@@ -175,7 +175,7 @@ In the call to `groupby(starwars, [:gender, :sex])` what Julia does is construct
 
 There's some obvious limitations to note in my code here though. Firstly, I'm not using the pipe `|>` at all, and while it's sort of fine in this context because there's only two steps in my data wrangling exercise, the code is going to get very ugly very quickly if I try to do something fancier.^[The other issue is that my code doesn't handle missing data gracefully, but that will come up later so I'm ignoring it for now.] So let's start by fixing this. 
 
-As I mentioned in the first post in this series, one way I could transform this into a pipeline is to use the [Pipe](https://juliapackages.com/p/pipe) package, which supplies a pipe that behaves very similarly to the base pipe in R. However, I'm not going to do that. Instead, I'm going to adopt a workflow where I use the Julia base pipe together with anonymous functions. Here's the same code expressed in this kind of pipeline:
+As I mentioned in the first post in this series, one way I could transform this into a pipeline is to use the [Pipe](https://juliapackages.com/p/pipe) package, which supplies a pipe that behaves very similarly to the base pipe in R. However, I'm not going to do that. Instead, I'm going to adopt a workflow where I use the Julia base pipe together with anonymous functions. Here's the same code expressed in this kind of pipeline:^[At some point I want to take a look at [Tidier.jl](https://tidierorg.github.io/Tidier.jl/stable/), but that's a topic for the future.]
 
 ```{julia}
 starwars |>
@@ -183,7 +183,7 @@ starwars |>
   d -> combine(d, :mass => rand)
 ```
 
-I genuinely wasn't expecting this when I first learned about the restrictiveness of the Julia pipe, but I think I really like this syntax. Because you *have* to define an anonymous function at each step in the pipeline, I find noticing that: 
+I genuinely wasn't expecting this when I first learned about the restrictiveness of the Julia pipe, but I think I really like this syntax. Because you *have* to define an anonymous function at each step in the pipeline, I find myself noticing that: 
 
 - It's only slightly more verbose than the R style, and has the advantage (to my mind) that you can use this workflow without having to think too much about Julia macros
 - The input argument (in this case `d`) serves the same role that the placeholder (`_` for the R base pipe and the Julia "Pipe-package-pipe", or `.` for the R magrittr pipe)
