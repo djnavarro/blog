@@ -1,0 +1,130 @@
+---
+title: "Thoughts on data formats in pharmacometric modelling"
+description: "A half-considered ramble based on some peculiarities in NONMEM"
+date: "2024-03-06"
+categories: ["Pharmacometrics", "NONMEM"]
+--- 
+
+<!--------------- my typical setup ----------------->
+
+```{r}
+#| label: setup
+#| include: false
+very_wide <- 500
+wide <- 136
+narrow <- 76
+options(width = narrow)
+cache_images <- TRUE
+set.seed(1)
+```
+
+<!--------------- post begins here ----------------->
+
+This is another entry in my intermittent series of posts on [pharmacometrics](/#category=Pharmacometrics), albeit a rather different one to the previous installments. This one came about because I've been slowly working my way through *Introduction to Population Pharmacokinetic/Pharmacodynamic Analysis with Nonlinear Mixed Effects Models* by Joel Owen and Jill Fiedler-Kelly. It's an excellent book, though in some ways the title is a little misleading: though the book does talk a little about PopPK modelling generally, the bulk of it is really a tutorial on how to use NONMEM, and it serves that purpose very nicely. 
+
+What I'm actually going to talk about in this post are some of the difficulties I've faced in getting up to speed in NONMEM from a user perspective, and how some of these "pain points" partially reflect design flaws in NONMEM. It's a difficult topic to talk about without seeming unfair or overly critical, because there are *many* respects in which NONMEM is excellent software, and I don't like the idea of presenting a lopsided perspective. With this in mind, as I go through I will try my very best to highlight the positives, and also try to be as sympathetic as possible to the developers. 
+
+I should also, I suppose, be explicit about stating that any opinions stated here are some personal thoughts. They don't represent my employer, or anybody else. And, quite frankly, I might be very wrong about a lot of them. I'm not so arrogant as to think that my opinions are necessarily right on all things. I am wrong about a depressingly large number of things.
+
+Okay, enough preliminaries. Let's get started.
+
+## What is NONMEM?
+
+For a pharmacometrician, there is very little point in having a section with this title, but since the majority of people who read this blog aren't pharmacometricians, I'll unpack this a little bit. 
+
+NONMEM is proprietary software designed specifically to support nonlinear mixed-effects modelling in pharmacometrics, and released by the company ICON Development Solutions. Originally developed in the 1970s by Lewis Shiner and Stuart Beal (with Alison Boeckmann joining the team a little later, I believe), NONMEM is written in Fortran and is comprised of several distinct parts:
+
+- The core of the platform is the NONMEM engine. Although NONMEM-the-software is used almost entirely for the purpose of working with compartmental models used in pharmacometrics, NONMEM-the-engine^[For the 1000th time, I reiterate my frustration with software tools that use the same word to mean different things: rstudio-the-ide vs (formerly) rstudio-the-company, observable-the-company vs observable-the-javascript-library vs observable-the-hosted-notebook-platform, etc etc. It's unhelpful.] is not specific to these models: it's simply a suite of tools for estimating nonlinear mixed effects models. Indeed, the name NONMEM is an abbreviation of **NON**linear **M**ixed **E**ffects **M**odels.
+
+- On top of NONMEM, there is are a collection of Fortran subroutines collectively referred to as PREDPP, short for **PRED**iction of **P**opulation **P**harmacometric models. There are many different subroutines within PREDPP, and they are given names like ADVAN1, ADVAN2, etc.^[I am told that the name ADVAN is short for "advance", and refers specifically to the manner in which the various ADVAN routines "advance" the underlying system of ODEs forward in time in discrete time steps that correspond to the times at which measurements are made]. Each of these ADVAN routines implements a specific type of model architecture: for instance, ADVAN2 implements a one-compartment model with first-order aborption and first-order elimination, whereas ADVAN4 corresponds to a two-compartment model with first-order absorption and elimination. As I've mentioned previously, these models can be parameterised in different ways, so each of these ADVAN subroutines is associated with a set of TRANS subroutines^[Named because of the gender dysphoria diagnosis that th... oh never mind. I will never stop finding the name funny though.] that provide the appropriate parameter transformation. 
+
+- Finally, there is NM-TRAN, short for **N**ON**M**EM **TRAN**slator. NM-TRAN provides a domain-specific language that allows users to write a "control file" that provides an abstract specification for the model, the dataset, the estimation procedure to be used, and the requested output. In effect, NM-TRAN is the user interface for NONMEM. 
+
+Understanding this three-part design helped me a lot in orienting myself to NONMEM and making sense of its behaviour. For instance, one strength in having the PREDPP routines is that it allows NONMEM (referring to the software as a whole, not just the engine) to be very performant. While in *principle* all compartmental popPK models form part of a broad family of nonlinear mixed effects models, there are huge performance gains to be had by implementing special cases as distinct subroutines. For example, the two-compartment model implemented by ADVAN4 is precisely the model for which I derived analytic solutions in [this post](/posts/2023-12-19_solving-two-compartment-pk-models/). There is absolutely no need to invoke a numerical ODE solver when fitting this model because there are closed-form solutions available. No matter how good your ODE solver is, it's always going to be orders of magnitude slower than using the algebraic form for the model predictions. By carving up the space of possible compartmental popPK models into "computationally meaningful" special cases, the NONMEM software is able to optimise performance very effectively.
+
+All these optimisations, combined with the fact that NONMEM was the first-to-market software tool for pharmacometric modelling, leads to a situation where it remains the dominant software platform in this space today.
+
+## Some difficulties with NONMEM
+
+Okay, so now that I've provided some background and -- I hope -- been sufficiently effusive in my praise for the things NONMEM does very well, I'm going to pivot a bit and start talking about some limitations to NONMEM from the end-user perspective. Many of these limitations are things that seem unavoidable, especially when you consider the time it was originally developed. But not everything can be explained that way. Some things are simply confusing, and in some cases feel like genuine design flaws.
+
+### Error reporting
+
+NONMEM doesn't have a good system for error reporting. Error messages are often terse, don't provide much information about where the error occurred, and so on. This makes debugging hard. I don't want to be too critical here though: I'm not a Fortran expert by any stretch of the imagination, but I don't think it's controversial to say that Fortran in the 1970s did not provide the same level of detailed compiler-error reporting that Rust does in the 2020s, and as a consequence if your model produces a compile-time error, you have to do trial-and-error guesswork to figure out where it went wrong.
+
+In practice, this is a big limitation to NONMEM. Error reporting is super-important for usability, and it is endlessly frustrating to me that NONMEM errors are so hard to debug. I'm not trying to be mean, because I really am sensitive to how hard it is to do good error reporting and can only imagine how tricky it must be with a codebase as old as NONMEMs. From a developer perspective it must be a nightmarishly hard problem to fix, so I am deeply sympathetic. But I won't lie: from a user perspective the lack of good error reporting is also nightmarish. 
+
+### CSV parsing
+
+Next up in my list of "Danielle has some concerns..." is the matter of how NONMEM validates the data input, or, more precisely the fact that it doesn't actually do this. 
+
+Data passed to NONMEM take the format of a delimited text file, most commonly using the comma-separated value format. With a few specific exceptions, all input fields to NONMEM must be numeric: you cannot include strings. This is a little frustrating sometimes, but I'm not being critical here. This limitation is not really that uncommon or unusual when you consider what the tool exists for. As a point of comparison, Stan has the same limitation: it supports a variety of numeric types, but does not support strings. 
+
+The fact that data must be numeric doesn't seem all that surprising to me. What *does* seem surprising to me, a quarter of the way through the 21st century, is that NONMEM has absolutely no ability to validate the input file. It does not check that the rows contain the same number of columns, and it cannot even read the header row to a CSV file. The *only* way you can provide names for the columns in your data set is to supply them manually through the $INPUT statement in your NM-TRAN control file.
+
+This part is genuinely and deeply shocking to me. It is 2024. There are plenty of open source tools for reading and validating a CSV file that come with completely free licenses and are suitable for inclusion within proprietary software. To lack even the most basic facilities for CSV parsing and validation is utterly mystifying, and I have no idea whatsoever why NONMEM can't actually read a CSV file properly.
+
+I've tried on numerous occasions to point out to people how truly bizarre this omission is, and I find there are two distinct reactions depending on who I'm talking to: 
+
+- Software developers stare at me in blank horror, utterly speechless
+- Pharmacometricians shrug their shoulders, because "that's how it is"
+
+Count me with the software devs on this one. I am so confused. But I don't actually have anything meaningful or constructive to say on this other than "why????" so perhaps it is best to move on.
+
+### Date handling
+
+Okay, let me be up front: this bit is me being confused as hell about something that actually doesn't matter much in real life. But it's so bizarre that I just have to talk about it. NONMEM has a system for encoding dates that... well, I can honestly say I've never seen anything like it in all my years in scientific computing. 
+
+Here's how it works. DATE columns are one of the few places where NONMEM can accept non-numeric input, and that seems very sensible to me. However, if you include a DATE column in your input data, the default format is MM/DD/YY^[Or to be more precise, MM-DD-YY is also accepted. You're permitted to use either "/" or "-" as the delimiter character for dates]. There are quite a lot of problems here packed into one sentence, and I'll have to unpack it piece by piece because there are layers to this onion.
+
+The first problem here is that almost no-one outside the US uses a month-day-year ("mdy") format to express dates. That's just not a thing in the rest of the world. Fortunately, you do have the option of asking NONMEM to parse a date as "dmy", "ymd", even "ydm" if you need to. However, the mechanism for doing this is a little peculiar. What I would have expected in this situation is that NM-TRAN would support an option in the $DATA block where the user would specify the date formatting convention. For instance, I could imagine a solution where the user specifies DATEFMT="yy/mm/dd" or DATEFMT="yyyy-mm-dd". That makes sense to me.
+
+However, this is not what NONMEM does. Instead, what happens is that NONMEM actuallyy has *four* different reserved names for date columns: DATE is used to specify a "mdy" ordering, DAT1 means that a date is "dmy", DAT2 is "ymd", and DAT3 is "ydm". Not what I'd have done -- and it does mean that the user has to just memorise which of the date variables corresponds to which of the date orderings -- but it doesn't seem like a hill to die on.
+
+A more severe limitation though is -- as was the custom at the time NONMEM was developed -- the fact that "year" is hardcoded as a two digit number. Now, I know what you're thinking, dear reader. *Obviously*, since NONMEM has this "reserved names" system for switching between "mdy", "ymd", etc (DATE, DAT1, etc), you'd expect that as the 21st century rolled around and with [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601) having been around since 1988 specifying an international standard stating that YYYY-MM-DD is the accepted format for dates, what NONMEM would do is introduce something like ISODATE as a reserved column name that accepts dates in the ISO-8601 format? That, at least, would be consistent with the DATE, DAT1, DAT2, etc system. 
+
+Right? 
+
+Wrong. 
+
+When it comes to the problem of four-digit years, the NONMEM solution is completely different to the way it handles date-ordering, and NONMEM doesn't actually support four-digit years at all.^[My suspicion is that internally there is a hard-coded restriction that a date must be *exactly* 8 characters in length: two each for MM, YY, and DD, and two more characters for the delimiter. If that's what NONMEM is doing, yeah, it's a much bigger refactor to support a four-digit year. Taking into account the fact that DATE isn't used very often and they have a very small developer team supporting an old codebase that probably carries quite a bit of technical debt, I suppose I am not surprised that even in 2024 NONMEM still cannot handle a four-digit date. Yes, I do find the status quo to be bizarre, but I can readily imagine why this is a can that the dev team decided to kick down the road. I'm genuinely sympathetic, actually.] Everything remains two-digit. What you do here is set the LAST20 option in the $DATA block in your control file, specifically by setting LAST20=n where n is an integer between 0 and 99. If YY>n the date is assigned to the 20th century and the year is 19YY. Otherwise the date is assigned to the 21st century and the year is 20YY. 
+
+I... don't quite know what to say.  
+
+All I can say here is that, well, in practice I've never actually seen a NONMEM data set that uses the DATE field so this bizarre behaviour has never affected me. But at the same time, *design matters*. I think part of the reason that I've never seen a NONMEM data file that uses proper date/time information is simply that NONMEM doesn't support dates properly.^[On top of all this, there is additional weirdness because the mere presence of a DATE column in NONMEM changes the semantics of the TIME column. If there is no DATE in the data, TIME is interpreted as numeric, and considered to be "time elapsed since first dose". But... if there is a DATE column, TIME is now given a new meaning and is interpreted as clock time: NONMEM now expects that TIME is hh:dd formatted and doesn't permit times greater than 24 hours. That is of course a recipe for chaos, so I'm not surprised that every data set I've seen in the wild makes the choice to omit date information entirely. Ultimately, NONMEM is so bad with dates that users don't ever feed it dates.] 
+
+All of that being said... as mystified I am at the design choices here, I find it hard to get too worked up. In my experience (which is admittedly limited) you just don't need date information in popPK modelling very often, so the fact that NONMEM is bad at this doesn't really affect me as a user.
+
+So let's move onto something more substantial, shall we?
+
+### Untidy data
+
+Up to this point, every "critique" I have made -- with the possible exception of the CSV parsing issue -- falls into one of two categories: (1) not important, or (2) really, really hard to fix. I don't think my "date criticism" is substantive, and I don't think my "error reporting criticism" has an easy fix. As frustrating as some of those things are, it would be churlish and unfair of me to be too harsh when talking about these issues.
+
+However, I have one more critique I want to talk about here, and this one feels like something that was (a) a bad design choice from the very beginning, and (b) something that has had nasty knock-on consequences for every other piece of software that has been developed since NONMEM. 
+
+That issue is "untidy data". 
+
+One of the *fundamental* properties of data sets used in popPK modelling is that they are necessarily comprised of (at least) two qualitatively different kinds of record: observation records and dosing records. These things are deeply different to one another, and entirely incommensurate in what they mean:
+
+- A **dosing** record specifies an *intervention*: it is used to specify what dose of a drug was administered, how it was administered, when those doses were administered, and so on. It is, fundamentally, a part of the study design (albeit one where the time-of-dose information might be empirical rather than precisely identical to what is stated in the study protocol)
+
+- An **observation** record specifies a *measurement*: it is used to record empirical measurements, usually (though not exclusively) the plasma concentration of a drug or its metabolite. It is fundamentally part of the study data, and is also the place where you might record values of a time-varying covariate (e.g., body weight might not simply be a baseline measure, it could change over the study time course). 
+
+These two things are deeply different kinds of record, and at some level NONMEM recognises this: a dosing record cannot, for instance, include a value for DV (i.e., the reserved column name used to record values of the dependent variable). However, the enforcement is inconsistent at best: you *are* permitted to include values of covariates within a dosing record, for instance.
+
+The thing that feels like a design flaw, and one that seems to have been inherited across every piece of popPK software I've come across, is that *dosing records and observation records are intermixed into the same "event schedule" data file*. 
+
+It seems to me that this is incoherent: dosing records and observation records are so incommensurate with each other in their structure that they properly belong in separate tables. You see this all the time when doing exploratory data analyses, exposure-response analyses, and other analyses associated with model validation. In those analyses, what you almost always do is read the data file into R, and one of the *first* things you have to do in the script is split the input data into (at least) two data frames: one containing the dosing records, and another one containing the observation records. It's necessary to do this because... well, it's sort of obvious right? One of these tables stores design/intervention information, and the other stores observation/measurement information. They're so different that *anything* you do with the data set downstream necessarily requires different analysis code.
+
+This is telling us something. The input data should have been structured as two separate tables from the beginning. Mixing qualitatively different data records within a single table is *untidy*, and untidy data sets are hard to write analysis code for. 
+
+Now at this point, dear reader, I must confess to a small faux pas that I regret slightly. I posted on mastodon about some of my... um... frustrations with the untidiness of NONMEM data files, and I was a bit more hyperbolic about it than is reasonable (I may have had a beer or two at the time of posting). I was genuinely a bit uncharitable. However, what followed after my foolishness was a very sensible conversation among pharmacometricians and software developers that was far more interesting than my initial remarks. One thing that I realised from that discussion -- in which every participant had immeasurably more experience in this field than I do -- is that because NONMEM has been so influential in the field, and because everything that NONMEM does has a tendency to become a de facto standard, the inherent untidiness of the input data has been inherited by every other software platform that has followed in NONMEM's footsteps. 
+
+Because of its status in the field, NONMEM is the thing that shapes user expectations, and -- unfortunately in this instance -- I think the pervasiveness of NONMEM has led to a situation where pharmacometricians *expect* that PK data sets should be untidy, and forced developers of other platforms to adopt data standards that are almost as untidy as what NONMEM does.
+
+This seems like a problem, and so it seems incumbent on me to stop behaving like a petulant child and instead try to offer some constructive thoughts. 
+
+## What would a tidy PK data set look like?
+
+
