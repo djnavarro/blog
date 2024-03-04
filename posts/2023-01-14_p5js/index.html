@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.4.550">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Danielle Navarro">
+<meta name="dcterms.date" content="2023-01-14">
+<meta name="description" content="Okay it’s a short post in which I teach myself a bit of p5.js, but it does have five different donut examples which seems cool?">
+
+<title>Notes from a data witch - Fun and games with p5.js and observable.js in quarto</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<style>
+
+      .quarto-title-block .quarto-title-banner {
+        background: #eeeeee;
+      }
+</style>
+<script type="module" src="../../site_libs/quarto-ojs/quarto-ojs-runtime.js"></script>
+<link href="../../site_libs/quarto-ojs/quarto-ojs.css" rel="stylesheet">
+
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="Notes from a data witch - Fun and games with p5.js and observable.js in quarto">
+<meta property="og:description" content="Okay it’s a short post in which I teach myself a bit of p5.js, but it does have five different donut examples which seems cool?">
+<meta property="og:image" content="https://blog.djnavarro.net/posts/2023-01-14_p5js/donut.jpg">
+<meta property="og:site_name" content="Notes from a data witch">
+<meta property="og:image:alt" content="A donut shape in brown and white with many criss-crossing lines inside">
+<meta name="twitter:title" content="Notes from a data witch - Fun and games with p5.js and observable.js in quarto">
+<meta name="twitter:description" content="Okay it’s a short post in which I teach myself a bit of p5.js, but it does have five different donut examples which seems cool?">
+<meta name="twitter:image" content="https://blog.djnavarro.net/posts/2023-01-14_p5js/donut.jpg">
+<meta name="twitter:creator" content="@djnavarro">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image:alt" content="A donut shape in brown and white with many criss-crossing lines inside">
+</head>
+
+<body class="floating nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.xml"> 
+<span class="menu-text">RSS</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-sites" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Sites</span>
+    </a>
+    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="nav-menu-sites">    
+        <li>
+    <a class="dropdown-item" href="https://djnavarro.net">
+ <span class="dropdown-text">Homepage</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://blog.djnavarro.net">
+ <span class="dropdown-text">Data science blog</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://art.djnavarro.net">
+ <span class="dropdown-text">Generative art</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://papers.djnavarro.net">
+ <span class="dropdown-text">Academic papers</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://djnavarro.net/sites">
+ <span class="dropdown-text">More…</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+          </div> <!-- /navcollapse -->
+          <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default toc-left page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Fun and games with p5.js and observable.js in quarto</h1>
+                  <div>
+        <div class="description">
+          Okay it’s a short post in which I teach myself a bit of p5.js, but it does have five different donut examples which seems cool?
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">Art</div>
+                <div class="quarto-category">P5</div>
+                <div class="quarto-category">Observable</div>
+                <div class="quarto-category">Javascript</div>
+                <div class="quarto-category">Quarto</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p><a href="https://djnavarro.net">Danielle Navarro</a> <a href="https://orcid.org/0000-0001-7648-6578" class="quarto-title-author-orcid"> <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA2ZpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYwIDYxLjEzNDc3NywgMjAxMC8wMi8xMi0xNzozMjowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo1N0NEMjA4MDI1MjA2ODExOTk0QzkzNTEzRjZEQTg1NyIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDozM0NDOEJGNEZGNTcxMUUxODdBOEVCODg2RjdCQ0QwOSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDozM0NDOEJGM0ZGNTcxMUUxODdBOEVCODg2RjdCQ0QwOSIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ1M1IE1hY2ludG9zaCI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOkZDN0YxMTc0MDcyMDY4MTE5NUZFRDc5MUM2MUUwNEREIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjU3Q0QyMDgwMjUyMDY4MTE5OTRDOTM1MTNGNkRBODU3Ii8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+84NovQAAAR1JREFUeNpiZEADy85ZJgCpeCB2QJM6AMQLo4yOL0AWZETSqACk1gOxAQN+cAGIA4EGPQBxmJA0nwdpjjQ8xqArmczw5tMHXAaALDgP1QMxAGqzAAPxQACqh4ER6uf5MBlkm0X4EGayMfMw/Pr7Bd2gRBZogMFBrv01hisv5jLsv9nLAPIOMnjy8RDDyYctyAbFM2EJbRQw+aAWw/LzVgx7b+cwCHKqMhjJFCBLOzAR6+lXX84xnHjYyqAo5IUizkRCwIENQQckGSDGY4TVgAPEaraQr2a4/24bSuoExcJCfAEJihXkWDj3ZAKy9EJGaEo8T0QSxkjSwORsCAuDQCD+QILmD1A9kECEZgxDaEZhICIzGcIyEyOl2RkgwAAhkmC+eAm0TAAAAABJRU5ErkJggg=="></a></p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">January 14, 2023</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#enabling-p5js" id="toc-enabling-p5js" class="nav-link active" data-scroll-target="#enabling-p5js">Enabling p5js</a></li>
+  <li><a href="#donut-1" id="toc-donut-1" class="nav-link" data-scroll-target="#donut-1">Donut 1</a></li>
+  <li><a href="#donut-2" id="toc-donut-2" class="nav-link" data-scroll-target="#donut-2">Donut 2</a></li>
+  <li><a href="#donut-3" id="toc-donut-3" class="nav-link" data-scroll-target="#donut-3">Donut 3</a></li>
+  <li><a href="#donut-4" id="toc-donut-4" class="nav-link" data-scroll-target="#donut-4">Donut 4</a></li>
+  <li><a href="#donut-5" id="toc-donut-5" class="nav-link" data-scroll-target="#donut-5">Donut 5</a></li>
+  </ul>
+</nav>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<!--------------- my typical setup ----------------->
+<!--------------- post begins here ----------------->
+<blockquote class="blockquote">
+<p>Be sweet to me, baby <br> I wanna believe in you <br> I wanna believe <br> Be sweet <br> Be sweet to me, baby <br> I wanna believe in you <br> I wanna believe in something <br> &nbsp; – Japanese Breakfast</p>
+</blockquote>
+<p>Okay, so… I write this blog using <a href="https://quarto.org/">quarto</a>, and quarto has native support for <a href="https://observablehq.com">observable.js</a> … and observable.js supports third-party javascript libraries such as <a href="https://p5js.org/">p5.js</a> executing in code cells… so, like… I can use p5.js to create generative art, inside the browser, inside a blog post? Right?</p>
+<p>Apparently the answer to that is yes.</p>
+<p>There is but one tiny problem. I don’t know anything about observable.js or p5.js. I supposed I’d best remedy that.</p>
+<section id="enabling-p5js" class="level2">
+<h2 class="anchored" data-anchor-id="enabling-p5js">Enabling p5js</h2>
+<p>The first step in the process is enabling p5.js, which is not one of the core libraries in observable, and is not immediately available. To use a third-party library that exists as an <a href="https://docs.npmjs.com/about-packages-and-modules">NPM modules</a> we can import it using <code>require()</code>.</p>
+<div class="cell" data-output="all">
+<div class="sourceCode cell-code" id="cb1" data-startfrom="43" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 42;"><span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>P5 <span class="op">=</span> <span class="pp">require</span>(<span class="st">"p5"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-1" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<p>Just like that, thanks to the joy of the <a href="https://www.jsdelivr.com/">jsDelivr CDN</a>, p5.js is now available to me in this post.</p>
+<p>Well, sort of. As you can see from the output,<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> the <code>P5</code> object is a function that takes three inputs. To do anything useful with it, I’ll use a trick I learned from <a href="https://observablehq.com/@tmcw/p5">this fabulous notebook by Tom MacWright</a> to run p5.js in “instance mode”. Normally, p5.js works by defining a lot of global objects. That works fine if you’re only doing one “sketch” on a single page, but it’s not so clean if you want to write modular code where a single page (like this one) could contain multiple p5.js sketches.</p>
+<p>To run p5.js in instance mode, and in a way that plays nicely with observable.js and quarto, I’ll define <code>createSketch</code> as a <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function*">generator function</a>:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" data-startfrom="53" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 52;"><span id="cb2-53"><a href="#cb2-53" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span><span class="op">*</span> <span class="fu">createSketch</span>(sketch) {</span>
+<span id="cb2-54"><a href="#cb2-54" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> element <span class="op">=</span> DOM<span class="op">.</span><span class="fu">element</span>(<span class="st">'div'</span>)<span class="op">;</span></span>
+<span id="cb2-55"><a href="#cb2-55" aria-hidden="true" tabindex="-1"></a>  <span class="kw">yield</span> element<span class="op">;</span></span>
+<span id="cb2-56"><a href="#cb2-56" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> instance <span class="op">=</span> <span class="kw">new</span> <span class="fu">P5</span>(sketch<span class="op">,</span> element<span class="op">,</span> <span class="kw">true</span>)<span class="op">;</span></span>
+<span id="cb2-57"><a href="#cb2-57" aria-hidden="true" tabindex="-1"></a>  <span class="cf">try</span> {</span>
+<span id="cb2-58"><a href="#cb2-58" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> (<span class="kw">true</span>) {</span>
+<span id="cb2-59"><a href="#cb2-59" aria-hidden="true" tabindex="-1"></a>      <span class="kw">yield</span> element<span class="op">;</span></span>
+<span id="cb2-60"><a href="#cb2-60" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb2-61"><a href="#cb2-61" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">finally</span> {</span>
+<span id="cb2-62"><a href="#cb2-62" aria-hidden="true" tabindex="-1"></a>    instance<span class="op">.</span><span class="fu">remove</span>()<span class="op">;</span></span>
+<span id="cb2-63"><a href="#cb2-63" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-64"><a href="#cb2-64" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-2" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<p>Using this approach, each instantiation of <code>P5</code> is attached to a div element that created when <code>createSketch</code> is called. If you want to know more about how this approach works, it’s probably best to go to the original source that I adapted it from, because Tom has commented it and explained it nicely: <a href="https://observablehq.com/@tmcw/p5">observablehq.com/<span class="citation" data-cites="tmcw/p5">@tmcw/p5</span></a></p>
+</section>
+<section id="donut-1" class="level2">
+<h2 class="anchored" data-anchor-id="donut-1">Donut 1</h2>
+<p>In keeping with the tradition I’ve set up in the last few blog posts, all the examples are donut themed.<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a> When calling <code>createSketch</code> I’ll pass an anonymous function that takes a single argument <code>s</code>, the document element to which all the p5 functions are attached. I’ll use the <a href="https://www.w3schools.com/js/js_arrow_function.asp">arrow notation</a>, so my code is going to look something like this:</p>
+<div class="cell" data-eval="false">
+<div class="sourceCode cell-code" id="cb3" data-startfrom="75" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 74;"><span id="cb3-75"><a href="#cb3-75" aria-hidden="true" tabindex="-1"></a><span class="fu">createSketch</span>(s <span class="kw">=&gt;</span> {</span>
+<span id="cb3-76"><a href="#cb3-76" aria-hidden="true" tabindex="-1"></a>  <span class="co">// add some p5.js code </span></span>
+<span id="cb3-77"><a href="#cb3-77" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-3" data-nodetype="expression">
+
+</div>
+</div>
+</div>
+<p>The idea in p5.js is all the work is done by two functions. The <code>setup</code> function includes code that is called only once, and if you want to draw static images you can do everything at the setup stage. In contrast the <code>draw</code> function is called repeatedly, so you can use that to add dynamic elements.</p>
+<p>Here’s an example of a static sketch that draws a single donut shape using two circles:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4" data-startfrom="85" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 84;"><span id="cb4-85"><a href="#cb4-85" aria-hidden="true" tabindex="-1"></a><span class="fu">createSketch</span>(s <span class="kw">=&gt;</span> {</span>
+<span id="cb4-86"><a href="#cb4-86" aria-hidden="true" tabindex="-1"></a>    s<span class="op">.</span><span class="at">setup</span> <span class="op">=</span> <span class="kw">function</span>() {</span>
+<span id="cb4-87"><a href="#cb4-87" aria-hidden="true" tabindex="-1"></a>      s<span class="op">.</span><span class="fu">createCanvas</span>(<span class="dv">500</span><span class="op">,</span> <span class="dv">500</span>)<span class="op">;</span></span>
+<span id="cb4-88"><a href="#cb4-88" aria-hidden="true" tabindex="-1"></a>      s<span class="op">.</span><span class="fu">background</span>(<span class="st">"black"</span>)<span class="op">;</span></span>
+<span id="cb4-89"><a href="#cb4-89" aria-hidden="true" tabindex="-1"></a>      s<span class="op">.</span><span class="fu">fill</span>(<span class="st">"red"</span>)<span class="op">.</span><span class="fu">circle</span>(<span class="dv">250</span><span class="op">,</span> <span class="dv">250</span><span class="op">,</span> <span class="dv">100</span>)<span class="op">;</span></span>
+<span id="cb4-90"><a href="#cb4-90" aria-hidden="true" tabindex="-1"></a>      s<span class="op">.</span><span class="fu">fill</span>(<span class="st">"black"</span>)<span class="op">.</span><span class="fu">circle</span>(<span class="dv">250</span><span class="op">,</span> <span class="dv">250</span><span class="op">,</span> <span class="dv">30</span>)<span class="op">;</span></span>
+<span id="cb4-91"><a href="#cb4-91" aria-hidden="true" tabindex="-1"></a>    }<span class="op">;</span></span>
+<span id="cb4-92"><a href="#cb4-92" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb4-93"><a href="#cb4-93" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-4" data-nodetype="expression">
+
+</div>
+</div>
+</div>
+<p>In this example:</p>
+<ul>
+<li><code>createCanvas</code> creates the drawing area in which the sketch will be rendered. Arguments are the width and height in pixels</li>
+<li><code>background</code> sets the background colour. The colour specification is flexible: it can be a recognised colour name, a hex string, or a numeric RGB specification</li>
+<li><code>fill</code> sets the fill colour</li>
+<li><code>circle</code> draws a circle: the first two arguments specify the origin of the circle, and the third argument specifies the diameter</li>
+</ul>
+<p>I’ve used <a href="https://dev.to/isiakaabd/method-chaining-in-javascript-154a">method chaining</a> here to remind me that the first <code>fill</code> and the first <code>circle</code> go together: writing <code>s.fill("red").circle(250, 250, 100)</code> on a single line helps me group code together conceptually. It’s mostly for my own convenience though.</p>
+</section>
+<section id="donut-2" class="level2">
+<h2 class="anchored" data-anchor-id="donut-2">Donut 2</h2>
+<p>Okay Danielle, that’s nice but it’s not <em>that</em> nice. Can we do something a little more interesting? Maybe with some dynamics? Well okay, Other Danielle, since you asked so sweetly, here’s an example with a moving circle that changes colour and traces out a donut shape:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5" data-startfrom="110" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 109;"><span id="cb5-110"><a href="#cb5-110" aria-hidden="true" tabindex="-1"></a><span class="fu">createSketch</span>(s <span class="kw">=&gt;</span> {</span>
+<span id="cb5-111"><a href="#cb5-111" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb5-112"><a href="#cb5-112" aria-hidden="true" tabindex="-1"></a>    s<span class="op">.</span><span class="at">setup</span> <span class="op">=</span> <span class="kw">function</span>() {</span>
+<span id="cb5-113"><a href="#cb5-113" aria-hidden="true" tabindex="-1"></a>      s<span class="op">.</span><span class="fu">createCanvas</span>(<span class="dv">500</span><span class="op">,</span> <span class="dv">500</span>)<span class="op">;</span></span>
+<span id="cb5-114"><a href="#cb5-114" aria-hidden="true" tabindex="-1"></a>      s<span class="op">.</span><span class="fu">background</span>(<span class="dv">0</span>)<span class="op">;</span></span>
+<span id="cb5-115"><a href="#cb5-115" aria-hidden="true" tabindex="-1"></a>      s<span class="op">.</span><span class="fu">noStroke</span>()<span class="op">;</span></span>
+<span id="cb5-116"><a href="#cb5-116" aria-hidden="true" tabindex="-1"></a>    }<span class="op">;</span></span>
+<span id="cb5-117"><a href="#cb5-117" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-118"><a href="#cb5-118" aria-hidden="true" tabindex="-1"></a>    s<span class="op">.</span><span class="at">draw</span> <span class="op">=</span> <span class="kw">function</span>() {</span>
+<span id="cb5-119"><a href="#cb5-119" aria-hidden="true" tabindex="-1"></a>      s<span class="op">.</span><span class="fu">translate</span>(</span>
+<span id="cb5-120"><a href="#cb5-120" aria-hidden="true" tabindex="-1"></a>        <span class="dv">100</span> <span class="op">*</span> s<span class="op">.</span><span class="fu">cos</span>(s<span class="op">.</span><span class="fu">millis</span>() <span class="op">*</span> <span class="op">.</span><span class="bn">001</span> <span class="op">*</span> s<span class="op">.</span><span class="at">PI</span>)<span class="op">,</span></span>
+<span id="cb5-121"><a href="#cb5-121" aria-hidden="true" tabindex="-1"></a>        <span class="dv">100</span> <span class="op">*</span> s<span class="op">.</span><span class="fu">sin</span>(s<span class="op">.</span><span class="fu">millis</span>() <span class="op">*</span> <span class="op">.</span><span class="bn">001</span> <span class="op">*</span> s<span class="op">.</span><span class="at">PI</span>)<span class="op">,</span></span>
+<span id="cb5-122"><a href="#cb5-122" aria-hidden="true" tabindex="-1"></a>      )<span class="op">;</span></span>
+<span id="cb5-123"><a href="#cb5-123" aria-hidden="true" tabindex="-1"></a>      <span class="cf">if</span> (s<span class="op">.</span><span class="fu">random</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">1</span>) <span class="op">&lt;</span> <span class="op">.</span><span class="dv">1</span>) {</span>
+<span id="cb5-124"><a href="#cb5-124" aria-hidden="true" tabindex="-1"></a>        s<span class="op">.</span><span class="fu">fill</span>(s<span class="op">.</span><span class="fu">random</span>(<span class="dv">0</span><span class="op">,</span> <span class="dv">255</span>))<span class="op">;</span></span>
+<span id="cb5-125"><a href="#cb5-125" aria-hidden="true" tabindex="-1"></a>      }</span>
+<span id="cb5-126"><a href="#cb5-126" aria-hidden="true" tabindex="-1"></a>      s<span class="op">.</span><span class="fu">circle</span>(<span class="dv">250</span><span class="op">,</span> <span class="dv">250</span><span class="op">,</span> <span class="dv">100</span>)<span class="op">;</span></span>
+<span id="cb5-127"><a href="#cb5-127" aria-hidden="true" tabindex="-1"></a>    }<span class="op">;</span></span>
+<span id="cb5-128"><a href="#cb5-128" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-129"><a href="#cb5-129" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb5-130"><a href="#cb5-130" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-5" data-nodetype="expression">
+
+</div>
+</div>
+</div>
+<p>This example makes use of some geometry functions included in p5.j (<code>sin</code>, <code>cos</code>, <code>translate</code>), a random number generator (<code>random</code>), and timer that returns the number of milliseconds since the sketch started (<code>millis</code>). These are all documented in the <a href="https://p5js.org/reference/">p5.js reference</a>.</p>
+</section>
+<section id="donut-3" class="level2">
+<h2 class="anchored" data-anchor-id="donut-3">Donut 3</h2>
+<p>For the third example we’ll introduce some fonts, adapting an example from <a href="https://observablehq.com/@tmcw/p5">observablehq.com/<span class="citation" data-cites="tmcw/p5">@tmcw/p5</span></a>. First, I’ll add some CSS to import the Courgette font:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode css code-with-copy"><code class="sourceCode css"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">@import</span> <span class="fu">url(</span><span class="st">https://fonts.googleapis.com/css?family=Courgette</span><span class="fu">)</span><span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<style type="text/css">
+@import url(https://fonts.googleapis.com/css?family=Courgette);
+</style>
+</div>
+<p>Now we can use that font in a p5.js scrolling window:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7" data-startfrom="147" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 146;"><span id="cb7-147"><a href="#cb7-147" aria-hidden="true" tabindex="-1"></a><span class="fu">createSketch</span>(s <span class="kw">=&gt;</span> {</span>
+<span id="cb7-148"><a href="#cb7-148" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb7-149"><a href="#cb7-149" aria-hidden="true" tabindex="-1"></a>    s<span class="op">.</span><span class="at">setup</span> <span class="op">=</span> <span class="kw">function</span>() {</span>
+<span id="cb7-150"><a href="#cb7-150" aria-hidden="true" tabindex="-1"></a>      s<span class="op">.</span><span class="fu">createCanvas</span>(<span class="dv">746</span><span class="op">,</span> <span class="dv">300</span>)<span class="op">;</span></span>
+<span id="cb7-151"><a href="#cb7-151" aria-hidden="true" tabindex="-1"></a>      s<span class="op">.</span><span class="fu">textFont</span>(<span class="st">'Courgette'</span>)<span class="op">;</span></span>
+<span id="cb7-152"><a href="#cb7-152" aria-hidden="true" tabindex="-1"></a>      s<span class="op">.</span><span class="fu">textStyle</span>(s<span class="op">.</span><span class="at">BOLD</span>)<span class="op">;</span></span>
+<span id="cb7-153"><a href="#cb7-153" aria-hidden="true" tabindex="-1"></a>      s<span class="op">.</span><span class="fu">textAlign</span>(s<span class="op">.</span><span class="at">CENTER</span><span class="op">,</span> s<span class="op">.</span><span class="at">CENTER</span>)</span>
+<span id="cb7-154"><a href="#cb7-154" aria-hidden="true" tabindex="-1"></a>    }<span class="op">;</span></span>
+<span id="cb7-155"><a href="#cb7-155" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb7-156"><a href="#cb7-156" aria-hidden="true" tabindex="-1"></a>    s<span class="op">.</span><span class="at">draw</span> <span class="op">=</span> <span class="kw">function</span>() {</span>
+<span id="cb7-157"><a href="#cb7-157" aria-hidden="true" tabindex="-1"></a>      s<span class="op">.</span><span class="fu">translate</span>(</span>
+<span id="cb7-158"><a href="#cb7-158" aria-hidden="true" tabindex="-1"></a>        s<span class="op">.</span><span class="fu">millis</span>() <span class="op">*</span> (<span class="op">-</span><span class="fl">0.1</span>) <span class="op">%</span> (s<span class="op">.</span><span class="at">width</span> <span class="op">+</span> <span class="dv">1000</span>)<span class="op">,</span> </span>
+<span id="cb7-159"><a href="#cb7-159" aria-hidden="true" tabindex="-1"></a>        s<span class="op">.</span><span class="at">height</span> <span class="op">/</span> <span class="dv">2</span></span>
+<span id="cb7-160"><a href="#cb7-160" aria-hidden="true" tabindex="-1"></a>      )<span class="op">;</span></span>
+<span id="cb7-161"><a href="#cb7-161" aria-hidden="true" tabindex="-1"></a>      s<span class="op">.</span><span class="fu">background</span>(<span class="st">'#222222'</span>)<span class="op">;</span></span>
+<span id="cb7-162"><a href="#cb7-162" aria-hidden="true" tabindex="-1"></a>      s<span class="op">.</span><span class="fu">fill</span>(<span class="st">'#DC3F74'</span>)<span class="op">.</span><span class="fu">textSize</span>(<span class="dv">100</span>)<span class="op">;</span></span>
+<span id="cb7-163"><a href="#cb7-163" aria-hidden="true" tabindex="-1"></a>      s<span class="op">.</span><span class="fu">text</span>(<span class="st">'Donuts: A Hole World'</span><span class="op">,</span> s<span class="op">.</span><span class="at">width</span> <span class="op">+</span> <span class="dv">500</span><span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></span>
+<span id="cb7-164"><a href="#cb7-164" aria-hidden="true" tabindex="-1"></a>    }<span class="op">;</span></span>
+<span id="cb7-165"><a href="#cb7-165" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb7-166"><a href="#cb7-166" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb7-167"><a href="#cb7-167" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-6" data-nodetype="expression">
+
+</div>
+</div>
+</div>
+<p>Could life be any more thrilling than this?</p>
+</section>
+<section id="donut-4" class="level2">
+<h2 class="anchored" data-anchor-id="donut-4">Donut 4</h2>
+<p>Well, maybe it can. We could make it a little more interesting by using webGL to move our donut plots into the… THIRD DIMENSION! (Gasp!)</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8" data-startfrom="179" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 178;"><span id="cb8-179"><a href="#cb8-179" aria-hidden="true" tabindex="-1"></a><span class="fu">createSketch</span>(s <span class="kw">=&gt;</span> {</span>
+<span id="cb8-180"><a href="#cb8-180" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-181"><a href="#cb8-181" aria-hidden="true" tabindex="-1"></a>  s<span class="op">.</span><span class="at">setup</span> <span class="op">=</span> <span class="kw">function</span>() {</span>
+<span id="cb8-182"><a href="#cb8-182" aria-hidden="true" tabindex="-1"></a>    s<span class="op">.</span><span class="fu">createCanvas</span>(<span class="dv">746</span><span class="op">,</span> <span class="dv">746</span><span class="op">,</span> s<span class="op">.</span><span class="at">WEBGL</span>)<span class="op">;</span></span>
+<span id="cb8-183"><a href="#cb8-183" aria-hidden="true" tabindex="-1"></a>    s<span class="op">.</span><span class="fu">noStroke</span>()<span class="op">;</span></span>
+<span id="cb8-184"><a href="#cb8-184" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb8-185"><a href="#cb8-185" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-186"><a href="#cb8-186" aria-hidden="true" tabindex="-1"></a>  s<span class="op">.</span><span class="at">draw</span> <span class="op">=</span> <span class="kw">function</span>() {</span>
+<span id="cb8-187"><a href="#cb8-187" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-188"><a href="#cb8-188" aria-hidden="true" tabindex="-1"></a>    s<span class="op">.</span><span class="fu">background</span>(<span class="dv">0</span>)<span class="op">;</span></span>
+<span id="cb8-189"><a href="#cb8-189" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-190"><a href="#cb8-190" aria-hidden="true" tabindex="-1"></a>    <span class="kw">let</span> locX <span class="op">=</span> s<span class="op">.</span><span class="at">mouseX</span> <span class="op">-</span> s<span class="op">.</span><span class="at">height</span> <span class="op">/</span> <span class="dv">2</span><span class="op">;</span></span>
+<span id="cb8-191"><a href="#cb8-191" aria-hidden="true" tabindex="-1"></a>    <span class="kw">let</span> locY <span class="op">=</span> s<span class="op">.</span><span class="at">mouseY</span> <span class="op">-</span> s<span class="op">.</span><span class="at">width</span> <span class="op">/</span> <span class="dv">2</span><span class="op">;</span>  </span>
+<span id="cb8-192"><a href="#cb8-192" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb8-193"><a href="#cb8-193" aria-hidden="true" tabindex="-1"></a>    s<span class="op">.</span><span class="fu">ambientLight</span>(<span class="dv">60</span><span class="op">,</span> <span class="dv">60</span><span class="op">,</span> <span class="dv">60</span>)<span class="op">;</span></span>
+<span id="cb8-194"><a href="#cb8-194" aria-hidden="true" tabindex="-1"></a>    s<span class="op">.</span><span class="fu">pointLight</span>(<span class="dv">190</span><span class="op">,</span> <span class="dv">80</span><span class="op">,</span> <span class="dv">190</span><span class="op">,</span> locX<span class="op">,</span> locY<span class="op">,</span> <span class="dv">100</span>)<span class="op">;</span></span>
+<span id="cb8-195"><a href="#cb8-195" aria-hidden="true" tabindex="-1"></a>    s<span class="op">.</span><span class="fu">pointLight</span>(<span class="dv">80</span><span class="op">,</span> <span class="dv">80</span><span class="op">,</span> <span class="dv">190</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">100</span>)<span class="op">;</span></span>
+<span id="cb8-196"><a href="#cb8-196" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb8-197"><a href="#cb8-197" aria-hidden="true" tabindex="-1"></a>    s<span class="op">.</span><span class="fu">specularMaterial</span>(<span class="dv">255</span>)<span class="op">;</span></span>
+<span id="cb8-198"><a href="#cb8-198" aria-hidden="true" tabindex="-1"></a>    s<span class="op">.</span><span class="fu">rotateX</span>(s<span class="op">.</span><span class="at">frameCount</span> <span class="op">*</span> <span class="fl">0.01</span>)<span class="op">;</span></span>
+<span id="cb8-199"><a href="#cb8-199" aria-hidden="true" tabindex="-1"></a>    s<span class="op">.</span><span class="fu">rotateY</span>(s<span class="op">.</span><span class="at">frameCount</span> <span class="op">*</span> <span class="fl">0.01</span>)<span class="op">;</span></span>
+<span id="cb8-200"><a href="#cb8-200" aria-hidden="true" tabindex="-1"></a>    s<span class="op">.</span><span class="fu">torus</span>(<span class="dv">150</span><span class="op">,</span> <span class="dv">80</span><span class="op">,</span> <span class="dv">64</span><span class="op">,</span> <span class="dv">64</span>)<span class="op">;</span></span>
+<span id="cb8-201"><a href="#cb8-201" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb8-202"><a href="#cb8-202" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-203"><a href="#cb8-203" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-7" data-nodetype="expression">
+
+</div>
+</div>
+</div>
+<p>If you move the mouse over the donut<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a> you’ll see that the light source moves with it.</p>
+</section>
+<section id="donut-5" class="level2">
+<h2 class="anchored" data-anchor-id="donut-5">Donut 5</h2>
+<p>For the final example, I’ll do a tiny bit of object-oriented programming. Inspired by a generative art course by Bernat Ferragut (<a href="https://ga-course.surge.sh/">ga-course.surge.sh</a>) that I was skimming yesterday, I’ll define a <code>Dot</code> class that creates a particle that moves around on the canvas and has the ability to bounce off circular boundaries:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9" data-startfrom="215" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 214;"><span id="cb9-215"><a href="#cb9-215" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Dot {</span>
+<span id="cb9-216"><a href="#cb9-216" aria-hidden="true" tabindex="-1"></a>  <span class="fu">constructor</span>(sketch<span class="op">,</span> x<span class="op">,</span> y<span class="op">,</span> colour<span class="op">,</span> size) {</span>
+<span id="cb9-217"><a href="#cb9-217" aria-hidden="true" tabindex="-1"></a>    <span class="kw">this</span><span class="op">.</span><span class="at">s</span> <span class="op">=</span> sketch<span class="op">;</span></span>
+<span id="cb9-218"><a href="#cb9-218" aria-hidden="true" tabindex="-1"></a>    <span class="kw">this</span><span class="op">.</span><span class="at">x</span> <span class="op">=</span> x <span class="op">|</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb9-219"><a href="#cb9-219" aria-hidden="true" tabindex="-1"></a>    <span class="kw">this</span><span class="op">.</span><span class="at">y</span> <span class="op">=</span> y <span class="op">|</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb9-220"><a href="#cb9-220" aria-hidden="true" tabindex="-1"></a>    <span class="kw">this</span><span class="op">.</span><span class="at">colour</span> <span class="op">=</span> colour<span class="op">;</span></span>
+<span id="cb9-221"><a href="#cb9-221" aria-hidden="true" tabindex="-1"></a>    <span class="kw">this</span><span class="op">.</span><span class="at">size</span> <span class="op">=</span> size<span class="op">;</span></span>
+<span id="cb9-222"><a href="#cb9-222" aria-hidden="true" tabindex="-1"></a>    <span class="kw">this</span><span class="op">.</span><span class="at">velX</span> <span class="op">=</span> <span class="kw">this</span><span class="op">.</span><span class="at">s</span><span class="op">.</span><span class="fu">random</span>(<span class="op">-</span><span class="dv">2</span><span class="op">,</span> <span class="dv">2</span>)<span class="op">;</span></span>
+<span id="cb9-223"><a href="#cb9-223" aria-hidden="true" tabindex="-1"></a>    <span class="kw">this</span><span class="op">.</span><span class="at">velY</span> <span class="op">=</span> <span class="kw">this</span><span class="op">.</span><span class="at">s</span><span class="op">.</span><span class="fu">random</span>(<span class="op">-</span><span class="dv">2</span><span class="op">,</span> <span class="dv">2</span>)<span class="op">;</span></span>
+<span id="cb9-224"><a href="#cb9-224" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb9-225"><a href="#cb9-225" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-226"><a href="#cb9-226" aria-hidden="true" tabindex="-1"></a>  <span class="fu">on</span>() {</span>
+<span id="cb9-227"><a href="#cb9-227" aria-hidden="true" tabindex="-1"></a>    <span class="kw">this</span><span class="op">.</span><span class="at">s</span><span class="op">.</span><span class="fu">noStroke</span>()<span class="op">;</span></span>
+<span id="cb9-228"><a href="#cb9-228" aria-hidden="true" tabindex="-1"></a>    <span class="kw">this</span><span class="op">.</span><span class="at">s</span><span class="op">.</span><span class="fu">fill</span>(<span class="kw">this</span><span class="op">.</span><span class="at">colour</span>)<span class="op">;</span></span>
+<span id="cb9-229"><a href="#cb9-229" aria-hidden="true" tabindex="-1"></a>    <span class="kw">this</span><span class="op">.</span><span class="at">s</span><span class="op">.</span><span class="fu">circle</span>(<span class="kw">this</span><span class="op">.</span><span class="at">x</span><span class="op">,</span> <span class="kw">this</span><span class="op">.</span><span class="at">y</span><span class="op">,</span> <span class="kw">this</span><span class="op">.</span><span class="at">size</span>)<span class="op">;</span></span>
+<span id="cb9-230"><a href="#cb9-230" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb9-231"><a href="#cb9-231" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-232"><a href="#cb9-232" aria-hidden="true" tabindex="-1"></a>  <span class="fu">move</span>() {</span>
+<span id="cb9-233"><a href="#cb9-233" aria-hidden="true" tabindex="-1"></a>    <span class="kw">this</span><span class="op">.</span><span class="at">x</span> <span class="op">+=</span> <span class="kw">this</span><span class="op">.</span><span class="at">velX</span><span class="op">;</span></span>
+<span id="cb9-234"><a href="#cb9-234" aria-hidden="true" tabindex="-1"></a>    <span class="kw">this</span><span class="op">.</span><span class="at">y</span> <span class="op">+=</span> <span class="kw">this</span><span class="op">.</span><span class="at">velY</span><span class="op">;</span></span>
+<span id="cb9-235"><a href="#cb9-235" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb9-236"><a href="#cb9-236" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb9-237"><a href="#cb9-237" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bounce</span>(radius<span class="op">,</span> inside) {</span>
+<span id="cb9-238"><a href="#cb9-238" aria-hidden="true" tabindex="-1"></a>    <span class="kw">let</span> x <span class="op">=</span> <span class="kw">this</span><span class="op">.</span><span class="at">x</span> <span class="op">-</span> <span class="kw">this</span><span class="op">.</span><span class="at">s</span><span class="op">.</span><span class="at">width</span><span class="op">/</span><span class="dv">2</span><span class="op">;</span></span>
+<span id="cb9-239"><a href="#cb9-239" aria-hidden="true" tabindex="-1"></a>    <span class="kw">let</span> y <span class="op">=</span> <span class="kw">this</span><span class="op">.</span><span class="at">y</span> <span class="op">-</span> <span class="kw">this</span><span class="op">.</span><span class="at">s</span><span class="op">.</span><span class="at">height</span><span class="op">/</span><span class="dv">2</span><span class="op">;</span></span>
+<span id="cb9-240"><a href="#cb9-240" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (</span>
+<span id="cb9-241"><a href="#cb9-241" aria-hidden="true" tabindex="-1"></a>      inside <span class="op">&amp;&amp;</span> x<span class="op">*</span>x <span class="op">+</span> y<span class="op">*</span>y <span class="op">&gt;</span> radius <span class="op">*</span> radius <span class="op">||</span></span>
+<span id="cb9-242"><a href="#cb9-242" aria-hidden="true" tabindex="-1"></a>      <span class="op">!</span>inside <span class="op">&amp;&amp;</span> x<span class="op">*</span>x <span class="op">+</span> y<span class="op">*</span>y <span class="op">&lt;</span> radius <span class="op">*</span> radius</span>
+<span id="cb9-243"><a href="#cb9-243" aria-hidden="true" tabindex="-1"></a>    ) {</span>
+<span id="cb9-244"><a href="#cb9-244" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb9-245"><a href="#cb9-245" aria-hidden="true" tabindex="-1"></a>      <span class="co">// https://math.stackexchange.com/a/611836</span></span>
+<span id="cb9-246"><a href="#cb9-246" aria-hidden="true" tabindex="-1"></a>      <span class="kw">let</span> nx <span class="op">=</span> x <span class="op">/</span> <span class="kw">this</span><span class="op">.</span><span class="at">s</span><span class="op">.</span><span class="fu">sqrt</span>(x<span class="op">*</span>x <span class="op">+</span> y<span class="op">*</span>y)<span class="op">;</span></span>
+<span id="cb9-247"><a href="#cb9-247" aria-hidden="true" tabindex="-1"></a>      <span class="kw">let</span> ny <span class="op">=</span> y <span class="op">/</span> <span class="kw">this</span><span class="op">.</span><span class="at">s</span><span class="op">.</span><span class="fu">sqrt</span>(x<span class="op">*</span>x <span class="op">+</span> y<span class="op">*</span>y)<span class="op">;</span></span>
+<span id="cb9-248"><a href="#cb9-248" aria-hidden="true" tabindex="-1"></a>      <span class="kw">let</span> vx <span class="op">=</span> <span class="kw">this</span><span class="op">.</span><span class="at">velX</span><span class="op">;</span></span>
+<span id="cb9-249"><a href="#cb9-249" aria-hidden="true" tabindex="-1"></a>      <span class="kw">let</span> vy <span class="op">=</span> <span class="kw">this</span><span class="op">.</span><span class="at">velY</span><span class="op">;</span></span>
+<span id="cb9-250"><a href="#cb9-250" aria-hidden="true" tabindex="-1"></a>      <span class="kw">this</span><span class="op">.</span><span class="at">velX</span> <span class="op">=</span> (ny<span class="op">*</span>ny <span class="op">-</span> nx<span class="op">*</span>nx)<span class="op">*</span>vx <span class="op">-</span> <span class="dv">2</span><span class="op">*</span>nx<span class="op">*</span>ny<span class="op">*</span>vy<span class="op">;</span></span>
+<span id="cb9-251"><a href="#cb9-251" aria-hidden="true" tabindex="-1"></a>      <span class="kw">this</span><span class="op">.</span><span class="at">velY</span> <span class="op">=</span> (nx<span class="op">*</span>nx <span class="op">-</span> ny<span class="op">*</span>ny)<span class="op">*</span>vy <span class="op">-</span> <span class="dv">2</span><span class="op">*</span>nx<span class="op">*</span>ny<span class="op">*</span>vx<span class="op">;</span></span>
+<span id="cb9-252"><a href="#cb9-252" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb9-253"><a href="#cb9-253" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb9-254"><a href="#cb9-254" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb9-255"><a href="#cb9-255" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb9-256"><a href="#cb9-256" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-8" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<p>Naturally, I will use this to draw a donut:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10" data-startfrom="263" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 262;"><span id="cb10-263"><a href="#cb10-263" aria-hidden="true" tabindex="-1"></a><span class="fu">createSketch</span>(s <span class="kw">=&gt;</span> {</span>
+<span id="cb10-264"><a href="#cb10-264" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-265"><a href="#cb10-265" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> n <span class="op">=</span> <span class="dv">100</span><span class="op">;</span></span>
+<span id="cb10-266"><a href="#cb10-266" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> dot<span class="op">;</span></span>
+<span id="cb10-267"><a href="#cb10-267" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> dotList <span class="op">=</span> []<span class="op">;</span></span>
+<span id="cb10-268"><a href="#cb10-268" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> palette <span class="op">=</span> [</span>
+<span id="cb10-269"><a href="#cb10-269" aria-hidden="true" tabindex="-1"></a>    s<span class="op">.</span><span class="fu">color</span>(<span class="st">"#6B1B00"</span>)<span class="op">,</span></span>
+<span id="cb10-270"><a href="#cb10-270" aria-hidden="true" tabindex="-1"></a>    s<span class="op">.</span><span class="fu">color</span>(<span class="st">"#AE8B70"</span>)<span class="op">,</span></span>
+<span id="cb10-271"><a href="#cb10-271" aria-hidden="true" tabindex="-1"></a>    s<span class="op">.</span><span class="fu">color</span>(<span class="st">"#F9FEFB"</span>)<span class="op">,</span></span>
+<span id="cb10-272"><a href="#cb10-272" aria-hidden="true" tabindex="-1"></a>    s<span class="op">.</span><span class="fu">color</span>(<span class="st">"#56382D"</span>) </span>
+<span id="cb10-273"><a href="#cb10-273" aria-hidden="true" tabindex="-1"></a>  ]<span class="op">;</span></span>
+<span id="cb10-274"><a href="#cb10-274" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-275"><a href="#cb10-275" aria-hidden="true" tabindex="-1"></a>  s<span class="op">.</span><span class="at">setup</span> <span class="op">=</span> <span class="kw">function</span>() {</span>
+<span id="cb10-276"><a href="#cb10-276" aria-hidden="true" tabindex="-1"></a>    s<span class="op">.</span><span class="fu">createCanvas</span>(<span class="dv">746</span><span class="op">,</span> <span class="dv">746</span>)<span class="op">;</span></span>
+<span id="cb10-277"><a href="#cb10-277" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span>(<span class="kw">let</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> n<span class="op">;</span> i<span class="op">++</span>) {</span>
+<span id="cb10-278"><a href="#cb10-278" aria-hidden="true" tabindex="-1"></a>      <span class="kw">let</span> angle <span class="op">=</span> s<span class="op">.</span><span class="fu">random</span>(<span class="dv">0</span><span class="op">,</span> s<span class="op">.</span><span class="at">TWO_PI</span>)<span class="op">;</span></span>
+<span id="cb10-279"><a href="#cb10-279" aria-hidden="true" tabindex="-1"></a>      <span class="kw">let</span> radius <span class="op">=</span> s<span class="op">.</span><span class="at">width</span> <span class="op">*</span> s<span class="op">.</span><span class="fu">random</span>(<span class="op">.</span><span class="dv">12</span><span class="op">,</span> <span class="op">.</span><span class="dv">33</span>)<span class="op">;</span></span>
+<span id="cb10-280"><a href="#cb10-280" aria-hidden="true" tabindex="-1"></a>      dotList<span class="op">.</span><span class="fu">push</span>(dot <span class="op">=</span> <span class="kw">new</span> <span class="fu">Dot</span>(</span>
+<span id="cb10-281"><a href="#cb10-281" aria-hidden="true" tabindex="-1"></a>        s<span class="op">,</span></span>
+<span id="cb10-282"><a href="#cb10-282" aria-hidden="true" tabindex="-1"></a>        s<span class="op">.</span><span class="at">width</span><span class="op">/</span><span class="dv">2</span> <span class="op">+</span> s<span class="op">.</span><span class="fu">cos</span>(angle) <span class="op">*</span> radius<span class="op">,</span></span>
+<span id="cb10-283"><a href="#cb10-283" aria-hidden="true" tabindex="-1"></a>        s<span class="op">.</span><span class="at">height</span><span class="op">/</span><span class="dv">2</span> <span class="op">+</span> s<span class="op">.</span><span class="fu">sin</span>(angle) <span class="op">*</span> radius<span class="op">,</span></span>
+<span id="cb10-284"><a href="#cb10-284" aria-hidden="true" tabindex="-1"></a>        s<span class="op">.</span><span class="fu">random</span>(palette)<span class="op">,</span></span>
+<span id="cb10-285"><a href="#cb10-285" aria-hidden="true" tabindex="-1"></a>        s<span class="op">.</span><span class="fu">random</span>(<span class="dv">1</span><span class="op">,</span> <span class="dv">5</span>)</span>
+<span id="cb10-286"><a href="#cb10-286" aria-hidden="true" tabindex="-1"></a>      ))<span class="op">;</span></span>
+<span id="cb10-287"><a href="#cb10-287" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb10-288"><a href="#cb10-288" aria-hidden="true" tabindex="-1"></a>  }<span class="op">;</span></span>
+<span id="cb10-289"><a href="#cb10-289" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb10-290"><a href="#cb10-290" aria-hidden="true" tabindex="-1"></a>  s<span class="op">.</span><span class="at">draw</span> <span class="op">=</span> <span class="kw">function</span>() {</span>
+<span id="cb10-291"><a href="#cb10-291" aria-hidden="true" tabindex="-1"></a>    dotList<span class="op">.</span><span class="fu">map</span>(dot <span class="kw">=&gt;</span> {</span>
+<span id="cb10-292"><a href="#cb10-292" aria-hidden="true" tabindex="-1"></a>      dot<span class="op">.</span><span class="fu">on</span>()<span class="op">;</span></span>
+<span id="cb10-293"><a href="#cb10-293" aria-hidden="true" tabindex="-1"></a>      dot<span class="op">.</span><span class="fu">move</span>()<span class="op">;</span></span>
+<span id="cb10-294"><a href="#cb10-294" aria-hidden="true" tabindex="-1"></a>      dot<span class="op">.</span><span class="fu">bounce</span>(s<span class="op">.</span><span class="at">width</span> <span class="op">*</span> <span class="op">.</span><span class="dv">35</span><span class="op">,</span> <span class="kw">true</span>)<span class="op">;</span></span>
+<span id="cb10-295"><a href="#cb10-295" aria-hidden="true" tabindex="-1"></a>      dot<span class="op">.</span><span class="fu">bounce</span>(s<span class="op">.</span><span class="at">width</span> <span class="op">*</span> <span class="op">.</span><span class="dv">1</span><span class="op">,</span> <span class="kw">false</span>)<span class="op">;</span></span>
+<span id="cb10-296"><a href="#cb10-296" aria-hidden="true" tabindex="-1"></a>    })<span class="op">;</span></span>
+<span id="cb10-297"><a href="#cb10-297" aria-hidden="true" tabindex="-1"></a>  }<span class="op">;</span></span>
+<span id="cb10-298"><a href="#cb10-298" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-9" data-nodetype="expression">
+
+</div>
+</div>
+</div>
+<p>Mmmm…. donuts.</p>
+<!--------------- appendices go here ----------------->
+
+
+</section>
+
+
+<div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p>An assignment like this would not normally produce any visible output for an observable.js code cell within in a quarto document, but I’ve set <code>output: all</code> for expository purposes.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>A tradition that, like most things, will last only until I get bored with it.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3"><p>I can’t make up my mind if the colour scheme implies this is a bisexual donut or a trans donut. Oh wait, it’s probably both.<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section><section class="quarto-appendix-contents" id="quarto-reuse"><h2 class="anchored quarto-appendix-heading">Reuse</h2><div class="quarto-appendix-contents"><div><a rel="license" href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></div></div></section><section class="quarto-appendix-contents" id="quarto-citation"><h2 class="anchored quarto-appendix-heading">Citation</h2><div><div class="quarto-appendix-secondary-label">BibTeX citation:</div><pre class="sourceCode code-with-copy quarto-appendix-bibtex"><code class="sourceCode bibtex">@online{navarro2023,
+  author = {Navarro, Danielle},
+  title = {Fun and Games with P5.js and Observable.js in Quarto},
+  date = {2023-01-14},
+  url = {https://blog.djnavarro.net/posts/2023-01-14_p5js},
+  langid = {en}
+}
+</code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre><div class="quarto-appendix-secondary-label">For attribution, please cite this work as:</div><div id="ref-navarro2023" class="csl-entry quarto-appendix-citeas" role="listitem">
+Navarro, Danielle. 2023. <span>“Fun and Games with P5.js and
+Observable.js in Quarto.”</span> January 14, 2023. <a href="https://blog.djnavarro.net/posts/2023-01-14_p5js">https://blog.djnavarro.net/posts/2023-01-14_p5js</a>.
+</div></div></section></div></main> <!-- /main -->
+<!-- plausible -->
+<script async="" defer="" data-domain="blog.djnavarro.net" src="https://plausible.io/js/plausible.js"></script>
+<script type="ojs-module-contents">
+eyJjb250ZW50cyI6W3sibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMSIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6IlA1ID0gcmVxdWlyZShcInA1XCIpXG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTIiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJmdW5jdGlvbiogY3JlYXRlU2tldGNoKHNrZXRjaCkge1xuICBjb25zdCBlbGVtZW50ID0gRE9NLmVsZW1lbnQoJ2RpdicpO1xuICB5aWVsZCBlbGVtZW50O1xuICBjb25zdCBpbnN0YW5jZSA9IG5ldyBQNShza2V0Y2gsIGVsZW1lbnQsIHRydWUpO1xuICB0cnkge1xuICAgIHdoaWxlICh0cnVlKSB7XG4gICAgICB5aWVsZCBlbGVtZW50O1xuICAgIH1cbiAgfSBmaW5hbGx5IHtcbiAgICBpbnN0YW5jZS5yZW1vdmUoKTtcbiAgfVxufVxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC00IiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoiY3JlYXRlU2tldGNoKHMgPT4ge1xuICAgIHMuc2V0dXAgPSBmdW5jdGlvbigpIHtcbiAgICAgIHMuY3JlYXRlQ2FudmFzKDUwMCwgNTAwKTtcbiAgICAgIHMuYmFja2dyb3VuZChcImJsYWNrXCIpO1xuICAgICAgcy5maWxsKFwicmVkXCIpLmNpcmNsZSgyNTAsIDI1MCwgMTAwKTtcbiAgICAgIHMuZmlsbChcImJsYWNrXCIpLmNpcmNsZSgyNTAsIDI1MCwgMzApO1xuICAgIH07XG4gIH1cbilcbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtNSIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6ImNyZWF0ZVNrZXRjaChzID0+IHtcbiAgXG4gICAgcy5zZXR1cCA9IGZ1bmN0aW9uKCkge1xuICAgICAgcy5jcmVhdGVDYW52YXMoNTAwLCA1MDApO1xuICAgICAgcy5iYWNrZ3JvdW5kKDApO1xuICAgICAgcy5ub1N0cm9rZSgpO1xuICAgIH07XG4gICAgXG4gICAgcy5kcmF3ID0gZnVuY3Rpb24oKSB7XG4gICAgICBzLnRyYW5zbGF0ZShcbiAgICAgICAgMTAwICogcy5jb3Mocy5taWxsaXMoKSAqIC4wMDEgKiBzLlBJKSxcbiAgICAgICAgMTAwICogcy5zaW4ocy5taWxsaXMoKSAqIC4wMDEgKiBzLlBJKSxcbiAgICAgICk7XG4gICAgICBpZiAocy5yYW5kb20oMCwgMSkgPCAuMSkge1xuICAgICAgICBzLmZpbGwocy5yYW5kb20oMCwgMjU1KSk7XG4gICAgICB9XG4gICAgICBzLmNpcmNsZSgyNTAsIDI1MCwgMTAwKTtcbiAgICB9O1xuICAgIFxuICB9XG4pXG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTYiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJjcmVhdGVTa2V0Y2gocyA9PiB7XG4gIFxuICAgIHMuc2V0dXAgPSBmdW5jdGlvbigpIHtcbiAgICAgIHMuY3JlYXRlQ2FudmFzKDc0NiwgMzAwKTtcbiAgICAgIHMudGV4dEZvbnQoJ0NvdXJnZXR0ZScpO1xuICAgICAgcy50ZXh0U3R5bGUocy5CT0xEKTtcbiAgICAgIHMudGV4dEFsaWduKHMuQ0VOVEVSLCBzLkNFTlRFUilcbiAgICB9O1xuICAgIFxuICAgIHMuZHJhdyA9IGZ1bmN0aW9uKCkge1xuICAgICAgcy50cmFuc2xhdGUoXG4gICAgICAgIHMubWlsbGlzKCkgKiAoLTAuMSkgJSAocy53aWR0aCArIDEwMDApLCBcbiAgICAgICAgcy5oZWlnaHQgLyAyXG4gICAgICApO1xuICAgICAgcy5iYWNrZ3JvdW5kKCcjMjIyMjIyJyk7XG4gICAgICBzLmZpbGwoJyNEQzNGNzQnKS50ZXh0U2l6ZSgxMDApO1xuICAgICAgcy50ZXh0KCdEb251dHM6IEEgSG9sZSBXb3JsZCcsIHMud2lkdGggKyA1MDAsIDApO1xuICAgIH07XG4gICAgXG4gIH1cbilcbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtNyIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6ImNyZWF0ZVNrZXRjaChzID0+IHtcblxuICBzLnNldHVwID0gZnVuY3Rpb24oKSB7XG4gICAgcy5jcmVhdGVDYW52YXMoNzQ2LCA3NDYsIHMuV0VCR0wpO1xuICAgIHMubm9TdHJva2UoKTtcbiAgfVxuXG4gIHMuZHJhdyA9IGZ1bmN0aW9uKCkge1xuXG4gICAgcy5iYWNrZ3JvdW5kKDApO1xuXG4gICAgbGV0IGxvY1ggPSBzLm1vdXNlWCAtIHMuaGVpZ2h0IC8gMjtcbiAgICBsZXQgbG9jWSA9IHMubW91c2VZIC0gcy53aWR0aCAvIDI7ICBcbiAgICBcbiAgICBzLmFtYmllbnRMaWdodCg2MCwgNjAsIDYwKTtcbiAgICBzLnBvaW50TGlnaHQoMTkwLCA4MCwgMTkwLCBsb2NYLCBsb2NZLCAxMDApO1xuICAgIHMucG9pbnRMaWdodCg4MCwgODAsIDE5MCwgMCwgMCwgMTAwKTtcbiAgXG4gICAgcy5zcGVjdWxhck1hdGVyaWFsKDI1NSk7XG4gICAgcy5yb3RhdGVYKHMuZnJhbWVDb3VudCAqIDAuMDEpO1xuICAgIHMucm90YXRlWShzLmZyYW1lQ291bnQgKiAwLjAxKTtcbiAgICBzLnRvcnVzKDE1MCwgODAsIDY0LCA2NCk7XG4gIH1cblxufSlcbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtOCIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6ImNsYXNzIERvdCB7XG4gIGNvbnN0cnVjdG9yKHNrZXRjaCwgeCwgeSwgY29sb3VyLCBzaXplKSB7XG4gICAgdGhpcy5zID0gc2tldGNoO1xuICAgIHRoaXMueCA9IHggfCAwO1xuICAgIHRoaXMueSA9IHkgfCAwO1xuICAgIHRoaXMuY29sb3VyID0gY29sb3VyO1xuICAgIHRoaXMuc2l6ZSA9IHNpemU7XG4gICAgdGhpcy52ZWxYID0gdGhpcy5zLnJhbmRvbSgtMiwgMik7XG4gICAgdGhpcy52ZWxZID0gdGhpcy5zLnJhbmRvbSgtMiwgMik7XG4gIH1cblxuICBvbigpIHtcbiAgICB0aGlzLnMubm9TdHJva2UoKTtcbiAgICB0aGlzLnMuZmlsbCh0aGlzLmNvbG91cik7XG4gICAgdGhpcy5zLmNpcmNsZSh0aGlzLngsIHRoaXMueSwgdGhpcy5zaXplKTtcbiAgfVxuXG4gIG1vdmUoKSB7XG4gICAgdGhpcy54ICs9IHRoaXMudmVsWDtcbiAgICB0aGlzLnkgKz0gdGhpcy52ZWxZO1xuICB9XG4gIFxuICBib3VuY2UocmFkaXVzLCBpbnNpZGUpIHtcbiAgICBsZXQgeCA9IHRoaXMueCAtIHRoaXMucy53aWR0aC8yO1xuICAgIGxldCB5ID0gdGhpcy55IC0gdGhpcy5zLmhlaWdodC8yO1xuICAgIGlmIChcbiAgICAgIGluc2lkZSAmJiB4KnggKyB5KnkgPiByYWRpdXMgKiByYWRpdXMgfHxcbiAgICAgICFpbnNpZGUgJiYgeCp4ICsgeSp5IDwgcmFkaXVzICogcmFkaXVzXG4gICAgKSB7XG4gICAgXG4gICAgICAvLyBodHRwczovL21hdGguc3RhY2tleGNoYW5nZS5jb20vYS82MTE4MzZcbiAgICAgIGxldCBueCA9IHggLyB0aGlzLnMuc3FydCh4KnggKyB5KnkpO1xuICAgICAgbGV0IG55ID0geSAvIHRoaXMucy5zcXJ0KHgqeCArIHkqeSk7XG4gICAgICBsZXQgdnggPSB0aGlzLnZlbFg7XG4gICAgICBsZXQgdnkgPSB0aGlzLnZlbFk7XG4gICAgICB0aGlzLnZlbFggPSAobnkqbnkgLSBueCpueCkqdnggLSAyKm54Km55KnZ5O1xuICAgICAgdGhpcy52ZWxZID0gKG54Km54IC0gbnkqbnkpKnZ5IC0gMipueCpueSp2eDtcbiAgICBcbiAgICB9XG4gIH1cbiAgXG59XG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTkiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJjcmVhdGVTa2V0Y2gocyA9PiB7XG5cbiAgbGV0IG4gPSAxMDA7XG4gIGxldCBkb3Q7XG4gIGxldCBkb3RMaXN0ID0gW107XG4gIGxldCBwYWxldHRlID0gW1xuICAgIHMuY29sb3IoXCIjNkIxQjAwXCIpLFxuICAgIHMuY29sb3IoXCIjQUU4QjcwXCIpLFxuICAgIHMuY29sb3IoXCIjRjlGRUZCXCIpLFxuICAgIHMuY29sb3IoXCIjNTYzODJEXCIpIFxuICBdO1xuXG4gIHMuc2V0dXAgPSBmdW5jdGlvbigpIHtcbiAgICBzLmNyZWF0ZUNhbnZhcyg3NDYsIDc0Nik7XG4gICAgZm9yKGxldCBpID0gMDsgaSA8IG47IGkrKykge1xuICAgICAgbGV0IGFuZ2xlID0gcy5yYW5kb20oMCwgcy5UV09fUEkpO1xuICAgICAgbGV0IHJhZGl1cyA9IHMud2lkdGggKiBzLnJhbmRvbSguMTIsIC4zMyk7XG4gICAgICBkb3RMaXN0LnB1c2goZG90ID0gbmV3IERvdChcbiAgICAgICAgcyxcbiAgICAgICAgcy53aWR0aC8yICsgcy5jb3MoYW5nbGUpICogcmFkaXVzLFxuICAgICAgICBzLmhlaWdodC8yICsgcy5zaW4oYW5nbGUpICogcmFkaXVzLFxuICAgICAgICBzLnJhbmRvbShwYWxldHRlKSxcbiAgICAgICAgcy5yYW5kb20oMSwgNSlcbiAgICAgICkpO1xuICAgIH1cbiAgfTtcbiAgICBcbiAgcy5kcmF3ID0gZnVuY3Rpb24oKSB7XG4gICAgZG90TGlzdC5tYXAoZG90ID0+IHtcbiAgICAgIGRvdC5vbigpO1xuICAgICAgZG90Lm1vdmUoKTtcbiAgICAgIGRvdC5ib3VuY2Uocy53aWR0aCAqIC4zNSwgdHJ1ZSk7XG4gICAgICBkb3QuYm91bmNlKHMud2lkdGggKiAuMSwgZmFsc2UpO1xuICAgIH0pO1xuICB9O1xufSlcblxuIn1dfQ==
+</script>
+<script type="module">
+if (window.location.protocol === "file:") { alert("The OJS runtime does not work with file:// URLs. Please use a web server to view this document."); }
+window._ojs.paths.runtimeToDoc = "../../posts/2023-01-14_p5js";
+window._ojs.paths.runtimeToRoot = "../..";
+window._ojs.paths.docToRoot = "../..";
+window._ojs.selfContained = false;
+window._ojs.runtime.interpretFromScriptTags();
+</script>
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+    <a class="nav-link" href="https://blog.djnavarro.net">
+<p>blog.djnavarro.net</p>
+</a>
+  </li>  
+</ul>
+    </div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>
