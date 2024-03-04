@@ -1,0 +1,48 @@
+project:
+  type: website
+  resources:
+    - CNAME
+
+website:
+  title: "Notes from a data witch"
+  description: "A data science blog by Danielle Navarro"
+  site-url: https://blog.djnavarro.net
+  repo-url: https://github.com/djnavarro/blog
+  open-graph: true
+  search: false
+  twitter-card:
+    creator: "@djnavarro"
+    card-style: summary_large_image
+  navbar:
+    title: false
+    background: "#eee"
+    left:
+      - href: index.qmd
+        text: Home
+      - href: index.xml
+        text: RSS
+    right:
+      - text: Sites
+        menu:
+        - href: https://djnavarro.net
+          text: Homepage
+        - href: https://blog.djnavarro.net
+          text: Data science blog
+        - href: https://art.djnavarro.net
+          text: Generative art
+        - href: https://papers.djnavarro.net
+          text: Academic papers
+        - href: https://djnavarro.net/sites
+          text: More...
+  page-footer:
+    center:
+      - href: https://blog.djnavarro.net
+        text: blog.djnavarro.net
+
+format:
+  html:
+    theme: ember.scss
+    css: styles.css
+    include-after-body: plausible.html
+
+
