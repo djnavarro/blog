@@ -48,6 +48,8 @@ All these optimisations, combined with the fact that NONMEM was the first-to-mar
 
 Okay, so now that I've provided some background and -- I hope -- been sufficiently effusive in my praise for the things NONMEM does very well, I'm going to pivot a bit and start talking about some limitations to NONMEM from the end-user perspective. Many of these limitations are things that seem unavoidable, especially when you consider the time it was originally developed. But not everything can be explained that way. Some things are simply confusing, and in some cases feel like genuine design flaws.
 
+Please bear with me, dear reader. This section of the post is going to be very whiny, and in truth it is nothing more than a laundry list of random complaints I've had during my learning process. I promise that by the end of this, though, things will turn around again and I'll start offering some more constructive thoughts that are a bit more general (and potentially more useful) than simply grumbling about the things I have found difficult in NONMEM. However, in blog posts as in life, you sometimes have to go through some rough patches before getting to the good parts...
+
 ### Error reporting
 
 NONMEM doesn't have a good system for error reporting. Error messages are often terse, don't provide much information about where the error occurred, and so on. This makes debugging hard. I don't want to be too critical here though: I'm not a Fortran expert by any stretch of the imagination, but I don't think it's controversial to say that Fortran in the 1970s did not provide the same level of detailed compiler-error reporting that Rust does in the 2020s, and as a consequence if your model produces a compile-time error, you have to do trial-and-error guesswork to figure out where it went wrong.
@@ -89,9 +91,11 @@ Wrong.
 
 When it comes to the problem of four-digit years, the NONMEM solution is completely different to the way it handles date-ordering, and NONMEM doesn't actually support four-digit years at all.^[My suspicion is that internally there is a hard-coded restriction that a date must be *exactly* 8 characters in length: two each for MM, YY, and DD, and two more characters for the delimiter. If that's what NONMEM is doing, yeah, it's a much bigger refactor to support a four-digit year. Taking into account the fact that DATE isn't used very often and they have a very small developer team supporting an old codebase that probably carries quite a bit of technical debt, I suppose I am not surprised that even in 2024 NONMEM still cannot handle a four-digit date. Yes, I do find the status quo to be bizarre, but I can readily imagine why this is a can that the dev team decided to kick down the road. I'm genuinely sympathetic, actually.] Everything remains two-digit. What you do here is set the LAST20 option in the $DATA block in your control file, specifically by setting LAST20=n where n is an integer between 0 and 99. If YY>n the date is assigned to the 20th century and the year is 19YY. Otherwise the date is assigned to the 21st century and the year is 20YY. 
 
+On top of all this, there is additional weirdness because the mere presence of a DATE column in NONMEM changes the semantics of the TIME column. If there is no DATE in the data, TIME is interpreted as numeric, and considered to be "time elapsed since first dose". But... if there is a DATE column, TIME is now given a new meaning and is interpreted as clock time: NONMEM now expects that TIME is hh:dd formatted and doesn't permit times greater than 24 hours. That is of course a recipe for chaos, so I'm not surprised that every data set I've seen in the wild makes the choice to omit date information entirely. Ultimately, NONMEM is so bad with dates that users don't ever feed it dates
+
 I... don't quite know what to say.  
 
-All I can say here is that, well, in practice I've never actually seen a NONMEM data set that uses the DATE field so this bizarre behaviour has never affected me. But at the same time, *design matters*. I think part of the reason that I've never seen a NONMEM data file that uses proper date/time information is simply that NONMEM doesn't support dates properly.^[On top of all this, there is additional weirdness because the mere presence of a DATE column in NONMEM changes the semantics of the TIME column. If there is no DATE in the data, TIME is interpreted as numeric, and considered to be "time elapsed since first dose". But... if there is a DATE column, TIME is now given a new meaning and is interpreted as clock time: NONMEM now expects that TIME is hh:dd formatted and doesn't permit times greater than 24 hours. That is of course a recipe for chaos, so I'm not surprised that every data set I've seen in the wild makes the choice to omit date information entirely. Ultimately, NONMEM is so bad with dates that users don't ever feed it dates.] 
+All I *can* say here is that, well, in practice I've never actually seen a NONMEM data set that uses the DATE field so this bizarre behaviour has never affected me. But at the same time, *design matters*. I think part of the reason that I've never seen a NONMEM data file that uses proper date/time information is simply that NONMEM doesn't support dates properly. 
 
 All of that being said... as mystified I am at the design choices here, I find it hard to get too worked up. In my experience (which is admittedly limited) you just don't need date information in popPK modelling very often, so the fact that NONMEM is bad at this doesn't really affect me as a user.
 
@@ -127,4 +131,53 @@ This seems like a problem, and so it seems incumbent on me to stop behaving like
 
 ## What would a tidy PK data set look like?
 
+At long last we get to the part of the post that is somewhat substantive in nature. It's the part of the post I've had to think hardest about, and also -- because this part is hard -- it's also the part I'm least certain about. But I am going to try anyway. Because a lot of the discussion of what constitutes tidy data in practical settings has come out of the R community, I'll start by quoting [this section](https://tidyr.tidyverse.org/articles/tidy-data.html#tidy-data) from the documentation of the "tidyr" R package:
 
+>Tidy data is a standard way of mapping the meaning of a dataset to its structure. A dataset is messy or tidy depending on how rows, columns and tables are matched up with observations, variables and types. In tidy data:
+>
+> - Each variable is a column; each column is a variable.
+> - Each observation is a row; each row is an observation.
+> - Each value is a cell; each cell is a single value.
+
+In the PK context, we should be careful about our use of the term "observation", because our data consists of "empirical observations" and "dosing interventions". The "tidy data" definition is uses the term "observation" more broadly: though not observational in nature, a dosing record absolutely counts as an "observation" in the sense implied the tidy data definition above. 
+
+### What are we talking about?
+
+In order to talk about what would constitute a "tidy" structure for PK data, I think it's important to be clear about what *isn't* part of the discussion, and you can see a few examples of this by looking at my "random"^[Okay, I'll be honest, it wasn't random at all.] laundry list of complaints about NONMEM.
+
+- The encoding format does not matter. It doesn't matter whether you're importing data from a CSV file, or a Parquet file,^[Don't get me wrong I *love* Parquet. It's an amazing format for serializing large data sets, and -- as I've discussed in some of my posts about Apache Arrow -- it makes a massive difference when you have big data. But the largest PK data set I've seen so far in my consulting work has about 10K rows. This is not large enough for anyone to care about the performance differences between CSV and Parquet.] or from an in-memory data structure like a data frame in R, Julia, or whatever. Encoding is a fundamentally different issue to "tidiness".
+
+- Data types do not matter. Earlier in the post I tangentially grumbled about the fact that NONMEM (and Stan) do not support strings, a complaint that you could probably generalise (in the in-memory context) to talk about whether R factors or Julia dictionaries should be supported. This too is irrelevant. A data structure that encodes race^[In the conventional US-centric sense of the term.] as a numeric variable where "1 = white", "2 = Black", "3 = Asian", etc is neither more nor less tidy than a data structure that explicitly represents the labels (either as strings or via dictionaries etc). This is not what I mean when I talk about tidyness.
+
+- Implementation details do not matter. Again referring back to my miscellaneous list of grumbles, the fact that NONMEM can't validate a CSV file and that it has a bizarre internal representation of dates... this too is irrelevant. NONMEM data sets are neither tidy or untidy because of these facts. 
+
+In other words, the "tidiness" of a data set is something that relates to the logical organisation and semantics of the data: it's not related to low-level implementation or encoding. 
+
+By way of contrast, semantics *do* matter. Recall earlier that, toward the end of what seemed like a silly rant about how dates are encoded in NONMEM, I mentioned the fact that the semantics of the TIME column are *different* in NONMEM depending on whether a DATE column exists. This actually is -- in my opinion, at least -- a form of untidiness. Every column and every row in a data set should mean one thing and *only* one thing. Its meaning and parsing should not be dependent on the existence (or lack thereof) of another column (or row). The fact that you cannot assign meaning to TIME in NONMEM without first checking to see if DATE exists is a form of untidiness, and is one of the things we want to avoid when constructing tidy data.
+
+### Why is it untidy to mix dosing with observations?
+
+Okay yes, it seems intuitively "obvious" that it's a bad idea to mix observational records into the same table as dosing records, but even so I want to unpack *why* we might have that intuition. There's probably a long list of reasons, but it probably suffices to note the a few salient examples.
+
+Firstly, notice that mixed table introduces messy dependencies between columns. A dosing record *must* have an AMT column (using NONMEM terminology here) because you can't really talk about dosing without recording the amount of drug administered. Yet at the same time an *observation* record cannot have an AMT value because it doesn't describe a dosing event. Similarly, a dosing record *cannot* have a DV value because it doesn't describe a measurement (in NONMEM, DV must be specified as missing for a dosing record), whereas an observation record can *only* have a missing value for DV if -- for whatever reason -- the relevant measurement wasn't made or wasn't recorded. By mixing these two things together you have a strange situation where there are "mandatory missing values" that don't *actually* correspond to real missingness: it's purely an artifact of the data structure.
+
+Secondly, notice that mixing disparate record types into the same table has the effect of subtly changing the semantics attached to the columns. Some of these semantic shifts are trivial: observation records and dosing records both have values for TIME, but one refers to time of dosing and the other refers to time of measurement. That's a minor difference, and perhaps not important. But, to extend the example from the last paragraph, the meaning of a missing DV value changes a *lot* depending on whether you have a dosing record or an observation record. One of those two things is purely artifactual, the other is meaningful. 
+
+Thirdly, notice that I lied in the previous paragraph when I said that the changes in the semantics of TIME depending on whether a row refers to a dosing event or an observation event are trivial. That's only really true when we're talking about dosing events that occur at discrete time points (e.g., oral dosing or bolus IV dosing). For an infusion dose, TIME interacts with RATE in a fashion that is very meaningful for the dosing information, but has no meaning whatsoever in the observation context.
+
+Of course, none of these points are very deep. They are "statements of the obvious", and nobody should mistake them for anything other than what they are. However, what I'm trying to accomplish by stating the obvious out loud is highlighting the fact that "separate tables for dosing and observation" is a better representation of the structure of the data than "one big table that mixes them together, messes up the semantics, and introduces massive dependencies between the columns".
+
+Our data are comprised of two fundamentally different types of records: as such, they belong in separate tables. 
+
+### What does a tidy dosing table look like?
+
+### What does a tidy observation table look like?
+
+
+## What might we lose by adopting a tidy data standard?
+
+Tidy data is generally a good thing from a scripting and data analysis perspective, but there are other things we need to take into account. 
+
+A big one is "unified data view" during exploratory data analysis. While some pharmacometricians are experts at scripting in R (or other languages), not everyone in the field possesses that expertise, and this does matter. 
+
+TODO: unpack the point about being able to visually detect "last dose" in a data view, and the necessity of having a "data view" that makes this easily accessible to the analyst.
