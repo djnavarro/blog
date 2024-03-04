@@ -158,7 +158,7 @@ function greet(name)
 end;
 ```
 
-The `end` keyword is required here. Note also that I've taken advantage of Julia's [string interpolation syntax](https://www.juliawiki.com/wiki/String_interpolation) to substitute the value of `name` into the string that `greet()` outputs:
+The `end` keyword is required here. Note also that I've taken advantage of Julia's [string interpolation syntax](https://docs.julialang.org/en/v1/manual/strings/#string-interpolation) to substitute the value of `name` into the string that `greet()` outputs:
 
 ```{julia}
 greet("danielle")
@@ -339,7 +339,7 @@ Honestly, as much as I was initially like "ugh this is unwieldy", I'm starting t
 
 ## Function composition
 
-I should also mention that Julia has the [function composition operator](https://www.juliawiki.com/wiki/Function_composition_(Julia)) `∘` that you can use for this purpose, using much the same notation as in mathematics.^[For most editors that are configured to handle Julia syntax can type the `∘` operator by typing `\circ` and then hitting tab.] So I could define a `geomean()` function as the following composition:
+I should also mention that Julia has the [function composition operator](https://docs.julialang.org/en/v1/manual/functions/#Function-composition-and-piping) `∘` that you can use for this purpose, using much the same notation as in mathematics.^[For most editors that are configured to handle Julia syntax can type the `∘` operator by typing `\circ` and then hitting tab.] So I could define a `geomean()` function as the following composition:
 
 ```{julia}
 geomean = exp ∘ mean ∘ (x -> log.(x))
@@ -359,7 +359,7 @@ Gender-swapping Daneel to Demerzel was a good move in the show just for the sake
  
 ## Metaprogramming
 
-Much like R -- and very unlike Matlab, which Julia syntax sometimes resembles -- the design choices underpinning Julia have been influnced heavily by [Lisp](https://en.wikipedia.org/wiki/Lisp_(programming_language)). While I have never actually learned to program in any of the major dialects of Lisp, I've always wanted to, and I'm a huge fan of the way that Lisp and its descendants contain programming constructs that directly represent [abstract syntax trees](https://en.wikipedia.org/wiki/Abstract_syntax_tree) and provide tools that let you manipulate user-supplied code.^[Very often I see programmers who have never worked in a Lisp-descended language (e.g., they know Python, C, etc. but not R, Julia, Scheme, etc.) react in horror and outrage at the things that you are permitted to do in languages that rely extensively on metaprogramming, but honestly I love it. I think it's such a powerful tool for constructing [domain specific languages](https://en.wikipedia.org/wiki/Domain-specific_language) *within* the confines of a more general language.]
+Much like R -- and very unlike Matlab, which Julia syntax sometimes resembles -- the design choices underpinning Julia has been influnced heavily by [Lisp](https://en.wikipedia.org/wiki/Lisp_(programming_language)). While I have never actually learned to program in any of the major dialects of Lisp, I've always wanted to, and I'm a huge fan of the way that Lisp and its descendants contain programming constructs that directly represent [abstract syntax trees](https://en.wikipedia.org/wiki/Abstract_syntax_tree) and provide tools that let you manipulate user-supplied code.^[Very often I see programmers who have never worked in a Lisp-descended language (e.g., they know Python, C, etc. but not R, Julia, Scheme, etc.) react in horror and outrage at the things that you are permitted to do in languages that rely extensively on metaprogramming, but honestly I love it. I think it's such a powerful tool for constructing [domain specific languages](https://en.wikipedia.org/wiki/Domain-specific_language) *within* the confines of a more general language.]
 
 Because [Julia Metaprogramming](https://docs.julialang.org/en/v1/manual/metaprogramming/) is such a powerful tool, what I've noticed already -- even as a novice -- is that most practical uses of the language end up relying on it heavily. Julia supports abstract [Symbols](https://docs.julialang.org/en/v1/base/base/#Core.Symbol), [Expressions](https://docs.julialang.org/en/v1/base/base/#Core.Expr), and [Macros](https://docs.julialang.org/en/v1/manual/metaprogramming/#man-macros), all of which start to pop up in your code once you start using it for real world data wrangling and visualisation. So it's pretty important to understand something about how it all works. That said... it's an advanced topic rather than a basic one, so what I think I'm going to do for now is issue a promissory note: I'll talk more about this in later posts as those topics become relevant.
 
