@@ -147,7 +147,7 @@ In order to talk about what would constitute a "tidy" structure for PK data, I t
 
 - The encoding format does not matter. It doesn't matter whether you're importing data from a CSV file, or a Parquet file,^[Don't get me wrong I *love* Parquet. It's an amazing format for serializing large data sets, and -- as I've discussed in some of my posts about Apache Arrow -- it makes a massive difference when you have big data. But the largest PK data set I've seen so far in my consulting work has about 10K rows. This is not large enough for anyone to care about the performance differences between CSV and Parquet.] or from an in-memory data structure like a data frame in R, Julia, or whatever. Encoding is a fundamentally different issue to "tidiness".
 
-- Data types do not matter. Earlier in the post I tangentially grumbled about the fact that NONMEM (and Stan) do not support strings, a complaint that you could probably generalise (in the in-memory context) to talk about whether R factors or Julia dictionaries should be supported. This too is irrelevant. A data structure that encodes race^[In the conventional US-centric sense of the term.] as a numeric variable where "1 = white", "2 = Black", "3 = Asian", etc is neither more nor less tidy than a data structure that explicitly represents the labels (either as strings or via dictionaries etc). This is not what I mean when I talk about tidyness.
+- Data types do not (inherently) matter. Earlier in the post I tangentially grumbled about the fact that NONMEM (and Stan) do not support strings, a complaint that you could probably generalise (in the in-memory context) to talk about whether R factors or Julia dictionaries should be supported. This too is irrelevant. A data structure that encodes race^[In the conventional US-centric sense of the term.] as a numeric variable where "1 = white", "2 = Black", "3 = Asian", etc is neither more nor less tidy than a data structure that explicitly represents the labels (either as strings or via dictionaries etc). This is not what I mean when I talk about tidiness. There will be moments later in the post where I talk about data types, certainly, but those remarks should be viewed as implementation details and/or user conveniences -- they're not inherently about "tidiness".
 
 - Implementation details do not matter. Again referring back to my miscellaneous list of grumbles, the fact that NONMEM can't validate a CSV file and that it has a bizarre internal representation of dates... this too is irrelevant. NONMEM data sets are neither tidy or untidy because of these facts. 
 
@@ -170,6 +170,62 @@ Of course, none of these points are very deep. They are "statements of the obvio
 Our data are comprised of two fundamentally different types of records: as such, they belong in separate tables. 
 
 ### What does a tidy dosing table look like?
+
+Dosing events in NONMEM have a fairly specific structure, with some mandatory and some optional columns. In what follows I'm going to talk a little about each of these, attempting to adopt a broader perspective than considering only NONMEM, but I will use "NONMEM-style" names to refer to each of the variables.
+
+#### Mandatory columns
+
+For some variables, a "tidy" format doesn't involve a lot of departure from the  NONMEM-style de facto standard. For example, TIME and AMT would both be required variables in a dosing table, and their meaning is not going to be any different from what NONMEM expects:
+
+- TIME specifies the time at which the dose was administered (or, in the case of an infusion, the time at which the infusion started). In the typical case this is a numeric variable, but (as discussed earlier) there is the possibility of specifying a DATE and a TIME column, in which case the semantics are slightly different. Looking more broadly than NONMEM (because lets face it, NONMEM is never going to change its data standards), I think it would be reasonable to adopt a standard in which TIME could *either* be a simple numeric value, or else could be a fully-specified datetime variable (e.g., a POSIXct variable in R, or a correctly-formatted ISO compliant field in a CSV file). When specified as a numeric variable, it is up to the user to make sure that the units are sensible; when specified as a datetime input, the units are already prescribed by the data. There doesn't seem to be much value in considering other formats for this field.  
+- AMT specifies the quantity of drug administered, as a numeric variable. The semantics of this column will depend slightly on whether the dose is administered all at once (e.g., bolus IV, oral) or over time (e.g., infusion), but either way the intended meaning of AMT is that it refers to the total amount of drug (in whatever units the user intends) administered. Naturally, this field should be a numeric variable (e.g., integer, float, a number in a CSV file, etc)
+
+These are both required fields, and a dosing table that does not have an AMT column or a TIME column should throw an error. Indeed, since -- in practice -- pharmacometric software is used primarily for popPK analyses where there are multiple participants receiving doses of the drug, I think we should go one step further and make ID a mandatory column:
+
+- ID specifies a unique identifier for a subject. In NONMEM there is a constraint that the ID column be a numeric variable (like any other NONMEM variable). This constraint, however, is entirely unprincipled from a data perspective and exists only because of how NONMEM is designed. It should not be part of a data standard. An ID column could be a numeric value, certainly, but strings should be permitted too. That's particularly valuable in the drug development context because most of the time we have access to the "universal subject identifier" field (which, in my experience is usually encoded as a USUBJID variable), which is a string that uniquely specifies both the subject *and* the study in which they were enrolled. It is counterproductive to have a data standard that precludes the user from passing a USUBJID field as the ID column, and as such the ID column should be permitted to be a string.
+
+There's something else to unpack about ID variables, which relates to reuse: in a tidy data format, the user should not be permitted to reuse ID values: an ID value should be *unique* for every subject in the data set. Surprisingly, NONMEM does not actually abide by this constraint, because of another peculiarity in how NONMEM data files are structured. NONMEM imposes a strong constraint -- which, in my view, is wrong -- that the ordering of rows matters. Specifically, NONMEM expects that all rows associated with a particular subject be *contiguous* in the input data, and moreover that these rows be ordered by increasing value of TIME. This constraint -- while convenient to the user, and generally desirable -- violates the usual assumptions of tidy data (and indeed of most database software). The *record itself* should contain all information relevant to its interpretation: its *position* in the data file should not be important. NONMEM does not abide by this rule, and because of this NONMEM produces very peculiar behaviour with regards to ID columns. In NONMEM, you are permitted to use the *same* ID value to refer to two different subjects, if those subject records are noncontiguous in the input file. This behaviour should not be permitted in a tidy data structure: a true ID column should uniquely identify a subject regardless of how the rows are permuted. This should not be permissible in a tidy dosing table: an ID should uniquely specify a subject, but (remarkably, in my view!) the NONMEM data standard doesn't actually do this. 
+
+But we should move on, because dosing tables are much more complicated in structure than merely specifying ID, TIME, and AMT, and the discussion gets a little more nuanced once we consider the "optional" columns. 
+
+#### Repeated dosing
+
+There are lots of other fields that are typically used in a NONMEM-style dosing record, and these have a tendency to be "optional" in the sense that you could safely omit them from a data file and supply default values if they aren't present. The two that come up most often, in my experience, are the ADDL and II columns that are used to describe *repeated dosing*:
+
+- ADDL is a numeric value used to specify the number of "repetitions" of the same dosing event (after the original one), and if ADDL is missing you would naturally supply a default value of zero. In my personal view, framing this variable as "additional" doses is the wrong way to do it: the natural format for this column should have been to name it NDOSES or something like that (i.e., NDOSES refers to the total number of doses specified by the row), and the default value would be NDOSES=1 rather than ADDL=0. But I'm a pragmatist. This doesn't make a big difference in practice, and by now most people in the field are used to seeing ADDL. 
+
+- II refers to the "interdose interval", and exists only when ADDL>0 (or NDOSES>1). This field specifies the length of time that separates each dose, and *must* be commensurate with the TIME column. That is to say, if TIME is numeric, II must be numeric and use the same units as TIME; whereas if TIME is a datetime object II must be a duration object (e.g., if TIME is a POSIXct object in R, II should probably be a difftime or something unambiguously coercible to a difftime).
+
+Dealing with these "repeated dose" columns is difficult from a tidy data perspective, because they violate the tidy data principle that each row corresponds to a *single* event. They are very convenient, in the sense that they allow the user to specify a complex sequence of events using compact syntax, but they create downstream problems: if you need to write code to determine the time at which a particular subject received their most recent dose (i.e., max TIME such that TIME < t), your code needs to:
+
+(a) inspect the TIME, II, and AMT columns
+(b) unpack *all* the dosing events to create a table in which every row corresponds to a single dosing event, creating new TIME values for each discrete dose, and only then
+(c) searching to find max TIME < t
+
+I have only been working in this field for six months and I have already run afoul of this problem about a dozen times. It is a *huge* pain when you are trying to write analysis code, because a "compact" dosing table is inherently untidy.
+
+What does all this tell us? 
+
+- Well, first off we should start with the elephant in the room... in practice, you actually cannot escape the necessity of having something like an ADDL/II syntax for describing pharmacometric data. Over and over you will find it written into the protocol for a study: X doses of Y amount, administered once daily at time Z. It's a *natural* way to describe a dosing schedule, and you cannot (and should not) take that "description language" away from the user. But also...
+
+- ... the software should *unpack* the dosing table. NONMEM doesn't do anything like this because (as usual) NONMEM is not user friendly and does not abide by any kind of tidy data principles, but to the extent that a user needs to write code to work with a dosing table, that table should be unpacked: there should be exactly one row per dosing event in the dosing table, no more and no less. 
+
+### What are we missing?
+
+So far, so good. At this point we have an opinionated^[Siiiiiiiigh. As every data scientist knows, everyone describes their approach as "opinionated" as if that were always a positive thing. Look, I feel like there is some value to being opinionated in a blog post like this, because indeed what I'm doing here is talking about my opinions and trying to articulate something about what I think tidy PK data might look like, but I am truly on the fence about whether it's a good thing for every single tool under the sun to be an "opinionated framework".] framework for thinking about dosing tables in a tidy format... but one that only really works for a subset of study designs (albeit a very common one). It works fine if you have oral dosing or bolus IV dosing, and it works if your data set is "complete" in the sense that it specifies all doses that a subject has received. But there's a lot of designs that doesn't cover:
+
+- We don't have a language to describe infusion dosing
+- We don't have a language to describe situations where the system starts at steady state because of prior doses (nor indeed any language to describe disruptions to steady state)
+- We don't have a language to describe "interruption" or "reset" events, such as in a crossover study where one dose is bolus IV and another is (say) oral dosing, and the only thing we want to assert about the time separating those two doses is that it's long enough that the drug concentration has returned to zero in all compartments in the time between those two dosing events
+
+NONMEM supplies a data specification that allows the user to describe those events, and a realistic "tidy" standard needs to be able to support those events also. 
+
+
+
+
+
+
+ 
 
 ### What does a tidy observation table look like?
 
