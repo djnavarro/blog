@@ -1,0 +1,84 @@
+---
+title: "A deep dive into table1"
+description: "This is a subtitle"
+date: "2024-06-21"
+--- 
+
+<!--------------- my typical setup ----------------->
+
+```{r}
+#| label: setup
+#| include: false
+very_wide <- 500
+wide <- 136
+narrow <- 76
+options(width = narrow)
+cache_images <- TRUE
+set.seed(1)
+```
+
+<!--------------- post begins here ----------------->
+
+
+```{r}
+#| label: packages
+#| message: false
+#| warning: false
+library(palmerpenguins)
+library(table1)
+library(dplyr)
+```
+
+The [table1](https://benjaminrich.github.io/table1/) package ([github link](https://github.com/benjaminrich/table1))
+
+Basic usage:
+
+```{r}
+#| label: minimal-use
+table1(~ island + bill_length_mm | species, penguins)
+```
+
+## Labels
+
+Adding labels:
+
+```{r}
+#| label: labelling-1
+label(penguins$island) <- "Island"
+label(penguins$bill_length_mm) <- "Bill Length (mm)"
+
+table1(~ island + bill_length_mm | species, penguins)
+```
+
+Using the `label<-()` function in table1 is how I've seen most people do it, but in truth there's nothing fancy here: all that the function does is set the "label" metadata attribute for the relevant object, so you could totally do it in base R via the `attr<-()` function:
+
+```{r}
+#| label: labelling-2
+attr(penguins$bill_depth_mm, "label") <- "Bill Depth (mm)"
+
+table1(~ island + bill_depth_mm | species, penguins)
+```
+
+However, I am slowly coming to like the `setLabel()` convenience function in table1 because it returns the labelled object and hence plays nicely with a dplyr workflow: 
+
+```{r}
+#| label: labelling-3
+penguins <- penguins |> 
+  mutate(
+    flipper_length_mm = setLabel(flipper_length_mm, "Flipper Length (mm)"),
+    body_mass_g = setLabel(body_mass_g, "Body Mass (g)"),
+    sex = setLabel(sex, "Sex"),
+    year = setLabel(year, "Year")
+  )
+
+table1(~ flipper_length_mm + body_mass_g + sex + year | species, penguins)
+```
+
+## Custom statistics
+
+```{r}
+#| label: custom-render-1
+
+
+```
+
