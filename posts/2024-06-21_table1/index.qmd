@@ -76,9 +76,30 @@ table1(~ flipper_length_mm + body_mass_g + sex + year | species, penguins)
 
 ## Custom statistics
 
+Okay so yeah you can do this to get geometric means and standard deviations...
+
 ```{r}
 #| label: custom-render-1
-
-
+table1(
+  x = ~ flipper_length_mm + body_mass_g + sex + year | species, 
+  data = penguins, 
+  render.continuous = c("Geometric mean" = "GMEAN", "Geometric SD" = "GSD")
+)
 ```
 
+That's important in my job where almost every continuous variable is lognormal. You can see that this affects only the continuous variables not the discrete ones. Similarly you can do this...
+
+```{r}
+#| label: custom-render-2
+table1(
+  x = ~ flipper_length_mm + body_mass_g | species, 
+  data = penguins, 
+  render.continuous = c(
+    "10th percentile" = "q10", 
+    "50th percentile" = "q50",
+    "90th percentile" = "q90"
+  )
+)
+```
+
+The tricky part to this is that it's not documented. You have to dig into the [source code](https://github.com/benjaminrich/table1/blob/master/R/table1.R) to work out what "aliases" are supported.
