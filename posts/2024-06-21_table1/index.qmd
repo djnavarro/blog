@@ -174,11 +174,78 @@ There's still a bit of a mystery here, because the `table1()` function doesn't h
 There's nothing to prevent you from bypassing this whole process by writing your own render function that handles *all* the input variables. For example, here's a very simple rendering function that counts the number of non-missing observations, and prints it in the same row as the variable name:
 
 ```{r}
+#| label: custom-render-6
 render_n <- function(x, ...) sum(!is.na(x))
 
 table1(
   x = ~ flipper_length_mm + body_mass_g + sex | species, 
   data = penguins, 
   render = render_n
+)
+```
+
+## Tweaking tables
+
+Two levels of stratification:
+
+```{r}
+#| label: table-tweak-1
+table1(
+  x = ~ flipper_length_mm + body_mass_g | species * sex,
+  data = penguins |> filter(!is.na(sex))
+)
+```
+
+Removing the overall column:
+
+```{r}
+#| label: table-tweak-2
+table1(
+  x = ~ flipper_length_mm + body_mass_g | species,
+  data = penguins,
+  overall = FALSE
+)
+```
+
+Tweaking the header row, adding footnotes, adding captions etc:
+
+```{r}
+#| label: table-tweak-3
+table1(
+  x = ~ flipper_length_mm + body_mass_g | species,
+  data = penguins,
+  overall = "All Species",
+  rowlabelhead = "Measurement",
+  footnote = "Created using table1 and palmerpenguins"
+)
+```
+
+Adding extra columns:
+
+```{r}
+render_p_value <- function(x, ...) {
+  dat <- bind_rows(
+    purrr::map(x, ~ data.frame(value = .)), 
+    .id = "group"
+  )
+  mod <- aov(value ~ group, dat)
+  p <- summary(mod)[[1]][1, 5]
+  return(scales::label_pvalue()(p))
+}
+
+render_mean_sd <- function(x, ...) {
+  paste0(
+    round(mean(x, na.rm = TRUE), 1), 
+    " (", 
+    round(sd(x, na.rm = TRUE), 1), 
+    ")"
+  )
+}
+
+table1(
+  x = ~ flipper_length_mm + body_mass_g | species,
+  data = penguins,
+  render = render_mean_sd,
+  extra.col = list("p-value" = render_p_value)
 )
 ```
