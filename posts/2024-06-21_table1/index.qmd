@@ -15,14 +15,14 @@ format:
 very_wide <- 500
 wide <- 136
 narrow <- 76
-options(width = narrow)
+options(width = wide)
 cache_images <- TRUE
 set.seed(1)
 ```
 
 <!--------------- post begins here ----------------->
 
-The [table1](https://benjaminrich.github.io/table1/) package ([github link](https://github.com/benjaminrich/table1))
+The [table1](https://benjaminrich.github.io/table1/) package by Benjamin Rich. Package soutce code is on [github](https://github.com/benjaminrich/table1), and the [package vignette](https://benjaminrich.github.io/table1/vignettes/table1-examples.html) provides a lot of useful detail that you can't necessarily find by browsing the help files.
 
 
 ## Getting started
@@ -36,6 +36,11 @@ library(table1)
 library(dplyr)
 ```
 
+```{r}
+#| label: penguins-data
+penguins
+```
+
 
 Basic usage:^[The output of a call to `table1()` has S3 class "table1", and internally specifies an HTML table (more on that later). When printed in a quarto or R markdown document like this one, in the normal course of events the `table1:::knit_print.table()` method is called, in which case the table1 object is coerced to a data frame and the end result looks the same as a data frame would look when `knitr::kable()` is called. However, this is slightly different to how the table looks if you call it interactively in an R session where the S3 method called is `table1:::print.table1()`. Because I want the output in this post to look as close as possible to the typical output when calling `table1()` in a regular R session, I've set `results = "asis"` for all my code chunks in this document, thereby ending up with tables that look the same as the ones you see interactively in the R session.]
 
@@ -44,6 +49,8 @@ Basic usage:^[The output of a call to `table1()` has S3 class "table1", and inte
 #| results: asis
 table1(~ island + bill_length_mm | species, penguins)
 ```
+
+<br>
 
 The stratification variable (i.e. `species`) isn't actually necessary to create a table, and if you wanted you could produce a table using a formula like `~ island + bill_length_mm`. In practice, however, I've found that I never do this: almost every table I've created in real life has a stratification variable.
 
@@ -55,10 +62,12 @@ Adding labels:^[The table1 package also supports units as a separate piece of me
 #| label: labelling-1
 #| results: asis
 label(penguins$island) <- "Island"
-label(penguins$bill_length_mm) <- "Bill Length"
+label(penguins$bill_length_mm) <- "Bill Length (mm)"
 
 table1(~ island + bill_length_mm | species, penguins)
 ```
+
+<br>
 
 Using the `label()` function in table1 is how I've seen most people do it, but in truth there's nothing fancy here: all that the function does is set the "label" metadata attribute for the relevant object, so you could totally do it in base R via the `attr()` function:
 
@@ -69,6 +78,8 @@ attr(penguins$bill_depth_mm, "label") <- "Bill Depth (mm)"
 
 table1(~ island + bill_depth_mm | species, penguins)
 ```
+
+<br>
 
 However, I am slowly coming to like the `setLabel()` convenience function in table1 because it returns the labelled object and hence plays nicely with a dplyr workflow: 
 
@@ -86,9 +97,11 @@ penguins <- penguins |>
 table1(~ flipper_length_mm + body_mass_g + sex + year | species, penguins)
 ```
 
+<br>
+
 ## Customing cell content
 
-### Using the mini-language
+### Using abbreviated codes
 
 Okay so yeah you can do this to get geometric means and standard deviations...
 
@@ -101,6 +114,8 @@ table1(
   render.continuous = c("Geometric mean" = "GMEAN", "Geometric SD" = "GSD")
 )
 ```
+
+<br>
 
 That's important in my job where almost every continuous variable is lognormal. You can see that this affects only the continuous variables not the discrete ones. Similarly you can do this...
 
@@ -118,17 +133,55 @@ table1(
 )
 ```
 
-The tricky part to this is that it's not documented. You have to dig into the [source code](https://github.com/benjaminrich/table1/blob/master/R/table1.R) to work out what "aliases" are supported, and it's not at all clear from the documentation how this mini-language works. Looking at the source code though you can see that the following names are understood for continuous variables:
+<br>
 
-- `"N"` and `"NMISS"` compute the number of non-missing observations and number of missing observations respectively
-- The strings `"SUM"`, `"MEAN"`, `"SD"`, `"MEDIAN"`, `"MIN"`, and `"MAX"` are all translated to the functions of the same name (e.g., `"SUM"` produces a call to `sum()`)
-- `"CV"` computes the coefficient of variation, i.e., 100 times the standard deviation divided by the absolute value of the mean
-- `"GMEAN"`, `"GSD"`, and `"GCV"` compute the geometric mean, geometric standard deviation, and geometric coefficient of variation
-- The strings `q01`, `q02.5`, `"q05"`, `"q10"`, `"q25"`, `"q50"`, `"q75"`, `"q90"`, `"q95"`, `"q97.5"`, and `"q99"` are understood, and compute the relevant quantiles (e.g., `"q25"` is translated as a function call that computes the 25th percentile)
-- Along the same lines `"Q1"`, `"Q2"`, and `"Q3"` are used to compute quartiles (25th, 50th, and 75th percentiles), and `"T1"` and `"T2"` are used for tertiles (33rd and 67th percentiles)
-- `"IQR"` computes the interquartile range
+### Supported aliases
 
-In all cases (except for `"NMISS"`, obviously) the statistics are computed after removing missing values.
+The natural question you might have as the user of the package is, of course, what abbreviated codes does the table1 package understand? The answer to this is hidden in the help file for the `stats.default()` function or -- if you're as foolish as I am -- you can dig into the [source code](https://github.com/benjaminrich/table1/blob/master/R/table1.R) to find the answer. Alternatively, of course, you could just keep reading this blog post, I suppose? That's probably the easiest thing to do since you're already here.
+
+For continuous variables, this is the list of supported aliases:
+
+```{r}
+#| label: narrow-text
+#| include: false
+options(width = narrow + 10)
+```
+
+```{r}
+#| label: continuous-aliases
+continuous <- 1:10
+names(stats.default(continuous)) 
+```
+
+Here's what each of these mean:^[If you want a more precise answer, you can use a command like `parse.abbrev.render.code("GMEAN")` to return the actual function that is executed whenever a `"GMEAN"` is computed during the table rendering process.]
+
+- `"N"`, `"NMISS"`: these compute the number of non-missing observations and number of missing observations respectively
+- `"SUM"`, `"MEAN"`, `"SD"`, `"MEDIAN"`, `"MIN"`, `"MAX"`: these all correspond to to the functions of the same name, e.g., `"SUM"` produces a call to `sum()`, with missing values removed
+- `"CV"`: the coefficient of variation, i.e., 100 times the standard deviation divided by the absolute value of the mean
+- `"GMEAN"`, `"GSD"`, `"GCV"`: the geometric mean, geometric standard deviation, and geometric coefficient of variation
+- `q01`, `q02.5`, `"q05"`, `"q10"`, `"q25"`, `"q50"`, `"q75"`, `"q90"`, `"q95"`, `"q97.5"`, `"q99"`: these are understood to refer to specific quantiles, e.g., `"q25"` is translated as a function call that computes the 25th percentile
+- `"Q1"`, `"Q2"` `"Q3"`: these are used to compute quartiles (25th, 50th, and 75th percentiles)
+- `"T1"`, `"T2"`: these are used to compute tertiles (33rd and 67th percentiles)
+- `"IQR"`: this computes the interquartile range
+
+In all cases except for `"NMISS"`, the relevant statistics are computed after removing missing values.
+
+Turning now to categorical variables, we can again use the `stats.default()` function to find the supported abbreviated codes:^[If you're curious as to why I'm extracting the first element of the output in this code, try playing around with `stats.default()` and looking at the differences between how the output is structured for continuous versus categorical inputs.]
+
+```{r}
+#| label: categorical-aliases
+categorical <- c("a", "b", "c")
+names(stats.default(categorical)[[1]])
+```
+
+The interpretation of these is as follows:
+
+- `"FREQ"`: the frequency count for a category
+- `"PCT"`: the percent relative frequency, with missing values included in the denominator
+- `"PCTnoNA"`: the percent relative frequency, after missing values are removed
+- `"NMISS"`: the number of missing values, as before
+
+
 
 ### Writing render functions
 
@@ -172,6 +225,8 @@ table1(
 )
 ```
 
+<br>
+
 Notice, however, that neither of these two functions affect the row in the table that handles the missing values. If you want to change that, you need to specify another function:
 
 ```{r}
@@ -189,6 +244,8 @@ table1(
   render.missing = render_missing
 )
 ```
+
+<br>
 
 ### Unpacking render functions
 
@@ -208,6 +265,8 @@ table1(
 )
 ```
 
+<br>
+
 ## Table annotations
 
 ### Strata column labels
@@ -226,6 +285,8 @@ table1(
 )
 ```
 
+<br>
+
 ### Other column labels
 
 ```{r}
@@ -239,6 +300,8 @@ table1(
 )
 ```
 
+<br>
+
 ### Footnotes
 
 ```{r}
@@ -251,6 +314,8 @@ table1(
 )
 ```
 
+<br>
+
 ### Captions
 
 ```{r}
@@ -262,6 +327,8 @@ table1(
   caption = "Flipper length and body mass by species among the Palmer penguins"
 )
 ```
+
+<br>
 
 ## Table structure
 
@@ -277,7 +344,9 @@ table1(
 )
 ```
 
-### Creating nested tables
+<br>
+
+### Nested stratifications
 
 ```{r}
 #| label: table-tweak-2
@@ -288,6 +357,8 @@ table1(
   overall = FALSE
 )
 ```
+
+<br>
 
 ### Adding extra columns
 
@@ -322,28 +393,99 @@ table1(
 )
 ```
 
-### Arbitary stratification
+<br>
+
+### Transposing tables
+
+```{r}
+#| label: transposing-tables
+#| results: asis
+render_mean_sd <- function(x, ...) {
+  m <- mean(x, na.rm = TRUE)
+  s <- sd(x, na.rm = TRUE)
+  sprintf("%1.1f (%1.1f)", m, s)
+}
+
+table1(
+  x = ~ bill_length_mm + bill_depth_mm + flipper_length_mm + body_mass_g | species,
+  data = penguins,
+  transpose = TRUE,
+  rowlabelhead = "Species",
+  render = render_mean_sd,
+  render.strat = render_strat
+)
+```
+
+<br>
+
+### Arbitrary stratification
 
 Using the data frame interface we can exercise finer-grained control over the strata.
 
 ```{r}
 #| label: arbitrary-strata
 #| results: asis
-table1(
-  c(
+penguins <- penguins |>
+  mutate(
+    sex = stringr::str_to_title(sex),
+    year = factor(year)
+  )
+
+penguins_strata <- c(
     split(penguins, ~species), 
     split(penguins, ~sex),
     list("All" = penguins)
-  ), 
-  labels = list(
-    variables = list(island = "Island"), 
+  )
+
+penguins_labels <- list(
+    variables = list(island = "Island", year = "Year"), 
     groups = list("Species", "Sex", "")
-  ), 
-  groupspan = c(3, 2, 1)
+  )
+
+table1(penguins_strata, penguins_labels, groupspan = c(3, 2, 1))
+```
+
+<br>
+
+## Styling tables
+
+### Built-in styles
+
+There are a few built-in styles, discussed in the package vignette:
+
+- `zebra`: alternating shaded and unshaded rows
+- `grid`: show all grid lines
+- `shade`: shade the header in gray
+- `times`: use a serif font
+- `center`: center all columns
+
+Selecting a style using the `topclass` argument:
+
+```{r}
+#| label: built-in-style-1
+table1(
+  x = ~ flipper_length_mm + body_mass_g | species,
+  data = penguins,
+  topclass = "Rtable1-zebra",
+  render = render_mean,
+  render.strat = render_strat,
+  footnote = "Source: palmerpenguins"
 )
 ```
 
-## Styling tables with CSS
+```{r}
+#| label: built-in-style-2
+table1(
+  x = ~ flipper_length_mm + body_mass_g | species,
+  data = penguins,
+  topclass = "Rtable1-zebra Rtable1-shade Rtable1-times",
+  render = render_mean,
+  render.strat = render_strat,
+  footnote = "Source: palmerpenguins"
+)
+```
+
+### Using custom CSS
 
 Here's the HTML that gets generated for a table:
 
@@ -354,7 +496,8 @@ tbl <- table1(
   data = penguins,
   topclass = "mytable",
   render = render_mean,
-  render.strat = render_strat
+  render.strat = render_strat,
+  footnote = "Source: palmerpenguins"
 )
 
 cat(as.character(tbl))
@@ -364,6 +507,9 @@ So we can add a bit of custom CSS like so:
 
 ```css
 .mytable {
+  .Rtable1-footnote {
+    font-style: italic;
+  }
   .stratlabel {
     color: hotpink
   }
@@ -377,3 +523,5 @@ Now the result looks like this:
 #| results: asis
 tbl
 ```
+
+<br>

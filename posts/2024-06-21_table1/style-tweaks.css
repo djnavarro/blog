@@ -1,4 +1,7 @@
 .mytable {
+  .Rtable1-footnote {
+    font-style: italic;
+  }
   .stratlabel {
     color: hotpink
   }
