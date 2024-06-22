@@ -22,6 +22,10 @@ set.seed(1)
 
 <!--------------- post begins here ----------------->
 
+The [table1](https://benjaminrich.github.io/table1/) package ([github link](https://github.com/benjaminrich/table1))
+
+
+## Getting started
 
 ```{r}
 #| label: packages
@@ -32,31 +36,35 @@ library(table1)
 library(dplyr)
 ```
 
-The [table1](https://benjaminrich.github.io/table1/) package ([github link](https://github.com/benjaminrich/table1))
 
-Basic usage:
+Basic usage:^[The output of a call to `table1()` has S3 class "table1", and internally specifies an HTML table (more on that later). When printed in a quarto or R markdown document like this one, in the normal course of events the `table1:::knit_print.table()` method is called, in which case the table1 object is coerced to a data frame and the end result looks the same as a data frame would look when `knitr::kable()` is called. However, this is slightly different to how the table looks if you call it interactively in an R session where the S3 method called is `table1:::print.table1()`. Because I want the output in this post to look as close as possible to the typical output when calling `table1()` in a regular R session, I've set `results = "asis"` for all my code chunks in this document, thereby ending up with tables that look the same as the ones you see interactively in the R session.]
 
 ```{r}
-#| label: minimal-use
+#| label: simple-table
+#| results: asis
 table1(~ island + bill_length_mm | species, penguins)
 ```
 
-## Labels
+The stratification variable (i.e. `species`) isn't actually necessary to create a table, and if you wanted you could produce a table using a formula like `~ island + bill_length_mm`. In practice, however, I've found that I never do this: almost every table I've created in real life has a stratification variable.
 
-Adding labels:
+## Applying labels
+
+Adding labels:^[The table1 package also supports units as a separate piece of metadata via the `units()` function, but I have to admit I never really use that one.]
 
 ```{r}
 #| label: labelling-1
+#| results: asis
 label(penguins$island) <- "Island"
-label(penguins$bill_length_mm) <- "Bill Length (mm)"
+label(penguins$bill_length_mm) <- "Bill Length"
 
 table1(~ island + bill_length_mm | species, penguins)
 ```
 
-Using the `label<-()` function in table1 is how I've seen most people do it, but in truth there's nothing fancy here: all that the function does is set the "label" metadata attribute for the relevant object, so you could totally do it in base R via the `attr<-()` function:
+Using the `label()` function in table1 is how I've seen most people do it, but in truth there's nothing fancy here: all that the function does is set the "label" metadata attribute for the relevant object, so you could totally do it in base R via the `attr()` function:
 
 ```{r}
 #| label: labelling-2
+#| results: asis
 attr(penguins$bill_depth_mm, "label") <- "Bill Depth (mm)"
 
 table1(~ island + bill_depth_mm | species, penguins)
@@ -66,6 +74,7 @@ However, I am slowly coming to like the `setLabel()` convenience function in tab
 
 ```{r}
 #| label: labelling-3
+#| results: asis
 penguins <- penguins |> 
   mutate(
     flipper_length_mm = setLabel(flipper_length_mm, "Flipper Length (mm)"),
@@ -77,12 +86,15 @@ penguins <- penguins |>
 table1(~ flipper_length_mm + body_mass_g + sex + year | species, penguins)
 ```
 
-## Custom statistics
+## Customing cell content
+
+### Using the mini-language
 
 Okay so yeah you can do this to get geometric means and standard deviations...
 
 ```{r}
-#| label: custom-render-1
+#| label: render-continuous-1
+#| results: asis
 table1(
   x = ~ flipper_length_mm + body_mass_g + sex + year | species, 
   data = penguins, 
@@ -93,7 +105,8 @@ table1(
 That's important in my job where almost every continuous variable is lognormal. You can see that this affects only the continuous variables not the discrete ones. Similarly you can do this...
 
 ```{r}
-#| label: custom-render-2
+#| label: render-continuous-2
+#| results: asis
 table1(
   x = ~ flipper_length_mm + body_mass_g + sex | species, 
   data = penguins, 
@@ -117,10 +130,12 @@ The tricky part to this is that it's not documented. You have to dig into the [s
 
 In all cases (except for `"NMISS"`, obviously) the statistics are computed after removing missing values.
 
+### Writing render functions
+
 However, you don't have to use this mini-language. You can instead write your own function that takes the data as input and returns a vector of strings to be printed into the table. As an example, here's how you would do the same thing as the previous example by supplying the function explicitly:
 
 ```{r}
-#| label: custom-render-3
+#| label: render-quantiles
 render_quantiles <- function(x, ...) {
   vals <- quantile(x, probs = c(.1, .5, .9), na.rm = TRUE, names = FALSE)
   strs <- c(
@@ -138,6 +153,7 @@ The `render_quantiles()` function returns a named vector of strings: the names b
 Here's another example that is appropriate for discrete variable:
 
 ```{r}
+#| label: render-counts
 render_counts <- function(x, ...) {
   c("", table(stringr::str_to_title(x)))
 }
@@ -146,7 +162,8 @@ render_counts <- function(x, ...) {
 Having defined our render functions, we produce the table like this:
 
 ```{r}
-#| label: custom-render-4
+#| label: render-categorical
+#| results: asis
 table1(
   x = ~ flipper_length_mm + body_mass_g + sex | species, 
   data = penguins, 
@@ -158,7 +175,8 @@ table1(
 Notice, however, that neither of these two functions affect the row in the table that handles the missing values. If you want to change that, you need to specify another function:
 
 ```{r}
-#| label: custom-render-5
+#| label: render-missing
+#| results: asis
 render_missing <- function(x, ...) {
   c("Missing" = sum(is.na(x)))
 }
@@ -172,12 +190,15 @@ table1(
 )
 ```
 
+### Unpacking render functions
+
 There's still a bit of a mystery here, because the `table1()` function doesn't have arguments `render.continuous`, `render.categorical`, or `render.missing`: instead, it has a `render` argument. What's actually going on here is that the default value for `render` is the `render.default()` function exported by table1, and `render.default()` accepts `render.continuous`, `render.categorical`, or `render.missing` as arguments. In other words, what's happening in the code above is that my custom functions end up being passed to `render.default()` via the dots. 
 
 There's nothing to prevent you from bypassing this whole process by writing your own render function that handles *all* the input variables. For example, here's a very simple rendering function that counts the number of non-missing observations, and prints it in the same row as the variable name:
 
 ```{r}
-#| label: custom-render-6
+#| label: custom-render
+#| results: asis
 render_n <- function(x, ...) sum(!is.na(x))
 
 table1(
@@ -187,27 +208,68 @@ table1(
 )
 ```
 
-## Tweaking tables
+## Table annotations
 
-Two levels of stratification:
+### Strata column labels
 
 ```{r}
-#| label: table-tweak-1
-table1(
-  x = ~ flipper_length_mm + body_mass_g | species * sex,
-  data = penguins |> filter(!is.na(sex))
-)
+#| label: render-strat
+#| results: asis
+render_strat <- function(label, n, transpose = FALSE) {
+  sprintf("<span class='stratlabel'>%s</span>", label)
+}
 
 table1(
-  x = ~ flipper_length_mm + body_mass_g | species * island,
-  data = penguins
+  x = ~ flipper_length_mm + body_mass_g | species,
+  data = penguins,
+  render.strat = render_strat
 )
 ```
 
-Removing the overall column:
+### Other column labels
 
 ```{r}
-#| label: table-tweak-2
+#| label: column-labels
+#| results: asis
+table1(
+  x = ~ flipper_length_mm + body_mass_g | species,
+  data = penguins,
+  overall = "All Species",
+  rowlabelhead = "Measurement"
+)
+```
+
+### Footnotes
+
+```{r}
+#| label: adding-footnotes
+#| results: asis
+table1(
+  x = ~ flipper_length_mm + body_mass_g | species,
+  data = penguins,
+  footnote = "Created using table1 and palmerpenguins"
+)
+```
+
+### Captions
+
+```{r}
+#| label: adding-captions
+#| results: asis
+table1(
+  x = ~ flipper_length_mm + body_mass_g | species,
+  data = penguins,
+  caption = "Flipper length and body mass by species among the Palmer penguins"
+)
+```
+
+## Table structure
+
+### Removing "overall"
+
+```{r}
+#| label: remove-overall
+#| results: asis
 table1(
   x = ~ flipper_length_mm + body_mass_g | species,
   data = penguins,
@@ -215,22 +277,22 @@ table1(
 )
 ```
 
-Tweaking the header row, adding footnotes, adding captions etc:
+### Creating nested tables
 
 ```{r}
-#| label: table-tweak-3
+#| label: table-tweak-2
+#| results: asis
 table1(
-  x = ~ flipper_length_mm + body_mass_g | species,
+  x = ~ flipper_length_mm + body_mass_g | species * island,
   data = penguins,
-  overall = "All Species",
-  rowlabelhead = "Measurement",
-  footnote = "Created using table1 and palmerpenguins"
+  overall = FALSE
 )
 ```
 
-Adding extra columns:
+### Adding extra columns
 
 ```{r}
+#| label: render-p-value
 render_p_value <- function(x, ...) {
   dat <- bind_rows(
     purrr::map(x, ~ data.frame(value = .)), 
@@ -240,43 +302,33 @@ render_p_value <- function(x, ...) {
   p <- summary(mod)[[1]][1, 5]
   return(scales::label_pvalue()(p))
 }
+```
 
-render_mean_sd <- function(x, ...) {
-  paste0(
-    round(mean(x, na.rm = TRUE), 1), 
-    " (", 
-    round(sd(x, na.rm = TRUE), 1), 
-    ")"
-  )
+```{r}
+#| label: render-mean
+render_mean <- function(x, ...) {
+  as.character(round(mean(x, na.rm = TRUE)))
 }
+```
 
+```{r}
+#| label: extra-columns
+#| results: asis
 table1(
   x = ~ flipper_length_mm + body_mass_g | species,
   data = penguins,
-  render = render_mean_sd,
+  render = render_mean,
   extra.col = list("p-value" = render_p_value)
 )
 ```
 
-Custom rendering for the strata labels:
+### Arbitary stratification
+
+Using the data frame interface we can exercise finer-grained control over the strata.
 
 ```{r}
-render_strat <- function(label, n, transpose = FALSE) {
-  sprintf("<span class='stratlabel'>%s</span>", label)
-}
-
-table1(
-  x = ~ flipper_length_mm + body_mass_g | species,
-  data = penguins,
-  render = render_mean_sd,
-  render.strat = render_strat
-)
-```
-
-## Fancier tricks
-
-```{r}
-#| label: fancy-tricks-1
+#| label: arbitrary-strata
+#| results: asis
 table1(
   c(
     split(penguins, ~species), 
@@ -291,28 +343,29 @@ table1(
 )
 ```
 
-## Using CSS classes
+## Styling tables with CSS
 
 Here's the HTML that gets generated for a table:
 
 ```{r}
+#| label: css-styling-1
 tbl <- table1(
   x = ~ flipper_length_mm + body_mass_g | species,
   data = penguins,
   topclass = "mytable",
-  render = render_mean_sd,
+  render = render_mean,
   render.strat = render_strat
 )
 
 cat(as.character(tbl))
 ```
 
-So we can add a bit of custom CSS:
+So we can add a bit of custom CSS like so:
 
 ```css
 .mytable {
   .stratlabel {
-    color: red
+    color: hotpink
   }
 }
 ```
@@ -320,5 +373,7 @@ So we can add a bit of custom CSS:
 Now the result looks like this:
 
 ```{r}
+#| label: css-styling-2
+#| results: asis
 tbl
 ```
