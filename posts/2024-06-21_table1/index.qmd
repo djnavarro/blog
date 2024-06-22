@@ -2,6 +2,9 @@
 title: "A deep dive into table1"
 description: "This is a subtitle"
 date: "2024-06-21"
+format: 
+  html:
+    css: style-tweaks.css
 --- 
 
 <!--------------- my typical setup ----------------->
@@ -288,3 +291,34 @@ table1(
 )
 ```
 
+## Using CSS classes
+
+Here's the HTML that gets generated for a table:
+
+```{r}
+tbl <- table1(
+  x = ~ flipper_length_mm + body_mass_g | species,
+  data = penguins,
+  topclass = "mytable",
+  render = render_mean_sd,
+  render.strat = render_strat
+)
+
+cat(as.character(tbl))
+```
+
+So we can add a bit of custom CSS:
+
+```css
+.mytable {
+  .stratlabel {
+    color: red
+  }
+}
+```
+
+Now the result looks like this:
+
+```{r}
+tbl
+```
