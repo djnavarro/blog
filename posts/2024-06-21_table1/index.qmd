@@ -194,6 +194,11 @@ table1(
   x = ~ flipper_length_mm + body_mass_g | species * sex,
   data = penguins |> filter(!is.na(sex))
 )
+
+table1(
+  x = ~ flipper_length_mm + body_mass_g | species * island,
+  data = penguins
+)
 ```
 
 Removing the overall column:
@@ -249,3 +254,37 @@ table1(
   extra.col = list("p-value" = render_p_value)
 )
 ```
+
+Custom rendering for the strata labels:
+
+```{r}
+render_strat <- function(label, n, transpose = FALSE) {
+  sprintf("<span class='stratlabel'>%s</span>", label)
+}
+
+table1(
+  x = ~ flipper_length_mm + body_mass_g | species,
+  data = penguins,
+  render = render_mean_sd,
+  render.strat = render_strat
+)
+```
+
+## Fancier tricks
+
+```{r}
+#| label: fancy-tricks-1
+table1(
+  c(
+    split(penguins, ~species), 
+    split(penguins, ~sex),
+    list("All" = penguins)
+  ), 
+  labels = list(
+    variables = list(island = "Island"), 
+    groups = list("Species", "Sex", "")
+  ), 
+  groupspan = c(3, 2, 1)
+)
+```
+
