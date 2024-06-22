@@ -92,7 +92,7 @@ That's important in my job where almost every continuous variable is lognormal. 
 ```{r}
 #| label: custom-render-2
 table1(
-  x = ~ flipper_length_mm + body_mass_g | species, 
+  x = ~ flipper_length_mm + body_mass_g + sex | species, 
   data = penguins, 
   render.continuous = c(
     "10th percentile" = "q10", 
@@ -102,4 +102,83 @@ table1(
 )
 ```
 
-The tricky part to this is that it's not documented. You have to dig into the [source code](https://github.com/benjaminrich/table1/blob/master/R/table1.R) to work out what "aliases" are supported.
+The tricky part to this is that it's not documented. You have to dig into the [source code](https://github.com/benjaminrich/table1/blob/master/R/table1.R) to work out what "aliases" are supported, and it's not at all clear from the documentation how this mini-language works. Looking at the source code though you can see that the following names are understood for continuous variables:
+
+- `"N"` and `"NMISS"` compute the number of non-missing observations and number of missing observations respectively
+- The strings `"SUM"`, `"MEAN"`, `"SD"`, `"MEDIAN"`, `"MIN"`, and `"MAX"` are all translated to the functions of the same name (e.g., `"SUM"` produces a call to `sum()`)
+- `"CV"` computes the coefficient of variation, i.e., 100 times the standard deviation divided by the absolute value of the mean
+- `"GMEAN"`, `"GSD"`, and `"GCV"` compute the geometric mean, geometric standard deviation, and geometric coefficient of variation
+- The strings `q01`, `q02.5`, `"q05"`, `"q10"`, `"q25"`, `"q50"`, `"q75"`, `"q90"`, `"q95"`, `"q97.5"`, and `"q99"` are understood, and compute the relevant quantiles (e.g., `"q25"` is translated as a function call that computes the 25th percentile)
+- Along the same lines `"Q1"`, `"Q2"`, and `"Q3"` are used to compute quartiles (25th, 50th, and 75th percentiles), and `"T1"` and `"T2"` are used for tertiles (33rd and 67th percentiles)
+- `"IQR"` computes the interquartile range
+
+In all cases (except for `"NMISS"`, obviously) the statistics are computed after removing missing values.
+
+However, you don't have to use this mini-language. You can instead write your own function that takes the data as input and returns a vector of strings to be printed into the table. As an example, here's how you would do the same thing as the previous example by supplying the function explicitly:
+
+```{r}
+#| label: custom-render-3
+render_quantiles <- function(x, ...) {
+  vals <- quantile(x, probs = c(.1, .5, .9), na.rm = TRUE, names = FALSE)
+  strs <- c(
+    "",
+    "10th percentile" = vals[1],
+    "50th percentile" = vals[2],
+    "90th percentile" = vals[3]
+  )
+  return(strs)
+}
+```
+
+The `render_quantiles()` function returns a named vector of strings: the names become the row labels (in the leftmost column of the table), and the values are printed into the table itself. 
+
+Here's another example that is appropriate for discrete variable:
+
+```{r}
+render_counts <- function(x, ...) {
+  c("", table(stringr::str_to_title(x)))
+}
+```
+
+Having defined our render functions, we produce the table like this:
+
+```{r}
+#| label: custom-render-4
+table1(
+  x = ~ flipper_length_mm + body_mass_g + sex | species, 
+  data = penguins, 
+  render.continuous = render_quantiles,
+  render.categorical = render_counts
+)
+```
+
+Notice, however, that neither of these two functions affect the row in the table that handles the missing values. If you want to change that, you need to specify another function:
+
+```{r}
+#| label: custom-render-5
+render_missing <- function(x, ...) {
+  c("Missing" = sum(is.na(x)))
+}
+
+table1(
+  x = ~ flipper_length_mm + body_mass_g + sex | species, 
+  data = penguins, 
+  render.continuous = render_quantiles,
+  render.categorical = render_counts,
+  render.missing = render_missing
+)
+```
+
+There's still a bit of a mystery here, because the `table1()` function doesn't have arguments `render.continuous`, `render.categorical`, or `render.missing`: instead, it has a `render` argument. What's actually going on here is that the default value for `render` is the `render.default()` function exported by table1, and `render.default()` accepts `render.continuous`, `render.categorical`, or `render.missing` as arguments. In other words, what's happening in the code above is that my custom functions end up being passed to `render.default()` via the dots. 
+
+There's nothing to prevent you from bypassing this whole process by writing your own render function that handles *all* the input variables. For example, here's a very simple rendering function that counts the number of non-missing observations, and prints it in the same row as the variable name:
+
+```{r}
+render_n <- function(x, ...) sum(!is.na(x))
+
+table1(
+  x = ~ flipper_length_mm + body_mass_g + sex | species, 
+  data = penguins, 
+  render = render_n
+)
+```
