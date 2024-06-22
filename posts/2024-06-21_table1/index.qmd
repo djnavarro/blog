@@ -76,7 +76,7 @@ Using the `label()` function in table1 is how I've seen most people do it, but i
 #| results: asis
 attr(penguins$bill_depth_mm, "label") <- "Bill Depth (mm)"
 
-table1(~ island + bill_depth_mm | species, penguins)
+table1(~ bill_depth_mm | species, penguins)
 ```
 
 <br>
