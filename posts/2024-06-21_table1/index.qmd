@@ -2,7 +2,7 @@
 title: "Making tables in R with table1"
 description: "A pretty reckless dive into a package that hits the sweet spot for me"
 date: "2024-06-21"
-categories: ["R"]
+categories: ["R", "Data Wrangling"]
 format: 
   html:
     css: style-tweaks.css
@@ -41,6 +41,8 @@ The [table1](https://benjaminrich.github.io/table1/) package by Benjamin Rich. P
 
 ## Getting started
 
+So let's get this party started shall we? First, I'll need to load a few packages in order to make this post even remotely legible. Besides the table1 package itself, I'll load the palmerpenguins package so that I have a data set I can play with, and dplyr for any data wrangling I need to do later on:
+
 ```{r}
 #| label: packages
 #| message: false
@@ -50,13 +52,20 @@ library(table1)
 library(dplyr)
 ```
 
+The [palmerpenguins](https://allisonhorst.github.io/palmerpenguins/) data set that I'll be using in this post is one I've used many times before, and it's nicely documented on the package website. Suffice it to say, the data set contains a collection of measurements from three penguin species, and the data set looks like this:
+
 ```{r}
 #| label: penguins-data
 penguins
 ```
 
+To illustrate the basic usage of the table1 package, I'll create a table that provides descriptive statistics for the `bill_length_mm` and `island` variables, computed separately by each `species` represented in the data set. We can do this with very little difficulty by passing a one-sided formula to the `table1()` function. The formula we want looks like this:
 
-Basic usage:^[The output of a call to `table1()` has S3 class "table1", and internally specifies an HTML table (more on that later). When printed in a quarto or R markdown document like this one, in the normal course of events the `table1:::knit_print.table()` method is called, in which case the table1 object is coerced to a data frame and the end result looks the same as a data frame would look when `knitr::kable()` is called. However, this is slightly different to how the table looks if you call it interactively in an R session where the S3 method called is `table1:::print.table1()`. Because I want the output in this post to look as close as possible to the typical output when calling `table1()` in a regular R session, I've set `results = "asis"` for all my code chunks in this document, thereby ending up with tables that look the same as the ones you see interactively in the R session.]
+```r
+~ island + bill_length_mm | species
+```
+
+On the left we have the two variables that contain the measurements we want to describe (`bill_length_mm` and `island`), and on the right we have the stratification variable that supplies the grouping (`species`). When calling the `table1()` function, all we have to do is pass this formula and the data frame itself:^[The output of a call to `table1()` has S3 class "table1", and internally specifies an HTML table (more on that later). When printed in a quarto or R markdown document like this one, in the normal course of events the `table1:::knit_print.table()` method is called, in which case the table1 object is coerced to a data frame and the end result looks the same as a data frame would look when `knitr::kable()` is called. However, this is slightly different to how the table looks if you call it interactively in an R session where the S3 method called is `table1:::print.table1()`. Because I want the output in this post to look as close as possible to the typical output when calling `table1()` in a regular R session, I've set `results = "asis"` for all my code chunks in this document, thereby ending up with tables that look the same as the ones you see interactively in the R session.] ^[The stratification variable (i.e. `species`) isn't actually necessary to create a table, and if you wanted you could produce a table using a formula like `~ island + bill_length_mm`. In practice, however, I've found that I never do this: almost every table I've created in real life has a stratification variable.]
 
 ```{r}
 #| label: simple-table
@@ -66,11 +75,11 @@ table1(~ island + bill_length_mm | species, penguins)
 
 <br>
 
-The stratification variable (i.e. `species`) isn't actually necessary to create a table, and if you wanted you could produce a table using a formula like `~ island + bill_length_mm`. In practice, however, I've found that I never do this: almost every table I've created in real life has a stratification variable.
+The output here is a table showing frequency counts for the discrete variable (`island`) and some standard summary statistics for the continuous variable (`bill_length_mm`). This table isn't perfect but it's surprisingly good given how little effort I had to put in when creating it, and I suspect this ease-of-use factor is the main reason why this package gets used so much in my workplace. Like everything in life though, the devil is in the details, and if you want to make the most of the package it's helpful to dive into those details to get a good sense of what the package can (and cannot) do. 
 
 ## Applying labels
 
-The table I produced above immediately illustrates the first problem a data analyst has to grapple with when using the table1 package: variable labels. In most respects this "off the shelf" table is surprisingly good: it's almost good enough to use. But there's one big eyesore: the raw variable names `island` and `bill_length_mm` appear as row labels in the output. These are both excellent variable names for programming, but they're not very nice when exposed in a table. To fix this, we can use the `label()` function supplied by the table1 package to associate each of these variables with a pretty, human-readable label:^[The table1 package also supports units as a separate piece of metadata via the `units()` function, but I have to admit I never really use that one.]
+The table I produced above immediately illustrates the first problem a data analyst has to grapple with when using the table1 package: variable labels. In most respects this "off the shelf" table is pretty good: it's almost good enough to use. But there's one big eyesore: the raw variable names `island` and `bill_length_mm` appear as row labels in the output. These are both excellent variable names for programming, but they're not very nice when exposed in a table. To fix this, we can use the `label()` function supplied by the table1 package to associate each of these variables with a pretty, human-readable label:^[The table1 package also supports units as a separate piece of metadata via the `units()` function, but I have to admit I never really use that one.]
 
 ```{r}
 #| label: labelling-1
