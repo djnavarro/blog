@@ -70,7 +70,7 @@ The stratification variable (i.e. `species`) isn't actually necessary to create 
 
 ## Applying labels
 
-Adding labels:^[The table1 package also supports units as a separate piece of metadata via the `units()` function, but I have to admit I never really use that one.]
+The table I produced above immediately illustrates the first problem a data analyst has to grapple with when using the table1 package: variable labels. In most respects this "off the shelf" table is surprisingly good: it's almost good enough to use. But there's one big eyesore: the raw variable names `island` and `bill_length_mm` appear as row labels in the output. These are both excellent variable names for programming, but they're not very nice when exposed in a table. To fix this, we can use the `label()` function supplied by the table1 package to associate each of these variables with a pretty, human-readable label:^[The table1 package also supports units as a separate piece of metadata via the `units()` function, but I have to admit I never really use that one.]
 
 ```{r}
 #| label: labelling-1
@@ -83,7 +83,7 @@ table1(~ island + bill_length_mm | species, penguins)
 
 <br>
 
-Using the `label()` function in table1 is how I've seen most people do it, but in truth there's nothing fancy here: all that the function does is set the "label" metadata attribute for the relevant object, so you could totally do it in base R via the `attr()` function:
+To understand what's really going on here, it's helpful to recognise that the `label()` function is *purely* a convenience function. All it's really doing is setting the "label" metadata attribute for the relevant object. If you really wanted to, you could do exactly the same thing in base R via the `attr()` function:
 
 ```{r}
 #| label: labelling-2
@@ -95,7 +95,7 @@ table1(~ bill_depth_mm | species, penguins)
 
 <br>
 
-However, I am slowly coming to like the `setLabel()` convenience function in table1 because it returns the labelled object and hence plays nicely with a dplyr workflow: 
+That being said, I am slowly coming to like the `setLabel()` convenience function that table1 provides rather than using `label()` or `attr()`. The `setLabel()` function has the nice property that it returns the labelled object itself and so it plays very nicely with a dplyr workflow. If you have a data frame with several variables that need to be labelled, you can use `mutate()` and `setLabel()` to apply all the labels in one step, like this:
 
 ```{r}
 #| label: labelling-3
