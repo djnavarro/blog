@@ -22,8 +22,21 @@ set.seed(1)
 
 <!--------------- post begins here ----------------->
 
-The [table1](https://benjaminrich.github.io/table1/) package by Benjamin Rich. Package soutce code is on [github](https://github.com/benjaminrich/table1), and the [package vignette](https://benjaminrich.github.io/table1/vignettes/table1-examples.html) provides a lot of useful detail that you can't necessarily find by browsing the help files.
+> I'll never be good enough <br>
+> You make me wanna die <br>
+> And everything you love will burn up in the light <br>
+> And every time I look inside your eyes <br>
+> You make me wanna die <br>
+> &nbsp; &nbsp; - [*The Pretty Reckless*](https://www.youtube.com/watch?v=txBfhpm1jI0)
 
+It's no secret that my health hasn't been so great these last few months. Nothing life-threatening, I hasten to add, but severe enough that I've spent a depressing amount of 2024 in bed, and not in the fun way. I'm fortunate enough to have a remote job, and the workload this year hasn't been as demanding as it was last year. I've been able to manage, yes, but it has been rough. I've necessarily been focusing what little energy I've had on my kids and on my day to day work. I've had no bandwidth at all to write, or make art, or learn new things. A sorry state of affairs, and one that sucks much of the joy out of life.
+
+Happily, things have started to turn around in recent weeks. I've had a little more energy, I've been able to work from my desk rather than my bed, and while the artistic impulse hasn't come back yet I've started to write once more. 
+
+The [table1](https://benjaminrich.github.io/table1/) package by Benjamin Rich. Package source code is on [github](https://github.com/benjaminrich/table1), and the [package vignette](https://benjaminrich.github.io/table1/vignettes/table1-examples.html) provides a lot of useful detail that you can't necessarily find by browsing the help files.
+
+
+![](./make-me-wanna-die.jpg)
 
 ## Getting started
 
@@ -101,9 +114,31 @@ table1(~ flipper_length_mm + body_mass_g + sex + year | species, penguins)
 
 ## Customing cell content
 
+> Somebody mixed my medicine <br>
+> Somebody's in my head again <br>
+> Well, I'll drink what you leak and I'll smoke what you sigh <br>
+> See across the room with a look in your eye <br>
+> &nbsp; &nbsp; --*The Pretty Reckless*
+
+One thing I really like about the table1 package is that it supplies very sensible defaults for tables of descriptive statistics: continuous variables are summarised not only via means and standard deviations, but you also get the medians, ranges, and missing data summaries. Categorical variables are summarised with counts and percentages, and again you get a missing data summary. Very often this is exactly the summary you want, and no customisation at all is required.
+
+Inevitably, though, every data analyst comes across as situation that requires a different collection of summary statistics. At that point, you need to dive a little deeper and understand the syntax table1 uses to modify the summaries that it produces. 
+
 ### Using abbreviated codes
 
-Okay so yeah you can do this to get geometric means and standard deviations...
+The table1 package has a very practical and flexible mechanism for customising the descriptive statistics that it produces, but one that needs a bit of unpacking to understand. If you really want to do so, you can write an entire "rendering" function from scratch that affords very fine grained control over the output (more on that later!) but most of the time you don't actually want to go to all that effort. In most situations, all you *really* want to do is swap out one widely-used descriptive statistic for a different widely-used descriptive statistic. It would be no fun for the analyst if they had to write an entire rendering function from scratch just to switch from reporting arithmetic means to reporting geometric means. To that end, table1 provides a compact syntax using "abbreviated codes" that covers a lot of common use cases.
+
+As a concrete example, let's consider the task I described above: reporting geometric means and standard deviations. This is a very common task in pharmacometrics because a lot of observed data are approximately log-normal in distribution, and in my everyday work I find I have to do this a lot. Luckily for me, the table1 package recognises the strings `"GMEAN"` and `"GSD"` as abbreviated codes, and internally will replace them with function calls that compute the geometric mean and geometric standard deviation. To define a custom render that produces these two statistics, all I have to do is define a named vector like this one:
+
+```{r}
+#| label: geometric-summary
+render_geometric <- c(
+  "Geometric mean" = "GMEAN", 
+  "Geometric SD" = "GSD"
+)
+```
+
+In this compressed syntax, the names define the row labels that will be printed in the output table (e.g., `"Geometric mean"` becomes a row label), and the values are interpreted using the abbreviated code (e.g., the `"GMEAN"` string is replaced by the value of the geometric mean). To apply this custom render to my table only to the continuous variables in the summary table, all I have to do is include `render.continuous = render_geometric` in the call to `table1()`:
 
 ```{r}
 #| label: render-continuous-1
@@ -111,13 +146,20 @@ Okay so yeah you can do this to get geometric means and standard deviations...
 table1(
   x = ~ flipper_length_mm + body_mass_g + sex + year | species, 
   data = penguins, 
-  render.continuous = c("Geometric mean" = "GMEAN", "Geometric SD" = "GSD")
+  render.continuous = render_geometric
 )
 ```
 
 <br>
 
-That's important in my job where almost every continuous variable is lognormal. You can see that this affects only the continuous variables not the discrete ones. Similarly you can do this...
+As you can see from the output, the custom render has been applied to the two continuous variables `flipper_length_mm` and `body_mass_g` but not the categorical variables `sex` and `year`, just as you'd expect given that the argument I specified is called `render.continuous`. However, there are two features that might be a little surprising:
+
+- The missing data summary for the continuous variables is unaffected
+- If you look at the documentation for `table1()` you'll notice it has a `render` argument but not a `render.continuous` argument
+
+I'll unpack both of those things later in the blog post, but I wanted to mention them now because these things confused me a little when I first started using table1. For now, let's just accept that it works and move on.
+
+The table1 package comes equipped with quite a few of these abbreviated codes, which makes life considerably easier. For instance if we needed to compute the 10th, 50th, and 90th percentiles of each continuous variable, we could use the `"q10"`, `"q50"`, and `"q90"` keywords, like so:
 
 ```{r}
 #| label: render-continuous-2
@@ -135,11 +177,12 @@ table1(
 
 <br>
 
+Very handy. 
+
+
 ### Supported aliases
 
-The natural question you might have as the user of the package is, of course, what abbreviated codes does the table1 package understand? The answer to this is hidden in the help file for the `stats.default()` function or -- if you're as foolish as I am -- you can dig into the [source code](https://github.com/benjaminrich/table1/blob/master/R/table1.R) to find the answer. Alternatively, of course, you could just keep reading this blog post, I suppose? That's probably the easiest thing to do since you're already here.
-
-For continuous variables, this is the list of supported aliases:
+The natural question you might have as the user of the package is, of course, what abbreviated codes does the table1 package understand? As documented [here](https://benjaminrich.github.io/table1/vignettes/table1-examples.html#using-abbreviated-code-to-specify-a-custom-renderer) in the package vignette, you can find a complete listing by playing around with the `stats.default()` function.^[If you're a foolish person like I am you can also dig into the [source code](https://github.com/benjaminrich/table1/blob/master/R/table1.R) to find the answer, because why would I be smart and read the package vignette *before* reading the source code?] So let's do that. For continuous variables, this is the list of supported aliases:
 
 ```{r}
 #| label: narrow-text
@@ -164,9 +207,7 @@ Here's what each of these mean:^[If you want a more precise answer, you can use 
 - `"T1"`, `"T2"`: these are used to compute tertiles (33rd and 67th percentiles)
 - `"IQR"`: this computes the interquartile range
 
-In all cases except for `"NMISS"`, the relevant statistics are computed after removing missing values.
-
-Turning now to categorical variables, we can again use the `stats.default()` function to find the supported abbreviated codes:^[If you're curious as to why I'm extracting the first element of the output in this code, try playing around with `stats.default()` and looking at the differences between how the output is structured for continuous versus categorical inputs.]
+In all cases except for `"NMISS"`, the relevant statistics are computed after removing missing values. Turning now to categorical variables, we can again use the `stats.default()` function to find the supported abbreviated codes:^[If you're curious as to why I'm extracting the first element of the output in this code, try playing around with `stats.default()` and looking at the differences between how the output is structured for continuous versus categorical inputs.]
 
 ```{r}
 #| label: categorical-aliases
@@ -181,38 +222,38 @@ The interpretation of these is as follows:
 - `"PCTnoNA"`: the percent relative frequency, after missing values are removed
 - `"NMISS"`: the number of missing values, as before
 
-
+The nice thing about these abbreviated codes is that they cover a surprisingly wide variety of use cases. More often than not I've found that the descriptive statistics I need can be specified using this mechanism. From the analyst perspective this is great: you really don't want to waste time writing more code than you have to, so if you can specify your table of descriptive statistics without bothering to write a function, you're doing well.
 
 ### Writing render functions
 
-However, you don't have to use this mini-language. You can instead write your own function that takes the data as input and returns a vector of strings to be printed into the table. As an example, here's how you would do the same thing as the previous example by supplying the function explicitly:
+Alas life is not always kind to us, and it's not uncommon to run into situations where your table of descriptive statistics requires the computation of something that doesn't have an abbreviated code in table1. When that happens, the only recourse is for the user to write a rendering function that takes the data as input and returns a vector of strings to be printed into the table. As an example, suppose you have a need to report [Winsorised](https://en.wikipedia.org/wiki/Winsorizing) summary statistics for your continuous variables:
 
 ```{r}
-#| label: render-quantiles
-render_quantiles <- function(x, ...) {
-  vals <- quantile(x, probs = c(.1, .5, .9), na.rm = TRUE, names = FALSE)
+#| label: render-winsorized
+render_winsorized <- function(x, cutoff = .05, ...) {
+  lo <- quantile(x, cutoff, na.rm = TRUE)
+  hi <- quantile(x, 1 - cutoff, na.rm = TRUE)
+  x[x < lo] <- lo
+  x[x > hi] <- hi
   strs <- c(
     "",
-    "10th percentile" = vals[1],
-    "50th percentile" = vals[2],
-    "90th percentile" = vals[3]
+    "Winsorized mean" = sprintf("%1.2f", mean(x, na.rm = TRUE)),
+    "Winsorized SD" = sprintf("%1.2f", sd(x, na.rm = TRUE))
   )
   return(strs)
 }
 ```
 
-The `render_quantiles()` function returns a named vector of strings: the names become the row labels (in the leftmost column of the table), and the values are printed into the table itself. 
+Notice that this `render_winsorized()` function returns a named vector of strings that follows the same convention that we followed with the simpler `render_geometric` example earlier: the names of the output string become the row labels, and the values are printed into the table itself.
 
-Here's another example that is appropriate for discrete variable:
+Along similar lines, we can define a rendering function to be applied to the categorical variables in the data. Here's a very simple one that reports only the absolute frequencies for each category:
 
 ```{r}
 #| label: render-counts
-render_counts <- function(x, ...) {
-  c("", table(stringr::str_to_title(x)))
-}
+render_counts <- function(x, ...) c("", table(stringr::str_to_title(x)))
 ```
 
-Having defined our render functions, we produce the table like this:
+Having defined our render functions, we produce the desired table by passing `render_winsorized()` as the handler for continuous variables and `render_counts()` as the handler for categorical variables:
 
 ```{r}
 #| label: render-categorical
@@ -220,26 +261,24 @@ Having defined our render functions, we produce the table like this:
 table1(
   x = ~ flipper_length_mm + body_mass_g + sex | species, 
   data = penguins, 
-  render.continuous = render_quantiles,
+  render.continuous = render_winsorized,
   render.categorical = render_counts
 )
 ```
 
 <br>
 
-Notice, however, that neither of these two functions affect the row in the table that handles the missing values. If you want to change that, you need to specify another function:
+Our table is mostly done, but we still don't have a method for adjusting how the missing data summaries are produced. To do that we need to define one more rendering function and pass it as the `render.missing` argument:
 
 ```{r}
 #| label: render-missing
 #| results: asis
-render_missing <- function(x, ...) {
-  c("Missing" = sum(is.na(x)))
-}
+render_missing <- function(x, ...) c("Missing" = sum(is.na(x)))
 
 table1(
   x = ~ flipper_length_mm + body_mass_g + sex | species, 
   data = penguins, 
-  render.continuous = render_quantiles,
+  render.continuous = render_winsorized,
   render.categorical = render_counts,
   render.missing = render_missing
 )
@@ -266,6 +305,8 @@ table1(
 ```
 
 <br>
+
+I have to confess it took me waaaaay too long to realise that I could do this in table1. True, I don't often have a need to bypass the `render.default()` function, but there are definitely times when that's a handy little bit of functionality. Sigh. Sometimes I'm quite dense. 
 
 ## Table annotations
 
