@@ -769,8 +769,15 @@ Another day, another encounter with CSS that I have survived. I will take the vi
 
 ## Epilogue
 
-In the process of writing this post I discovered that The Pretty Reckless have recorded a [cover](https://www.youtube.com/watch?v=PJ9Xy3RJoOA) of "Champagne Supernova" and I cannot stop laughing. It's good to laugh again, but I shudder to think of what horrors I'm going to discover when I eventually decide to write a Kim Petras themed blog post.
+> For the ways that I hurt when I'm hiking up my skirt <br>
+> For the man that I hate I'm going to hell <br>
+> &nbsp; &nbsp; --*The Pretty Reckless*
 
+There's a lot I'm not saying in this post. There's a lot of hidden detail in the table1 package, and additional tricks that you can deploy to make it work to your advantage. But a post has to end somewhere and besides, if you've hit the point where the tools I've talked about in this post can't solve your specific problem you're probably at the point where table1 is the wrong fit. 
+
+It's never wise to try to use force.
+
+<br>
 
 ![](take-me-down.jpg)
 
