@@ -1,7 +1,8 @@
 ---
-title: "A deep dive into table1"
-description: "This is a subtitle"
+title: "Making tables in R with table1"
+description: "A pretty reckless dive into a package that hits the sweet spot for me"
 date: "2024-06-21"
+categories: ["R"]
 format: 
   html:
     css: style-tweaks.css
@@ -29,7 +30,7 @@ set.seed(1)
 > You make me wanna die <br>
 > &nbsp; &nbsp; - [*The Pretty Reckless*](https://www.youtube.com/watch?v=txBfhpm1jI0)
 
-It's no secret that my health hasn't been so great these last few months. Nothing life-threatening, I hasten to add, but severe enough that I've spent a depressing amount of 2024 in bed, and not in the fun way. I'm fortunate enough to have a remote job, and the workload this year hasn't been as demanding as it was last year. I've been able to manage, yes, but it has been rough. I've necessarily been focusing what little energy I've had on my kids and on my day to day work. I've had no bandwidth at all to write, or make art, or learn new things. A sorry state of affairs, and one that sucks much of the joy out of life.
+It's no secret that my health hasn't been so great these last few months. Nothing life-threatening, I hasten to add, but severe enough that I've spent a depressing amount of 2024 in bed, and not in the fun way. I'm fortunate enough to have a remote job, and the workload this year hasn't been as demanding as it was last year. I've been able to manage, yes,^[It always strikes me as a bitter failure of public policy that when someone falls sick, their first thought is *always* something along the lines of "can I still work?" Very few people actually love their jobs so much that they want to work through a serious illness, but the fear that the company will discard you the moment something bad happens is built into our society at a low level. If you're not dead you work. Because capitalism.] but it has been rough. I've necessarily been focusing what little energy I've had on my kids and on my day to day work. I've had no bandwidth at all to write, or make art, or learn new things. A sorry state of affairs, and one that sucks much of the joy out of life.
 
 Happily, things have started to turn around in recent weeks. I've had a little more energy, I've been able to work from my desk rather than my bed, and while the artistic impulse hasn't come back yet I've started to write once more. 
 
@@ -112,13 +113,16 @@ table1(~ flipper_length_mm + body_mass_g + sex + year | species, penguins)
 
 <br>
 
+
+![](my-medicine.jpg)
+
 ## Customing cell content
 
 > Somebody mixed my medicine <br>
 > Somebody's in my head again <br>
 > Well, I'll drink what you leak and I'll smoke what you sigh <br>
 > See across the room with a look in your eye <br>
-> &nbsp; &nbsp; --*The Pretty Reckless*
+> &nbsp; &nbsp; --[*The Pretty Reckless*](https://www.youtube.com/watch?v=cJMSDlWlfMM)
 
 One thing I really like about the table1 package is that it supplies very sensible defaults for tables of descriptive statistics: continuous variables are summarised not only via means and standard deviations, but you also get the medians, ranges, and missing data summaries. Categorical variables are summarised with counts and percentages, and again you get a missing data summary. Very often this is exactly the summary you want, and no customisation at all is required.
 
@@ -224,7 +228,17 @@ The interpretation of these is as follows:
 
 The nice thing about these abbreviated codes is that they cover a surprisingly wide variety of use cases. More often than not I've found that the descriptive statistics I need can be specified using this mechanism. From the analyst perspective this is great: you really don't want to waste time writing more code than you have to, so if you can specify your table of descriptive statistics without bothering to write a function, you're doing well.
 
+![](hit-me-like-a-man.jpg)
+
 ### Writing render functions
+
+> I am strong, love is evil <br>
+> It's a version of perversion that is only for the lucky people <br>
+> Take your time and do with me what you will <br>
+> I won't mind, you know I'm ill, you know I'm ill <br>
+> So hit me like a man <br>
+> And love me like a woman <br>
+> &nbsp; &nbsp; -- *[The Pretty Reckless](https://www.youtube.com/watch?v=Z6ZtYZiHong)*
 
 Alas life is not always kind to us, and it's not uncommon to run into situations where your table of descriptive statistics requires the computation of something that doesn't have an abbreviated code in table1. When that happens, the only recourse is for the user to write a rendering function that takes the data as input and returns a vector of strings to be printed into the table. As an example, suppose you have a need to report [Winsorised](https://en.wikipedia.org/wiki/Winsorizing) summary statistics for your continuous variables:
 
@@ -244,9 +258,7 @@ render_winsorized <- function(x, cutoff = .05, ...) {
 }
 ```
 
-Notice that this `render_winsorized()` function returns a named vector of strings that follows the same convention that we followed with the simpler `render_geometric` example earlier: the names of the output string become the row labels, and the values are printed into the table itself.
-
-Along similar lines, we can define a rendering function to be applied to the categorical variables in the data. Here's a very simple one that reports only the absolute frequencies for each category:
+Notice that this `render_winsorized()` function returns a named vector of strings that follows the same convention that we followed with the simpler `render_geometric` example earlier: the names of the output string become the row labels, and the values are printed into the table itself. Along similar lines, we can define a rendering function to be applied to the categorical variables in the data. Here's a very simple one that reports only the absolute frequencies for each category:
 
 ```{r}
 #| label: render-counts
@@ -308,7 +320,18 @@ table1(
 
 I have to confess it took me waaaaay too long to realise that I could do this in table1. True, I don't often have a need to bypass the `render.default()` function, but there are definitely times when that's a handy little bit of functionality. Sigh. Sometimes I'm quite dense. 
 
+![](follow-me-down.jpg)
+
 ## Table annotations
+
+> Follow me down to the river <br>
+> Drink while the water is clean <br>
+> Follow me down to the river tonight <br>
+> I'll be down here on my knees <br>
+> &nbsp; &nbsp; --*[The Pretty Reckless](https://www.youtube.com/watch?v=vfwJ-SoYw4U)*
+
+Time to switch gears a little. In the previous section I talked about how to customise the statistics that are reported in the table cells. Implicit in this discussion is the fact that a custom render function allows you to customise the row labels associated with each statistic, in exactly the same way that variable labels allow you to customise the variable descriptions that appear in the leftmost column of the table. Taken together, these two mechanisms (render functions and variable labels) give the user a *lot* of control over what appears in the leftmost column of the table. But what about the header row? How do we customise that in table1?
+
 
 ### Strata column labels
 
@@ -461,6 +484,9 @@ table1(
 
 ### Arbitrary stratification
 
+> Why'd you bring a shotgun to the party? <br>
+> &nbsp; &nbsp; --[*The Pretty Reckless*](https://www.youtube.com/watch?v=PYxd8gh7g_k)
+
 Using the data frame interface we can exercise finer-grained control over the strata.
 
 ```{r}
@@ -526,7 +552,13 @@ table1(
 )
 ```
 
+
 ### Using custom CSS
+
+> Signed with the devil <br>
+> Signed with the devil <br>
+> Signed with the devil, oh <br>
+> &nbsp; &nbsp; --*[The Pretty Reckless](https://www.youtube.com/watch?v=BQpZv2r8fb4)*
 
 Here's the HTML that gets generated for a table:
 
@@ -566,3 +598,10 @@ tbl
 ```
 
 <br>
+
+![](take-me-down.jpg)
+
+## Epilogue
+
+In the process of writing this post I discovered that The Pretty Reckless have recorded a [cover](https://www.youtube.com/watch?v=PJ9Xy3RJoOA) of "Champagne Supernova" and I cannot stop laughing. It's good to laugh again.
+
