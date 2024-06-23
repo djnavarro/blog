@@ -3,6 +3,8 @@ title: "Making tables in R with table1"
 description: "A pretty reckless dive into a package that hits the sweet spot for me"
 date: "2024-06-21"
 categories: ["R", "Data Wrangling"]
+image: "make-me-wanna-die.jpg"
+image-alt: "Screenshot to the film clip for 'Make Me Wanna Die' by The Pretty Reckless, in which Taylor Momsen is looking fabulous"
 format: 
   html:
     css: style-tweaks.css
@@ -740,7 +742,7 @@ Another day, another encounter with CSS that I have survived. I will take the vi
 
 ## Epilogue
 
-In the process of writing this post I discovered that The Pretty Reckless have recorded a [cover](https://www.youtube.com/watch?v=PJ9Xy3RJoOA) of "Champagne Supernova" and I cannot stop laughing. It's good to laugh again.
+In the process of writing this post I discovered that The Pretty Reckless have recorded a [cover](https://www.youtube.com/watch?v=PJ9Xy3RJoOA) of "Champagne Supernova" and I cannot stop laughing. It's good to laugh again, but I shudder to think of what horrors I'm going to discover when I eventually decide to write a Kim Petras themed blog post.
 
 
 ![](take-me-down.jpg)
