@@ -40,6 +40,8 @@ Yeah, right.
 
 ## Getting started
 
+The table1 package is one of those "niche" packages that is designed to solve exactly one problem, and solve that problem well: it is designed to produce tables of descriptive statistics of the sort that typically appear as "Table 1" in an academic paper (hence the name). It's not a general purpose tool for table construction like [gt](https://gt.rstudio.com/) or [flextable](https://ardata-fr.github.io/flextable-book/index.html), and compared to those packages it has a number of limitations. However, because the scope of the package is narrower, it's able to solve the specific problem that it is designed for in an extremely efficient manner. It's used a lot in my workplace and while I was a little skeptical at first I've come to love it. 
+
 So let's get this party started shall we? First, I'll need to load a few packages in order to make this post even remotely legible. Besides the table1 package itself, I'll load the palmerpenguins package so that I have a data set I can play with, and dplyr for any data wrangling I need to do later on:
 
 ```{r}
