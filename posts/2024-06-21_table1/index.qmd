@@ -557,32 +557,74 @@ It works, and there are definitely use cases for this. But the functionality is 
 > Why'd you bring a shotgun to the party? <br>
 > &nbsp; &nbsp; --[*The Pretty Reckless*](https://www.youtube.com/watch?v=PYxd8gh7g_k)
 
-Using the data frame interface we can exercise finer-grained control over the strata.
+Up to this point in the post every table I've created with `table1()` has used a formula to specify the basic structure of the output. In real life this is almost always what you want to do, because this "formula interface" is pretty flexible and *extremely* easy to work with. I'd even go so far as to say that this formula interface is one of the most appealing aspects to the table1 package. However, in point of fact the formula interface that everyone uses is actually a bit of sweet syntactic sugar laid atop a lower-level interface. Very occasionally you encounter a situation where the formula interface isn't expressive enough to do what you want, and when that happens you have to "bring a shotgun to the party" and use the low level interface which takes a list of data frames (one per stratum) as input.
+
+To motivate the discussion, I'll give an example of something that I've occasionally wanted to do but isn't possible with the formula interface. Earlier in this post I showed you how to create a *nested* stratification where we pass two stratification variables in the formula, and the table contains one stratum for every unique combination of the two variables. Sometimes, though, you want to create a table that stratifies by two variables but only shows the *marginal* stratifications. For example, I might want a table that includes descriptive statistics for each `species` of penguin, and next to that my table would have descriptive statistics for each `sex`. In this situation I'm not interested in the cross-tabulation. That is, I don't care about which species a male penguin belongs to, and I don't care about the sex of the various Adelie penguins either. I'm interested in `species` and `sex` completely independently of each other. The formula interface doesn't support this kind of stratification, so I'm going to have to do it manually. 
+
+Let's see how this is done. First, I'm going to make a few tweaks to the data that aren't really very important, but will make my table a little nicer. Specifically, I'll convert the `sex` variable to title case so that I get nice labels later, and I'll convert `year` to a factor so that `table1()` treats it as a categorical variable:
 
 ```{r}
-#| label: arbitrary-strata
-#| results: asis
+#| label: data-tweak
 penguins <- penguins |>
   mutate(
     sex = stringr::str_to_title(sex),
     year = factor(year)
   )
+```
 
+Now let's move along to the important step. I'm going to create a new variable called `penguins_strata` that is a list of data frames. 
+
+```{r}
+#| label: penguins-strata
 penguins_strata <- c(
     split(penguins, ~species), 
     split(penguins, ~sex),
     list("All" = penguins)
   )
 
+penguins_strata
+```
+
+As you can see from this lengthy output, the `penguins_strata` variable is a list of six data frames. There are three data frames corresponding to each of the three `species`, two data frames corresponding to each unique `sex` category, and a final data frame that contains the entire data set. Later on when I construct the table, the `table1()` function will render each of these six data frames into a single column with the appropriate descriptive statistics.
+
+The second input we need is a "labels" list that does two jobs:
+
+- Notice that so far I've defined my strata, but haven't specified the variables. The labels list has to do this. It specifies which `variables` should to be used when computing descriptive statistics. For the purposes of this example, I would like to tabulate the number of penguins (in each stratum) found on each `island` and the number of penguins observed in each `year`
+
+- In my head, the thing I want to do here is stratify the data separately by each `species` and by each `sex`. But the `penguins_strata` object doesn't say anything about this. It's just a flat list of six data frames. It doesn't "know" that three of these data frames refer to different species and two of them refer to different sexes. For that matter, it doesn't know that the last data frame isn't associated with a grouping variable either. So we'll also need to specify a list of `groups` that supplies the names of these grouping variables.
+
+In other words, we need something like this:
+
+```{r}
+#| label: penguin-labels
 penguins_labels <- list(
-    variables = list(island = "Island", year = "Year"), 
-    groups = list("Species", "Sex", "")
+    variables = list(
+      island = "Island", # names denote variables, values supply labels
+      year = "Year"
+    ), 
+    groups = list("Species", "Sex", "") # this is a list of labels only
   )
 
-table1(penguins_strata, penguins_labels, groupspan = c(3, 2, 1))
+penguin_groups <- c(3, 2, 1) # first three data frames are group 1, etc
+```
+
+At this point we have:
+
+- `penguins_strata`, a variable that contains all the data organised into a list with one data frame per strata
+- `penguins_labels`, a list that specifies the variables for which descriptive statistics are requested and the labels that should be assigned to variables and strata groups; and
+- `penguins_groups`, a vector that specifies how the strata columns should be grouped 
+
+It's quite a bit of setup work, but having done all the hard parts during the setup, the call to `table1()` is now very simple:
+
+```{r}
+#| label: arbitrary-strata
+#| results: asis
+table1(penguins_strata, penguins_labels, groupspan = penguin_groups)
 ```
 
 <br>
+
+And there it is. A table with two marginal stratifications and an overall column that provides descriptive statistics for two categorical variables. 
 
 ## Styling tables
 
