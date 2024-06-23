@@ -332,16 +332,23 @@ I have to confess it took me waaaaay too long to realise that I could do this in
 
 Time to switch gears a little. In the previous section I talked about how to customise the statistics that are reported in the table cells. Implicit in this discussion is the fact that a custom render function allows you to customise the row labels associated with each statistic, in exactly the same way that variable labels allow you to customise the variable descriptions that appear in the leftmost column of the table. Taken together, these two mechanisms (render functions and variable labels) give the user a *lot* of control over what appears in the leftmost column of the table. But what about the header row? How do we customise that in table1?
 
-
 ### Strata column labels
 
+To start with, let's consider the columns that associated with a particular stratum. In the penguins tables I've been creating, the strata are defined by the `species` variable so are three columns that are associated with a specific stratum. By default `table1()` will add a description for each such column in the header row that contains the category name (e.g., "Gentoo") and the number of observations that belong to this category. But perhaps we don't want those sample size numbers? Maybe all we want is the category name. To customise how each stratum is labelled in the header row, the `table1()` function has an argument called `render.strat` that takes a function as its value. The strata rendering function takes three arguments: the `label` is the value in the data that defines that category (e.g., `"Gentoo"`), `n` is the number of observations that have been assigned to the category, and `transpose` is a logical variable indicating whether the table is transposed (more on that later). The output of the function is a string that specifies (as HTML) what should appear in the header row. To illustrate the idea, here's a very simple stratum rendering function that only prints the category label:
+
 ```{r}
-#| label: render-strat
+#| label: render-strat-1
 #| results: asis
 render_strat <- function(label, n, transpose = FALSE) {
   sprintf("<span class='stratlabel'>%s</span>", label)
 }
+```
 
+The only subtlety to this `render_strat()` function is that it outputs some HTML that wraps the `label` in an HTML span tag and assigns it to a class that we can (and will) use later on to create some fancy styling using CSS. But I'm getting ahead of myself a little. For now, it's enough to note that `render_strat()` creates a very simple label that just prints out the category label. Here it is in action: 
+
+```{r}
+#| label: render-strat-2
+#| results: asis
 table1(
   x = ~ flipper_length_mm + body_mass_g | species,
   data = penguins,
@@ -351,7 +358,11 @@ table1(
 
 <br>
 
+Indeed it performs as expected: the sample size annotations are gone and we now have very minimalistic labels for each of the three penguin species. So let's move along.
+
 ### Other column labels
+
+There are two other columns that typically appear in a table1 output object: on the left we have column that contains the row labels, and on the right we have a table that contains the descriptive statistics for the "overall" data set where we collapse across all strata. By default, the row label column on the left has no label and the aggregated column on the right uses that label "Overall". Both of these are customisable in the call to `table1()`, using the `overall` and `rowlabelhead` arguments. An example of this is illustrated below:
 
 ```{r}
 #| label: column-labels
@@ -366,7 +377,9 @@ table1(
 
 <br>
 
-### Footnotes
+### Footnotes and captions
+
+In addition to allowing you to customise the header row, the table1 package also supports the addition of captions and footnotes. Shockingly, it turns out you can specify these with `table1()` by using the `caption` and `footnote` arguments. Both of these take a single string as their input, and you can use HTML tags here. For example, here's a footer that acknowledges the two packages I've relied on most in this post, specifying the package names in boldface:
 
 ```{r}
 #| label: adding-footnotes
@@ -374,13 +387,13 @@ table1(
 table1(
   x = ~ flipper_length_mm + body_mass_g | species,
   data = penguins,
-  footnote = "Created using table1 and palmerpenguins"
+  footnote = "Created using <b>table1</b> and <b>palmerpenguins</b>"
 )
 ```
 
 <br>
 
-### Captions
+Specifying captions is very similar. Here's a simple example:
 
 ```{r}
 #| label: adding-captions
