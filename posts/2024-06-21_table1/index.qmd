@@ -40,6 +40,10 @@ Yeah, right.
 
 ![](./make-me-wanna-die.jpg)
 
+::: {.column-margin}
+As my health recovers I've been listening to [The Pretty Reckless](https://en.wikipedia.org/wiki/The_Pretty_Reckless) a lot, and discovering that [Taylor Momsen](https://en.wikipedia.org/wiki/Taylor_Momsen) is so much more awesome than I realised
+:::
+
 ## Getting started
 
 The table1 package is one of those "niche" packages that is designed to solve exactly one problem, and solve that problem well: it is designed to produce tables of descriptive statistics of the sort that typically appear as "Table 1" in an academic paper (hence the name). It's not a general purpose tool for table construction like [gt](https://gt.rstudio.com/) or [flextable](https://ardata-fr.github.io/flextable-book/index.html), and compared to those packages it has a number of limitations. However, because the scope of the package is narrower, it's able to solve the specific problem that it is designed for in an extremely efficient manner. It's used a lot in my workplace and while I was a little skeptical at first I've come to love it. 
@@ -195,6 +199,10 @@ table1(
 
 Very handy. 
 
+::: {.column-margin}
+The quote from "My medicine" at the start of this section isn't accidental. The abbreviated code syntax in table1 is a powerful tool, but when I started reading table1 code without understanding the keyword matching involved it did feel a little like "someone's in my head again", substituting code where a string should be
+:::
+
 
 ### Supported aliases
 
@@ -251,6 +259,10 @@ The nice thing about these abbreviated codes is that they cover a surprisingly w
 > So hit me like a man <br>
 > And love me like a woman <br>
 > &nbsp; &nbsp; -- *[The Pretty Reckless](https://www.youtube.com/watch?v=Z6ZtYZiHong)*
+
+::: {.column-margin}
+Probably no surprise to anyone who knows me that "Hit me like a man" is my favourite Pretty Reckless song. But also appropriate to how I feel about the render function syntax. The functionality is powerful once you know how to use it, but it's also simple and lovely
+:::
 
 Alas life is not always kind to us, and it's not uncommon to run into situations where your table of descriptive statistics requires the computation of something that doesn't have an abbreviated code in table1. When that happens, the only recourse is for the user to write a rendering function that takes the data as input and returns a vector of strings to be printed into the table. As an example, suppose you have a need to report [Winsorised](https://en.wikipedia.org/wiki/Winsorizing) summary statistics for your continuous variables:
 
@@ -342,6 +354,11 @@ I have to confess it took me waaaaay too long to realise that I could do this in
 > I'll be down here on my knees <br>
 > &nbsp; &nbsp; --*[The Pretty Reckless](https://www.youtube.com/watch?v=vfwJ-SoYw4U)*
 
+::: {.column-margin}
+Okay I'll admit it. This lyric isn't really connected to the text. I mean, the video clip is a collection of annotations showing the lyrics, I guess. But honestly I just like the song
+:::
+
+
 Time to switch gears a little. In the previous section I talked about how to customise the statistics that are reported in the table cells. Implicit in this discussion is the fact that a custom render function allows you to customise the row labels associated with each statistic, in exactly the same way that variable labels allow you to customise the variable descriptions that appear in the leftmost column of the table. Taken together, these two mechanisms (render functions and variable labels) give the user a *lot* of control over what appears in the leftmost column of the table. But what about the header row? How do we customise that in table1?
 
 ### Strata column labels
@@ -422,6 +439,13 @@ table1(
 ```
 
 <br>
+
+![](heaven-knows.jpg)
+
+::: {.column-margin}
+One day, just for one brief moment, I would like to look this cool. It's never going to happen of course, but a girl can dream
+:::
+
 
 ## Table structure
 
@@ -641,6 +665,9 @@ table1(penguins_strata, penguins_labels, groupspan = penguin_groups)
 <br>
 
 And there it is. A table with two marginal stratifications and an overall column that provides descriptive statistics for two categorical variables. 
+
+![](whyd-you-bring-a-shotgun.jpg)
+
 
 ## Styling tables
 
