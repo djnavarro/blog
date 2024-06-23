@@ -1,0 +1,3117 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.4.549">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Danielle Navarro">
+<meta name="dcterms.date" content="2024-06-21">
+<meta name="description" content="A pretty reckless dive into a package that hits the sweet spot for me">
+
+<title>Notes from a data witch - Making tables in R with table1</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<style>
+
+      .quarto-title-block .quarto-title-banner {
+        background: #eeeeee;
+      }
+</style>
+<link href="../../site_libs/table1-1.0/table1_defaults.css" rel="stylesheet">
+
+
+<link rel="stylesheet" href="../../styles.css">
+<link rel="stylesheet" href="style-tweaks.css">
+<meta property="og:title" content="Notes from a data witch - Making tables in R with table1">
+<meta property="og:description" content="A pretty reckless dive into a package that hits the sweet spot for me">
+<meta property="og:image" content="https://blog.djnavarro.net/posts/2024-06-21_table1/make-me-wanna-die.jpg">
+<meta property="og:site_name" content="Notes from a data witch">
+<meta property="og:image:alt" content="Screenshot to the film clip for 'Make Me Wanna Die' by The Pretty Reckless, in which Taylor Momsen is looking fabulous">
+<meta name="twitter:title" content="Notes from a data witch - Making tables in R with table1">
+<meta name="twitter:description" content="A pretty reckless dive into a package that hits the sweet spot for me">
+<meta name="twitter:image" content="https://blog.djnavarro.net/posts/2024-06-21_table1/make-me-wanna-die.jpg">
+<meta name="twitter:creator" content="@djnavarro">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image:alt" content="Screenshot to the film clip for 'Make Me Wanna Die' by The Pretty Reckless, in which Taylor Momsen is looking fabulous">
+</head>
+
+<body class="floating nav-fixed slimcontent">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.xml"> 
+<span class="menu-text">RSS</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-sites" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Sites</span>
+    </a>
+    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="nav-menu-sites">    
+        <li>
+    <a class="dropdown-item" href="https://djnavarro.net">
+ <span class="dropdown-text">Homepage</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://blog.djnavarro.net">
+ <span class="dropdown-text">Data science blog</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://art.djnavarro.net">
+ <span class="dropdown-text">Generative art</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://papers.djnavarro.net">
+ <span class="dropdown-text">Academic papers</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://djnavarro.net/sites">
+ <span class="dropdown-text">More…</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+          </div> <!-- /navcollapse -->
+          <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default toc-left page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Making tables in R with table1</h1>
+                  <div>
+        <div class="description">
+          A pretty reckless dive into a package that hits the sweet spot for me
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">R</div>
+                <div class="quarto-category">Data Wrangling</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p><a href="https://djnavarro.net">Danielle Navarro</a> <a href="https://orcid.org/0000-0001-7648-6578" class="quarto-title-author-orcid"> <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA2ZpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYwIDYxLjEzNDc3NywgMjAxMC8wMi8xMi0xNzozMjowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo1N0NEMjA4MDI1MjA2ODExOTk0QzkzNTEzRjZEQTg1NyIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDozM0NDOEJGNEZGNTcxMUUxODdBOEVCODg2RjdCQ0QwOSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDozM0NDOEJGM0ZGNTcxMUUxODdBOEVCODg2RjdCQ0QwOSIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ1M1IE1hY2ludG9zaCI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOkZDN0YxMTc0MDcyMDY4MTE5NUZFRDc5MUM2MUUwNEREIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjU3Q0QyMDgwMjUyMDY4MTE5OTRDOTM1MTNGNkRBODU3Ii8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+84NovQAAAR1JREFUeNpiZEADy85ZJgCpeCB2QJM6AMQLo4yOL0AWZETSqACk1gOxAQN+cAGIA4EGPQBxmJA0nwdpjjQ8xqArmczw5tMHXAaALDgP1QMxAGqzAAPxQACqh4ER6uf5MBlkm0X4EGayMfMw/Pr7Bd2gRBZogMFBrv01hisv5jLsv9nLAPIOMnjy8RDDyYctyAbFM2EJbRQw+aAWw/LzVgx7b+cwCHKqMhjJFCBLOzAR6+lXX84xnHjYyqAo5IUizkRCwIENQQckGSDGY4TVgAPEaraQr2a4/24bSuoExcJCfAEJihXkWDj3ZAKy9EJGaEo8T0QSxkjSwORsCAuDQCD+QILmD1A9kECEZgxDaEZhICIzGcIyEyOl2RkgwAAhkmC+eAm0TAAAAABJRU5ErkJggg=="></a></p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">June 21, 2024</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#getting-started" id="toc-getting-started" class="nav-link active" data-scroll-target="#getting-started">Getting started</a></li>
+  <li><a href="#applying-labels" id="toc-applying-labels" class="nav-link" data-scroll-target="#applying-labels">Applying labels</a></li>
+  <li><a href="#customing-cell-content" id="toc-customing-cell-content" class="nav-link" data-scroll-target="#customing-cell-content">Customing cell content</a>
+  <ul class="collapse">
+  <li><a href="#using-abbreviated-codes" id="toc-using-abbreviated-codes" class="nav-link" data-scroll-target="#using-abbreviated-codes">Using abbreviated codes</a></li>
+  <li><a href="#supported-aliases" id="toc-supported-aliases" class="nav-link" data-scroll-target="#supported-aliases">Supported aliases</a></li>
+  <li><a href="#writing-render-functions" id="toc-writing-render-functions" class="nav-link" data-scroll-target="#writing-render-functions">Writing render functions</a></li>
+  <li><a href="#unpacking-render-functions" id="toc-unpacking-render-functions" class="nav-link" data-scroll-target="#unpacking-render-functions">Unpacking render functions</a></li>
+  </ul></li>
+  <li><a href="#table-annotations" id="toc-table-annotations" class="nav-link" data-scroll-target="#table-annotations">Table annotations</a>
+  <ul class="collapse">
+  <li><a href="#strata-column-labels" id="toc-strata-column-labels" class="nav-link" data-scroll-target="#strata-column-labels">Strata column labels</a></li>
+  <li><a href="#other-column-labels" id="toc-other-column-labels" class="nav-link" data-scroll-target="#other-column-labels">Other column labels</a></li>
+  <li><a href="#footnotes-and-captions" id="toc-footnotes-and-captions" class="nav-link" data-scroll-target="#footnotes-and-captions">Footnotes and captions</a></li>
+  </ul></li>
+  <li><a href="#table-structure" id="toc-table-structure" class="nav-link" data-scroll-target="#table-structure">Table structure</a>
+  <ul class="collapse">
+  <li><a href="#removing-overall" id="toc-removing-overall" class="nav-link" data-scroll-target="#removing-overall">Removing “overall”</a></li>
+  <li><a href="#nested-stratifications" id="toc-nested-stratifications" class="nav-link" data-scroll-target="#nested-stratifications">Nested stratifications</a></li>
+  <li><a href="#adding-extra-columns" id="toc-adding-extra-columns" class="nav-link" data-scroll-target="#adding-extra-columns">Adding extra columns</a></li>
+  <li><a href="#transposing-tables" id="toc-transposing-tables" class="nav-link" data-scroll-target="#transposing-tables">Transposing tables</a></li>
+  <li><a href="#arbitrary-stratification" id="toc-arbitrary-stratification" class="nav-link" data-scroll-target="#arbitrary-stratification">Arbitrary stratification</a></li>
+  </ul></li>
+  <li><a href="#styling-tables" id="toc-styling-tables" class="nav-link" data-scroll-target="#styling-tables">Styling tables</a>
+  <ul class="collapse">
+  <li><a href="#built-in-styles" id="toc-built-in-styles" class="nav-link" data-scroll-target="#built-in-styles">Built-in styles</a></li>
+  <li><a href="#using-custom-css" id="toc-using-custom-css" class="nav-link" data-scroll-target="#using-custom-css">Using custom CSS</a></li>
+  </ul></li>
+  <li><a href="#epilogue" id="toc-epilogue" class="nav-link" data-scroll-target="#epilogue">Epilogue</a></li>
+  </ul>
+</nav>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block page-columns page-full" id="quarto-document-content">
+
+
+
+
+
+<!--------------- my typical setup ----------------->
+<!--------------- post begins here ----------------->
+<blockquote class="blockquote">
+<p>I’ll never be good enough <br> You make me wanna die <br> And everything you love will burn up in the light <br> And every time I look inside your eyes <br> You make me wanna die <br> &nbsp; &nbsp; - <a href="https://www.youtube.com/watch?v=txBfhpm1jI0"><em>The Pretty Reckless</em></a></p>
+</blockquote>
+<p>It’s no secret that my health hasn’t been so great these last few months. Nothing life-threatening, I hasten to add, but severe enough that I’ve spent a depressing amount of 2024 in bed, and not in the fun way. I’m fortunate enough to have a remote job, and the workload this year hasn’t been as demanding as it was last year. I’ve been able to manage, yes,<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> but it has been rough. I’ve necessarily been focusing what little energy I’ve had on my kids and on my day to day work. I’ve had no bandwidth at all to write, or make art, or learn new things. A sorry state of affairs, and one that sucks much of the joy out of life.</p>
+<p>Happily, things have started to turn around in recent weeks. I’ve had a little more energy, I’ve been able to work from my desk rather than my bed, and while the artistic impulse hasn’t come back yet I’ve started to write once more. I told myself that I’d start with something fairly simple for my first attempt at writing – Danielle, perhaps you could write up a few notes about a package you use at work? Nothing complicated. Just a little something on the <a href="https://benjaminrich.github.io/table1/">table1</a> package<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a> by Benjamin Rich, perhaps? Nice and simple, short and sweet. Won’t take very long at all will it my dear?</p>
+<p>Yeah, right.</p>
+<p><img src="./make-me-wanna-die.jpg" class="img-fluid"></p>
+
+<div class="no-row-height column-margin column-container"><div class="">
+<p>As my health recovers I’ve been listening to <a href="https://en.wikipedia.org/wiki/The_Pretty_Reckless">The Pretty Reckless</a> a lot, and discovering that <a href="https://en.wikipedia.org/wiki/Taylor_Momsen">Taylor Momsen</a> is so much more awesome than I realised</p>
+</div></div><section id="getting-started" class="level2">
+<h2 class="anchored" data-anchor-id="getting-started">Getting started</h2>
+<p>The table1 package is one of those “niche” packages that is designed to solve exactly one problem, and solve that problem well: it is designed to produce tables of descriptive statistics of the sort that typically appear as “Table 1” in an academic paper (hence the name). It’s not a general purpose tool for table construction like <a href="https://gt.rstudio.com/">gt</a> or <a href="https://ardata-fr.github.io/flextable-book/index.html">flextable</a>, and compared to those packages it has a number of limitations. However, because the scope of the package is narrower, it’s able to solve the specific problem that it is designed for in an extremely efficient manner. It’s used a lot in my workplace and while I was a little skeptical at first I’ve come to love it.</p>
+<p>So let’s get this party started shall we? First, I’ll need to load a few packages in order to make this post even remotely legible. Besides the table1 package itself, I’ll load the palmerpenguins package so that I have a data set I can play with, and dplyr for any data wrangling I need to do later on:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(palmerpenguins)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(table1)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The <a href="https://allisonhorst.github.io/palmerpenguins/">palmerpenguins</a> data set that I’ll be using in this post is one I’ve used many times before, and it’s nicely documented on the package website. Suffice it to say, the data set contains a collection of measurements from three penguin species, and the data set looks like this:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>penguins</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 344 × 8
+   species island    bill_length_mm bill_depth_mm flipper_length_mm body_mass_g sex     year
+   &lt;fct&gt;   &lt;fct&gt;              &lt;dbl&gt;         &lt;dbl&gt;             &lt;int&gt;       &lt;int&gt; &lt;fct&gt;  &lt;int&gt;
+ 1 Adelie  Torgersen           39.1          18.7               181        3750 male    2007
+ 2 Adelie  Torgersen           39.5          17.4               186        3800 female  2007
+ 3 Adelie  Torgersen           40.3          18                 195        3250 female  2007
+ 4 Adelie  Torgersen           NA            NA                  NA          NA &lt;NA&gt;    2007
+ 5 Adelie  Torgersen           36.7          19.3               193        3450 female  2007
+ 6 Adelie  Torgersen           39.3          20.6               190        3650 male    2007
+ 7 Adelie  Torgersen           38.9          17.8               181        3625 female  2007
+ 8 Adelie  Torgersen           39.2          19.6               195        4675 male    2007
+ 9 Adelie  Torgersen           34.1          18.1               193        3475 &lt;NA&gt;    2007
+10 Adelie  Torgersen           42            20.2               190        4250 &lt;NA&gt;    2007
+# ℹ 334 more rows</code></pre>
+</div>
+</div>
+<p>To illustrate the basic usage of the table1 package, I’ll create a table that provides descriptive statistics for the <code>bill_length_mm</code> and <code>island</code> variables, computed separately by each <code>species</code> represented in the data set. We can do this with very little difficulty by passing a one-sided formula to the <code>table1()</code> function. The formula we want looks like this:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="sc">~</span> island <span class="sc">+</span> bill_length_mm <span class="sc">|</span> species</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>On the left we have the two variables that contain the measurements we want to describe (<code>bill_length_mm</code> and <code>island</code>), and on the right we have the stratification variable that supplies the grouping (<code>species</code>). When calling the <code>table1()</code> function, all we have to do is pass this formula and the data frame itself:<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a> <a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a></p>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">table1</span>(<span class="sc">~</span> island <span class="sc">+</span> bill_length_mm <span class="sc">|</span> species, penguins)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="Rtable1">
+<table class="Rtable1 table" data-quarto-postprocess="true">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th class="rowlabel firstrow lastrow" data-quarto-table-cell-role="th"></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Adelie<br>
+<span class="stratn">(N=152)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Chinstrap<br>
+<span class="stratn">(N=68)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Gentoo<br>
+<span class="stratn">(N=124)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Overall<br>
+<span class="stratn">(N=344)</span></span></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td class="rowlabel firstrow">island</td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+</tr>
+<tr class="even">
+<td class="rowlabel">Biscoe</td>
+<td>44 (28.9%)</td>
+<td>0 (0%)</td>
+<td>124 (100%)</td>
+<td>168 (48.8%)</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel">Dream</td>
+<td>56 (36.8%)</td>
+<td>68 (100%)</td>
+<td>0 (0%)</td>
+<td>124 (36.0%)</td>
+</tr>
+<tr class="even">
+<td class="rowlabel lastrow">Torgersen</td>
+<td class="lastrow">52 (34.2%)</td>
+<td class="lastrow">0 (0%)</td>
+<td class="lastrow">0 (0%)</td>
+<td class="lastrow">52 (15.1%)</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel firstrow">bill_length_mm</td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+</tr>
+<tr class="even">
+<td class="rowlabel">Mean (SD)</td>
+<td>38.8 (2.66)</td>
+<td>48.8 (3.34)</td>
+<td>47.5 (3.08)</td>
+<td>43.9 (5.46)</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel">Median [Min, Max]</td>
+<td>38.8 [32.1, 46.0]</td>
+<td>49.6 [40.9, 58.0]</td>
+<td>47.3 [40.9, 59.6]</td>
+<td>44.5 [32.1, 59.6]</td>
+</tr>
+<tr class="even">
+<td class="rowlabel lastrow">Missing</td>
+<td class="lastrow">1 (0.7%)</td>
+<td class="lastrow">0 (0%)</td>
+<td class="lastrow">1 (0.8%)</td>
+<td class="lastrow">2 (0.6%)</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+<p><br></p>
+<p>The output here is a table showing frequency counts for the discrete variable (<code>island</code>) and some standard summary statistics for the continuous variable (<code>bill_length_mm</code>). This table isn’t perfect but it’s surprisingly good given how little effort I had to put in when creating it, and I suspect this ease-of-use factor is the main reason why this package gets used so much in my workplace. Like everything in life though, the devil is in the details, and if you want to make the most of the package it’s helpful to dive into those details to get a good sense of what the package can (and cannot) do.</p>
+</section>
+<section id="applying-labels" class="level2">
+<h2 class="anchored" data-anchor-id="applying-labels">Applying labels</h2>
+<p>The table I produced above immediately illustrates the first problem a data analyst has to grapple with when using the table1 package: variable labels. In most respects this “off the shelf” table is pretty good: it’s almost good enough to use. But there’s one big eyesore: the raw variable names <code>island</code> and <code>bill_length_mm</code> appear as row labels in the output. These are both excellent variable names for programming, but they’re not very nice when exposed in a table. To fix this, we can use the <code>label()</code> function supplied by the table1 package to associate each of these variables with a pretty, human-readable label:<a href="#fn5" class="footnote-ref" id="fnref5" role="doc-noteref"><sup>5</sup></a></p>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(penguins<span class="sc">$</span>island) <span class="ot">&lt;-</span> <span class="st">"Island"</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(penguins<span class="sc">$</span>bill_length_mm) <span class="ot">&lt;-</span> <span class="st">"Bill Length (mm)"</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="fu">table1</span>(<span class="sc">~</span> island <span class="sc">+</span> bill_length_mm <span class="sc">|</span> species, penguins)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="Rtable1">
+<table class="Rtable1 table" data-quarto-postprocess="true">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th class="rowlabel firstrow lastrow" data-quarto-table-cell-role="th"></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Adelie<br>
+<span class="stratn">(N=152)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Chinstrap<br>
+<span class="stratn">(N=68)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Gentoo<br>
+<span class="stratn">(N=124)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Overall<br>
+<span class="stratn">(N=344)</span></span></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td class="rowlabel firstrow">Island</td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+</tr>
+<tr class="even">
+<td class="rowlabel">Biscoe</td>
+<td>44 (28.9%)</td>
+<td>0 (0%)</td>
+<td>124 (100%)</td>
+<td>168 (48.8%)</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel">Dream</td>
+<td>56 (36.8%)</td>
+<td>68 (100%)</td>
+<td>0 (0%)</td>
+<td>124 (36.0%)</td>
+</tr>
+<tr class="even">
+<td class="rowlabel lastrow">Torgersen</td>
+<td class="lastrow">52 (34.2%)</td>
+<td class="lastrow">0 (0%)</td>
+<td class="lastrow">0 (0%)</td>
+<td class="lastrow">52 (15.1%)</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel firstrow">Bill Length (mm)</td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+</tr>
+<tr class="even">
+<td class="rowlabel">Mean (SD)</td>
+<td>38.8 (2.66)</td>
+<td>48.8 (3.34)</td>
+<td>47.5 (3.08)</td>
+<td>43.9 (5.46)</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel">Median [Min, Max]</td>
+<td>38.8 [32.1, 46.0]</td>
+<td>49.6 [40.9, 58.0]</td>
+<td>47.3 [40.9, 59.6]</td>
+<td>44.5 [32.1, 59.6]</td>
+</tr>
+<tr class="even">
+<td class="rowlabel lastrow">Missing</td>
+<td class="lastrow">1 (0.7%)</td>
+<td class="lastrow">0 (0%)</td>
+<td class="lastrow">1 (0.8%)</td>
+<td class="lastrow">2 (0.6%)</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+<p><br></p>
+<p>To understand what’s really going on here, it’s helpful to recognise that the <code>label()</code> function is <em>purely</em> a convenience function. All it’s really doing is setting the “label” metadata attribute for the relevant object. If you really wanted to, you could do exactly the same thing in base R via the <code>attr()</code> function:</p>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">attr</span>(penguins<span class="sc">$</span>bill_depth_mm, <span class="st">"label"</span>) <span class="ot">&lt;-</span> <span class="st">"Bill Depth (mm)"</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="fu">table1</span>(<span class="sc">~</span> bill_depth_mm <span class="sc">|</span> species, penguins)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="Rtable1">
+<table class="Rtable1 table" data-quarto-postprocess="true">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th class="rowlabel firstrow lastrow" data-quarto-table-cell-role="th"></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Adelie<br>
+<span class="stratn">(N=152)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Chinstrap<br>
+<span class="stratn">(N=68)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Gentoo<br>
+<span class="stratn">(N=124)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Overall<br>
+<span class="stratn">(N=344)</span></span></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td class="rowlabel firstrow">Bill Depth (mm)</td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+</tr>
+<tr class="even">
+<td class="rowlabel">Mean (SD)</td>
+<td>18.3 (1.22)</td>
+<td>18.4 (1.14)</td>
+<td>15.0 (0.981)</td>
+<td>17.2 (1.97)</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel">Median [Min, Max]</td>
+<td>18.4 [15.5, 21.5]</td>
+<td>18.5 [16.4, 20.8]</td>
+<td>15.0 [13.1, 17.3]</td>
+<td>17.3 [13.1, 21.5]</td>
+</tr>
+<tr class="even">
+<td class="rowlabel lastrow">Missing</td>
+<td class="lastrow">1 (0.7%)</td>
+<td class="lastrow">0 (0%)</td>
+<td class="lastrow">1 (0.8%)</td>
+<td class="lastrow">2 (0.6%)</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+<p><br></p>
+<p>That being said, I am slowly coming to like the <code>setLabel()</code> convenience function that table1 provides rather than using <code>label()</code> or <code>attr()</code>. The <code>setLabel()</code> function has the nice property that it returns the labelled object itself and so it plays very nicely with a dplyr workflow. If you have a data frame with several variables that need to be labelled, you can use <code>mutate()</code> and <code>setLabel()</code> to apply all the labels in one step, like this:</p>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>penguins <span class="ot">&lt;-</span> penguins <span class="sc">|&gt;</span> </span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">flipper_length_mm =</span> <span class="fu">setLabel</span>(flipper_length_mm, <span class="st">"Flipper Length (mm)"</span>),</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">body_mass_g =</span> <span class="fu">setLabel</span>(body_mass_g, <span class="st">"Body Mass (g)"</span>),</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">sex =</span> <span class="fu">setLabel</span>(sex, <span class="st">"Sex"</span>),</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">year =</span> <span class="fu">setLabel</span>(year, <span class="st">"Year"</span>)</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="fu">table1</span>(<span class="sc">~</span> flipper_length_mm <span class="sc">+</span> body_mass_g <span class="sc">+</span> sex <span class="sc">+</span> year <span class="sc">|</span> species, penguins)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="Rtable1">
+<table class="Rtable1 table" data-quarto-postprocess="true">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th class="rowlabel firstrow lastrow" data-quarto-table-cell-role="th"></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Adelie<br>
+<span class="stratn">(N=152)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Chinstrap<br>
+<span class="stratn">(N=68)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Gentoo<br>
+<span class="stratn">(N=124)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Overall<br>
+<span class="stratn">(N=344)</span></span></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td class="rowlabel firstrow">Flipper Length (mm)</td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+</tr>
+<tr class="even">
+<td class="rowlabel">Mean (SD)</td>
+<td>190 (6.54)</td>
+<td>196 (7.13)</td>
+<td>217 (6.48)</td>
+<td>201 (14.1)</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel">Median [Min, Max]</td>
+<td>190 [172, 210]</td>
+<td>196 [178, 212]</td>
+<td>216 [203, 231]</td>
+<td>197 [172, 231]</td>
+</tr>
+<tr class="even">
+<td class="rowlabel lastrow">Missing</td>
+<td class="lastrow">1 (0.7%)</td>
+<td class="lastrow">0 (0%)</td>
+<td class="lastrow">1 (0.8%)</td>
+<td class="lastrow">2 (0.6%)</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel firstrow">Body Mass (g)</td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+</tr>
+<tr class="even">
+<td class="rowlabel">Mean (SD)</td>
+<td>3700 (459)</td>
+<td>3730 (384)</td>
+<td>5080 (504)</td>
+<td>4200 (802)</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel">Median [Min, Max]</td>
+<td>3700 [2850, 4780]</td>
+<td>3700 [2700, 4800]</td>
+<td>5000 [3950, 6300]</td>
+<td>4050 [2700, 6300]</td>
+</tr>
+<tr class="even">
+<td class="rowlabel lastrow">Missing</td>
+<td class="lastrow">1 (0.7%)</td>
+<td class="lastrow">0 (0%)</td>
+<td class="lastrow">1 (0.8%)</td>
+<td class="lastrow">2 (0.6%)</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel firstrow">Sex</td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+</tr>
+<tr class="even">
+<td class="rowlabel">female</td>
+<td>73 (48.0%)</td>
+<td>34 (50.0%)</td>
+<td>58 (46.8%)</td>
+<td>165 (48.0%)</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel">male</td>
+<td>73 (48.0%)</td>
+<td>34 (50.0%)</td>
+<td>61 (49.2%)</td>
+<td>168 (48.8%)</td>
+</tr>
+<tr class="even">
+<td class="rowlabel lastrow">Missing</td>
+<td class="lastrow">6 (3.9%)</td>
+<td class="lastrow">0 (0%)</td>
+<td class="lastrow">5 (4.0%)</td>
+<td class="lastrow">11 (3.2%)</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel firstrow">Year</td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+</tr>
+<tr class="even">
+<td class="rowlabel">Mean (SD)</td>
+<td>2010 (0.822)</td>
+<td>2010 (0.863)</td>
+<td>2010 (0.792)</td>
+<td>2010 (0.818)</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel lastrow">Median [Min, Max]</td>
+<td class="lastrow">2010 [2010, 2010]</td>
+<td class="lastrow">2010 [2010, 2010]</td>
+<td class="lastrow">2010 [2010, 2010]</td>
+<td class="lastrow">2010 [2010, 2010]</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+<p><br></p>
+<p><img src="my-medicine.jpg" class="img-fluid"></p>
+</section>
+<section id="customing-cell-content" class="level2 page-columns page-full">
+<h2 class="anchored" data-anchor-id="customing-cell-content">Customing cell content</h2>
+<blockquote class="blockquote">
+<p>Somebody mixed my medicine <br> Somebody’s in my head again <br> Well, I’ll drink what you leak and I’ll smoke what you sigh <br> See across the room with a look in your eye <br> &nbsp; &nbsp; –<a href="https://www.youtube.com/watch?v=cJMSDlWlfMM"><em>The Pretty Reckless</em></a></p>
+</blockquote>
+<p>One thing I really like about the table1 package is that it supplies very sensible defaults for tables of descriptive statistics: continuous variables are summarised not only via means and standard deviations, but you also get the medians, ranges, and missing data summaries. Categorical variables are summarised with counts and percentages, and again you get a missing data summary. Very often this is exactly the summary you want, and no customisation at all is required.</p>
+<p>Inevitably, though, every data analyst comes across as situation that requires a different collection of summary statistics. At that point, you need to dive a little deeper and understand the syntax table1 uses to modify the summaries that it produces.</p>
+<section id="using-abbreviated-codes" class="level3 page-columns page-full">
+<h3 class="anchored" data-anchor-id="using-abbreviated-codes">Using abbreviated codes</h3>
+<p>The table1 package has a very practical and flexible mechanism for customising the descriptive statistics that it produces, but one that needs a bit of unpacking to understand. If you really want to do so, you can write an entire “rendering” function from scratch that affords very fine grained control over the output (more on that later!) but most of the time you don’t actually want to go to all that effort. In most situations, all you <em>really</em> want to do is swap out one widely-used descriptive statistic for a different widely-used descriptive statistic. It would be no fun for the analyst if they had to write an entire rendering function from scratch just to switch from reporting arithmetic means to reporting geometric means. To that end, table1 provides a compact syntax using “abbreviated codes” that covers a lot of common use cases.</p>
+<p>As a concrete example, let’s consider the task I described above: reporting geometric means and standard deviations. This is a very common task in pharmacometrics because a lot of observed data are approximately log-normal in distribution, and in my everyday work I find I have to do this a lot. Luckily for me, the table1 package recognises the strings <code>"GMEAN"</code> and <code>"GSD"</code> as abbreviated codes, and internally will replace them with function calls that compute the geometric mean and geometric standard deviation. To define a custom render that produces these two statistics, all I have to do is define a named vector like this one:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>render_geometric <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Geometric mean"</span> <span class="ot">=</span> <span class="st">"GMEAN"</span>, </span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Geometric SD"</span> <span class="ot">=</span> <span class="st">"GSD"</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>In this compressed syntax, the names define the row labels that will be printed in the output table (e.g., <code>"Geometric mean"</code> becomes a row label), and the values are interpreted using the abbreviated code (e.g., the <code>"GMEAN"</code> string is replaced by the value of the geometric mean). To apply this custom render to my table only to the continuous variables in the summary table, all I have to do is include <code>render.continuous = render_geometric</code> in the call to <code>table1()</code>:</p>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">table1</span>(</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">x =</span> <span class="sc">~</span> flipper_length_mm <span class="sc">+</span> body_mass_g <span class="sc">+</span> sex <span class="sc">+</span> year <span class="sc">|</span> species, </span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> penguins, </span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">render.continuous =</span> render_geometric</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="Rtable1">
+<table class="Rtable1 table" data-quarto-postprocess="true">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th class="rowlabel firstrow lastrow" data-quarto-table-cell-role="th"></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Adelie<br>
+<span class="stratn">(N=152)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Chinstrap<br>
+<span class="stratn">(N=68)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Gentoo<br>
+<span class="stratn">(N=124)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Overall<br>
+<span class="stratn">(N=344)</span></span></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td class="rowlabel firstrow">Flipper Length (mm)</td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+</tr>
+<tr class="even">
+<td class="rowlabel">Geometric mean</td>
+<td>190</td>
+<td>196</td>
+<td>217</td>
+<td>200</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel">Geometric SD</td>
+<td>1.04</td>
+<td>1.04</td>
+<td>1.03</td>
+<td>1.07</td>
+</tr>
+<tr class="even">
+<td class="rowlabel lastrow">Missing</td>
+<td class="lastrow">1 (0.7%)</td>
+<td class="lastrow">0 (0%)</td>
+<td class="lastrow">1 (0.8%)</td>
+<td class="lastrow">2 (0.6%)</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel firstrow">Body Mass (g)</td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+</tr>
+<tr class="even">
+<td class="rowlabel">Geometric mean</td>
+<td>3670</td>
+<td>3710</td>
+<td>5050</td>
+<td>4130</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel">Geometric SD</td>
+<td>1.13</td>
+<td>1.11</td>
+<td>1.11</td>
+<td>1.21</td>
+</tr>
+<tr class="even">
+<td class="rowlabel lastrow">Missing</td>
+<td class="lastrow">1 (0.7%)</td>
+<td class="lastrow">0 (0%)</td>
+<td class="lastrow">1 (0.8%)</td>
+<td class="lastrow">2 (0.6%)</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel firstrow">Sex</td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+</tr>
+<tr class="even">
+<td class="rowlabel">female</td>
+<td>73 (48.0%)</td>
+<td>34 (50.0%)</td>
+<td>58 (46.8%)</td>
+<td>165 (48.0%)</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel">male</td>
+<td>73 (48.0%)</td>
+<td>34 (50.0%)</td>
+<td>61 (49.2%)</td>
+<td>168 (48.8%)</td>
+</tr>
+<tr class="even">
+<td class="rowlabel lastrow">Missing</td>
+<td class="lastrow">6 (3.9%)</td>
+<td class="lastrow">0 (0%)</td>
+<td class="lastrow">5 (4.0%)</td>
+<td class="lastrow">11 (3.2%)</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel firstrow">Year</td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+</tr>
+<tr class="even">
+<td class="rowlabel">Geometric mean</td>
+<td>2010</td>
+<td>2010</td>
+<td>2010</td>
+<td>2010</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel lastrow">Geometric SD</td>
+<td class="lastrow">1.00</td>
+<td class="lastrow">1.00</td>
+<td class="lastrow">1.00</td>
+<td class="lastrow">1.00</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+<p><br></p>
+<p>As you can see from the output, the custom render has been applied to the two continuous variables <code>flipper_length_mm</code> and <code>body_mass_g</code> but not the categorical variables <code>sex</code> and <code>year</code>, just as you’d expect given that the argument I specified is called <code>render.continuous</code>. However, there are two features that might be a little surprising:</p>
+<ul>
+<li>The missing data summary for the continuous variables is unaffected</li>
+<li>If you look at the documentation for <code>table1()</code> you’ll notice it has a <code>render</code> argument but not a <code>render.continuous</code> argument</li>
+</ul>
+<p>I’ll unpack both of those things later in the blog post, but I wanted to mention them now because these things confused me a little when I first started using table1. For now, let’s just accept that it works and move on.</p>
+<p>The table1 package comes equipped with quite a few of these abbreviated codes, which makes life considerably easier. For instance if we needed to compute the 10th, 50th, and 90th percentiles of each continuous variable, we could use the <code>"q10"</code>, <code>"q50"</code>, and <code>"q90"</code> keywords, like so:</p>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">table1</span>(</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">x =</span> <span class="sc">~</span> flipper_length_mm <span class="sc">+</span> body_mass_g <span class="sc">+</span> sex <span class="sc">|</span> species, </span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> penguins, </span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">render.continuous =</span> <span class="fu">c</span>(</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">"10th percentile"</span> <span class="ot">=</span> <span class="st">"q10"</span>, </span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">"50th percentile"</span> <span class="ot">=</span> <span class="st">"q50"</span>,</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">"90th percentile"</span> <span class="ot">=</span> <span class="st">"q90"</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="Rtable1">
+<table class="Rtable1 table" data-quarto-postprocess="true">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th class="rowlabel firstrow lastrow" data-quarto-table-cell-role="th"></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Adelie<br>
+<span class="stratn">(N=152)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Chinstrap<br>
+<span class="stratn">(N=68)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Gentoo<br>
+<span class="stratn">(N=124)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Overall<br>
+<span class="stratn">(N=344)</span></span></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td class="rowlabel firstrow">Flipper Length (mm)</td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+</tr>
+<tr class="even">
+<td class="rowlabel">10th percentile</td>
+<td>181</td>
+<td>187</td>
+<td>209</td>
+<td>185</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel">50th percentile</td>
+<td>190</td>
+<td>196</td>
+<td>216</td>
+<td>197</td>
+</tr>
+<tr class="even">
+<td class="rowlabel">90th percentile</td>
+<td>198</td>
+<td>205</td>
+<td>228</td>
+<td>221</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel lastrow">Missing</td>
+<td class="lastrow">1 (0.7%)</td>
+<td class="lastrow">0 (0%)</td>
+<td class="lastrow">1 (0.8%)</td>
+<td class="lastrow">2 (0.6%)</td>
+</tr>
+<tr class="even">
+<td class="rowlabel firstrow">Body Mass (g)</td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+</tr>
+<tr class="odd">
+<td class="rowlabel">10th percentile</td>
+<td>3150</td>
+<td>3300</td>
+<td>4400</td>
+<td>3300</td>
+</tr>
+<tr class="even">
+<td class="rowlabel">50th percentile</td>
+<td>3700</td>
+<td>3700</td>
+<td>5000</td>
+<td>4050</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel">90th percentile</td>
+<td>4300</td>
+<td>4200</td>
+<td>5700</td>
+<td>5400</td>
+</tr>
+<tr class="even">
+<td class="rowlabel lastrow">Missing</td>
+<td class="lastrow">1 (0.7%)</td>
+<td class="lastrow">0 (0%)</td>
+<td class="lastrow">1 (0.8%)</td>
+<td class="lastrow">2 (0.6%)</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel firstrow">Sex</td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+</tr>
+<tr class="even">
+<td class="rowlabel">female</td>
+<td>73 (48.0%)</td>
+<td>34 (50.0%)</td>
+<td>58 (46.8%)</td>
+<td>165 (48.0%)</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel">male</td>
+<td>73 (48.0%)</td>
+<td>34 (50.0%)</td>
+<td>61 (49.2%)</td>
+<td>168 (48.8%)</td>
+</tr>
+<tr class="even">
+<td class="rowlabel lastrow">Missing</td>
+<td class="lastrow">6 (3.9%)</td>
+<td class="lastrow">0 (0%)</td>
+<td class="lastrow">5 (4.0%)</td>
+<td class="lastrow">11 (3.2%)</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+<p><br></p>
+<p>Very handy.</p>
+
+<div class="no-row-height column-margin column-container"><div class="">
+<p>The quote from “My medicine” at the start of this section isn’t accidental. The abbreviated code syntax in table1 is a powerful tool, but when I started reading table1 code without understanding the keyword matching involved it did feel a little like “someone’s in my head again”, substituting code where a string should be</p>
+</div></div></section>
+<section id="supported-aliases" class="level3">
+<h3 class="anchored" data-anchor-id="supported-aliases">Supported aliases</h3>
+<p>The natural question you might have as the user of the package is, of course, what abbreviated codes does the table1 package understand? As documented <a href="https://benjaminrich.github.io/table1/vignettes/table1-examples.html#using-abbreviated-code-to-specify-a-custom-renderer">here</a> in the package vignette, you can find a complete listing by playing around with the <code>stats.default()</code> function.<a href="#fn6" class="footnote-ref" id="fnref6" role="doc-noteref"><sup>6</sup></a> So let’s do that. For continuous variables, this is the list of supported aliases:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>continuous <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">10</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(<span class="fu">stats.default</span>(continuous)) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] "N"      "NMISS"  "SUM"    "MEAN"   "SD"     "CV"     "GMEAN"  "GSD"    "GCV"   
+[10] "MEDIAN" "MIN"    "MAX"    "q01"    "q02.5"  "q05"    "q10"    "q25"    "q50"   
+[19] "q75"    "q90"    "q95"    "q97.5"  "q99"    "Q1"     "Q2"     "Q3"     "IQR"   
+[28] "T1"     "T2"    </code></pre>
+</div>
+</div>
+<p>Here’s what each of these mean:<a href="#fn7" class="footnote-ref" id="fnref7" role="doc-noteref"><sup>7</sup></a></p>
+<ul>
+<li><code>"N"</code>, <code>"NMISS"</code>: these compute the number of non-missing observations and number of missing observations respectively</li>
+<li><code>"SUM"</code>, <code>"MEAN"</code>, <code>"SD"</code>, <code>"MEDIAN"</code>, <code>"MIN"</code>, <code>"MAX"</code>: these all correspond to to the functions of the same name, e.g., <code>"SUM"</code> produces a call to <code>sum()</code>, with missing values removed</li>
+<li><code>"CV"</code>: the coefficient of variation, i.e., 100 times the standard deviation divided by the absolute value of the mean</li>
+<li><code>"GMEAN"</code>, <code>"GSD"</code>, <code>"GCV"</code>: the geometric mean, geometric standard deviation, and geometric coefficient of variation</li>
+<li><code>q01</code>, <code>q02.5</code>, <code>"q05"</code>, <code>"q10"</code>, <code>"q25"</code>, <code>"q50"</code>, <code>"q75"</code>, <code>"q90"</code>, <code>"q95"</code>, <code>"q97.5"</code>, <code>"q99"</code>: these are understood to refer to specific quantiles, e.g., <code>"q25"</code> is translated as a function call that computes the 25th percentile</li>
+<li><code>"Q1"</code>, <code>"Q2"</code> <code>"Q3"</code>: these are used to compute quartiles (25th, 50th, and 75th percentiles)</li>
+<li><code>"T1"</code>, <code>"T2"</code>: these are used to compute tertiles (33rd and 67th percentiles)</li>
+<li><code>"IQR"</code>: this computes the interquartile range</li>
+</ul>
+<p>In all cases except for <code>"NMISS"</code>, the relevant statistics are computed after removing missing values. Turning now to categorical variables, we can again use the <code>stats.default()</code> function to find the supported abbreviated codes:<a href="#fn8" class="footnote-ref" id="fnref8" role="doc-noteref"><sup>8</sup></a></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>categorical <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"a"</span>, <span class="st">"b"</span>, <span class="st">"c"</span>)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(<span class="fu">stats.default</span>(categorical)[[<span class="dv">1</span>]])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "FREQ"    "PCT"     "PCTnoNA" "NMISS"  </code></pre>
+</div>
+</div>
+<p>The interpretation of these is as follows:</p>
+<ul>
+<li><code>"FREQ"</code>: the frequency count for a category</li>
+<li><code>"PCT"</code>: the percent relative frequency, with missing values included in the denominator</li>
+<li><code>"PCTnoNA"</code>: the percent relative frequency, after missing values are removed</li>
+<li><code>"NMISS"</code>: the number of missing values, as before</li>
+</ul>
+<p>The nice thing about these abbreviated codes is that they cover a surprisingly wide variety of use cases. More often than not I’ve found that the descriptive statistics I need can be specified using this mechanism. From the analyst perspective this is great: you really don’t want to waste time writing more code than you have to, so if you can specify your table of descriptive statistics without bothering to write a function, you’re doing well.</p>
+<p><img src="hit-me-like-a-man.jpg" class="img-fluid"></p>
+</section>
+<section id="writing-render-functions" class="level3 page-columns page-full">
+<h3 class="anchored" data-anchor-id="writing-render-functions">Writing render functions</h3>
+<blockquote class="blockquote">
+<p>I am strong, love is evil <br> It’s a version of perversion that is only for the lucky people <br> Take your time and do with me what you will <br> I won’t mind, you know I’m ill, you know I’m ill <br> So hit me like a man <br> And love me like a woman <br> &nbsp; &nbsp; – <em><a href="https://www.youtube.com/watch?v=Z6ZtYZiHong">The Pretty Reckless</a></em></p>
+</blockquote>
+
+<div class="no-row-height column-margin column-container"><div class="">
+<p>Probably no surprise to anyone who knows me that “Hit me like a man” is my favourite Pretty Reckless song. But also appropriate to how I feel about the render function syntax. The functionality is powerful once you know how to use it, but it’s also simple and lovely</p>
+</div></div><p>Alas life is not always kind to us, and it’s not uncommon to run into situations where your table of descriptive statistics requires the computation of something that doesn’t have an abbreviated code in table1. When that happens, the only recourse is for the user to write a rendering function that takes the data as input and returns a vector of strings to be printed into the table. As an example, suppose you have a need to report <a href="https://en.wikipedia.org/wiki/Winsorizing">Winsorised</a> summary statistics for your continuous variables:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>render_winsorized <span class="ot">&lt;-</span> <span class="cf">function</span>(x, <span class="at">cutoff =</span> .<span class="dv">05</span>, ...) {</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  lo <span class="ot">&lt;-</span> <span class="fu">quantile</span>(x, cutoff, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  hi <span class="ot">&lt;-</span> <span class="fu">quantile</span>(x, <span class="dv">1</span> <span class="sc">-</span> cutoff, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  x[x <span class="sc">&lt;</span> lo] <span class="ot">&lt;-</span> lo</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>  x[x <span class="sc">&gt;</span> hi] <span class="ot">&lt;-</span> hi</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>  strs <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">""</span>,</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Winsorized mean"</span> <span class="ot">=</span> <span class="fu">sprintf</span>(<span class="st">"%1.2f"</span>, <span class="fu">mean</span>(x, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)),</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Winsorized SD"</span> <span class="ot">=</span> <span class="fu">sprintf</span>(<span class="st">"%1.2f"</span>, <span class="fu">sd</span>(x, <span class="at">na.rm =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(strs)</span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Notice that this <code>render_winsorized()</code> function returns a named vector of strings that follows the same convention that we followed with the simpler <code>render_geometric</code> example earlier: the names of the output string become the row labels, and the values are printed into the table itself. Along similar lines, we can define a rendering function to be applied to the categorical variables in the data. Here’s a very simple one that reports only the absolute frequencies for each category:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>render_counts <span class="ot">&lt;-</span> <span class="cf">function</span>(x, ...) <span class="fu">c</span>(<span class="st">""</span>, <span class="fu">table</span>(stringr<span class="sc">::</span><span class="fu">str_to_title</span>(x)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Having defined our render functions, we produce the desired table by passing <code>render_winsorized()</code> as the handler for continuous variables and <code>render_counts()</code> as the handler for categorical variables:</p>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">table1</span>(</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">x =</span> <span class="sc">~</span> flipper_length_mm <span class="sc">+</span> body_mass_g <span class="sc">+</span> sex <span class="sc">|</span> species, </span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> penguins, </span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">render.continuous =</span> render_winsorized,</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">render.categorical =</span> render_counts</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="Rtable1">
+<table class="Rtable1 table" data-quarto-postprocess="true">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th class="rowlabel firstrow lastrow" data-quarto-table-cell-role="th"></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Adelie<br>
+<span class="stratn">(N=152)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Chinstrap<br>
+<span class="stratn">(N=68)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Gentoo<br>
+<span class="stratn">(N=124)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Overall<br>
+<span class="stratn">(N=344)</span></span></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td class="rowlabel firstrow">Flipper Length (mm)</td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+</tr>
+<tr class="even">
+<td class="rowlabel">Winsorized mean</td>
+<td>189.91</td>
+<td>195.99</td>
+<td>217.23</td>
+<td>200.85</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel">Winsorized SD</td>
+<td>5.75</td>
+<td>6.43</td>
+<td>6.38</td>
+<td>13.52</td>
+</tr>
+<tr class="even">
+<td class="rowlabel lastrow">Missing</td>
+<td class="lastrow">1 (0.7%)</td>
+<td class="lastrow">0 (0%)</td>
+<td class="lastrow">1 (0.8%)</td>
+<td class="lastrow">2 (0.6%)</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel firstrow">Body Mass (g)</td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+</tr>
+<tr class="even">
+<td class="rowlabel">Winsorized mean</td>
+<td>3696.52</td>
+<td>3738.68</td>
+<td>5074.80</td>
+<td>4200.80</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel">Winsorized SD</td>
+<td>432.98</td>
+<td>336.76</td>
+<td>471.74</td>
+<td>765.82</td>
+</tr>
+<tr class="even">
+<td class="rowlabel lastrow">Missing</td>
+<td class="lastrow">1 (0.7%)</td>
+<td class="lastrow">0 (0%)</td>
+<td class="lastrow">1 (0.8%)</td>
+<td class="lastrow">2 (0.6%)</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel firstrow">Sex</td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+</tr>
+<tr class="even">
+<td class="rowlabel">Female</td>
+<td>73</td>
+<td>34</td>
+<td>58</td>
+<td>165</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel">Male</td>
+<td>73</td>
+<td>34</td>
+<td>61</td>
+<td>168</td>
+</tr>
+<tr class="even">
+<td class="rowlabel lastrow">Missing</td>
+<td class="lastrow">6 (3.9%)</td>
+<td class="lastrow">0 (0%)</td>
+<td class="lastrow">5 (4.0%)</td>
+<td class="lastrow">11 (3.2%)</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+<p><br></p>
+<p>Our table is mostly done, but we still don’t have a method for adjusting how the missing data summaries are produced. To do that we need to define one more rendering function and pass it as the <code>render.missing</code> argument:</p>
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>render_missing <span class="ot">&lt;-</span> <span class="cf">function</span>(x, ...) <span class="fu">c</span>(<span class="st">"Missing"</span> <span class="ot">=</span> <span class="fu">sum</span>(<span class="fu">is.na</span>(x)))</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="fu">table1</span>(</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">x =</span> <span class="sc">~</span> flipper_length_mm <span class="sc">+</span> body_mass_g <span class="sc">+</span> sex <span class="sc">|</span> species, </span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> penguins, </span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">render.continuous =</span> render_winsorized,</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">render.categorical =</span> render_counts,</span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">render.missing =</span> render_missing</span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="Rtable1">
+<table class="Rtable1 table" data-quarto-postprocess="true">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th class="rowlabel firstrow lastrow" data-quarto-table-cell-role="th"></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Adelie<br>
+<span class="stratn">(N=152)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Chinstrap<br>
+<span class="stratn">(N=68)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Gentoo<br>
+<span class="stratn">(N=124)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Overall<br>
+<span class="stratn">(N=344)</span></span></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td class="rowlabel firstrow">Flipper Length (mm)</td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+</tr>
+<tr class="even">
+<td class="rowlabel">Winsorized mean</td>
+<td>189.91</td>
+<td>195.99</td>
+<td>217.23</td>
+<td>200.85</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel">Winsorized SD</td>
+<td>5.75</td>
+<td>6.43</td>
+<td>6.38</td>
+<td>13.52</td>
+</tr>
+<tr class="even">
+<td class="rowlabel lastrow">Missing</td>
+<td class="lastrow">1</td>
+<td class="lastrow">0</td>
+<td class="lastrow">1</td>
+<td class="lastrow">2</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel firstrow">Body Mass (g)</td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+</tr>
+<tr class="even">
+<td class="rowlabel">Winsorized mean</td>
+<td>3696.52</td>
+<td>3738.68</td>
+<td>5074.80</td>
+<td>4200.80</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel">Winsorized SD</td>
+<td>432.98</td>
+<td>336.76</td>
+<td>471.74</td>
+<td>765.82</td>
+</tr>
+<tr class="even">
+<td class="rowlabel lastrow">Missing</td>
+<td class="lastrow">1</td>
+<td class="lastrow">0</td>
+<td class="lastrow">1</td>
+<td class="lastrow">2</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel firstrow">Sex</td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+</tr>
+<tr class="even">
+<td class="rowlabel">Female</td>
+<td>73</td>
+<td>34</td>
+<td>58</td>
+<td>165</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel">Male</td>
+<td>73</td>
+<td>34</td>
+<td>61</td>
+<td>168</td>
+</tr>
+<tr class="even">
+<td class="rowlabel lastrow">Missing</td>
+<td class="lastrow">6</td>
+<td class="lastrow">0</td>
+<td class="lastrow">5</td>
+<td class="lastrow">11</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+<p><br></p>
+</section>
+<section id="unpacking-render-functions" class="level3">
+<h3 class="anchored" data-anchor-id="unpacking-render-functions">Unpacking render functions</h3>
+<p>There’s still a bit of a mystery here, because the <code>table1()</code> function doesn’t have arguments <code>render.continuous</code>, <code>render.categorical</code>, or <code>render.missing</code>: instead, it has a <code>render</code> argument. What’s actually going on here is that the default value for <code>render</code> is the <code>render.default()</code> function exported by table1, and <code>render.default()</code> accepts <code>render.continuous</code>, <code>render.categorical</code>, or <code>render.missing</code> as arguments. In other words, what’s happening in the code above is that my custom functions end up being passed to <code>render.default()</code> via the dots.</p>
+<p>There’s nothing to prevent you from bypassing this whole process by writing your own render function that handles <em>all</em> the input variables. For example, here’s a very simple rendering function that counts the number of non-missing observations, and prints it in the same row as the variable name:</p>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>render_n <span class="ot">&lt;-</span> <span class="cf">function</span>(x, ...) <span class="fu">sum</span>(<span class="sc">!</span><span class="fu">is.na</span>(x))</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="fu">table1</span>(</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">x =</span> <span class="sc">~</span> flipper_length_mm <span class="sc">+</span> body_mass_g <span class="sc">+</span> sex <span class="sc">|</span> species, </span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> penguins, </span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">render =</span> render_n</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="Rtable1">
+<table class="Rtable1 table" data-quarto-postprocess="true">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th class="rowlabel firstrow lastrow" data-quarto-table-cell-role="th"></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Adelie<br>
+<span class="stratn">(N=152)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Chinstrap<br>
+<span class="stratn">(N=68)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Gentoo<br>
+<span class="stratn">(N=124)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Overall<br>
+<span class="stratn">(N=344)</span></span></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td class="rowlabel firstrow lastrow">Flipper Length (mm)</td>
+<td class="firstrow lastrow">151</td>
+<td class="firstrow lastrow">68</td>
+<td class="firstrow lastrow">123</td>
+<td class="firstrow lastrow">342</td>
+</tr>
+<tr class="even">
+<td class="rowlabel firstrow lastrow">Body Mass (g)</td>
+<td class="firstrow lastrow">151</td>
+<td class="firstrow lastrow">68</td>
+<td class="firstrow lastrow">123</td>
+<td class="firstrow lastrow">342</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel firstrow lastrow">Sex</td>
+<td class="firstrow lastrow">146</td>
+<td class="firstrow lastrow">68</td>
+<td class="firstrow lastrow">119</td>
+<td class="firstrow lastrow">333</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+<p><br></p>
+<p>I have to confess it took me waaaaay too long to realise that I could do this in table1. True, I don’t often have a need to bypass the <code>render.default()</code> function, but there are definitely times when that’s a handy little bit of functionality. Sigh. Sometimes I’m quite dense.</p>
+<p><img src="follow-me-down.jpg" class="img-fluid"></p>
+</section>
+</section>
+<section id="table-annotations" class="level2 page-columns page-full">
+<h2 class="anchored" data-anchor-id="table-annotations">Table annotations</h2>
+<blockquote class="blockquote">
+<p>Follow me down to the river <br> Drink while the water is clean <br> Follow me down to the river tonight <br> I’ll be down here on my knees <br> &nbsp; &nbsp; –<em><a href="https://www.youtube.com/watch?v=vfwJ-SoYw4U">The Pretty Reckless</a></em></p>
+</blockquote>
+
+<div class="no-row-height column-margin column-container"><div class="">
+<p>Okay I’ll admit it. This lyric isn’t really connected to the text. I mean, the video clip is a collection of annotations showing the lyrics, I guess. But honestly I just like the song</p>
+</div></div><p>Time to switch gears a little. In the previous section I talked about how to customise the statistics that are reported in the table cells. Implicit in this discussion is the fact that a custom render function allows you to customise the row labels associated with each statistic, in exactly the same way that variable labels allow you to customise the variable descriptions that appear in the leftmost column of the table. Taken together, these two mechanisms (render functions and variable labels) give the user a <em>lot</em> of control over what appears in the leftmost column of the table. But what about the header row? How do we customise that in table1?</p>
+<section id="strata-column-labels" class="level3">
+<h3 class="anchored" data-anchor-id="strata-column-labels">Strata column labels</h3>
+<p>To start with, let’s consider the columns that associated with a particular stratum. In the penguins tables I’ve been creating, the strata are defined by the <code>species</code> variable so are three columns that are associated with a specific stratum. By default <code>table1()</code> will add a description for each such column in the header row that contains the category name (e.g., “Gentoo”) and the number of observations that belong to this category. But perhaps we don’t want those sample size numbers? Maybe all we want is the category name. To customise how each stratum is labelled in the header row, the <code>table1()</code> function has an argument called <code>render.strat</code> that takes a function as its value. The strata rendering function takes three arguments: the <code>label</code> is the value in the data that defines that category (e.g., <code>"Gentoo"</code>), <code>n</code> is the number of observations that have been assigned to the category, and <code>transpose</code> is a logical variable indicating whether the table is transposed (more on that later). The output of the function is a string that specifies (as HTML) what should appear in the header row. To illustrate the idea, here’s a very simple stratum rendering function that only prints the category label:</p>
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>render_strat <span class="ot">&lt;-</span> <span class="cf">function</span>(label, n, <span class="at">transpose =</span> <span class="cn">FALSE</span>) {</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sprintf</span>(<span class="st">"&lt;span class='stratlabel'&gt;%s&lt;/span&gt;"</span>, label)</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The only subtlety to this <code>render_strat()</code> function is that it outputs some HTML that wraps the <code>label</code> in an HTML span tag and assigns it to a class that we can (and will) use later on to create some fancy styling using CSS. But I’m getting ahead of myself a little. For now, it’s enough to note that <code>render_strat()</code> creates a very simple label that just prints out the category label. Here it is in action:</p>
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">table1</span>(</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">x =</span> <span class="sc">~</span> flipper_length_mm <span class="sc">+</span> body_mass_g <span class="sc">|</span> species,</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> penguins,</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">render.strat =</span> render_strat</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="Rtable1">
+<table class="Rtable1 table" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th class="rowlabel firstrow lastrow" data-quarto-table-cell-role="th"></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Adelie</span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Chinstrap</span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Gentoo</span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Overall</span></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td class="rowlabel firstrow">Flipper Length (mm)</td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+</tr>
+<tr class="even">
+<td class="rowlabel">Mean (SD)</td>
+<td>190 (6.54)</td>
+<td>196 (7.13)</td>
+<td>217 (6.48)</td>
+<td>201 (14.1)</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel">Median [Min, Max]</td>
+<td>190 [172, 210]</td>
+<td>196 [178, 212]</td>
+<td>216 [203, 231]</td>
+<td>197 [172, 231]</td>
+</tr>
+<tr class="even">
+<td class="rowlabel lastrow">Missing</td>
+<td class="lastrow">1 (0.7%)</td>
+<td class="lastrow">0 (0%)</td>
+<td class="lastrow">1 (0.8%)</td>
+<td class="lastrow">2 (0.6%)</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel firstrow">Body Mass (g)</td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+</tr>
+<tr class="even">
+<td class="rowlabel">Mean (SD)</td>
+<td>3700 (459)</td>
+<td>3730 (384)</td>
+<td>5080 (504)</td>
+<td>4200 (802)</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel">Median [Min, Max]</td>
+<td>3700 [2850, 4780]</td>
+<td>3700 [2700, 4800]</td>
+<td>5000 [3950, 6300]</td>
+<td>4050 [2700, 6300]</td>
+</tr>
+<tr class="even">
+<td class="rowlabel lastrow">Missing</td>
+<td class="lastrow">1 (0.7%)</td>
+<td class="lastrow">0 (0%)</td>
+<td class="lastrow">1 (0.8%)</td>
+<td class="lastrow">2 (0.6%)</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+<p><br></p>
+<p>Indeed it performs as expected: the sample size annotations are gone and we now have very minimalistic labels for each of the three penguin species. So let’s move along.</p>
+</section>
+<section id="other-column-labels" class="level3">
+<h3 class="anchored" data-anchor-id="other-column-labels">Other column labels</h3>
+<p>There are two other columns that typically appear in a table1 output object: on the left we have column that contains the row labels, and on the right we have a table that contains the descriptive statistics for the “overall” data set where we collapse across all strata. By default, the row label column on the left has no label and the aggregated column on the right uses that label “Overall”. Both of these are customisable in the call to <code>table1()</code>, using the <code>overall</code> and <code>rowlabelhead</code> arguments. An example of this is illustrated below:</p>
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">table1</span>(</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">x =</span> <span class="sc">~</span> flipper_length_mm <span class="sc">+</span> body_mass_g <span class="sc">|</span> species,</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> penguins,</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">overall =</span> <span class="st">"All Species"</span>,</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">rowlabelhead =</span> <span class="st">"Measurement"</span></span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="Rtable1">
+<table class="Rtable1 table" data-quarto-postprocess="true">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th class="rowlabel firstrow lastrow" data-quarto-table-cell-role="th">Measurement</th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Adelie<br>
+<span class="stratn">(N=152)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Chinstrap<br>
+<span class="stratn">(N=68)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Gentoo<br>
+<span class="stratn">(N=124)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">All Species<br>
+<span class="stratn">(N=344)</span></span></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td class="rowlabel firstrow">Flipper Length (mm)</td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+</tr>
+<tr class="even">
+<td class="rowlabel">Mean (SD)</td>
+<td>190 (6.54)</td>
+<td>196 (7.13)</td>
+<td>217 (6.48)</td>
+<td>201 (14.1)</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel">Median [Min, Max]</td>
+<td>190 [172, 210]</td>
+<td>196 [178, 212]</td>
+<td>216 [203, 231]</td>
+<td>197 [172, 231]</td>
+</tr>
+<tr class="even">
+<td class="rowlabel lastrow">Missing</td>
+<td class="lastrow">1 (0.7%)</td>
+<td class="lastrow">0 (0%)</td>
+<td class="lastrow">1 (0.8%)</td>
+<td class="lastrow">2 (0.6%)</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel firstrow">Body Mass (g)</td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+</tr>
+<tr class="even">
+<td class="rowlabel">Mean (SD)</td>
+<td>3700 (459)</td>
+<td>3730 (384)</td>
+<td>5080 (504)</td>
+<td>4200 (802)</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel">Median [Min, Max]</td>
+<td>3700 [2850, 4780]</td>
+<td>3700 [2700, 4800]</td>
+<td>5000 [3950, 6300]</td>
+<td>4050 [2700, 6300]</td>
+</tr>
+<tr class="even">
+<td class="rowlabel lastrow">Missing</td>
+<td class="lastrow">1 (0.7%)</td>
+<td class="lastrow">0 (0%)</td>
+<td class="lastrow">1 (0.8%)</td>
+<td class="lastrow">2 (0.6%)</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+<p><br></p>
+</section>
+<section id="footnotes-and-captions" class="level3 page-columns page-full">
+<h3 class="anchored" data-anchor-id="footnotes-and-captions">Footnotes and captions</h3>
+<blockquote class="blockquote">
+<p>Oh lord, heaven knows, we belong way down below <br> Oh lord, tell us so, we belong way down below <br> &nbsp; &nbsp; –<em><a href="https://www.youtube.com/watch?v=JVZe5K3PZig">The Pretty Reckless</a></em></p>
+</blockquote>
+<p>In addition to allowing you to customise the header row, the table1 package also supports the addition of captions and footnotes. Shockingly, it turns out you can specify these with <code>table1()</code> by using the <code>caption</code> and <code>footnote</code> arguments. Both of these take a single string as their input, and you can use HTML tags here. For example, here’s a footer that acknowledges the two packages I’ve relied on most in this post, specifying the package names in boldface:</p>
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">table1</span>(</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">x =</span> <span class="sc">~</span> flipper_length_mm <span class="sc">+</span> body_mass_g <span class="sc">|</span> species,</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> penguins,</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">footnote =</span> <span class="st">"Created using &lt;b&gt;table1&lt;/b&gt; and &lt;b&gt;palmerpenguins&lt;/b&gt;"</span></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="Rtable1"><table class="Rtable1">
+<thead>
+<tr>
+<th class="rowlabel firstrow lastrow"></th>
+<th class="firstrow lastrow"><span class="stratlabel">Adelie<br><span class="stratn">(N=152)</span></span></th>
+<th class="firstrow lastrow"><span class="stratlabel">Chinstrap<br><span class="stratn">(N=68)</span></span></th>
+<th class="firstrow lastrow"><span class="stratlabel">Gentoo<br><span class="stratn">(N=124)</span></span></th>
+<th class="firstrow lastrow"><span class="stratlabel">Overall<br><span class="stratn">(N=344)</span></span></th>
+</tr>
+</thead><tfoot><tr><td colspan="5" class="Rtable1-footnote"><p>Created using <b>table1</b> and <b>palmerpenguins</b></p>
+</td></tr></tfoot>
+
+<tbody>
+<tr>
+<td class="rowlabel firstrow">Flipper Length (mm)</td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+</tr>
+<tr>
+<td class="rowlabel">Mean (SD)</td>
+<td>190 (6.54)</td>
+<td>196 (7.13)</td>
+<td>217 (6.48)</td>
+<td>201 (14.1)</td>
+</tr>
+<tr>
+<td class="rowlabel">Median [Min, Max]</td>
+<td>190 [172, 210]</td>
+<td>196 [178, 212]</td>
+<td>216 [203, 231]</td>
+<td>197 [172, 231]</td>
+</tr>
+<tr>
+<td class="rowlabel lastrow">Missing</td>
+<td class="lastrow">1 (0.7%)</td>
+<td class="lastrow">0 (0%)</td>
+<td class="lastrow">1 (0.8%)</td>
+<td class="lastrow">2 (0.6%)</td>
+</tr>
+<tr>
+<td class="rowlabel firstrow">Body Mass (g)</td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+</tr>
+<tr>
+<td class="rowlabel">Mean (SD)</td>
+<td>3700 (459)</td>
+<td>3730 (384)</td>
+<td>5080 (504)</td>
+<td>4200 (802)</td>
+</tr>
+<tr>
+<td class="rowlabel">Median [Min, Max]</td>
+<td>3700 [2850, 4780]</td>
+<td>3700 [2700, 4800]</td>
+<td>5000 [3950, 6300]</td>
+<td>4050 [2700, 6300]</td>
+</tr>
+<tr>
+<td class="rowlabel lastrow">Missing</td>
+<td class="lastrow">1 (0.7%)</td>
+<td class="lastrow">0 (0%)</td>
+<td class="lastrow">1 (0.8%)</td>
+<td class="lastrow">2 (0.6%)</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><br></p>
+<p>Specifying captions is very similar. Here’s a simple example:</p>
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">table1</span>(</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">x =</span> <span class="sc">~</span> flipper_length_mm <span class="sc">+</span> body_mass_g <span class="sc">|</span> species,</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> penguins,</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">caption =</span> <span class="st">"Flipper length and body mass by species among the Palmer penguins"</span></span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="Rtable1">
+<table class="Rtable1 table" data-quarto-postprocess="true">
+<caption>Flipper length and body mass by species among the Palmer penguins</caption>
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th class="rowlabel firstrow lastrow" data-quarto-table-cell-role="th"></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Adelie<br>
+<span class="stratn">(N=152)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Chinstrap<br>
+<span class="stratn">(N=68)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Gentoo<br>
+<span class="stratn">(N=124)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Overall<br>
+<span class="stratn">(N=344)</span></span></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td class="rowlabel firstrow">Flipper Length (mm)</td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+</tr>
+<tr class="even">
+<td class="rowlabel">Mean (SD)</td>
+<td>190 (6.54)</td>
+<td>196 (7.13)</td>
+<td>217 (6.48)</td>
+<td>201 (14.1)</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel">Median [Min, Max]</td>
+<td>190 [172, 210]</td>
+<td>196 [178, 212]</td>
+<td>216 [203, 231]</td>
+<td>197 [172, 231]</td>
+</tr>
+<tr class="even">
+<td class="rowlabel lastrow">Missing</td>
+<td class="lastrow">1 (0.7%)</td>
+<td class="lastrow">0 (0%)</td>
+<td class="lastrow">1 (0.8%)</td>
+<td class="lastrow">2 (0.6%)</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel firstrow">Body Mass (g)</td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+</tr>
+<tr class="even">
+<td class="rowlabel">Mean (SD)</td>
+<td>3700 (459)</td>
+<td>3730 (384)</td>
+<td>5080 (504)</td>
+<td>4200 (802)</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel">Median [Min, Max]</td>
+<td>3700 [2850, 4780]</td>
+<td>3700 [2700, 4800]</td>
+<td>5000 [3950, 6300]</td>
+<td>4050 [2700, 6300]</td>
+</tr>
+<tr class="even">
+<td class="rowlabel lastrow">Missing</td>
+<td class="lastrow">1 (0.7%)</td>
+<td class="lastrow">0 (0%)</td>
+<td class="lastrow">1 (0.8%)</td>
+<td class="lastrow">2 (0.6%)</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+<p><br></p>
+<p><img src="heaven-knows.jpg" class="img-fluid"></p>
+
+<div class="no-row-height column-margin column-container"><div class="">
+<p>One day, just for one brief moment, I would like to look this cool. It’s never going to happen of course, but a girl can dream</p>
+</div></div></section>
+</section>
+<section id="table-structure" class="level2">
+<h2 class="anchored" data-anchor-id="table-structure">Table structure</h2>
+<p>So far we’ve discussed how to control what statistics are computed in the table, and in the process I’ve also talked about how to specify the row and columns labels that are associated with the various statistics. I’ve also talked about other marginalia associated with a table, which in table1 is really just the footnote and caption. What I haven’t talked about yet is how to control the <em>structure</em> of the table that gets produced. For the most part, this structure is controlled by the formula that you use to specify the table. When I specify a table like this</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="sc">~</span> flipper_length_mm <span class="sc">+</span> body_mass_g <span class="sc">|</span> species</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>I will generally get a table that has one column for each unique value of <code>species</code> (the strata), and a block of rows associated with each of the variables (<code>flipper_length_mm</code> and <code>body_mass_g</code>) that supply the relevant descriptive statistics. By default we also get one additional “overall” column that collapses the strata and reports descriptive statistics for the entire data set. Most of the time this is exactly the structure we want, but not always. To that end, table1 allows you to customise the structure in various ways.</p>
+<section id="removing-overall" class="level3">
+<h3 class="anchored" data-anchor-id="removing-overall">Removing “overall”</h3>
+<p>The simplest way to modify the table structure is to remove the “overall” column that collapses the strata. We can do this using the <code>overall</code> argument. In the last section I showed how to use this argument to change the label associated with this column by passing a string, but if instead we set <code>overall = FALSE</code>, that column will be removed entirely:</p>
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">table1</span>(</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">x =</span> <span class="sc">~</span> flipper_length_mm <span class="sc">+</span> body_mass_g <span class="sc">|</span> species,</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> penguins,</span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">overall =</span> <span class="cn">FALSE</span></span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="Rtable1">
+<table class="Rtable1 table" data-quarto-postprocess="true">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th class="rowlabel firstrow lastrow" data-quarto-table-cell-role="th"></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Adelie<br>
+<span class="stratn">(N=152)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Chinstrap<br>
+<span class="stratn">(N=68)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Gentoo<br>
+<span class="stratn">(N=124)</span></span></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td class="rowlabel firstrow">Flipper Length (mm)</td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+</tr>
+<tr class="even">
+<td class="rowlabel">Mean (SD)</td>
+<td>190 (6.54)</td>
+<td>196 (7.13)</td>
+<td>217 (6.48)</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel">Median [Min, Max]</td>
+<td>190 [172, 210]</td>
+<td>196 [178, 212]</td>
+<td>216 [203, 231]</td>
+</tr>
+<tr class="even">
+<td class="rowlabel lastrow">Missing</td>
+<td class="lastrow">1 (0.7%)</td>
+<td class="lastrow">0 (0%)</td>
+<td class="lastrow">1 (0.8%)</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel firstrow">Body Mass (g)</td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+</tr>
+<tr class="even">
+<td class="rowlabel">Mean (SD)</td>
+<td>3700 (459)</td>
+<td>3730 (384)</td>
+<td>5080 (504)</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel">Median [Min, Max]</td>
+<td>3700 [2850, 4780]</td>
+<td>3700 [2700, 4800]</td>
+<td>5000 [3950, 6300]</td>
+</tr>
+<tr class="even">
+<td class="rowlabel lastrow">Missing</td>
+<td class="lastrow">1 (0.7%)</td>
+<td class="lastrow">0 (0%)</td>
+<td class="lastrow">1 (0.8%)</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+<p><br></p>
+</section>
+<section id="nested-stratifications" class="level3">
+<h3 class="anchored" data-anchor-id="nested-stratifications">Nested stratifications</h3>
+<p>Up to this point in the post I’ve used only a single variable to define the strata in the table. At the start of the post I mentioned that you can drop the stratification entirely simply by specifying a one-sided formula like <code>~ flipper_length_mm + body_mass_g</code> that doesn’t include anything on the right hand side of the <code>|</code> separator. But that’s rarely of interest to us in real world data analysis. The thing we’re more likely to want is a <em>nested</em> stratification, where we define strata based on all unique combinations of two variables. For example, let’s suppose I wanted to compute descriptive statistics for each <code>species</code> of penguin, but for each species the statistics should be computed separately for each <code>island</code>. Happily, the table1 package supports this kind of two-level stratification. All I have to do is write <code>species * island</code> on the right hand side of the separator like so:</p>
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">table1</span>(</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">x =</span> <span class="sc">~</span> flipper_length_mm <span class="sc">+</span> body_mass_g <span class="sc">|</span> species <span class="sc">*</span> island,</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> penguins,</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">overall =</span> <span class="cn">FALSE</span></span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="Rtable1">
+<table class="Rtable1 table" data-quarto-postprocess="true">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th class="grouplabel" data-quarto-table-cell-role="th"></th>
+<th colspan="3" class="grouplabel" data-quarto-table-cell-role="th"><div>
+Adelie
+</div></th>
+<th class="grouplabel" data-quarto-table-cell-role="th"><div>
+Chinstrap
+</div></th>
+<th class="grouplabel" data-quarto-table-cell-role="th"><div>
+Gentoo
+</div></th>
+</tr>
+<tr class="odd">
+<th class="rowlabel firstrow lastrow" data-quarto-table-cell-role="th"></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Biscoe<br>
+<span class="stratn">(N=44)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Dream<br>
+<span class="stratn">(N=56)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Torgersen<br>
+<span class="stratn">(N=52)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Dream<br>
+<span class="stratn">(N=68)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Biscoe<br>
+<span class="stratn">(N=124)</span></span></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td class="rowlabel firstrow">Flipper Length (mm)</td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+</tr>
+<tr class="even">
+<td class="rowlabel">Mean (SD)</td>
+<td>189 (6.73)</td>
+<td>190 (6.59)</td>
+<td>191 (6.23)</td>
+<td>196 (7.13)</td>
+<td>217 (6.48)</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel">Median [Min, Max]</td>
+<td>190 [172, 203]</td>
+<td>190 [178, 208]</td>
+<td>191 [176, 210]</td>
+<td>196 [178, 212]</td>
+<td>216 [203, 231]</td>
+</tr>
+<tr class="even">
+<td class="rowlabel lastrow">Missing</td>
+<td class="lastrow">0 (0%)</td>
+<td class="lastrow">0 (0%)</td>
+<td class="lastrow">1 (1.9%)</td>
+<td class="lastrow">0 (0%)</td>
+<td class="lastrow">1 (0.8%)</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel firstrow">Body Mass (g)</td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+</tr>
+<tr class="even">
+<td class="rowlabel">Mean (SD)</td>
+<td>3710 (488)</td>
+<td>3690 (455)</td>
+<td>3710 (445)</td>
+<td>3730 (384)</td>
+<td>5080 (504)</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel">Median [Min, Max]</td>
+<td>3750 [2850, 4780]</td>
+<td>3580 [2900, 4650]</td>
+<td>3700 [2900, 4700]</td>
+<td>3700 [2700, 4800]</td>
+<td>5000 [3950, 6300]</td>
+</tr>
+<tr class="even">
+<td class="rowlabel lastrow">Missing</td>
+<td class="lastrow">0 (0%)</td>
+<td class="lastrow">0 (0%)</td>
+<td class="lastrow">1 (1.9%)</td>
+<td class="lastrow">0 (0%)</td>
+<td class="lastrow">1 (0.8%)</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+<p><br></p>
+<p>As it happens, only the Adelie penguins appear on all three islands: the Chinstrap penguins appear only on Dream Island, and the Gentoo penguins appear only on Biscoe Island. So the table here contains three columns for the Adelie penguins, and only one each for the Chinstrap and Gentoo penguins.</p>
+<p>There are some limitations to this functionality. You can’t stratify by more than two variables, and the stratification variables cannot contain any missing values. Even so, the functionality is pretty handy, and it is sensitive to the order in which you specify the two stratification variables. If I write <code>island * species</code> rather than <code>species * island</code>, I get this table instead:</p>
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">table1</span>(</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">x =</span> <span class="sc">~</span> flipper_length_mm <span class="sc">+</span> body_mass_g <span class="sc">|</span> island <span class="sc">*</span> species,</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> penguins,</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">overall =</span> <span class="cn">FALSE</span></span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="Rtable1">
+<table class="Rtable1 table" data-quarto-postprocess="true">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th class="grouplabel" data-quarto-table-cell-role="th"></th>
+<th colspan="2" class="grouplabel" data-quarto-table-cell-role="th"><div>
+Biscoe
+</div></th>
+<th colspan="2" class="grouplabel" data-quarto-table-cell-role="th"><div>
+Dream
+</div></th>
+<th class="grouplabel" data-quarto-table-cell-role="th"><div>
+Torgersen
+</div></th>
+</tr>
+<tr class="odd">
+<th class="rowlabel firstrow lastrow" data-quarto-table-cell-role="th"></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Adelie<br>
+<span class="stratn">(N=44)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Gentoo<br>
+<span class="stratn">(N=124)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Adelie<br>
+<span class="stratn">(N=56)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Chinstrap<br>
+<span class="stratn">(N=68)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Adelie<br>
+<span class="stratn">(N=52)</span></span></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td class="rowlabel firstrow">Flipper Length (mm)</td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+</tr>
+<tr class="even">
+<td class="rowlabel">Mean (SD)</td>
+<td>189 (6.73)</td>
+<td>217 (6.48)</td>
+<td>190 (6.59)</td>
+<td>196 (7.13)</td>
+<td>191 (6.23)</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel">Median [Min, Max]</td>
+<td>190 [172, 203]</td>
+<td>216 [203, 231]</td>
+<td>190 [178, 208]</td>
+<td>196 [178, 212]</td>
+<td>191 [176, 210]</td>
+</tr>
+<tr class="even">
+<td class="rowlabel lastrow">Missing</td>
+<td class="lastrow">0 (0%)</td>
+<td class="lastrow">1 (0.8%)</td>
+<td class="lastrow">0 (0%)</td>
+<td class="lastrow">0 (0%)</td>
+<td class="lastrow">1 (1.9%)</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel firstrow">Body Mass (g)</td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+</tr>
+<tr class="even">
+<td class="rowlabel">Mean (SD)</td>
+<td>3710 (488)</td>
+<td>5080 (504)</td>
+<td>3690 (455)</td>
+<td>3730 (384)</td>
+<td>3710 (445)</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel">Median [Min, Max]</td>
+<td>3750 [2850, 4780]</td>
+<td>5000 [3950, 6300]</td>
+<td>3580 [2900, 4650]</td>
+<td>3700 [2700, 4800]</td>
+<td>3700 [2900, 4700]</td>
+</tr>
+<tr class="even">
+<td class="rowlabel lastrow">Missing</td>
+<td class="lastrow">0 (0%)</td>
+<td class="lastrow">1 (0.8%)</td>
+<td class="lastrow">0 (0%)</td>
+<td class="lastrow">0 (0%)</td>
+<td class="lastrow">1 (1.9%)</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+<p><br></p>
+<p>I’ve found this functionality useful many times in my everyday life.</p>
+</section>
+<section id="adding-extra-columns" class="level3">
+<h3 class="anchored" data-anchor-id="adding-extra-columns">Adding extra columns</h3>
+<p>Another kind of “structural” customisation that table1 allows is adding new columns. A common use case for this functionality is to add a column that reports a p-value associated with a particular row. For example, suppose what I wanted my table to do is run a one-way ANOVA for each of the continuous variables in the table, to test to see if the categories have different group means. To handle something like this we’ll again need to write a custom render function that accepts data from <em>all</em> groups – as a list of vectors – and returns a string that should be printed into the relevant cell in the new “p-values” column. This <code>render_p_value()</code> function will do this for me:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>render_p_value <span class="ot">&lt;-</span> <span class="cf">function</span>(x, ...) {</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>  dat <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>    purrr<span class="sc">::</span><span class="fu">map</span>(x, <span class="sc">~</span> <span class="fu">data.frame</span>(<span class="at">value =</span> .)), </span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">.id =</span> <span class="st">"group"</span></span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>  mod <span class="ot">&lt;-</span> <span class="fu">aov</span>(value <span class="sc">~</span> group, dat)</span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>  p <span class="ot">&lt;-</span> <span class="fu">summary</span>(mod)[[<span class="dv">1</span>]][<span class="dv">1</span>, <span class="dv">5</span>]</span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(scales<span class="sc">::</span><span class="fu">label_pvalue</span>()(p))</span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>I don’t want to dive into the details of what this function is doing, but if you’re familiar with the standard interface for linear models in R it should look very familiar. If not, here’s the gist: the first part of the code rearranges the list of vectors input into a data frame format, the second part estimates parameters for the model, runs the usual F-test, and extracts the p-value from the output. Finally, it returns the p-value as a prettily-formatted string.</p>
+<p>The <code>render_p_value()</code> function is the one we’ll use to render our new column, but for the purposes of this example I’ll also define a custom renderer for the contents of the strata columns as well, so that the only thing it does is report the mean value for the group. You don’t have to do this, I’m only doing it because I want my table to be as simple as possible.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>render_mean <span class="ot">&lt;-</span> <span class="cf">function</span>(x, ...) <span class="fu">sprintf</span>(<span class="st">"%1.1f"</span>, <span class="fu">mean</span>(x, <span class="at">na.rm =</span> <span class="cn">TRUE</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Now that we have our rendering functions, I can specify one or more additional columns in my table by passing a named list of functions to the <code>extra.col</code> argument (the names are used to specify the column labels). In my case I’m only adding a single extra column with the p-value so my list has only a single function, but it’s not too hard to imagine scenarios where I’d want to add more than one (e.g., maybe I want to report the degrees of freedom associated with my F-test). Anyway, here’s the code:</p>
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="fu">table1</span>(</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">x =</span> <span class="sc">~</span> flipper_length_mm <span class="sc">+</span> body_mass_g <span class="sc">|</span> species,</span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> penguins,</span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">render =</span> render_mean,</span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">extra.col =</span> <span class="fu">list</span>(<span class="st">"p-value"</span> <span class="ot">=</span> render_p_value)</span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="Rtable1">
+<table class="Rtable1 table" data-quarto-postprocess="true">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th class="rowlabel firstrow lastrow" data-quarto-table-cell-role="th"></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Adelie<br>
+<span class="stratn">(N=152)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Chinstrap<br>
+<span class="stratn">(N=68)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Gentoo<br>
+<span class="stratn">(N=124)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Overall<br>
+<span class="stratn">(N=344)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">p-value</span></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td class="rowlabel firstrow lastrow">Flipper Length (mm)</td>
+<td class="firstrow lastrow">190.0</td>
+<td class="firstrow lastrow">195.8</td>
+<td class="firstrow lastrow">217.2</td>
+<td class="firstrow lastrow">200.9</td>
+<td class="firstrow lastrow">&lt;0.001</td>
+</tr>
+<tr class="even">
+<td class="rowlabel firstrow lastrow">Body Mass (g)</td>
+<td class="firstrow lastrow">3700.7</td>
+<td class="firstrow lastrow">3733.1</td>
+<td class="firstrow lastrow">5076.0</td>
+<td class="firstrow lastrow">4201.8</td>
+<td class="firstrow lastrow">&lt;0.001</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+<p><br></p>
+<p>Very nice.</p>
+</section>
+<section id="transposing-tables" class="level3">
+<h3 class="anchored" data-anchor-id="transposing-tables">Transposing tables</h3>
+<blockquote class="blockquote">
+<p>Let me open up the discussion with <br> I’m not impressed with any motherfucking word I say <br> See I lied that I cried when he came inside <br> And now I’m burning a highway to Hades <br> &nbsp; &nbsp; –<em><a href="https://www.youtube.com/watch?v=j6t-AgLT-LM&amp;rco=1">The Pretty Reckless</a></em></p>
+</blockquote>
+<p>Before I dive a little deeper and talk about table structures that go beyond what you can do with the formula interface to <code>table1()</code> there’s one more thing I should talk about. I don’t actually <em>want</em> to talk about this topic because it makes me cry a little bit every time I encounter it, but I’ll be good and try anyway.</p>
+<p>That topic is transposing a table.</p>
+<p>Normally when you specify a table with a formula, the stratification is used to create the columns, and the variable list is used to define the rows. You can flip this if you like by setting <code>transpose = TRUE</code> when calling <code>table1()</code>, but in my experience this is a bit messy and often requires a lot of tinkering with your render functions to make the results look good. To that end, here’s a simple rendering function that I’ll use in this example. All it does is compute the mean and standard deviation for a continuous variable:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>render_mean_sd <span class="ot">&lt;-</span> <span class="cf">function</span>(x, ...) {</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>  m <span class="ot">&lt;-</span> <span class="fu">mean</span>(x, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>  s <span class="ot">&lt;-</span> <span class="fu">sd</span>(x, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sprintf</span>(<span class="st">"%1.1f (%1.1f)"</span>, m, s)</span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>With the help of this <code>render_mean_sd()</code> function and the simple <code>render_strat()</code> function I defined earlier, here’s an example of a transposed table in which the stratification variable (<code>species</code>) defines the rows, and the four variables on the left are used to define columns:</p>
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="fu">table1</span>(</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">x =</span> <span class="sc">~</span> bill_length_mm <span class="sc">+</span> bill_depth_mm <span class="sc">+</span> flipper_length_mm <span class="sc">+</span> body_mass_g <span class="sc">|</span> species,</span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> penguins,</span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">transpose =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">rowlabelhead =</span> <span class="st">"Species"</span>,</span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">render =</span> render_mean_sd,</span>
+<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">render.strat =</span> render_strat</span>
+<span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="Rtable1">
+<table class="Rtable1 table" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th class="rowlabel firstrow lastrow" data-quarto-table-cell-role="th">Species</th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th">Bill Length (mm)</th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th">Bill Depth (mm)</th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th">Flipper Length (mm)</th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th">Body Mass (g)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td class="rowlabel firstrow lastrow"><span class="stratlabel">Adelie</span></td>
+<td class="firstrow lastrow">38.8 (2.7)</td>
+<td class="firstrow lastrow">18.3 (1.2)</td>
+<td class="firstrow lastrow">190.0 (6.5)</td>
+<td class="firstrow lastrow">3700.7 (458.6)</td>
+</tr>
+<tr class="even">
+<td class="rowlabel firstrow lastrow"><span class="stratlabel">Chinstrap</span></td>
+<td class="firstrow lastrow">48.8 (3.3)</td>
+<td class="firstrow lastrow">18.4 (1.1)</td>
+<td class="firstrow lastrow">195.8 (7.1)</td>
+<td class="firstrow lastrow">3733.1 (384.3)</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel firstrow lastrow"><span class="stratlabel">Gentoo</span></td>
+<td class="firstrow lastrow">47.5 (3.1)</td>
+<td class="firstrow lastrow">15.0 (1.0)</td>
+<td class="firstrow lastrow">217.2 (6.5)</td>
+<td class="firstrow lastrow">5076.0 (504.1)</td>
+</tr>
+<tr class="even">
+<td class="rowlabel firstrow lastrow"><span class="stratlabel">Overall</span></td>
+<td class="firstrow lastrow">43.9 (5.5)</td>
+<td class="firstrow lastrow">17.2 (2.0)</td>
+<td class="firstrow lastrow">200.9 (14.1)</td>
+<td class="firstrow lastrow">4201.8 (802.0)</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+<p><br></p>
+<p>It works, and there are definitely use cases for this. But the functionality is limited. It only works for a single stratification level (i.e., you can’t do <code>species * island</code> in this context), and it only looks pretty because my <code>render_mean_sd()</code> function doesn’t contain any labels. Things get messy pretty fast when working with transposed tables, and in all honesty I’ve never been willing to use this functionality in a client project.</p>
+</section>
+<section id="arbitrary-stratification" class="level3">
+<h3 class="anchored" data-anchor-id="arbitrary-stratification">Arbitrary stratification</h3>
+<blockquote class="blockquote">
+<p>Why’d you bring a shotgun to the party? <br> &nbsp; &nbsp; –<a href="https://www.youtube.com/watch?v=PYxd8gh7g_k"><em>The Pretty Reckless</em></a></p>
+</blockquote>
+<p>Up to this point in the post every table I’ve created with <code>table1()</code> has used a formula to specify the basic structure of the output. In real life this is almost always what you want to do, because this “formula interface” is pretty flexible and <em>extremely</em> easy to work with. I’d even go so far as to say that this formula interface is one of the most appealing aspects to the table1 package. However, in point of fact the formula interface that everyone uses is actually a bit of sweet syntactic sugar laid atop a lower-level interface. Very occasionally you encounter a situation where the formula interface isn’t expressive enough to do what you want, and when that happens you have to “bring a shotgun to the party” and use the low level interface which takes a list of data frames (one per stratum) as input.</p>
+<p>To motivate the discussion, I’ll give an example of something that I’ve occasionally wanted to do but isn’t possible with the formula interface. Earlier in this post I showed you how to create a <em>nested</em> stratification where we pass two stratification variables in the formula, and the table contains one stratum for every unique combination of the two variables. Sometimes, though, you want to create a table that stratifies by two variables but only shows the <em>marginal</em> stratifications. For example, I might want a table that includes descriptive statistics for each <code>species</code> of penguin, and next to that my table would have descriptive statistics for each <code>sex</code>. In this situation I’m not interested in the cross-tabulation. That is, I don’t care about which species a male penguin belongs to, and I don’t care about the sex of the various Adelie penguins either. I’m interested in <code>species</code> and <code>sex</code> completely independently of each other. The formula interface doesn’t support this kind of stratification, so I’m going to have to do it manually.</p>
+<p>Let’s see how this is done. First, I’m going to make a few tweaks to the data that aren’t really very important, but will make my table a little nicer. Specifically, I’ll convert the <code>sex</code> variable to title case so that I get nice labels later, and I’ll convert <code>year</code> to a factor so that <code>table1()</code> treats it as a categorical variable:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>penguins <span class="ot">&lt;-</span> penguins <span class="sc">|&gt;</span></span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">sex =</span> stringr<span class="sc">::</span><span class="fu">str_to_title</span>(sex),</span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">year =</span> <span class="fu">factor</span>(year)</span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Now let’s move along to the important step. I’m going to create a new variable called <code>penguins_strata</code> that is a list of data frames.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>penguins_strata <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">split</span>(penguins, <span class="sc">~</span>species), </span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">split</span>(penguins, <span class="sc">~</span>sex),</span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">list</span>(<span class="st">"All"</span> <span class="ot">=</span> penguins)</span>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a>penguins_strata</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$Adelie
+# A tibble: 152 × 8
+   species island    bill_length_mm bill_depth_mm flipper_length_mm body_mass_g sex   
+   &lt;fct&gt;   &lt;fct&gt;              &lt;dbl&gt;         &lt;dbl&gt;             &lt;int&gt;       &lt;int&gt; &lt;chr&gt; 
+ 1 Adelie  Torgersen           39.1          18.7               181        3750 Male  
+ 2 Adelie  Torgersen           39.5          17.4               186        3800 Female
+ 3 Adelie  Torgersen           40.3          18                 195        3250 Female
+ 4 Adelie  Torgersen           NA            NA                  NA          NA &lt;NA&gt;  
+ 5 Adelie  Torgersen           36.7          19.3               193        3450 Female
+ 6 Adelie  Torgersen           39.3          20.6               190        3650 Male  
+ 7 Adelie  Torgersen           38.9          17.8               181        3625 Female
+ 8 Adelie  Torgersen           39.2          19.6               195        4675 Male  
+ 9 Adelie  Torgersen           34.1          18.1               193        3475 &lt;NA&gt;  
+10 Adelie  Torgersen           42            20.2               190        4250 &lt;NA&gt;  
+# ℹ 142 more rows
+# ℹ 1 more variable: year &lt;fct&gt;
+
+$Chinstrap
+# A tibble: 68 × 8
+   species   island bill_length_mm bill_depth_mm flipper_length_mm body_mass_g sex   
+   &lt;fct&gt;     &lt;fct&gt;           &lt;dbl&gt;         &lt;dbl&gt;             &lt;int&gt;       &lt;int&gt; &lt;chr&gt; 
+ 1 Chinstrap Dream            46.5          17.9               192        3500 Female
+ 2 Chinstrap Dream            50            19.5               196        3900 Male  
+ 3 Chinstrap Dream            51.3          19.2               193        3650 Male  
+ 4 Chinstrap Dream            45.4          18.7               188        3525 Female
+ 5 Chinstrap Dream            52.7          19.8               197        3725 Male  
+ 6 Chinstrap Dream            45.2          17.8               198        3950 Female
+ 7 Chinstrap Dream            46.1          18.2               178        3250 Female
+ 8 Chinstrap Dream            51.3          18.2               197        3750 Male  
+ 9 Chinstrap Dream            46            18.9               195        4150 Female
+10 Chinstrap Dream            51.3          19.9               198        3700 Male  
+# ℹ 58 more rows
+# ℹ 1 more variable: year &lt;fct&gt;
+
+$Gentoo
+# A tibble: 124 × 8
+   species island bill_length_mm bill_depth_mm flipper_length_mm body_mass_g sex   
+   &lt;fct&gt;   &lt;fct&gt;           &lt;dbl&gt;         &lt;dbl&gt;             &lt;int&gt;       &lt;int&gt; &lt;chr&gt; 
+ 1 Gentoo  Biscoe           46.1          13.2               211        4500 Female
+ 2 Gentoo  Biscoe           50            16.3               230        5700 Male  
+ 3 Gentoo  Biscoe           48.7          14.1               210        4450 Female
+ 4 Gentoo  Biscoe           50            15.2               218        5700 Male  
+ 5 Gentoo  Biscoe           47.6          14.5               215        5400 Male  
+ 6 Gentoo  Biscoe           46.5          13.5               210        4550 Female
+ 7 Gentoo  Biscoe           45.4          14.6               211        4800 Female
+ 8 Gentoo  Biscoe           46.7          15.3               219        5200 Male  
+ 9 Gentoo  Biscoe           43.3          13.4               209        4400 Female
+10 Gentoo  Biscoe           46.8          15.4               215        5150 Male  
+# ℹ 114 more rows
+# ℹ 1 more variable: year &lt;fct&gt;
+
+$Female
+# A tibble: 165 × 8
+   species island    bill_length_mm bill_depth_mm flipper_length_mm body_mass_g sex   
+   &lt;fct&gt;   &lt;fct&gt;              &lt;dbl&gt;         &lt;dbl&gt;             &lt;int&gt;       &lt;int&gt; &lt;chr&gt; 
+ 1 Adelie  Torgersen           39.5          17.4               186        3800 Female
+ 2 Adelie  Torgersen           40.3          18                 195        3250 Female
+ 3 Adelie  Torgersen           36.7          19.3               193        3450 Female
+ 4 Adelie  Torgersen           38.9          17.8               181        3625 Female
+ 5 Adelie  Torgersen           41.1          17.6               182        3200 Female
+ 6 Adelie  Torgersen           36.6          17.8               185        3700 Female
+ 7 Adelie  Torgersen           38.7          19                 195        3450 Female
+ 8 Adelie  Torgersen           34.4          18.4               184        3325 Female
+ 9 Adelie  Biscoe              37.8          18.3               174        3400 Female
+10 Adelie  Biscoe              35.9          19.2               189        3800 Female
+# ℹ 155 more rows
+# ℹ 1 more variable: year &lt;fct&gt;
+
+$Male
+# A tibble: 168 × 8
+   species island    bill_length_mm bill_depth_mm flipper_length_mm body_mass_g sex  
+   &lt;fct&gt;   &lt;fct&gt;              &lt;dbl&gt;         &lt;dbl&gt;             &lt;int&gt;       &lt;int&gt; &lt;chr&gt;
+ 1 Adelie  Torgersen           39.1          18.7               181        3750 Male 
+ 2 Adelie  Torgersen           39.3          20.6               190        3650 Male 
+ 3 Adelie  Torgersen           39.2          19.6               195        4675 Male 
+ 4 Adelie  Torgersen           38.6          21.2               191        3800 Male 
+ 5 Adelie  Torgersen           34.6          21.1               198        4400 Male 
+ 6 Adelie  Torgersen           42.5          20.7               197        4500 Male 
+ 7 Adelie  Torgersen           46            21.5               194        4200 Male 
+ 8 Adelie  Biscoe              37.7          18.7               180        3600 Male 
+ 9 Adelie  Biscoe              38.2          18.1               185        3950 Male 
+10 Adelie  Biscoe              38.8          17.2               180        3800 Male 
+# ℹ 158 more rows
+# ℹ 1 more variable: year &lt;fct&gt;
+
+$All
+# A tibble: 344 × 8
+   species island    bill_length_mm bill_depth_mm flipper_length_mm body_mass_g sex   
+   &lt;fct&gt;   &lt;fct&gt;              &lt;dbl&gt;         &lt;dbl&gt;             &lt;int&gt;       &lt;int&gt; &lt;chr&gt; 
+ 1 Adelie  Torgersen           39.1          18.7               181        3750 Male  
+ 2 Adelie  Torgersen           39.5          17.4               186        3800 Female
+ 3 Adelie  Torgersen           40.3          18                 195        3250 Female
+ 4 Adelie  Torgersen           NA            NA                  NA          NA &lt;NA&gt;  
+ 5 Adelie  Torgersen           36.7          19.3               193        3450 Female
+ 6 Adelie  Torgersen           39.3          20.6               190        3650 Male  
+ 7 Adelie  Torgersen           38.9          17.8               181        3625 Female
+ 8 Adelie  Torgersen           39.2          19.6               195        4675 Male  
+ 9 Adelie  Torgersen           34.1          18.1               193        3475 &lt;NA&gt;  
+10 Adelie  Torgersen           42            20.2               190        4250 &lt;NA&gt;  
+# ℹ 334 more rows
+# ℹ 1 more variable: year &lt;fct&gt;</code></pre>
+</div>
+</div>
+<p>As you can see from this lengthy output, the <code>penguins_strata</code> variable is a list of six data frames. There are three data frames corresponding to each of the three <code>species</code>, two data frames corresponding to each unique <code>sex</code> category, and a final data frame that contains the entire data set. Later on when I construct the table, the <code>table1()</code> function will render each of these six data frames into a single column with the appropriate descriptive statistics.</p>
+<p>The second input we need is a “labels” list that does two jobs:</p>
+<ul>
+<li><p>Notice that so far I’ve defined my strata, but haven’t specified the variables. The labels list has to do this. It specifies which <code>variables</code> should to be used when computing descriptive statistics. For the purposes of this example, I would like to tabulate the number of penguins (in each stratum) found on each <code>island</code> and the number of penguins observed in each <code>year</code></p></li>
+<li><p>In my head, the thing I want to do here is stratify the data separately by each <code>species</code> and by each <code>sex</code>. But the <code>penguins_strata</code> object doesn’t say anything about this. It’s just a flat list of six data frames. It doesn’t “know” that three of these data frames refer to different species and two of them refer to different sexes. For that matter, it doesn’t know that the last data frame isn’t associated with a grouping variable either. So we’ll also need to specify a list of <code>groups</code> that supplies the names of these grouping variables.</p></li>
+</ul>
+<p>In other words, we need something like this:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>penguins_labels <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>    <span class="at">variables =</span> <span class="fu">list</span>(</span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>      <span class="at">island =</span> <span class="st">"Island"</span>, <span class="co"># names denote variables, values supply labels</span></span>
+<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>      <span class="at">year =</span> <span class="st">"Year"</span></span>
+<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a>    ), </span>
+<span id="cb38-6"><a href="#cb38-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">groups =</span> <span class="fu">list</span>(<span class="st">"Species"</span>, <span class="st">"Sex"</span>, <span class="st">""</span>) <span class="co"># this is a list of labels only</span></span>
+<span id="cb38-7"><a href="#cb38-7" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb38-8"><a href="#cb38-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-9"><a href="#cb38-9" aria-hidden="true" tabindex="-1"></a>penguin_groups <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">3</span>, <span class="dv">2</span>, <span class="dv">1</span>) <span class="co"># first three data frames are group 1, etc</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>At this point we have:</p>
+<ul>
+<li><code>penguins_strata</code>, a variable that contains all the data organised into a list with one data frame per strata</li>
+<li><code>penguins_labels</code>, a list that specifies the variables for which descriptive statistics are requested and the labels that should be assigned to variables and strata groups; and</li>
+<li><code>penguins_groups</code>, a vector that specifies how the strata columns should be grouped</li>
+</ul>
+<p>It’s quite a bit of setup work, but having done all the hard parts during the setup, the call to <code>table1()</code> is now very simple:</p>
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="fu">table1</span>(penguins_strata, penguins_labels, <span class="at">groupspan =</span> penguin_groups)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="Rtable1">
+<table class="Rtable1 table" data-quarto-postprocess="true">
+<colgroup>
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 14%">
+</colgroup>
+<thead>
+<tr class="header">
+<th class="grouplabel" data-quarto-table-cell-role="th"></th>
+<th colspan="3" class="grouplabel" data-quarto-table-cell-role="th"><div>
+Species
+</div></th>
+<th colspan="2" class="grouplabel" data-quarto-table-cell-role="th"><div>
+Sex
+</div></th>
+<th class="grouplabel" data-quarto-table-cell-role="th"></th>
+</tr>
+<tr class="odd">
+<th class="rowlabel firstrow lastrow" data-quarto-table-cell-role="th"></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Adelie<br>
+<span class="stratn">(N=152)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Chinstrap<br>
+<span class="stratn">(N=68)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Gentoo<br>
+<span class="stratn">(N=124)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Female<br>
+<span class="stratn">(N=165)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">Male<br>
+<span class="stratn">(N=168)</span></span></th>
+<th class="firstrow lastrow" data-quarto-table-cell-role="th"><span class="stratlabel">All<br>
+<span class="stratn">(N=344)</span></span></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td class="rowlabel firstrow">Island</td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+</tr>
+<tr class="even">
+<td class="rowlabel">Biscoe</td>
+<td>44 (28.9%)</td>
+<td>0 (0%)</td>
+<td>124 (100%)</td>
+<td>80 (48.5%)</td>
+<td>83 (49.4%)</td>
+<td>168 (48.8%)</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel">Dream</td>
+<td>56 (36.8%)</td>
+<td>68 (100%)</td>
+<td>0 (0%)</td>
+<td>61 (37.0%)</td>
+<td>62 (36.9%)</td>
+<td>124 (36.0%)</td>
+</tr>
+<tr class="even">
+<td class="rowlabel lastrow">Torgersen</td>
+<td class="lastrow">52 (34.2%)</td>
+<td class="lastrow">0 (0%)</td>
+<td class="lastrow">0 (0%)</td>
+<td class="lastrow">24 (14.5%)</td>
+<td class="lastrow">23 (13.7%)</td>
+<td class="lastrow">52 (15.1%)</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel firstrow">Year</td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+</tr>
+<tr class="even">
+<td class="rowlabel">2007</td>
+<td>50 (32.9%)</td>
+<td>26 (38.2%)</td>
+<td>34 (27.4%)</td>
+<td>51 (30.9%)</td>
+<td>52 (31.0%)</td>
+<td>110 (32.0%)</td>
+</tr>
+<tr class="odd">
+<td class="rowlabel">2008</td>
+<td>50 (32.9%)</td>
+<td>18 (26.5%)</td>
+<td>46 (37.1%)</td>
+<td>56 (33.9%)</td>
+<td>57 (33.9%)</td>
+<td>114 (33.1%)</td>
+</tr>
+<tr class="even">
+<td class="rowlabel lastrow">2009</td>
+<td class="lastrow">52 (34.2%)</td>
+<td class="lastrow">24 (35.3%)</td>
+<td class="lastrow">44 (35.5%)</td>
+<td class="lastrow">58 (35.2%)</td>
+<td class="lastrow">59 (35.1%)</td>
+<td class="lastrow">120 (34.9%)</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+<p><br></p>
+<p>And there it is. A table with two marginal stratifications and an overall column that provides descriptive statistics for two categorical variables.</p>
+<p><img src="whyd-you-bring-a-shotgun.jpg" class="img-fluid"></p>
+</section>
+</section>
+<section id="styling-tables" class="level2">
+<h2 class="anchored" data-anchor-id="styling-tables">Styling tables</h2>
+<p>The last topic I want to cover in this post is the visual styling of tables produced by <code>table1()</code>. In a moment I’ll show you what a table1 object looks like under the hood, but the short version is that the table structure is specified using HTML, and the visual styling is performed with the help of CSS. Most of the time when you’re using the table1 package you don’t really have to think too much about this, because the package comes with a collection of built-in styles that are usually good enough for a data analyst to use, but sometimes you want to go a little further. So we should talk a little about styling.</p>
+<section id="built-in-styles" class="level3">
+<h3 class="anchored" data-anchor-id="built-in-styles">Built-in styles</h3>
+<p>Let’s start with the built-in styles that come for free with the table1 package. As described in the package vignette, if you’re not particularly interested in writing your own CSS code you have these options available to you:</p>
+<ul>
+<li><code>zebra</code>: alternating shaded and unshaded rows</li>
+<li><code>grid</code>: show all grid lines</li>
+<li><code>shade</code>: shade the header in gray</li>
+<li><code>times</code>: use a serif font</li>
+<li><code>center</code>: center all columns</li>
+</ul>
+<p>Each of these is associated with a CSS class that has the <code>Rtable1-</code> prefix, e.g., the <code>zebra</code> style corresponds to the <code>Rtable1-zebra</code> CSS class. You can have one of these classes applied to your table using the <code>topclass</code> argument. For instance, here’s a “zebra” style table:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="fu">table1</span>(</span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">x =</span> <span class="sc">~</span> flipper_length_mm <span class="sc">+</span> body_mass_g <span class="sc">|</span> species,</span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> penguins,</span>
+<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">topclass =</span> <span class="st">"Rtable1-zebra"</span>,</span>
+<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">render =</span> render_mean,</span>
+<span id="cb40-6"><a href="#cb40-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">render.strat =</span> render_strat,</span>
+<span id="cb40-7"><a href="#cb40-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">footnote =</span> <span class="st">"Source: palmerpenguins"</span></span>
+<span id="cb40-8"><a href="#cb40-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="Rtable1"><table class="Rtable1-zebra">
+<thead>
+<tr>
+<th class="rowlabel firstrow lastrow"></th>
+<th class="firstrow lastrow"><span class="stratlabel">Adelie</span></th>
+<th class="firstrow lastrow"><span class="stratlabel">Chinstrap</span></th>
+<th class="firstrow lastrow"><span class="stratlabel">Gentoo</span></th>
+<th class="firstrow lastrow"><span class="stratlabel">Overall</span></th>
+</tr>
+</thead><tfoot><tr><td colspan="5" class="Rtable1-footnote"><p>Source: palmerpenguins</p>
+</td></tr></tfoot>
+
+<tbody>
+<tr>
+<td class="rowlabel firstrow lastrow">Flipper Length (mm)</td>
+<td class="firstrow lastrow">190.0</td>
+<td class="firstrow lastrow">195.8</td>
+<td class="firstrow lastrow">217.2</td>
+<td class="firstrow lastrow">200.9</td>
+</tr>
+<tr>
+<td class="rowlabel firstrow lastrow">Body Mass (g)</td>
+<td class="firstrow lastrow">3700.7</td>
+<td class="firstrow lastrow">3733.1</td>
+<td class="firstrow lastrow">5076.0</td>
+<td class="firstrow lastrow">4201.8</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<p>Because these built-in styles are all CSS classes, you can apply more than one to your table. For example, if I want a table with zebra-style stripes, a shaded header bar, and text in Times New Roman font, I can specify <code>topclass = "Rtable1-zebra Rtable1-shade Rtable1-times"</code> and get the desired result:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="fu">table1</span>(</span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">x =</span> <span class="sc">~</span> flipper_length_mm <span class="sc">+</span> body_mass_g <span class="sc">|</span> species,</span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> penguins,</span>
+<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">topclass =</span> <span class="st">"Rtable1-zebra Rtable1-shade Rtable1-times"</span>,</span>
+<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">render =</span> render_mean,</span>
+<span id="cb41-6"><a href="#cb41-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">render.strat =</span> render_strat,</span>
+<span id="cb41-7"><a href="#cb41-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">footnote =</span> <span class="st">"Source: palmerpenguins"</span></span>
+<span id="cb41-8"><a href="#cb41-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="Rtable1"><table class="Rtable1-zebra Rtable1-shade Rtable1-times">
+<thead>
+<tr>
+<th class="rowlabel firstrow lastrow"></th>
+<th class="firstrow lastrow"><span class="stratlabel">Adelie</span></th>
+<th class="firstrow lastrow"><span class="stratlabel">Chinstrap</span></th>
+<th class="firstrow lastrow"><span class="stratlabel">Gentoo</span></th>
+<th class="firstrow lastrow"><span class="stratlabel">Overall</span></th>
+</tr>
+</thead><tfoot><tr><td colspan="5" class="Rtable1-footnote"><p>Source: palmerpenguins</p>
+</td></tr></tfoot>
+
+<tbody>
+<tr>
+<td class="rowlabel firstrow lastrow">Flipper Length (mm)</td>
+<td class="firstrow lastrow">190.0</td>
+<td class="firstrow lastrow">195.8</td>
+<td class="firstrow lastrow">217.2</td>
+<td class="firstrow lastrow">200.9</td>
+</tr>
+<tr>
+<td class="rowlabel firstrow lastrow">Body Mass (g)</td>
+<td class="firstrow lastrow">3700.7</td>
+<td class="firstrow lastrow">3733.1</td>
+<td class="firstrow lastrow">5076.0</td>
+<td class="firstrow lastrow">4201.8</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</section>
+<section id="using-custom-css" class="level3">
+<h3 class="anchored" data-anchor-id="using-custom-css">Using custom CSS</h3>
+<blockquote class="blockquote">
+<p>Signed with the devil <br> Signed with the devil <br> Signed with the devil, oh <br> &nbsp; &nbsp; –<em><a href="https://www.youtube.com/watch?v=BQpZv2r8fb4">The Pretty Reckless</a></em></p>
+</blockquote>
+<p>In everyday data analysis work the build-in style classes that come with the table1 package are good enough to create pretty outputs. But sometimes they are not. A client or a journal might want a table to be formatted in a very specific style, and at that point you’re going to have to write your own CSS code. I have a love/hate relationship with CSS. It’s such a powerful tool for styling HTML objects, but somehow it never feels natural to me and I feel like I’m making a pact with dark powers every time I use. Unfortunately I’m at the point in the post where I have to deal with demonic forces. Let’s just hope we all come through this unscathed yeah?</p>
+<p>To help with this disussion I’ll start by creating a table, but instead of printing it to the output, I’ll assign it to a variable called <code>tbl</code>. As you can see from the code below, I’ve specified <code>topclass = "mytable"</code> so that I can write some CSS that will be applied only to this table (or, I suppose, any other table that has CSS class <code>mytable</code>, but I’m only going to make one):</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>tbl <span class="ot">&lt;-</span> <span class="fu">table1</span>(</span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">x =</span> <span class="sc">~</span> flipper_length_mm <span class="sc">+</span> body_mass_g <span class="sc">|</span> species,</span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> penguins,</span>
+<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">topclass =</span> <span class="st">"mytable"</span>,</span>
+<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">render =</span> render_mean,</span>
+<span id="cb42-6"><a href="#cb42-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">render.strat =</span> render_strat,</span>
+<span id="cb42-7"><a href="#cb42-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">footnote =</span> <span class="st">"Source: palmerpenguins"</span></span>
+<span id="cb42-8"><a href="#cb42-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Next, if we want to write some CSS that will target this table, it helps a great deal to be able to see the actual HTML associated with the <code>tbl</code> object. Here it is:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">as.character</span>(tbl))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>&lt;table class="mytable"&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th class='rowlabel firstrow lastrow'&gt;&lt;/th&gt;
+&lt;th class='firstrow lastrow'&gt;&lt;span class='stratlabel'&gt;Adelie&lt;/span&gt;&lt;/th&gt;
+&lt;th class='firstrow lastrow'&gt;&lt;span class='stratlabel'&gt;Chinstrap&lt;/span&gt;&lt;/th&gt;
+&lt;th class='firstrow lastrow'&gt;&lt;span class='stratlabel'&gt;Gentoo&lt;/span&gt;&lt;/th&gt;
+&lt;th class='firstrow lastrow'&gt;&lt;span class='stratlabel'&gt;Overall&lt;/span&gt;&lt;/th&gt;
+&lt;/tr&gt;
+&lt;tfoot&gt;&lt;tr&gt;&lt;td colspan="5" class="Rtable1-footnote"&gt;&lt;p&gt;Source: palmerpenguins&lt;/p&gt;
+&lt;/td&gt;&lt;/tr&gt;&lt;/tfoot&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td class='rowlabel firstrow lastrow'&gt;Flipper Length (mm)&lt;/td&gt;
+&lt;td class='firstrow lastrow'&gt;190.0&lt;/td&gt;
+&lt;td class='firstrow lastrow'&gt;195.8&lt;/td&gt;
+&lt;td class='firstrow lastrow'&gt;217.2&lt;/td&gt;
+&lt;td class='firstrow lastrow'&gt;200.9&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td class='rowlabel firstrow lastrow'&gt;Body Mass (g)&lt;/td&gt;
+&lt;td class='firstrow lastrow'&gt;3700.7&lt;/td&gt;
+&lt;td class='firstrow lastrow'&gt;3733.1&lt;/td&gt;
+&lt;td class='firstrow lastrow'&gt;5076.0&lt;/td&gt;
+&lt;td class='firstrow lastrow'&gt;4201.8&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;</code></pre>
+</div>
+</div>
+<p>This output reveals the CSS class names associated with the specific components of the table. So, let’s suppose that the client has indicated that the table footnote needs to be in italics and – for reasons known but to god – the header text needs to be shown in hot pink. Thanks to the blood magic of CSS nesting, I can write a little snippet of CSS that specifies that for any table of CSS class <code>mytable</code>, the footnote should be in italics and the stratification labels should be shown in hot pink:</p>
+<div class="sourceCode" id="cb45"><pre class="sourceCode css code-with-copy"><code class="sourceCode css"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="fu">.mytable</span> {</span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">.Rtable1-footnote</span> {</span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">font-style</span><span class="ch">:</span> <span class="dv">italic</span><span class="op">;</span></span>
+<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">.stratlabel</span> {</span>
+<span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">color</span><span class="ch">:</span> <span class="cn">hotpink</span></span>
+<span id="cb45-7"><a href="#cb45-7" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb45-8"><a href="#cb45-8" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Under the hood, I have saved this exact CSS snippet to a tiny stylesheet that is imported within this post, so when I print out the <code>tbl</code> object I get the desired result:</p>
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>tbl</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="Rtable1"><table class="mytable">
+<thead>
+<tr>
+<th class="rowlabel firstrow lastrow"></th>
+<th class="firstrow lastrow"><span class="stratlabel">Adelie</span></th>
+<th class="firstrow lastrow"><span class="stratlabel">Chinstrap</span></th>
+<th class="firstrow lastrow"><span class="stratlabel">Gentoo</span></th>
+<th class="firstrow lastrow"><span class="stratlabel">Overall</span></th>
+</tr>
+</thead><tfoot><tr><td colspan="5" class="Rtable1-footnote"><p>Source: palmerpenguins</p>
+</td></tr></tfoot>
+
+<tbody>
+<tr>
+<td class="rowlabel firstrow lastrow">Flipper Length (mm)</td>
+<td class="firstrow lastrow">190.0</td>
+<td class="firstrow lastrow">195.8</td>
+<td class="firstrow lastrow">217.2</td>
+<td class="firstrow lastrow">200.9</td>
+</tr>
+<tr>
+<td class="rowlabel firstrow lastrow">Body Mass (g)</td>
+<td class="firstrow lastrow">3700.7</td>
+<td class="firstrow lastrow">3733.1</td>
+<td class="firstrow lastrow">5076.0</td>
+<td class="firstrow lastrow">4201.8</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><br></p>
+<p>Another day, another encounter with CSS that I have survived. I will take the victory.</p>
+</section>
+</section>
+<section id="epilogue" class="level2">
+<h2 class="anchored" data-anchor-id="epilogue">Epilogue</h2>
+<blockquote class="blockquote">
+<p>For the ways that I hurt when I’m hiking up my skirt <br> For the man that I hate I’m going to hell <br> &nbsp; &nbsp; –<em>The Pretty Reckless</em></p>
+</blockquote>
+<p>There’s a lot I’m not saying in this post. There’s a lot of hidden detail in the table1 package, and additional tricks that you can deploy to make it work to your advantage. But a post has to end somewhere and besides, if you’ve hit the point where the tools I’ve talked about in this post can’t solve your specific problem you’re probably at the point where table1 is the wrong fit.</p>
+<p>It’s never wise to try to use force.</p>
+<p><br></p>
+<p><img src="take-me-down.jpg" class="img-fluid"></p>
+
+
+</section>
+
+
+<div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p>It always strikes me as a bitter failure of public policy that when someone falls sick, their first thought is <em>always</em> something along the lines of “can I still work?” Very few people actually love their jobs so much that they want to work through a serious illness, but the fear that the company will discard you the moment something bad happens is built into our society at a low level. If you’re not dead you work. Because capitalism.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>The package source code is on <a href="https://github.com/benjaminrich/table1">github</a>, and the <a href="https://benjaminrich.github.io/table1/vignettes/table1-examples.html">package vignette</a> provides a lot of useful detail that you can’t necessarily find by browsing the help files.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3"><p>The output of a call to <code>table1()</code> has S3 class “table1”, and internally specifies an HTML table (more on that later). When printed in a quarto or R markdown document like this one, in the normal course of events the <code>table1:::knit_print.table()</code> method is called, in which case the table1 object is coerced to a data frame and the end result looks the same as a data frame would look when <code>knitr::kable()</code> is called. However, this is slightly different to how the table looks if you call it interactively in an R session where the S3 method called is <code>table1:::print.table1()</code>. Because I want the output in this post to look as close as possible to the typical output when calling <code>table1()</code> in a regular R session, I’ve set <code>results = "asis"</code> for all my code chunks in this document, thereby ending up with tables that look the same as the ones you see interactively in the R session.<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn4"><p>The stratification variable (i.e.&nbsp;<code>species</code>) isn’t actually necessary to create a table, and if you wanted you could produce a table using a formula like <code>~ island + bill_length_mm</code>. In practice, however, I’ve found that I never do this: almost every table I’ve created in real life has a stratification variable.<a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn5"><p>The table1 package also supports units as a separate piece of metadata via the <code>units()</code> function, but I have to admit I never really use that one.<a href="#fnref5" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn6"><p>If you’re a foolish person like I am you can also dig into the <a href="https://github.com/benjaminrich/table1/blob/master/R/table1.R">source code</a> to find the answer, because why would I be smart and read the package vignette <em>before</em> reading the source code?<a href="#fnref6" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn7"><p>If you want a more precise answer, you can use a command like <code>parse.abbrev.render.code("GMEAN")</code> to return the actual function that is executed whenever a <code>"GMEAN"</code> is computed during the table rendering process.<a href="#fnref7" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn8"><p>If you’re curious as to why I’m extracting the first element of the output in this code, try playing around with <code>stats.default()</code> and looking at the differences between how the output is structured for continuous versus categorical inputs.<a href="#fnref8" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section><section class="quarto-appendix-contents" id="quarto-reuse"><h2 class="anchored quarto-appendix-heading">Reuse</h2><div class="quarto-appendix-contents"><div><a rel="license" href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></div></div></section><section class="quarto-appendix-contents" id="quarto-citation"><h2 class="anchored quarto-appendix-heading">Citation</h2><div><div class="quarto-appendix-secondary-label">BibTeX citation:</div><pre class="sourceCode code-with-copy quarto-appendix-bibtex"><code class="sourceCode bibtex">@online{navarro2024,
+  author = {Navarro, Danielle},
+  title = {Making Tables in {R} with Table1},
+  date = {2024-06-21},
+  url = {https://blog.djnavarro.net/posts/2024-06-21_table1},
+  langid = {en}
+}
+</code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre><div class="quarto-appendix-secondary-label">For attribution, please cite this work as:</div><div id="ref-navarro2024" class="csl-entry quarto-appendix-citeas" role="listitem">
+Navarro, Danielle. 2024. <span>“Making Tables in R with Table1.”</span>
+June 21, 2024. <a href="https://blog.djnavarro.net/posts/2024-06-21_table1">https://blog.djnavarro.net/posts/2024-06-21_table1</a>.
+</div></div></section></div></main> <!-- /main -->
+<!-- plausible -->
+<script async="" defer="" data-domain="blog.djnavarro.net" src="https://plausible.io/js/plausible.js"></script>
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+    <a class="nav-link" href="https://blog.djnavarro.net">
+<p>blog.djnavarro.net</p>
+</a>
+  </li>  
+</ul>
+    </div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>

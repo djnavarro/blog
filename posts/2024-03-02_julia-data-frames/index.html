@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.4.550">
+<meta name="generator" content="quarto-1.4.549">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -264,7 +264,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  author <span class="op">=</span> <span class="st">"William Gibson"</span></span>
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="3">
-<div>
 <div><div style="float: left;"><span>3×3 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
 <table class="data-frame table table-sm table-striped small" data-quarto-postprocess="true">
 <thead>
@@ -305,7 +304,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-</div>
 <p>Data frames have pretty print methods so the output looks quite nice here. But internally it’s essentially a collection of vectors, one for each column. For example, <code>sprawl.title</code> is a vector of three strings:</p>
 <div id="8c395abb" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>sprawl.title</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -326,7 +324,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div id="4384172d" class="cell page-columns page-full" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>starwars <span class="op">=</span> <span class="fu">DataFrame</span>(starwars_csv)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display column-page" data-execution_count="6">
-<div>
 <div><div style="float: left;"><span>87×11 DataFrame</span></div><div style="float: right;"><span style="font-style: italic;">62 rows omitted</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
 <table class="data-frame table table-sm table-striped small" data-quarto-postprocess="true">
 <thead>
@@ -729,7 +726,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-</div>
 </section>
 <section id="subsetting-data-frames-i" class="level2">
 <h2 class="anchored" data-anchor-id="subsetting-data-frames-i">Subsetting data frames I</h2>
@@ -737,7 +733,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div id="07ce92f9" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>starwars[<span class="fl">1</span><span class="op">:</span><span class="fl">6</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">5</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="7">
-<div>
 <div><div style="float: left;"><span>6×5 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
 <table class="data-frame table table-sm table-striped small" data-quarto-postprocess="true">
 <thead>
@@ -812,7 +807,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-</div>
 <p>However, there are other methods for subsetting a data frame. You can also filter the rows of a data frame using logical expressions. Again, this is quite similar to how it works in base R. For instance, I can construct a boolean vector <code>fair_skinned</code> which indicates whether the corresponding row in <code>starwars</code> refers to a person with fair skin:<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
 <div id="8b1afd8f" class="cell" data-execution_count="7">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>fair_skinned <span class="op">=</span> starwars.skin_color <span class="op">.==</span> <span class="st">"fair"</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -821,7 +815,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div id="2fbce141" class="cell" data-execution_count="8">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>starwars[fair_skinned, <span class="fl">1</span><span class="op">:</span><span class="fl">5</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="9">
-<div>
 <div><div style="float: left;"><span>17×5 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
 <table class="data-frame table table-sm table-striped small" data-quarto-postprocess="true">
 <thead>
@@ -984,12 +977,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-</div>
 <p>On the columns side, we also have more flexible options for subsetting a data frame. For example, instead of referring to columns using numerical indices, we can select the variables that we want to keep using their names:</p>
 <div id="74531c1d" class="cell" data-execution_count="9">
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>starwars[<span class="fl">1</span><span class="op">:</span><span class="fl">6</span>, [<span class="op">:</span>name, <span class="op">:</span>gender, <span class="op">:</span>homeworld]]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="10">
-<div>
 <div><div style="float: left;"><span>6×3 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
 <table class="data-frame table table-sm table-striped small" data-quarto-postprocess="true">
 <thead>
@@ -1048,7 +1039,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-</div>
 <p>Referring to columns by name is very handy in practice, and there’s some hidden Julia concepts here that I didn’t talk about in the last post. So with that in mind I’ll digress slightly to talk about…</p>
 </section>
 <section id="symbols" class="level2 page-columns page-full">
@@ -1100,7 +1090,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div id="6c54228a" class="cell" data-execution_count="14">
 <div class="sourceCode cell-code" id="cb17"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>starwars[<span class="fl">1</span><span class="op">:</span><span class="fl">6</span>, <span class="fu">Not</span>([<span class="op">:</span>hair_color, <span class="op">:</span>eye_color, <span class="op">:</span>sex, <span class="op">:</span>homeworld])]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="15">
-<div>
 <div><div style="float: left;"><span>6×7 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
 <table class="data-frame table table-sm table-striped small" data-quarto-postprocess="true">
 <thead>
@@ -1191,12 +1180,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-</div>
 <p>The <code>Between()</code> selector does what you’d think. It returns all columns in between two named columns:</p>
 <div id="5d85756d" class="cell" data-execution_count="15">
 <div class="sourceCode cell-code" id="cb18"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>starwars[<span class="fl">1</span><span class="op">:</span><span class="fl">6</span>, <span class="fu">Between</span>(<span class="op">:</span>sex, <span class="op">:</span>homeworld)]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="16">
-<div>
 <div><div style="float: left;"><span>6×3 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
 <table class="data-frame table table-sm table-striped small" data-quarto-postprocess="true">
 <thead>
@@ -1255,12 +1242,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-</div>
 <p>There’s also an <code>All()</code> selector that returns all columns, but that’s not super exciting. More interesting, I think, is the <code>Cols()</code> selector which takes a predicate function as input.<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a> The column names are passed to the function, and they are included in the output if that function returns <code>true</code>. So, for example, if I want to extract the columns in the data whose name ends in <code>"color"</code> I can do this:</p>
 <div id="8aa5840e" class="cell" data-execution_count="16">
 <div class="sourceCode cell-code" id="cb19"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>starwars[<span class="fl">1</span><span class="op">:</span><span class="fl">6</span>, <span class="fu">Cols</span>(x <span class="op">-&gt;</span> <span class="fu">endswith</span>(x, <span class="st">"color"</span>))]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="17">
-<div>
 <div><div style="float: left;"><span>6×3 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
 <table class="data-frame table table-sm table-striped small" data-quarto-postprocess="true">
 <thead>
@@ -1319,7 +1304,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-</div>
 <p>I find myself liking these selector functions. Coming from the tidyverse style in R where tidyselect is used to govern column selection it feels… not terribly different. Superficially different, perhaps, but the combination of <code>All()</code>, <code>Not()</code>, <code>Between()</code>, and <code>Cols()</code> seems to provide a fairly powerful and (I think?) user-friendly way to select columns.</p>
 
 <div class="no-row-height column-margin column-container"><div class="">
@@ -1337,7 +1321,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div id="cf57dbfd" class="cell" data-execution_count="17">
 <div class="sourceCode cell-code" id="cb20"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">combine</span>(<span class="fu">groupby</span>(starwars, [<span class="op">:</span>gender, <span class="op">:</span>sex]), <span class="op">:</span>mass <span class="op">=&gt;</span> rand) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="18">
-<div>
 <div><div style="float: left;"><span>6×3 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
 <table class="data-frame table table-sm table-striped small" data-quarto-postprocess="true">
 <thead>
@@ -1396,7 +1379,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-</div>
 <p>In the call to <code>groupby(starwars, [:gender, :sex])</code> what Julia does is construct a grouped data frame (very similar to what you expect in R, really), and then this grouped data frame is passed to <code>combine()</code>. For each such group, we take the relevant subset of the <code>:mass</code> column and pass it to the <code>rand()</code> function, and by doing so a random mass is returned.</p>
 <p>There’s some obvious limitations to note in my code here though. Firstly, I’m not using the pipe <code>|&gt;</code> at all, and while it’s sort of fine in this context because there’s only two steps in my data wrangling exercise, the code is going to get very ugly very quickly if I try to do something fancier.<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a> So let’s start by fixing this.</p>
 <p>As I mentioned in the first post in this series, one way I could transform this into a pipeline is to use the <a href="https://juliapackages.com/p/pipe">Pipe</a> package, which supplies a pipe that behaves very similarly to the base pipe in R. However, I’m not going to do that. Instead, I’m going to adopt a workflow where I use the Julia base pipe together with anonymous functions. Here’s the same code expressed in this kind of pipeline:<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a></p>
@@ -1405,7 +1387,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>  d <span class="op">-&gt;</span> <span class="fu">groupby</span>(d, [<span class="op">:</span>gender, <span class="op">:</span>sex]) <span class="op">|&gt;</span></span>
 <span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  d <span class="op">-&gt;</span> <span class="fu">combine</span>(d, <span class="op">:</span>mass <span class="op">=&gt;</span> rand)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="19">
-<div>
 <div><div style="float: left;"><span>6×3 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
 <table class="data-frame table table-sm table-striped small" data-quarto-postprocess="true">
 <thead>
@@ -1464,7 +1445,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-</div>
 <p>I genuinely wasn’t expecting this when I first learned about the restrictiveness of the Julia pipe, but I think I really like this syntax. Because you <em>have</em> to define an anonymous function at each step in the pipeline, I find myself noticing that:</p>
 <ul>
 <li>It’s only slightly more verbose than the R style, and has the advantage (to my mind) that you can use this workflow without having to think too much about Julia macros</li>
@@ -1511,7 +1491,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>  d <span class="op">-&gt;</span> <span class="fu">subset</span>(d, <span class="op">:</span>homeworld <span class="op">=&gt;</span> h <span class="op">-&gt;</span> h<span class="op">.==</span><span class="st">"Tatooine"</span>, skipmissing<span class="op">=</span><span class="cn">true</span>) <span class="op">|&gt;</span></span>
 <span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>  d <span class="op">-&gt;</span> <span class="fu">sort</span>(d, <span class="op">:</span>mass)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="21">
-<div>
 <div><div style="float: left;"><span>10×3 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
 <table class="data-frame table table-sm table-striped small" data-quarto-postprocess="true">
 <thead>
@@ -1594,7 +1573,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-</div>
 <p>Notice that this time I’ve been a little smarter about handling missing values. In the call to <code>subset()</code> I specified <code>skipmissing=true</code> to drop all cases where the homeworld is missing. The <code>sort()</code> function doesn’t have a <code>skipmissing</code> argument, so the results include the two cases where someone from Tatooine doesn’t have a stated weight. But hopefully it’s clear that I could easily subset the data again to remove any cases with missing values on the <code>:mass</code> column if I wanted to. In fact, the DataFrames package supplies functions <code>dropmissing()</code>, <code>allowmissing()</code>, and <code>completecases()</code> that could be used for that purpose. For example:</p>
 <div id="854e3daa" class="cell" data-execution_count="21">
 <div class="sourceCode cell-code" id="cb25"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>starwars <span class="op">|&gt;</span> </span>
@@ -1603,7 +1581,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>  d <span class="op">-&gt;</span> <span class="fu">sort</span>(d, <span class="op">:</span>mass, rev<span class="op">=</span><span class="cn">true</span>) <span class="op">|&gt;</span></span>
 <span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>  d <span class="op">-&gt;</span> <span class="fu">dropmissing</span>(d, <span class="op">:</span>mass)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="22">
-<div>
 <div><div style="float: left;"><span>8×3 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
 <table class="data-frame table table-sm table-striped small" data-quarto-postprocess="true">
 <thead>
@@ -1674,7 +1651,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-</div>
 <p>The missing <code>:mass</code> rows are now gone, and – just for my own personal amusement – this time I’ve sorted the results in order of descending weight by setting <code>rev=true</code>.</p>
 
 <div class="no-row-height column-margin column-container"><div class="">
@@ -1692,7 +1668,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="sourceCode cell-code" id="cb26"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>starwars <span class="op">|&gt;</span></span>
 <span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>  d <span class="op">-&gt;</span> <span class="fu">select</span>(d, [<span class="op">:</span>name, <span class="op">:</span>eye_color, <span class="op">:</span>skin_color, <span class="op">:</span>hair_color])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="23">
-<div>
 <div><div style="float: left;"><span>87×4 DataFrame</span></div><div style="float: right;"><span style="font-style: italic;">62 rows omitted</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
 <table class="data-frame table table-sm table-striped small" data-quarto-postprocess="true">
 <thead>
@@ -1899,7 +1874,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-</div>
 <p>Suppose what I want to do is transform this into a data set that has variables <code>:name</code>, <code>:body_part</code>, and <code>:color</code>. In other words I want to pivot this into a long-form data set where each character is represented by three rows, and has one row that specifies the colour of the relevant body part. We can do this with the <code>stack()</code> function:</p>
 <div id="bc588e3d" class="cell" data-execution_count="23">
 <div class="sourceCode cell-code" id="cb27"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>starwars <span class="op">|&gt;</span></span>
@@ -1909,7 +1883,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>    value_name<span class="op">=:</span>color</span>
 <span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="24">
-<div>
 <div><div style="float: left;"><span>261×3 DataFrame</span></div><div style="float: right;"><span style="font-style: italic;">236 rows omitted</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
 <table class="data-frame table table-sm table-striped small" data-quarto-postprocess="true">
 <thead>
@@ -2088,7 +2061,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-</div>
 </section>
 <section id="data-wrangling-iv-unstack" class="level2 page-columns page-full">
 <h2 class="anchored" data-anchor-id="data-wrangling-iv-unstack">Data wrangling IV: unstack</h2>
@@ -2099,7 +2071,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>  d <span class="op">-&gt;</span> <span class="fu">groupby</span>(d, [<span class="op">:</span>homeworld, <span class="op">:</span>species]) <span class="op">|&gt;</span> </span>
 <span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>  d <span class="op">-&gt;</span> <span class="fu">combine</span>(d, <span class="op">:</span>name <span class="op">=&gt;</span> (n <span class="op">-&gt;</span> <span class="fu">length</span>(n)) <span class="op">=&gt;</span> <span class="op">:</span>count)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="25">
-<div>
 <div><div style="float: left;"><span>51×3 DataFrame</span></div><div style="float: right;"><span style="font-style: italic;">26 rows omitted</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
 <table class="data-frame table table-sm table-striped small" data-quarto-postprocess="true">
 <thead>
@@ -2278,12 +2249,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-</div>
 <p>So now, if I wanted a version of this data set with one row per <code>:homeworld</code> and a column for each <code>:species</code> that contains the <code>:count</code> of the number of characters of that species on the corresponding world, I could use <code>unstack()</code> to pivot from long-form to wide-form data like this:</p>
 <div id="294c7710" class="cell page-columns page-full" data-execution_count="25">
 <div class="sourceCode cell-code" id="cb29"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">unstack</span>(census, <span class="op">:</span>species, <span class="op">:</span>count, fill<span class="op">=</span><span class="fl">0</span>) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display column-page" data-execution_count="26">
-<div>
 <div><div style="float: left;"><span>46×37 DataFrame</span></div><div style="float: right;"><span style="font-style: italic;">21 rows omitted</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
 <table class="data-frame table table-sm table-striped small" data-quarto-postprocess="true">
 <thead>
@@ -3414,7 +3383,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-</div>
 <p>Here I’ve specified <code>fill=0</code> to indicate missing values should be replaced with zeros, which is very sensible in this case because if there are no characters with a particular species/homeworld combination there wouldn’t be a row in <code>census</code>. Also, because I can, here’s a version that appears in a pipeline where I return only a subset of species, and – in act of appalling xenophobia – consider only planets inhabited by at least one human character:</p>
 <div id="efa73efc" class="cell" data-execution_count="26">
 <div class="sourceCode cell-code" id="cb30"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>census<span class="op">|&gt;</span></span>
@@ -3422,7 +3390,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>  d <span class="op">-&gt;</span> <span class="fu">select</span>(d, [<span class="op">:</span>homeworld, <span class="op">:</span>Human, <span class="op">:</span>Droid, <span class="op">:</span>Ewok, <span class="op">:</span>Wookiee, <span class="op">:</span>Hutt]) <span class="op">|&gt;</span></span>
 <span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>  d <span class="op">-&gt;</span> <span class="fu">subset</span>(d, <span class="op">:</span>Human <span class="op">=&gt;</span> h <span class="op">-&gt;</span> h <span class="op">.&gt;</span> <span class="fl">0</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="27">
-<div>
 <div><div style="float: left;"><span>14×6 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
 <table class="data-frame table table-sm table-striped small" data-quarto-postprocess="true">
 <thead>
@@ -3577,7 +3544,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-</div>
 <p>Hm. Not sure what those results say about the willingness of humans to mix with other species in the <em>Star Wars</em> universe but it’s probably not good to reflect on it too much.</p>
 
 <div class="no-row-height column-margin column-container"><div class="">
@@ -3595,7 +3561,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="sourceCode cell-code" id="cb31"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>starwars[<span class="fl">1</span><span class="op">:</span><span class="fl">6</span>, [<span class="op">:</span>name]] <span class="op">|&gt;</span> </span>
 <span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>  d <span class="op">-&gt;</span> <span class="fu">transform</span>(d, <span class="op">:</span>name <span class="op">=&gt;</span> (n <span class="op">-&gt;</span> n<span class="op">.==</span><span class="st">"Darth Vader"</span>) <span class="op">=&gt;</span> <span class="op">:</span>lukes_father)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="28">
-<div>
 <div><div style="float: left;"><span>6×2 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
 <table class="data-frame table table-sm table-striped small" data-quarto-postprocess="true">
 <thead>
@@ -3643,7 +3608,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 </tbody>
 </table>
-</div>
 </div>
 </div>
 </div>
