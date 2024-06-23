@@ -512,15 +512,32 @@ Very nice.
 
 ### Transposing tables
 
+> Let me open up the discussion with <br>
+> I'm not impressed with any motherfucking word I say <br>
+> See I lied that I cried when he came inside <br>
+> And now I'm burning a highway to Hades <br>
+> &nbsp; &nbsp; --*[The Pretty Reckless](https://www.youtube.com/watch?v=j6t-AgLT-LM&rco=1)*
+
+Before I dive a little deeper and talk about table structures that go beyond what you can do with the formula interface to `table1()` there's one more thing I should talk about. I don't actually *want* to talk about this topic because it makes me cry a little bit every time I encounter it, but I'll be good and try anyway. 
+
+That topic is transposing a table. 
+
+Normally when you specify a table with a formula, the stratification is used to create the columns, and the variable list is used to define the rows. You can flip this if you like by setting `transpose = TRUE` when calling `table1()`, but in my experience this is a bit messy and often requires a lot of tinkering with your render functions to make the results look good. To that end, here's a simple rendering function that I'll use in this example. All it does is compute the mean and standard deviation for a continuous variable:
+
 ```{r}
-#| label: transposing-tables
-#| results: asis
+#| label: render-mean-sd
 render_mean_sd <- function(x, ...) {
   m <- mean(x, na.rm = TRUE)
   s <- sd(x, na.rm = TRUE)
   sprintf("%1.1f (%1.1f)", m, s)
 }
+```
 
+With the help of this `render_mean_sd()` function and the simple `render_strat()` function I defined earlier, here's an example of a transposed table in which the stratification variable (`species`) defines the rows, and the four variables on the left are used to define columns:
+
+```{r}
+#| label: transposing-tables
+#| results: asis
 table1(
   x = ~ bill_length_mm + bill_depth_mm + flipper_length_mm + body_mass_g | species,
   data = penguins,
@@ -532,6 +549,8 @@ table1(
 ```
 
 <br>
+
+It works, and there are definitely use cases for this. But the functionality is limited. It only works for a single stratification level (i.e., you can't do `species * island` in this context), and it only looks pretty because my `render_mean_sd()` function doesn't contain any labels. Things get messy pretty fast when working with transposed tables, and in all honesty I've never been willing to use this functionality in a client project.
 
 ### Arbitrary stratification
 
