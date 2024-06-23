@@ -1,0 +1,783 @@
+---
+title: "Making tables in R with table1"
+description: "A pretty reckless dive into a package that hits the sweet spot for me"
+date: "2024-06-21"
+categories: ["R", "Data Wrangling"]
+image: "make-me-wanna-die.jpg"
+image-alt: "Screenshot to the film clip for 'Make Me Wanna Die' by The Pretty Reckless, in which Taylor Momsen is looking fabulous"
+format: 
+  html:
+    css: style-tweaks.css
+--- 
+
+<!--------------- my typical setup ----------------->
+
+```{r}
+#| label: setup
+#| include: false
+very_wide <- 500
+wide <- 136
+narrow <- 76
+options(width = wide)
+cache_images <- TRUE
+set.seed(1)
+```
+
+<!--------------- post begins here ----------------->
+
+> I'll never be good enough <br>
+> You make me wanna die <br>
+> And everything you love will burn up in the light <br>
+> And every time I look inside your eyes <br>
+> You make me wanna die <br>
+> &nbsp; &nbsp; - [*The Pretty Reckless*](https://www.youtube.com/watch?v=txBfhpm1jI0)
+
+It's no secret that my health hasn't been so great these last few months. Nothing life-threatening, I hasten to add, but severe enough that I've spent a depressing amount of 2024 in bed, and not in the fun way. I'm fortunate enough to have a remote job, and the workload this year hasn't been as demanding as it was last year. I've been able to manage, yes,^[It always strikes me as a bitter failure of public policy that when someone falls sick, their first thought is *always* something along the lines of "can I still work?" Very few people actually love their jobs so much that they want to work through a serious illness, but the fear that the company will discard you the moment something bad happens is built into our society at a low level. If you're not dead you work. Because capitalism.] but it has been rough. I've necessarily been focusing what little energy I've had on my kids and on my day to day work. I've had no bandwidth at all to write, or make art, or learn new things. A sorry state of affairs, and one that sucks much of the joy out of life.
+
+Happily, things have started to turn around in recent weeks. I've had a little more energy, I've been able to work from my desk rather than my bed, and while the artistic impulse hasn't come back yet I've started to write once more. I told myself that I'd start with something fairly simple for my first attempt at writing -- Danielle, perhaps you could write up a few notes about a package you use at work? Nothing complicated. Just a little something on the [table1](https://benjaminrich.github.io/table1/) package^[The package source code is on [github](https://github.com/benjaminrich/table1), and the [package vignette](https://benjaminrich.github.io/table1/vignettes/table1-examples.html) provides a lot of useful detail that you can't necessarily find by browsing the help files.] by Benjamin Rich, perhaps? Nice and simple, short and sweet. Won't take very long at all will it my dear?
+
+Yeah, right.
+
+![](./make-me-wanna-die.jpg)
+
+::: {.column-margin}
+As my health recovers I've been listening to [The Pretty Reckless](https://en.wikipedia.org/wiki/The_Pretty_Reckless) a lot, and discovering that [Taylor Momsen](https://en.wikipedia.org/wiki/Taylor_Momsen) is so much more awesome than I realised
+:::
+
+## Getting started
+
+The table1 package is one of those "niche" packages that is designed to solve exactly one problem, and solve that problem well: it is designed to produce tables of descriptive statistics of the sort that typically appear as "Table 1" in an academic paper (hence the name). It's not a general purpose tool for table construction like [gt](https://gt.rstudio.com/) or [flextable](https://ardata-fr.github.io/flextable-book/index.html), and compared to those packages it has a number of limitations. However, because the scope of the package is narrower, it's able to solve the specific problem that it is designed for in an extremely efficient manner. It's used a lot in my workplace and while I was a little skeptical at first I've come to love it. 
+
+So let's get this party started shall we? First, I'll need to load a few packages in order to make this post even remotely legible. Besides the table1 package itself, I'll load the palmerpenguins package so that I have a data set I can play with, and dplyr for any data wrangling I need to do later on:
+
+```{r}
+#| label: packages
+#| message: false
+#| warning: false
+library(palmerpenguins)
+library(table1)
+library(dplyr)
+```
+
+The [palmerpenguins](https://allisonhorst.github.io/palmerpenguins/) data set that I'll be using in this post is one I've used many times before, and it's nicely documented on the package website. Suffice it to say, the data set contains a collection of measurements from three penguin species, and the data set looks like this:
+
+```{r}
+#| label: penguins-data
+penguins
+```
+
+To illustrate the basic usage of the table1 package, I'll create a table that provides descriptive statistics for the `bill_length_mm` and `island` variables, computed separately by each `species` represented in the data set. We can do this with very little difficulty by passing a one-sided formula to the `table1()` function. The formula we want looks like this:
+
+```r
+~ island + bill_length_mm | species
+```
+
+On the left we have the two variables that contain the measurements we want to describe (`bill_length_mm` and `island`), and on the right we have the stratification variable that supplies the grouping (`species`). When calling the `table1()` function, all we have to do is pass this formula and the data frame itself:^[The output of a call to `table1()` has S3 class "table1", and internally specifies an HTML table (more on that later). When printed in a quarto or R markdown document like this one, in the normal course of events the `table1:::knit_print.table()` method is called, in which case the table1 object is coerced to a data frame and the end result looks the same as a data frame would look when `knitr::kable()` is called. However, this is slightly different to how the table looks if you call it interactively in an R session where the S3 method called is `table1:::print.table1()`. Because I want the output in this post to look as close as possible to the typical output when calling `table1()` in a regular R session, I've set `results = "asis"` for all my code chunks in this document, thereby ending up with tables that look the same as the ones you see interactively in the R session.] ^[The stratification variable (i.e. `species`) isn't actually necessary to create a table, and if you wanted you could produce a table using a formula like `~ island + bill_length_mm`. In practice, however, I've found that I never do this: almost every table I've created in real life has a stratification variable.]
+
+```{r}
+#| label: simple-table
+#| results: asis
+table1(~ island + bill_length_mm | species, penguins)
+```
+
+<br>
+
+The output here is a table showing frequency counts for the discrete variable (`island`) and some standard summary statistics for the continuous variable (`bill_length_mm`). This table isn't perfect but it's surprisingly good given how little effort I had to put in when creating it, and I suspect this ease-of-use factor is the main reason why this package gets used so much in my workplace. Like everything in life though, the devil is in the details, and if you want to make the most of the package it's helpful to dive into those details to get a good sense of what the package can (and cannot) do. 
+
+## Applying labels
+
+The table I produced above immediately illustrates the first problem a data analyst has to grapple with when using the table1 package: variable labels. In most respects this "off the shelf" table is pretty good: it's almost good enough to use. But there's one big eyesore: the raw variable names `island` and `bill_length_mm` appear as row labels in the output. These are both excellent variable names for programming, but they're not very nice when exposed in a table. To fix this, we can use the `label()` function supplied by the table1 package to associate each of these variables with a pretty, human-readable label:^[The table1 package also supports units as a separate piece of metadata via the `units()` function, but I have to admit I never really use that one.]
+
+```{r}
+#| label: labelling-1
+#| results: asis
+label(penguins$island) <- "Island"
+label(penguins$bill_length_mm) <- "Bill Length (mm)"
+
+table1(~ island + bill_length_mm | species, penguins)
+```
+
+<br>
+
+To understand what's really going on here, it's helpful to recognise that the `label()` function is *purely* a convenience function. All it's really doing is setting the "label" metadata attribute for the relevant object. If you really wanted to, you could do exactly the same thing in base R via the `attr()` function:
+
+```{r}
+#| label: labelling-2
+#| results: asis
+attr(penguins$bill_depth_mm, "label") <- "Bill Depth (mm)"
+
+table1(~ bill_depth_mm | species, penguins)
+```
+
+<br>
+
+That being said, I am slowly coming to like the `setLabel()` convenience function that table1 provides rather than using `label()` or `attr()`. The `setLabel()` function has the nice property that it returns the labelled object itself and so it plays very nicely with a dplyr workflow. If you have a data frame with several variables that need to be labelled, you can use `mutate()` and `setLabel()` to apply all the labels in one step, like this:
+
+```{r}
+#| label: labelling-3
+#| results: asis
+penguins <- penguins |> 
+  mutate(
+    flipper_length_mm = setLabel(flipper_length_mm, "Flipper Length (mm)"),
+    body_mass_g = setLabel(body_mass_g, "Body Mass (g)"),
+    sex = setLabel(sex, "Sex"),
+    year = setLabel(year, "Year")
+  )
+
+table1(~ flipper_length_mm + body_mass_g + sex + year | species, penguins)
+```
+
+<br>
+
+
+![](my-medicine.jpg)
+
+## Customing cell content
+
+> Somebody mixed my medicine <br>
+> Somebody's in my head again <br>
+> Well, I'll drink what you leak and I'll smoke what you sigh <br>
+> See across the room with a look in your eye <br>
+> &nbsp; &nbsp; --[*The Pretty Reckless*](https://www.youtube.com/watch?v=cJMSDlWlfMM)
+
+One thing I really like about the table1 package is that it supplies very sensible defaults for tables of descriptive statistics: continuous variables are summarised not only via means and standard deviations, but you also get the medians, ranges, and missing data summaries. Categorical variables are summarised with counts and percentages, and again you get a missing data summary. Very often this is exactly the summary you want, and no customisation at all is required.
+
+Inevitably, though, every data analyst comes across as situation that requires a different collection of summary statistics. At that point, you need to dive a little deeper and understand the syntax table1 uses to modify the summaries that it produces. 
+
+### Using abbreviated codes
+
+The table1 package has a very practical and flexible mechanism for customising the descriptive statistics that it produces, but one that needs a bit of unpacking to understand. If you really want to do so, you can write an entire "rendering" function from scratch that affords very fine grained control over the output (more on that later!) but most of the time you don't actually want to go to all that effort. In most situations, all you *really* want to do is swap out one widely-used descriptive statistic for a different widely-used descriptive statistic. It would be no fun for the analyst if they had to write an entire rendering function from scratch just to switch from reporting arithmetic means to reporting geometric means. To that end, table1 provides a compact syntax using "abbreviated codes" that covers a lot of common use cases.
+
+As a concrete example, let's consider the task I described above: reporting geometric means and standard deviations. This is a very common task in pharmacometrics because a lot of observed data are approximately log-normal in distribution, and in my everyday work I find I have to do this a lot. Luckily for me, the table1 package recognises the strings `"GMEAN"` and `"GSD"` as abbreviated codes, and internally will replace them with function calls that compute the geometric mean and geometric standard deviation. To define a custom render that produces these two statistics, all I have to do is define a named vector like this one:
+
+```{r}
+#| label: geometric-summary
+render_geometric <- c(
+  "Geometric mean" = "GMEAN", 
+  "Geometric SD" = "GSD"
+)
+```
+
+In this compressed syntax, the names define the row labels that will be printed in the output table (e.g., `"Geometric mean"` becomes a row label), and the values are interpreted using the abbreviated code (e.g., the `"GMEAN"` string is replaced by the value of the geometric mean). To apply this custom render to my table only to the continuous variables in the summary table, all I have to do is include `render.continuous = render_geometric` in the call to `table1()`:
+
+```{r}
+#| label: render-continuous-1
+#| results: asis
+table1(
+  x = ~ flipper_length_mm + body_mass_g + sex + year | species, 
+  data = penguins, 
+  render.continuous = render_geometric
+)
+```
+
+<br>
+
+As you can see from the output, the custom render has been applied to the two continuous variables `flipper_length_mm` and `body_mass_g` but not the categorical variables `sex` and `year`, just as you'd expect given that the argument I specified is called `render.continuous`. However, there are two features that might be a little surprising:
+
+- The missing data summary for the continuous variables is unaffected
+- If you look at the documentation for `table1()` you'll notice it has a `render` argument but not a `render.continuous` argument
+
+I'll unpack both of those things later in the blog post, but I wanted to mention them now because these things confused me a little when I first started using table1. For now, let's just accept that it works and move on.
+
+The table1 package comes equipped with quite a few of these abbreviated codes, which makes life considerably easier. For instance if we needed to compute the 10th, 50th, and 90th percentiles of each continuous variable, we could use the `"q10"`, `"q50"`, and `"q90"` keywords, like so:
+
+```{r}
+#| label: render-continuous-2
+#| results: asis
+table1(
+  x = ~ flipper_length_mm + body_mass_g + sex | species, 
+  data = penguins, 
+  render.continuous = c(
+    "10th percentile" = "q10", 
+    "50th percentile" = "q50",
+    "90th percentile" = "q90"
+  )
+)
+```
+
+<br>
+
+Very handy. 
+
+::: {.column-margin}
+The quote from "My medicine" at the start of this section isn't accidental. The abbreviated code syntax in table1 is a powerful tool, but when I started reading table1 code without understanding the keyword matching involved it did feel a little like "someone's in my head again", substituting code where a string should be
+:::
+
+
+### Supported aliases
+
+The natural question you might have as the user of the package is, of course, what abbreviated codes does the table1 package understand? As documented [here](https://benjaminrich.github.io/table1/vignettes/table1-examples.html#using-abbreviated-code-to-specify-a-custom-renderer) in the package vignette, you can find a complete listing by playing around with the `stats.default()` function.^[If you're a foolish person like I am you can also dig into the [source code](https://github.com/benjaminrich/table1/blob/master/R/table1.R) to find the answer, because why would I be smart and read the package vignette *before* reading the source code?] So let's do that. For continuous variables, this is the list of supported aliases:
+
+```{r}
+#| label: narrow-text
+#| include: false
+options(width = narrow + 10)
+```
+
+```{r}
+#| label: continuous-aliases
+continuous <- 1:10
+names(stats.default(continuous)) 
+```
+
+Here's what each of these mean:^[If you want a more precise answer, you can use a command like `parse.abbrev.render.code("GMEAN")` to return the actual function that is executed whenever a `"GMEAN"` is computed during the table rendering process.]
+
+- `"N"`, `"NMISS"`: these compute the number of non-missing observations and number of missing observations respectively
+- `"SUM"`, `"MEAN"`, `"SD"`, `"MEDIAN"`, `"MIN"`, `"MAX"`: these all correspond to to the functions of the same name, e.g., `"SUM"` produces a call to `sum()`, with missing values removed
+- `"CV"`: the coefficient of variation, i.e., 100 times the standard deviation divided by the absolute value of the mean
+- `"GMEAN"`, `"GSD"`, `"GCV"`: the geometric mean, geometric standard deviation, and geometric coefficient of variation
+- `q01`, `q02.5`, `"q05"`, `"q10"`, `"q25"`, `"q50"`, `"q75"`, `"q90"`, `"q95"`, `"q97.5"`, `"q99"`: these are understood to refer to specific quantiles, e.g., `"q25"` is translated as a function call that computes the 25th percentile
+- `"Q1"`, `"Q2"` `"Q3"`: these are used to compute quartiles (25th, 50th, and 75th percentiles)
+- `"T1"`, `"T2"`: these are used to compute tertiles (33rd and 67th percentiles)
+- `"IQR"`: this computes the interquartile range
+
+In all cases except for `"NMISS"`, the relevant statistics are computed after removing missing values. Turning now to categorical variables, we can again use the `stats.default()` function to find the supported abbreviated codes:^[If you're curious as to why I'm extracting the first element of the output in this code, try playing around with `stats.default()` and looking at the differences between how the output is structured for continuous versus categorical inputs.]
+
+```{r}
+#| label: categorical-aliases
+categorical <- c("a", "b", "c")
+names(stats.default(categorical)[[1]])
+```
+
+The interpretation of these is as follows:
+
+- `"FREQ"`: the frequency count for a category
+- `"PCT"`: the percent relative frequency, with missing values included in the denominator
+- `"PCTnoNA"`: the percent relative frequency, after missing values are removed
+- `"NMISS"`: the number of missing values, as before
+
+The nice thing about these abbreviated codes is that they cover a surprisingly wide variety of use cases. More often than not I've found that the descriptive statistics I need can be specified using this mechanism. From the analyst perspective this is great: you really don't want to waste time writing more code than you have to, so if you can specify your table of descriptive statistics without bothering to write a function, you're doing well.
+
+![](hit-me-like-a-man.jpg)
+
+### Writing render functions
+
+> I am strong, love is evil <br>
+> It's a version of perversion that is only for the lucky people <br>
+> Take your time and do with me what you will <br>
+> I won't mind, you know I'm ill, you know I'm ill <br>
+> So hit me like a man <br>
+> And love me like a woman <br>
+> &nbsp; &nbsp; -- *[The Pretty Reckless](https://www.youtube.com/watch?v=Z6ZtYZiHong)*
+
+::: {.column-margin}
+Probably no surprise to anyone who knows me that "Hit me like a man" is my favourite Pretty Reckless song. But also appropriate to how I feel about the render function syntax. The functionality is powerful once you know how to use it, but it's also simple and lovely
+:::
+
+Alas life is not always kind to us, and it's not uncommon to run into situations where your table of descriptive statistics requires the computation of something that doesn't have an abbreviated code in table1. When that happens, the only recourse is for the user to write a rendering function that takes the data as input and returns a vector of strings to be printed into the table. As an example, suppose you have a need to report [Winsorised](https://en.wikipedia.org/wiki/Winsorizing) summary statistics for your continuous variables:
+
+```{r}
+#| label: render-winsorized
+render_winsorized <- function(x, cutoff = .05, ...) {
+  lo <- quantile(x, cutoff, na.rm = TRUE)
+  hi <- quantile(x, 1 - cutoff, na.rm = TRUE)
+  x[x < lo] <- lo
+  x[x > hi] <- hi
+  strs <- c(
+    "",
+    "Winsorized mean" = sprintf("%1.2f", mean(x, na.rm = TRUE)),
+    "Winsorized SD" = sprintf("%1.2f", sd(x, na.rm = TRUE))
+  )
+  return(strs)
+}
+```
+
+Notice that this `render_winsorized()` function returns a named vector of strings that follows the same convention that we followed with the simpler `render_geometric` example earlier: the names of the output string become the row labels, and the values are printed into the table itself. Along similar lines, we can define a rendering function to be applied to the categorical variables in the data. Here's a very simple one that reports only the absolute frequencies for each category:
+
+```{r}
+#| label: render-counts
+render_counts <- function(x, ...) c("", table(stringr::str_to_title(x)))
+```
+
+Having defined our render functions, we produce the desired table by passing `render_winsorized()` as the handler for continuous variables and `render_counts()` as the handler for categorical variables:
+
+```{r}
+#| label: render-categorical
+#| results: asis
+table1(
+  x = ~ flipper_length_mm + body_mass_g + sex | species, 
+  data = penguins, 
+  render.continuous = render_winsorized,
+  render.categorical = render_counts
+)
+```
+
+<br>
+
+Our table is mostly done, but we still don't have a method for adjusting how the missing data summaries are produced. To do that we need to define one more rendering function and pass it as the `render.missing` argument:
+
+```{r}
+#| label: render-missing
+#| results: asis
+render_missing <- function(x, ...) c("Missing" = sum(is.na(x)))
+
+table1(
+  x = ~ flipper_length_mm + body_mass_g + sex | species, 
+  data = penguins, 
+  render.continuous = render_winsorized,
+  render.categorical = render_counts,
+  render.missing = render_missing
+)
+```
+
+<br>
+
+### Unpacking render functions
+
+There's still a bit of a mystery here, because the `table1()` function doesn't have arguments `render.continuous`, `render.categorical`, or `render.missing`: instead, it has a `render` argument. What's actually going on here is that the default value for `render` is the `render.default()` function exported by table1, and `render.default()` accepts `render.continuous`, `render.categorical`, or `render.missing` as arguments. In other words, what's happening in the code above is that my custom functions end up being passed to `render.default()` via the dots. 
+
+There's nothing to prevent you from bypassing this whole process by writing your own render function that handles *all* the input variables. For example, here's a very simple rendering function that counts the number of non-missing observations, and prints it in the same row as the variable name:
+
+```{r}
+#| label: custom-render
+#| results: asis
+render_n <- function(x, ...) sum(!is.na(x))
+
+table1(
+  x = ~ flipper_length_mm + body_mass_g + sex | species, 
+  data = penguins, 
+  render = render_n
+)
+```
+
+<br>
+
+I have to confess it took me waaaaay too long to realise that I could do this in table1. True, I don't often have a need to bypass the `render.default()` function, but there are definitely times when that's a handy little bit of functionality. Sigh. Sometimes I'm quite dense. 
+
+![](follow-me-down.jpg)
+
+## Table annotations
+
+> Follow me down to the river <br>
+> Drink while the water is clean <br>
+> Follow me down to the river tonight <br>
+> I'll be down here on my knees <br>
+> &nbsp; &nbsp; --*[The Pretty Reckless](https://www.youtube.com/watch?v=vfwJ-SoYw4U)*
+
+::: {.column-margin}
+Okay I'll admit it. This lyric isn't really connected to the text. I mean, the video clip is a collection of annotations showing the lyrics, I guess. But honestly I just like the song
+:::
+
+
+Time to switch gears a little. In the previous section I talked about how to customise the statistics that are reported in the table cells. Implicit in this discussion is the fact that a custom render function allows you to customise the row labels associated with each statistic, in exactly the same way that variable labels allow you to customise the variable descriptions that appear in the leftmost column of the table. Taken together, these two mechanisms (render functions and variable labels) give the user a *lot* of control over what appears in the leftmost column of the table. But what about the header row? How do we customise that in table1?
+
+### Strata column labels
+
+To start with, let's consider the columns that associated with a particular stratum. In the penguins tables I've been creating, the strata are defined by the `species` variable so are three columns that are associated with a specific stratum. By default `table1()` will add a description for each such column in the header row that contains the category name (e.g., "Gentoo") and the number of observations that belong to this category. But perhaps we don't want those sample size numbers? Maybe all we want is the category name. To customise how each stratum is labelled in the header row, the `table1()` function has an argument called `render.strat` that takes a function as its value. The strata rendering function takes three arguments: the `label` is the value in the data that defines that category (e.g., `"Gentoo"`), `n` is the number of observations that have been assigned to the category, and `transpose` is a logical variable indicating whether the table is transposed (more on that later). The output of the function is a string that specifies (as HTML) what should appear in the header row. To illustrate the idea, here's a very simple stratum rendering function that only prints the category label:
+
+```{r}
+#| label: render-strat-1
+#| results: asis
+render_strat <- function(label, n, transpose = FALSE) {
+  sprintf("<span class='stratlabel'>%s</span>", label)
+}
+```
+
+The only subtlety to this `render_strat()` function is that it outputs some HTML that wraps the `label` in an HTML span tag and assigns it to a class that we can (and will) use later on to create some fancy styling using CSS. But I'm getting ahead of myself a little. For now, it's enough to note that `render_strat()` creates a very simple label that just prints out the category label. Here it is in action: 
+
+```{r}
+#| label: render-strat-2
+#| results: asis
+table1(
+  x = ~ flipper_length_mm + body_mass_g | species,
+  data = penguins,
+  render.strat = render_strat
+)
+```
+
+<br>
+
+Indeed it performs as expected: the sample size annotations are gone and we now have very minimalistic labels for each of the three penguin species. So let's move along.
+
+### Other column labels
+
+There are two other columns that typically appear in a table1 output object: on the left we have column that contains the row labels, and on the right we have a table that contains the descriptive statistics for the "overall" data set where we collapse across all strata. By default, the row label column on the left has no label and the aggregated column on the right uses that label "Overall". Both of these are customisable in the call to `table1()`, using the `overall` and `rowlabelhead` arguments. An example of this is illustrated below:
+
+```{r}
+#| label: column-labels
+#| results: asis
+table1(
+  x = ~ flipper_length_mm + body_mass_g | species,
+  data = penguins,
+  overall = "All Species",
+  rowlabelhead = "Measurement"
+)
+```
+
+<br>
+
+### Footnotes and captions
+
+> Oh lord, heaven knows, we belong way down below <br>
+> Oh lord, tell us so, we belong way down below <br>
+> &nbsp; &nbsp; --*[The Pretty Reckless](https://www.youtube.com/watch?v=JVZe5K3PZig)*
+
+In addition to allowing you to customise the header row, the table1 package also supports the addition of captions and footnotes. Shockingly, it turns out you can specify these with `table1()` by using the `caption` and `footnote` arguments. Both of these take a single string as their input, and you can use HTML tags here. For example, here's a footer that acknowledges the two packages I've relied on most in this post, specifying the package names in boldface:
+
+```{r}
+#| label: adding-footnotes
+#| results: asis
+table1(
+  x = ~ flipper_length_mm + body_mass_g | species,
+  data = penguins,
+  footnote = "Created using <b>table1</b> and <b>palmerpenguins</b>"
+)
+```
+
+<br>
+
+Specifying captions is very similar. Here's a simple example:
+
+```{r}
+#| label: adding-captions
+#| results: asis
+table1(
+  x = ~ flipper_length_mm + body_mass_g | species,
+  data = penguins,
+  caption = "Flipper length and body mass by species among the Palmer penguins"
+)
+```
+
+<br>
+
+![](heaven-knows.jpg)
+
+::: {.column-margin}
+One day, just for one brief moment, I would like to look this cool. It's never going to happen of course, but a girl can dream
+:::
+
+
+## Table structure
+
+So far we've discussed how to control what statistics are computed in the table, and in the process I've also talked about how to specify the row and columns labels that are associated with the various statistics. I've also talked about other marginalia associated with a table, which in table1 is really just the footnote and caption. What I haven't talked about yet is how to control the *structure* of the table that gets produced. For the most part, this structure is controlled by the formula that you use to specify the table. When I specify a table like this
+
+```r
+~ flipper_length_mm + body_mass_g | species
+```
+
+I will generally get a table that has one column for each unique value of `species` (the strata), and a block of rows associated with each of the variables (`flipper_length_mm` and `body_mass_g`) that supply the relevant descriptive statistics. By default we also get one additional "overall" column that collapses the strata and reports descriptive statistics for the entire data set. Most of the time this is exactly the structure we want, but not always. To that end, table1 allows you to customise the structure in various ways.
+
+### Removing "overall"
+
+The simplest way to modify the table structure is to remove the "overall" column that collapses the strata. We can do this using the `overall` argument. In the last section I showed how to use this argument to change the label associated with this column by passing a string, but if instead we set `overall = FALSE`, that column will be removed entirely:
+
+```{r}
+#| label: remove-overall
+#| results: asis
+table1(
+  x = ~ flipper_length_mm + body_mass_g | species,
+  data = penguins,
+  overall = FALSE
+)
+```
+
+<br>
+
+### Nested stratifications
+
+Up to this point in the post I've used only a single variable to define the strata in the table. At the start of the post I mentioned that you can drop the stratification entirely simply by specifying a one-sided formula like `~ flipper_length_mm + body_mass_g` that doesn't include anything on the right hand side of the `|` separator. But that's rarely of interest to us in real world data analysis. The thing we're more likely to want is a *nested* stratification, where we define strata based on all unique combinations of two variables. For example, let's suppose I wanted to compute descriptive statistics for each `species` of penguin, but for each species the statistics should be computed separately for each `island`. Happily, the table1 package supports this kind of two-level stratification. All I have to do is write `species * island` on the right hand side of the separator like so:
+
+```{r}
+#| label: nested-strata-1
+#| results: asis
+table1(
+  x = ~ flipper_length_mm + body_mass_g | species * island,
+  data = penguins,
+  overall = FALSE
+)
+```
+
+<br>
+
+As it happens, only the Adelie penguins appear on all three islands: the Chinstrap penguins appear only on Dream Island, and the Gentoo penguins appear only on Biscoe Island. So the table here contains three columns for the Adelie penguins, and only one each for the Chinstrap and Gentoo penguins. 
+
+There are some limitations to this functionality. You can't stratify by more than two variables, and the stratification variables cannot contain any missing values. Even so, the functionality is pretty handy, and it is sensitive to the order in which you specify the two stratification variables. If I write `island * species` rather than `species * island`, I get this table instead:
+
+```{r}
+#| label: nested-strata-2
+#| results: asis
+table1(
+  x = ~ flipper_length_mm + body_mass_g | island * species,
+  data = penguins,
+  overall = FALSE
+)
+```
+
+<br>
+
+I've found this functionality useful many times in my everyday life. 
+
+### Adding extra columns
+
+Another kind of "structural" customisation that table1 allows is adding new columns. A common use case for this functionality is to add a column that reports a p-value associated with a particular row. For example, suppose what I wanted my table to do is run a one-way ANOVA for each of the continuous variables in the table, to test to see if the categories have different group means. To handle something like this we'll again need to write a custom render function that accepts data from *all* groups -- as a list of vectors -- and returns a string that should be printed into the relevant cell in the new "p-values" column. This `render_p_value()` function will do this for me:
+
+```{r}
+#| label: render-p-value
+render_p_value <- function(x, ...) {
+  dat <- bind_rows(
+    purrr::map(x, ~ data.frame(value = .)), 
+    .id = "group"
+  )
+  mod <- aov(value ~ group, dat)
+  p <- summary(mod)[[1]][1, 5]
+  return(scales::label_pvalue()(p))
+}
+```
+
+I don't want to dive into the details of what this function is doing, but if you're familiar with the standard interface for linear models in R it should look very familiar. If not, here's the gist: the first part of the code rearranges the list of vectors input into a data frame format, the second part estimates parameters for the model, runs the usual F-test, and extracts the p-value from the output. Finally, it returns the p-value as a prettily-formatted string.
+
+The `render_p_value()` function is the one we'll use to render our new column, but for the purposes of this example I'll also define a custom renderer for the contents of the strata columns as well, so that the only thing it does is report the mean value for the group. You don't have to do this, I'm only doing it because I want my table to be as simple as possible. 
+
+```{r}
+#| label: render-mean
+render_mean <- function(x, ...) sprintf("%1.1f", mean(x, na.rm = TRUE))
+```
+
+Now that we have our rendering functions, I can specify one or more additional columns in my table by passing a named list of functions to the `extra.col` argument (the names are used to specify the column labels). In my case I'm only adding a single extra column with the p-value so my list has only a single function, but it's not too hard to imagine scenarios where I'd want to add more than one (e.g., maybe I want to report the degrees of freedom associated with my F-test). Anyway, here's the code:
+
+```{r}
+#| label: extra-columns
+#| results: asis
+table1(
+  x = ~ flipper_length_mm + body_mass_g | species,
+  data = penguins,
+  render = render_mean,
+  extra.col = list("p-value" = render_p_value)
+)
+```
+
+<br>
+
+Very nice.
+
+### Transposing tables
+
+> Let me open up the discussion with <br>
+> I'm not impressed with any motherfucking word I say <br>
+> See I lied that I cried when he came inside <br>
+> And now I'm burning a highway to Hades <br>
+> &nbsp; &nbsp; --*[The Pretty Reckless](https://www.youtube.com/watch?v=j6t-AgLT-LM&rco=1)*
+
+Before I dive a little deeper and talk about table structures that go beyond what you can do with the formula interface to `table1()` there's one more thing I should talk about. I don't actually *want* to talk about this topic because it makes me cry a little bit every time I encounter it, but I'll be good and try anyway. 
+
+That topic is transposing a table. 
+
+Normally when you specify a table with a formula, the stratification is used to create the columns, and the variable list is used to define the rows. You can flip this if you like by setting `transpose = TRUE` when calling `table1()`, but in my experience this is a bit messy and often requires a lot of tinkering with your render functions to make the results look good. To that end, here's a simple rendering function that I'll use in this example. All it does is compute the mean and standard deviation for a continuous variable:
+
+```{r}
+#| label: render-mean-sd
+render_mean_sd <- function(x, ...) {
+  m <- mean(x, na.rm = TRUE)
+  s <- sd(x, na.rm = TRUE)
+  sprintf("%1.1f (%1.1f)", m, s)
+}
+```
+
+With the help of this `render_mean_sd()` function and the simple `render_strat()` function I defined earlier, here's an example of a transposed table in which the stratification variable (`species`) defines the rows, and the four variables on the left are used to define columns:
+
+```{r}
+#| label: transposing-tables
+#| results: asis
+table1(
+  x = ~ bill_length_mm + bill_depth_mm + flipper_length_mm + body_mass_g | species,
+  data = penguins,
+  transpose = TRUE,
+  rowlabelhead = "Species",
+  render = render_mean_sd,
+  render.strat = render_strat
+)
+```
+
+<br>
+
+It works, and there are definitely use cases for this. But the functionality is limited. It only works for a single stratification level (i.e., you can't do `species * island` in this context), and it only looks pretty because my `render_mean_sd()` function doesn't contain any labels. Things get messy pretty fast when working with transposed tables, and in all honesty I've never been willing to use this functionality in a client project.
+
+### Arbitrary stratification
+
+> Why'd you bring a shotgun to the party? <br>
+> &nbsp; &nbsp; --[*The Pretty Reckless*](https://www.youtube.com/watch?v=PYxd8gh7g_k)
+
+Up to this point in the post every table I've created with `table1()` has used a formula to specify the basic structure of the output. In real life this is almost always what you want to do, because this "formula interface" is pretty flexible and *extremely* easy to work with. I'd even go so far as to say that this formula interface is one of the most appealing aspects to the table1 package. However, in point of fact the formula interface that everyone uses is actually a bit of sweet syntactic sugar laid atop a lower-level interface. Very occasionally you encounter a situation where the formula interface isn't expressive enough to do what you want, and when that happens you have to "bring a shotgun to the party" and use the low level interface which takes a list of data frames (one per stratum) as input.
+
+To motivate the discussion, I'll give an example of something that I've occasionally wanted to do but isn't possible with the formula interface. Earlier in this post I showed you how to create a *nested* stratification where we pass two stratification variables in the formula, and the table contains one stratum for every unique combination of the two variables. Sometimes, though, you want to create a table that stratifies by two variables but only shows the *marginal* stratifications. For example, I might want a table that includes descriptive statistics for each `species` of penguin, and next to that my table would have descriptive statistics for each `sex`. In this situation I'm not interested in the cross-tabulation. That is, I don't care about which species a male penguin belongs to, and I don't care about the sex of the various Adelie penguins either. I'm interested in `species` and `sex` completely independently of each other. The formula interface doesn't support this kind of stratification, so I'm going to have to do it manually. 
+
+Let's see how this is done. First, I'm going to make a few tweaks to the data that aren't really very important, but will make my table a little nicer. Specifically, I'll convert the `sex` variable to title case so that I get nice labels later, and I'll convert `year` to a factor so that `table1()` treats it as a categorical variable:
+
+```{r}
+#| label: data-tweak
+penguins <- penguins |>
+  mutate(
+    sex = stringr::str_to_title(sex),
+    year = factor(year)
+  )
+```
+
+Now let's move along to the important step. I'm going to create a new variable called `penguins_strata` that is a list of data frames. 
+
+```{r}
+#| label: penguins-strata
+penguins_strata <- c(
+    split(penguins, ~species), 
+    split(penguins, ~sex),
+    list("All" = penguins)
+  )
+
+penguins_strata
+```
+
+As you can see from this lengthy output, the `penguins_strata` variable is a list of six data frames. There are three data frames corresponding to each of the three `species`, two data frames corresponding to each unique `sex` category, and a final data frame that contains the entire data set. Later on when I construct the table, the `table1()` function will render each of these six data frames into a single column with the appropriate descriptive statistics.
+
+The second input we need is a "labels" list that does two jobs:
+
+- Notice that so far I've defined my strata, but haven't specified the variables. The labels list has to do this. It specifies which `variables` should to be used when computing descriptive statistics. For the purposes of this example, I would like to tabulate the number of penguins (in each stratum) found on each `island` and the number of penguins observed in each `year`
+
+- In my head, the thing I want to do here is stratify the data separately by each `species` and by each `sex`. But the `penguins_strata` object doesn't say anything about this. It's just a flat list of six data frames. It doesn't "know" that three of these data frames refer to different species and two of them refer to different sexes. For that matter, it doesn't know that the last data frame isn't associated with a grouping variable either. So we'll also need to specify a list of `groups` that supplies the names of these grouping variables.
+
+In other words, we need something like this:
+
+```{r}
+#| label: penguin-labels
+penguins_labels <- list(
+    variables = list(
+      island = "Island", # names denote variables, values supply labels
+      year = "Year"
+    ), 
+    groups = list("Species", "Sex", "") # this is a list of labels only
+  )
+
+penguin_groups <- c(3, 2, 1) # first three data frames are group 1, etc
+```
+
+At this point we have:
+
+- `penguins_strata`, a variable that contains all the data organised into a list with one data frame per strata
+- `penguins_labels`, a list that specifies the variables for which descriptive statistics are requested and the labels that should be assigned to variables and strata groups; and
+- `penguins_groups`, a vector that specifies how the strata columns should be grouped 
+
+It's quite a bit of setup work, but having done all the hard parts during the setup, the call to `table1()` is now very simple:
+
+```{r}
+#| label: arbitrary-strata
+#| results: asis
+table1(penguins_strata, penguins_labels, groupspan = penguin_groups)
+```
+
+<br>
+
+And there it is. A table with two marginal stratifications and an overall column that provides descriptive statistics for two categorical variables. 
+
+![](whyd-you-bring-a-shotgun.jpg)
+
+
+## Styling tables
+
+The last topic I want to cover in this post is the visual styling of tables produced by `table1()`. In a moment I'll show you what a table1 object looks like under the hood, but the short version is that the table structure is specified using HTML, and the visual styling is performed with the help of CSS. Most of the time when you're using the table1 package you don't really have to think too much about this, because the package comes with a collection of built-in styles that are usually good enough for a data analyst to use, but sometimes you want to go a little further. So we should talk a little about styling. 
+
+### Built-in styles
+
+Let's start with the built-in styles that come for free with the table1 package. As described in the package vignette, if you're not particularly interested in writing your own CSS code you have these options available to you:
+
+- `zebra`: alternating shaded and unshaded rows
+- `grid`: show all grid lines
+- `shade`: shade the header in gray
+- `times`: use a serif font
+- `center`: center all columns
+
+Each of these is associated with a CSS class that has the `Rtable1-` prefix, e.g., the `zebra` style corresponds to the `Rtable1-zebra` CSS class. You can have one of these classes applied to your table using the `topclass` argument. For instance, here's a "zebra" style table:
+
+```{r}
+#| label: built-in-style-1
+table1(
+  x = ~ flipper_length_mm + body_mass_g | species,
+  data = penguins,
+  topclass = "Rtable1-zebra",
+  render = render_mean,
+  render.strat = render_strat,
+  footnote = "Source: palmerpenguins"
+)
+```
+
+Because these built-in styles are all CSS classes, you can apply more than one to your table. For example, if I want a table with zebra-style stripes, a shaded header bar, and text in Times New Roman font, I can specify `topclass = "Rtable1-zebra Rtable1-shade Rtable1-times"` and get the desired result:
+
+```{r}
+#| label: built-in-style-2
+table1(
+  x = ~ flipper_length_mm + body_mass_g | species,
+  data = penguins,
+  topclass = "Rtable1-zebra Rtable1-shade Rtable1-times",
+  render = render_mean,
+  render.strat = render_strat,
+  footnote = "Source: palmerpenguins"
+)
+```
+
+
+### Using custom CSS
+
+> Signed with the devil <br>
+> Signed with the devil <br>
+> Signed with the devil, oh <br>
+> &nbsp; &nbsp; --*[The Pretty Reckless](https://www.youtube.com/watch?v=BQpZv2r8fb4)*
+
+In everyday data analysis work the build-in style classes that come with the table1 package are good enough to create pretty outputs. But sometimes they are not. A client or a journal might want a table to be formatted in a very specific style, and at that point you're going to have to write your own CSS code. I have a love/hate relationship with CSS. It's such a powerful tool for styling HTML objects, but somehow it never feels natural to me and I feel like I'm making a pact with dark powers every time I use. Unfortunately I'm at the point in the post where I have to deal with demonic forces. Let's just hope we all come through this unscathed yeah?
+
+To help with this disussion I'll start by creating a table, but instead of printing it to the output, I'll assign it to a variable called `tbl`. As you can see from the code below, I've specified `topclass = "mytable"` so that I can write some CSS that will be applied only to this table (or, I suppose, any other table that has CSS class `mytable`, but I'm only going to make one):
+
+```{r}
+#| label: css-styling-1
+tbl <- table1(
+  x = ~ flipper_length_mm + body_mass_g | species,
+  data = penguins,
+  topclass = "mytable",
+  render = render_mean,
+  render.strat = render_strat,
+  footnote = "Source: palmerpenguins"
+)
+```
+
+Next, if we want to write some CSS that will target this table, it helps a great deal to be able to see the actual HTML associated with the `tbl` object. Here it is:
+
+```{r}
+#| label: css-styling-2
+cat(as.character(tbl))
+```
+
+This output reveals the CSS class names associated with the specific components of the table. So, let's suppose that the client has indicated that the table footnote needs to be in italics and -- for reasons known but to god -- the header text needs to be shown in hot pink. Thanks to the blood magic of CSS nesting, I can write a little snippet of CSS that specifies that for any table of CSS class `mytable`, the footnote should be in italics and the stratification labels should be shown in hot pink:
+
+```css
+.mytable {
+  .Rtable1-footnote {
+    font-style: italic;
+  }
+  .stratlabel {
+    color: hotpink
+  }
+}
+```
+
+Under the hood, I have saved this exact CSS snippet to a tiny stylesheet that is imported within this post, so when I print out the `tbl` object I get the desired result:
+
+```{r}
+#| label: css-styling-3
+#| results: asis
+tbl
+```
+
+<br>
+
+Another day, another encounter with CSS that I have survived. I will take the victory. 
+
+## Epilogue
+
+> For the ways that I hurt when I'm hiking up my skirt <br>
+> For the man that I hate I'm going to hell <br>
+> &nbsp; &nbsp; --*The Pretty Reckless*
+
+There's a lot I'm not saying in this post. There's a lot of hidden detail in the table1 package, and additional tricks that you can deploy to make it work to your advantage. But a post has to end somewhere and besides, if you've hit the point where the tools I've talked about in this post can't solve your specific problem you're probably at the point where table1 is the wrong fit. 
+
+It's never wise to try to use force.
+
+<br>
+
+![](take-me-down.jpg)
+
