@@ -628,9 +628,11 @@ And there it is. A table with two marginal stratifications and an overall column
 
 ## Styling tables
 
+The last topic I want to cover in this post is the visual styling of tables produced by `table1()`. In a moment I'll show you what a table1 object looks like under the hood, but the short version is that the table structure is specified using HTML, and the visual styling is performed with the help of CSS. Most of the time when you're using the table1 package you don't really have to think too much about this, because the package comes with a collection of built-in styles that are usually good enough for a data analyst to use, but sometimes you want to go a little further. So we should talk a little about styling. 
+
 ### Built-in styles
 
-There are a few built-in styles, discussed in the package vignette:
+Let's start with the built-in styles that come for free with the table1 package. As described in the package vignette, if you're not particularly interested in writing your own CSS code you have these options available to you:
 
 - `zebra`: alternating shaded and unshaded rows
 - `grid`: show all grid lines
@@ -638,7 +640,7 @@ There are a few built-in styles, discussed in the package vignette:
 - `times`: use a serif font
 - `center`: center all columns
 
-Selecting a style using the `topclass` argument:
+Each of these is associated with a CSS class that has the `Rtable1-` prefix, e.g., the `zebra` style corresponds to the `Rtable1-zebra` CSS class. You can have one of these classes applied to your table using the `topclass` argument. For instance, here's a "zebra" style table:
 
 ```{r}
 #| label: built-in-style-1
@@ -651,6 +653,8 @@ table1(
   footnote = "Source: palmerpenguins"
 )
 ```
+
+Because these built-in styles are all CSS classes, you can apply more than one to your table. For example, if I want a table with zebra-style stripes, a shaded header bar, and text in Times New Roman font, I can specify `topclass = "Rtable1-zebra Rtable1-shade Rtable1-times"` and get the desired result:
 
 ```{r}
 #| label: built-in-style-2
@@ -672,7 +676,9 @@ table1(
 > Signed with the devil, oh <br>
 > &nbsp; &nbsp; --*[The Pretty Reckless](https://www.youtube.com/watch?v=BQpZv2r8fb4)*
 
-Here's the HTML that gets generated for a table:
+In everyday data analysis work the build-in style classes that come with the table1 package are good enough to create pretty outputs. But sometimes they are not. A client or a journal might want a table to be formatted in a very specific style, and at that point you're going to have to write your own CSS code. I have a love/hate relationship with CSS. It's such a powerful tool for styling HTML objects, but somehow it never feels natural to me and I feel like I'm making a pact with dark powers every time I use. Unfortunately I'm at the point in the post where I have to deal with demonic forces. Let's just hope we all come through this unscathed yeah?
+
+To help with this disussion I'll start by creating a table, but instead of printing it to the output, I'll assign it to a variable called `tbl`. As you can see from the code below, I've specified `topclass = "mytable"` so that I can write some CSS that will be applied only to this table (or, I suppose, any other table that has CSS class `mytable`, but I'm only going to make one):
 
 ```{r}
 #| label: css-styling-1
@@ -684,11 +690,16 @@ tbl <- table1(
   render.strat = render_strat,
   footnote = "Source: palmerpenguins"
 )
+```
 
+Next, if we want to write some CSS that will target this table, it helps a great deal to be able to see the actual HTML associated with the `tbl` object. Here it is:
+
+```{r}
+#| label: css-styling-2
 cat(as.character(tbl))
 ```
 
-So we can add a bit of custom CSS like so:
+This output reveals the CSS class names associated with the specific components of the table. So, let's suppose that the client has indicated that the table footnote needs to be in italics and -- for reasons known but to god -- the header text needs to be shown in hot pink. Thanks to the blood magic of CSS nesting, I can write a little snippet of CSS that specifies that for any table of CSS class `mytable`, the footnote should be in italics and the stratification labels should be shown in hot pink:
 
 ```css
 .mytable {
@@ -701,19 +712,22 @@ So we can add a bit of custom CSS like so:
 }
 ```
 
-Now the result looks like this:
+Under the hood, I have saved this exact CSS snippet to a tiny stylesheet that is imported within this post, so when I print out the `tbl` object I get the desired result:
 
 ```{r}
-#| label: css-styling-2
+#| label: css-styling-3
 #| results: asis
 tbl
 ```
 
 <br>
 
-![](take-me-down.jpg)
+Another day, another encounter with CSS that I have survived. I will take the victory. 
 
 ## Epilogue
 
 In the process of writing this post I discovered that The Pretty Reckless have recorded a [cover](https://www.youtube.com/watch?v=PJ9Xy3RJoOA) of "Champagne Supernova" and I cannot stop laughing. It's good to laugh again.
+
+
+![](take-me-down.jpg)
 
