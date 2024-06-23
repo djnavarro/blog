@@ -32,10 +32,9 @@ set.seed(1)
 
 It's no secret that my health hasn't been so great these last few months. Nothing life-threatening, I hasten to add, but severe enough that I've spent a depressing amount of 2024 in bed, and not in the fun way. I'm fortunate enough to have a remote job, and the workload this year hasn't been as demanding as it was last year. I've been able to manage, yes,^[It always strikes me as a bitter failure of public policy that when someone falls sick, their first thought is *always* something along the lines of "can I still work?" Very few people actually love their jobs so much that they want to work through a serious illness, but the fear that the company will discard you the moment something bad happens is built into our society at a low level. If you're not dead you work. Because capitalism.] but it has been rough. I've necessarily been focusing what little energy I've had on my kids and on my day to day work. I've had no bandwidth at all to write, or make art, or learn new things. A sorry state of affairs, and one that sucks much of the joy out of life.
 
-Happily, things have started to turn around in recent weeks. I've had a little more energy, I've been able to work from my desk rather than my bed, and while the artistic impulse hasn't come back yet I've started to write once more. 
+Happily, things have started to turn around in recent weeks. I've had a little more energy, I've been able to work from my desk rather than my bed, and while the artistic impulse hasn't come back yet I've started to write once more. I told myself that I'd start with something fairly simple for my first attempt at writing -- Danielle, perhaps you could write up a few notes about a package you use at work? Nothing complicated. Just a little something on the [table1](https://benjaminrich.github.io/table1/) package^[The package source code is on [github](https://github.com/benjaminrich/table1), and the [package vignette](https://benjaminrich.github.io/table1/vignettes/table1-examples.html) provides a lot of useful detail that you can't necessarily find by browsing the help files.] by Benjamin Rich, perhaps? Nice and simple, short and sweet. Won't take very long at all will it my dear?
 
-The [table1](https://benjaminrich.github.io/table1/) package by Benjamin Rich. Package source code is on [github](https://github.com/benjaminrich/table1), and the [package vignette](https://benjaminrich.github.io/table1/vignettes/table1-examples.html) provides a lot of useful detail that you can't necessarily find by browsing the help files.
-
+Yeah, right.
 
 ![](./make-me-wanna-die.jpg)
 
@@ -387,6 +386,10 @@ table1(
 <br>
 
 ### Footnotes and captions
+
+> Oh lord, heaven knows, we belong way down below <br>
+> Oh lord, tell us so, we belong way down below <br>
+> &nbsp; &nbsp; --*[The Pretty Reckless](https://www.youtube.com/watch?v=JVZe5K3PZig)*
 
 In addition to allowing you to customise the header row, the table1 package also supports the addition of captions and footnotes. Shockingly, it turns out you can specify these with `table1()` by using the `caption` and `footnote` arguments. Both of these take a single string as their input, and you can use HTML tags here. For example, here's a footer that acknowledges the two packages I've relied on most in this post, specifying the package names in boldface:
 
