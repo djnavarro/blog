@@ -409,7 +409,17 @@ table1(
 
 ## Table structure
 
+So far we've discussed how to control what statistics are computed in the table, and in the process I've also talked about how to specify the row and columns labels that are associated with the various statistics. I've also talked about other marginalia associated with a table, which in table1 is really just the footnote and caption. What I haven't talked about yet is how to control the *structure* of the table that gets produced. For the most part, this structure is controlled by the formula that you use to specify the table. When I specify a table like this
+
+```r
+~ flipper_length_mm + body_mass_g | species
+```
+
+I will generally get a table that has one column for each unique value of `species` (the strata), and a block of rows associated with each of the variables (`flipper_length_mm` and `body_mass_g`) that supply the relevant descriptive statistics. By default we also get one additional "overall" column that collapses the strata and reports descriptive statistics for the entire data set. Most of the time this is exactly the structure we want, but not always. To that end, table1 allows you to customise the structure in various ways.
+
 ### Removing "overall"
+
+The simplest way to modify the table structure is to remove the "overall" column that collapses the strata. We can do this using the `overall` argument. In the last section I showed how to use this argument to change the label associated with this column by passing a string, but if instead we set `overall = FALSE`, that column will be removed entirely:
 
 ```{r}
 #| label: remove-overall
@@ -425,8 +435,10 @@ table1(
 
 ### Nested stratifications
 
+Up to this point in the post I've used only a single variable to define the strata in the table. At the start of the post I mentioned that you can drop the stratification entirely simply by specifying a one-sided formula like `~ flipper_length_mm + body_mass_g` that doesn't include anything on the right hand side of the `|` separator. But that's rarely of interest to us in real world data analysis. The thing we're more likely to want is a *nested* stratification, where we define strata based on all unique combinations of two variables. For example, let's suppose I wanted to compute descriptive statistics for each `species` of penguin, but for each species the statistics should be computed separately for each `island`. Happily, the table1 package supports this kind of two-level stratification. All I have to do is write `species * island` on the right hand side of the separator like so:
+
 ```{r}
-#| label: table-tweak-2
+#| label: nested-strata-1
 #| results: asis
 table1(
   x = ~ flipper_length_mm + body_mass_g | species * island,
@@ -437,7 +449,27 @@ table1(
 
 <br>
 
+As it happens, only the Adelie penguins appear on all three islands: the Chinstrap penguins appear only on Dream Island, and the Gentoo penguins appear only on Biscoe Island. So the table here contains three columns for the Adelie penguins, and only one each for the Chinstrap and Gentoo penguins. 
+
+There are some limitations to this functionality. You can't stratify by more than two variables, and the stratification variables cannot contain any missing values. Even so, the functionality is pretty handy, and it is sensitive to the order in which you specify the two stratification variables. If I write `island * species` rather than `species * island`, I get this table instead:
+
+```{r}
+#| label: nested-strata-2
+#| results: asis
+table1(
+  x = ~ flipper_length_mm + body_mass_g | island * species,
+  data = penguins,
+  overall = FALSE
+)
+```
+
+<br>
+
+I've found this functionality useful many times in my everyday life. 
+
 ### Adding extra columns
+
+Another kind of "structural" customisation that table1 allows is adding new columns. A common use case for this functionality is to add a column that reports a p-value associated with a particular row. For example, suppose what I wanted my table to do is run a one-way ANOVA for each of the continuous variables in the table, to test to see if the categories have different group means. To handle something like this we'll again need to write a custom render function that accepts data from *all* groups -- as a list of vectors -- and returns a string that should be printed into the relevant cell in the new "p-values" column. This `render_p_value()` function will do this for me:
 
 ```{r}
 #| label: render-p-value
@@ -452,12 +484,16 @@ render_p_value <- function(x, ...) {
 }
 ```
 
+I don't want to dive into the details of what this function is doing, but if you're familiar with the standard interface for linear models in R it should look very familiar. If not, here's the gist: the first part of the code rearranges the list of vectors input into a data frame format, the second part estimates parameters for the model, runs the usual F-test, and extracts the p-value from the output. Finally, it returns the p-value as a prettily-formatted string.
+
+The `render_p_value()` function is the one we'll use to render our new column, but for the purposes of this example I'll also define a custom renderer for the contents of the strata columns as well, so that the only thing it does is report the mean value for the group. You don't have to do this, I'm only doing it because I want my table to be as simple as possible. 
+
 ```{r}
 #| label: render-mean
-render_mean <- function(x, ...) {
-  as.character(round(mean(x, na.rm = TRUE)))
-}
+render_mean <- function(x, ...) sprintf("%1.1f", mean(x, na.rm = TRUE))
 ```
+
+Now that we have our rendering functions, I can specify one or more additional columns in my table by passing a named list of functions to the `extra.col` argument (the names are used to specify the column labels). In my case I'm only adding a single extra column with the p-value so my list has only a single function, but it's not too hard to imagine scenarios where I'd want to add more than one (e.g., maybe I want to report the degrees of freedom associated with my F-test). Anyway, here's the code:
 
 ```{r}
 #| label: extra-columns
@@ -471,6 +507,8 @@ table1(
 ```
 
 <br>
+
+Very nice.
 
 ### Transposing tables
 
