@@ -25,17 +25,20 @@ library(flextable)
 library(tibble)
 library(stringr)
 library(dplyr)
+library(tidyr)
 ```
 
 Data for the table:
 
 ```{r}
 sw <- starwars %>% 
-  select(name, height, mass, hair_color, eye_color, gender, starships) %>% 
+  select(name, height, mass, hair_color, eye_color, gender) %>% 
   slice_head(n = 10)
 
 sw
 ```
+
+## Basic use
 
 Passing to `flextable()`
 
@@ -80,7 +83,9 @@ sw %>%
   )
 ```
 
-Use `compose()` or `mk_par()` to build cell contents from constituent parts:
+## Cell contents
+
+Use `compose()` or `mk_par()` (the latter is an alias to make life easier in case of conficts between `purrr::compose()` and `flextable::compose()` to build cell contents from constituent parts:
 
 ```{r}
 sw %>% 
@@ -106,7 +111,6 @@ sw %>%
     value = as_paragraph(mass, "kg")
   )
 ```
-
 
 Fancier formatting to a specific chunk using `as_chunk()` and `fp_text_default()`:
 
@@ -141,10 +145,8 @@ sw %>%
   )
 ```
 
-
 Using fancier row selectors to get contextual formatting:
 
-```{r}
 ```{r}
 sw %>% 
   mutate(across(hair_color:gender, str_to_title)) %>% 
@@ -181,5 +183,88 @@ sw %>%
   )
 ```
 
+Notice that `color()` here is just a convenience function. I could do the same thing using `compose()`, `as_paragraph()`, `as_chunk()`, and `fp_text_default()`:
+
+```{r}
+sw %>% 
+  mutate(across(hair_color:gender, str_to_title)) %>% 
+  flextable() %>% 
+  autofit() %>% 
+  set_header_labels(
+    name = "Character Name",
+    height = "Height",
+    mass = "Mass", 
+    hair_color = "Hair Color",
+    eye_color = "Eye Color", 
+    sex = "Sex",
+    gender = "Gender",
+    starships = "Starships"
+  ) %>% 
+  compose(
+    j = "height", 
+    value = as_paragraph(
+      height, 
+      as_chunk("cm", props = fp_text_default(color = "grey50"))
+    )
+  ) %>% 
+  compose(
+    j = "mass",
+    value = as_paragraph(
+      mass, 
+      as_chunk("kg", props = fp_text_default(color = "grey50"))
+    )
+  ) %>% 
+  compose(
+    i = ~ eye_color == "Blue",
+    j = "eye_color",
+    value = as_paragraph(as_chunk(
+      eye_color, 
+      props = fp_text_default(color = "blue")
+    )
+  )) %>% 
+  color(
+    i = ~ eye_color == "Red",
+    j = "eye_color",
+    color = "red" 
+  )
+```
+
+## Grouped tables
+
+Data for the table:
+
+```{r}
+sw <- starwars %>% 
+  select(name, starships) %>% 
+  slice_head(n = 10) %>% 
+  unnest(cols = c(starships))
+
+sw
+```
+
+```{r}
+sw %>% 
+  flextable() %>% 
+  set_header_labels(name = "Name", starships = "Starships") %>% 
+  autofit() %>% 
+  theme_box()
+```
+
+```{r}
+sw %>% 
+  flextable() %>% 
+  set_header_labels(name = "Name", starships = "Starships") %>% 
+  autofit() %>% 
+  merge_v(j = "name") %>% 
+  theme_box()
+```
 
 
+```{r}
+sw %>% 
+  as_grouped_data(groups = "name") %>% 
+  flextable() %>% 
+  set_header_labels(name = "Name", starships = "Starships") %>% 
+  autofit() %>% 
+  theme_box()
+```
