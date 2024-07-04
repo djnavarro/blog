@@ -22,11 +22,16 @@ set.seed(1)
 ```{r}
 #| message: false
 library(flextable)
+library(ftExtra)
 library(tibble)
 library(stringr)
 library(dplyr)
 library(tidyr)
 ```
+
+
+- [flextable package](https://davidgohel.github.io/flextable/)
+- [flextable book](https://ardata-fr.github.io/flextable-book/)
 
 Data for the table:
 
@@ -229,7 +234,7 @@ sw %>%
   )
 ```
 
-## Grouped tables
+## Merging cells
 
 Data for the table:
 
@@ -259,7 +264,6 @@ sw %>%
   theme_box()
 ```
 
-
 ```{r}
 sw %>% 
   as_grouped_data(groups = "name") %>% 
@@ -268,3 +272,47 @@ sw %>%
   autofit() %>% 
   theme_box()
 ```
+
+## Markdown columns
+
+Flextable doesn't natively support markdown syntax in data columns, but the [ftExtra](https://ftextra.atusy.net/) package provides this:
+
+```{r}
+tbl <- tribble(
+  ~expression,                  ~text,
+  "x^2^ + y^2^ = 1",            "Formula for the unit circle",
+  "**x** = (x~1~, ..., x~n~)" , "A vector of length n"
+)
+tbl
+```
+
+```{r}
+tbl %>% 
+  flextable() %>% 
+  colformat_md(j = "expression") %>% 
+  autofit()
+```
+
+Math support:
+
+```{r}
+tbl <- tribble(
+  ~expression,                       ~text,
+  "$x^2 + y^2 = 1$",                 "Formula for the unit circle",
+  "$\\bm{x} = (x_1, \\ldots, x_n)$", "A vector of length $n$",
+  "$\\mathcal{R}^n$",                 "$n$-dimensional real space",
+  "$e^{i\\pi} + 1 = 0$",             "Euler's identity^[A special case of Euler's formula]"
+)
+tbl
+```
+
+```{r}
+tbl %>% 
+  flextable() %>% 
+  colformat_md() %>% 
+  autofit()
+```
+
+
+
+
