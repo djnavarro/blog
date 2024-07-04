@@ -1,0 +1,185 @@
+---
+title: "flextable"
+description: "This is a subtitle"
+date: "2024-07-04"
+--- 
+
+<!--------------- my typical setup ----------------->
+
+```{r}
+#| label: setup
+#| include: false
+very_wide <- 500
+wide <- 136
+narrow <- 76
+options(width = narrow)
+cache_images <- TRUE
+set.seed(1)
+```
+
+<!--------------- post begins here ----------------->
+
+```{r}
+#| message: false
+library(flextable)
+library(tibble)
+library(stringr)
+library(dplyr)
+```
+
+Data for the table:
+
+```{r}
+sw <- starwars %>% 
+  select(name, height, mass, hair_color, eye_color, gender, starships) %>% 
+  slice_head(n = 10)
+
+sw
+```
+
+Passing to `flextable()`
+
+```{r}
+sw %>% 
+  flextable()
+```
+
+Using `autofit()` to produce nice column spacing:
+
+```{r}
+sw %>% 
+  flextable() %>% 
+  autofit()
+```
+
+Combine with dplyr to tidy up printed values:
+
+```{e}
+sw %>% 
+  mutate(across(hair_color:gender, str_to_title)) %>% 
+  flextable() %>% 
+  autofit()
+```
+
+Use `set_header_labels()` to format the column labels:
+
+```{r}
+sw %>% 
+  mutate(across(hair_color:gender, str_to_title)) %>% 
+  flextable() %>% 
+  autofit() %>% 
+  set_header_labels(
+    name = "Character Name",
+    height = "Height (cm)",
+    mass = "Mass (kg)", 
+    hair_color = "Hair Color",
+    eye_color = "Eye Color", 
+    sex = "Sex",
+    gender = "Gender",
+    starships = "Starships"
+  )
+```
+
+Use `compose()` or `mk_par()` to build cell contents from constituent parts:
+
+```{r}
+sw %>% 
+  mutate(across(hair_color:gender, str_to_title)) %>% 
+  flextable() %>% 
+  autofit() %>% 
+  set_header_labels(
+    name = "Character Name",
+    height = "Height",
+    mass = "Mass", 
+    hair_color = "Hair Color",
+    eye_color = "Eye Color", 
+    sex = "Sex",
+    gender = "Gender",
+    starships = "Starships"
+  ) %>% 
+  compose(
+    j = "height", 
+    value = as_paragraph(height, "cm")
+  ) %>% 
+  compose(
+    j = "mass",
+    value = as_paragraph(mass, "kg")
+  )
+```
+
+
+Fancier formatting to a specific chunk using `as_chunk()` and `fp_text_default()`:
+
+```{r}
+sw %>% 
+  mutate(across(hair_color:gender, str_to_title)) %>% 
+  flextable() %>% 
+  autofit() %>% 
+  set_header_labels(
+    name = "Character Name",
+    height = "Height",
+    mass = "Mass", 
+    hair_color = "Hair Color",
+    eye_color = "Eye Color", 
+    sex = "Sex",
+    gender = "Gender",
+    starships = "Starships"
+  ) %>% 
+  compose(
+    j = "height", 
+    value = as_paragraph(
+      height, 
+      as_chunk("cm", props = fp_text_default(color = "grey50"))
+    )
+  ) %>% 
+  compose(
+    j = "mass",
+    value = as_paragraph(
+      mass, 
+      as_chunk("kg", props = fp_text_default(color = "grey50"))
+    )
+  )
+```
+
+
+Using fancier row selectors to get contextual formatting:
+
+```{r}
+```{r}
+sw %>% 
+  mutate(across(hair_color:gender, str_to_title)) %>% 
+  flextable() %>% 
+  autofit() %>% 
+  set_header_labels(
+    name = "Character Name",
+    height = "Height",
+    mass = "Mass", 
+    hair_color = "Hair Color",
+    eye_color = "Eye Color", 
+    sex = "Sex",
+    gender = "Gender",
+    starships = "Starships"
+  ) %>% 
+  compose(
+    j = "height", 
+    value = as_paragraph(
+      height, 
+      as_chunk("cm", props = fp_text_default(color = "grey50"))
+    )
+  ) %>% 
+  compose(
+    j = "mass",
+    value = as_paragraph(
+      mass, 
+      as_chunk("kg", props = fp_text_default(color = "grey50"))
+    )
+  ) %>% 
+  color(
+    i = ~ eye_color == "Red",
+    j = "eye_color",
+    color = "red" 
+  )
+```
+
+
+
