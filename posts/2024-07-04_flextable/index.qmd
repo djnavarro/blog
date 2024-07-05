@@ -28,6 +28,7 @@ library(stringr)
 library(dplyr)
 library(tidyr)
 library(readr)
+library(ggplot2)
 ```
 
 
@@ -348,3 +349,47 @@ galleries %>%
   autofit()
 ```
 
+## Inserting plots
+
+```{r}
+streaks <- function(seed, n = 10) {
+  set.seed(seed)
+  ggplot(
+    data = tibble(
+      x = rnorm(n), 
+      y = rnorm(n, sd = .1),
+      len = runif(n), 
+      shade = sample(colors(), size = n)
+    ), 
+    mapping = aes(
+      x = x, 
+      y = y, 
+      xend = x + len,
+      yend = y,
+      color = shade
+    )
+  ) + 
+    geom_segment(linewidth = 2, show.legend = FALSE) + 
+    scale_color_identity() + 
+    theme_void()
+}
+
+df <- tibble(
+  seed = 1:10,
+  plot = lapply(seed, streaks)
+)
+
+df
+```
+
+```{r}
+flextable(df) %>% 
+  set_header_labels(seed = "RNG Seed", plot = "Streaks Plot") %>% 
+  compose(
+    j = "plot", 
+    value = as_paragraph(
+      gg_chunk(value = plot, width = 4, height = .3)
+    )
+  ) %>% 
+  autofit()
+```
