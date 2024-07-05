@@ -27,6 +27,7 @@ library(tibble)
 library(stringr)
 library(dplyr)
 library(tidyr)
+library(readr)
 ```
 
 
@@ -314,5 +315,36 @@ tbl %>%
 ```
 
 
+## Inserting images
 
+```{r}
+galleries <- read_csv("galleries.csv", show_col_types = FALSE)
+galleries
+```
+
+```{r}
+galleries %>% 
+  flextable() %>% 
+  set_header_labels(
+    name = "Series Name", 
+    image = "Image", 
+    repo = "GitHub Repository"
+  ) %>% 
+  colformat_image(j = "image", width = 1, height = 1) %>% 
+  autofit()
+```
+
+```{r}
+galleries %>% 
+  mutate(repo = paste0("[", basename(repo), "](", repo, ")")) %>% 
+  flextable() %>% 
+  set_header_labels(
+    name = "Series Name", 
+    image = "Image", 
+    repo = "GitHub Repository"
+  ) %>% 
+  colformat_image(j = "image", width = 1, height = 1) %>% 
+  colformat_md(j = "repo") %>% 
+  autofit()
+```
 
