@@ -1,9 +1,9 @@
 ---
 title: "Use of flextable"
-description: "This is a subtitle"
+description: "In which the author explores the flextable R package for table construction, and gushes far too much about the work of Iain M. Banks"
 date: "2024-07-04"
-image: "img/swatch.png"
-image-alt: "A table of four horizontal textured bands in pastel shades"
+image: "cover.jpg"
+image-alt: "Cover art to 'Use of Weapons' by Iain M. Banks"
 categories: ["R", "Data Wrangling"]
 --- 
 
@@ -22,6 +22,31 @@ set.seed(1)
 
 <!--------------- post begins here ----------------->
 
+- [flextable package](https://davidgohel.github.io/flextable/)
+- [flextable book](https://ardata-fr.github.io/flextable-book/)
+
+There are nine books that make up the Culture novels, starting with the 1988 novel *Consider Phlebas* and finishing with *The Hydrogen Sonata* in 2012. 
+
+```{r}
+#| echo: false
+#| message: false
+readr::read_csv("culture.csv", show_col_types = FALSE) |> 
+  dplyr::mutate(title = paste0("[", title, "](", url, ")")) |> 
+  dplyr::select(title, image, description) |> 
+  flextable::flextable(col_keys = c("title", "image", "description")) |> 
+  flextable::set_header_labels(
+    title = "Book Title",
+    description = "Description",
+    image = "Cover"
+  ) |> 
+  ftExtra::colformat_md(j = "title") |> 
+  flextable::colformat_image(j = "image", width = .75, height = 1.2) |> 
+  flextable::autofit()
+```
+
+## Basic use
+
+To get started, I'll load all the packages needed to create the various tables that appeatr in this post:
 
 ```{r}
 #| message: false
@@ -35,14 +60,7 @@ library(readr)
 library(ggplot2)
 ```
 
-- [flextable package](https://davidgohel.github.io/flextable/)
-- [flextable book](https://ardata-fr.github.io/flextable-book/)
-
-- [list of spacecraft](https://theculture.fandom.com/wiki/List_of_spacecraft)
-
-## Basic use
-
-There are nine books that make up the Culture novels, starting with the 1988 novel *Consider Phlebas* and finishing with *The Hydrogen Sonata* in 2012. For the purposes of this post I put together a small data set using information taken from the [wikipedia page](https://en.wikipedia.org/wiki/Culture_series) on the Culture novels:
+For the purposes of this post I put together a small data set using information taken from the [wikipedia page](https://en.wikipedia.org/wiki/Culture_series) on the Culture novels:
 
 ```{r}
 novels <- read_csv("culture.csv", show_col_types = FALSE)
@@ -51,10 +69,9 @@ novels
 
 To construct a table using a subset of these columns, we can use the `flextable()` function. In the simplest case, we pass a data fram to `flextable()` and we get an HTML table as output:
 
-
 ```{r}
-novels %>%
-  select(title:isbn) %>% 
+novels |>
+  select(title:isbn) |> 
   flextable()
 ```
 
@@ -62,20 +79,20 @@ This is a promising beginning, but it can be improved in any number of ways.
 
 ## Column widths
 
-The most obvious shortcoming is the column widths, which we can adjust manually by passing a vector of widths (in inches) as the `cwidth` argument to `flextable()`:
+The most obvious shortcoming in the previous table is the column widths, which we can adjust manually by passing a vector of widths (in inches) as the `cwidth` argument to `flextable()`:
 
 ```{r}
-novels %>%
-  select(title:isbn) %>% 
+novels |>
+  select(title:isbn) |> 
   flextable(cwidth = c(3, 1, 4, 2))
 ```
 
 There are situations where this manual control is helpful, but often you can avoid the tedious tinkering to get the widths right simply by using `autofit()` to select nice column widths:
 
 ```{r}
-novels %>%
-  select(title:isbn) %>% 
-  flextable() %>% 
+novels |>
+  select(title:isbn) |> 
+  flextable() |> 
   autofit()
 ```
 
@@ -84,9 +101,9 @@ novels %>%
 Now that we have better-spaced columns, the thing that pops out at us next is the column headers. We can do better than using variable names as column headers. To do so we can use `set_header_labels()`, which takes name-value pairs as inputs, like this:
 
 ```{r}
-novels %>%
-  select(title:isbn) %>% 
-  flextable(cwidth = c(3, 1, 4, 2)) %>% 
+novels |>
+  select(title:isbn) |> 
+  flextable(cwidth = c(3, 1, 4, 2)) |> 
   set_header_labels(
     title = "Book Title",
     publication_date = "Published",
@@ -98,32 +115,32 @@ novels %>%
 ## Column formats
 
 ```{r}
-novels %>%
-  mutate(publication_date = as.integer(publication_date)) %>% 
-  select(title:isbn) %>% 
-  flextable(cwidth = c(3, 1, 4, 2)) %>% 
+novels |>
+  mutate(publication_date = as.integer(publication_date)) |> 
+  select(title:isbn) |> 
+  flextable(cwidth = c(3, 1, 4, 2)) |> 
   set_header_labels(
     title = "Book Title",
     publication_date = "Published",
     setting_date = "Story Date", 
     isbn = "ISBN"
-  ) %>% 
+  ) |> 
   colformat_int(big.mark = "")
 ```
 
 I'll store this as the `base` table to be modified later:
 
 ```{r}
-base <- novels %>%
-  mutate(publication_date = as.integer(publication_date)) %>% 
-  select(title:isbn) %>% 
-  flextable(cwidth = c(3, 1, 4, 2)) %>% 
+base <- novels |>
+  mutate(publication_date = as.integer(publication_date)) |> 
+  select(title:isbn) |> 
+  flextable(cwidth = c(3, 1, 4, 2)) |> 
   set_header_labels(
     title = "Book Title",
     publication_date = "Published",
     setting_date = "Story Date", 
     isbn = "ISBN"
-  ) %>% 
+  ) |> 
   colformat_int(big.mark = "")
 ```
 
@@ -144,15 +161,15 @@ Theme functions are simpler than ggplot2. It's a function that takes a flextable
 Here are a few of them:
 
 ```{r}
-base %>% theme_box()
+base |> theme_box()
 ```
 
 ```{r}
-base %>% theme_alafoli()
+base |> theme_alafoli()
 ```
 
 ```{r}
-base %>% theme_tron()
+base |> theme_tron()
 ```
 
 ## Table defaults
@@ -166,8 +183,8 @@ set_flextable_defaults(
   table.layout = "autofit"
 )
 
-novels %>% 
-  select(title:isbn) %>% 
+novels |> 
+  select(title:isbn) |> 
   flextable()
 ```
 
@@ -182,40 +199,40 @@ init_flextable_defaults()
 It's often helpful to define formatting rules that apply only to a subset of the table. For instance, we might want to use boldface text for the column headers but not the body of the table. Or perhaps some rows or columns should appear in a different colour for one reason or another. To do this effectively it is helpful to understand how flextables are structured. All flextables are comprised of three parts: a set of **header** rows at the top, a grid of cells in the table **body**, and a set of footer rows at the bottom. Many functions in flextable have a `part` argument that you can use to select one (or all) of these three parts. For example, the `bg()` function is used to set the background colour, and the example below takes our `base` table and gives the header a red background, the body a green background, and the footer a blue background:
 
 ```{r}
-base %>% 
-  bg(bg = "#ff000040", part = "header") %>% # red header
-  bg(bg = "#00cc0040", part = "body") %>%   # green body
-  bg(bg = "#0000ff40", part = "footer") %>% # blue footer
+base |> 
+  bg(bg = "#ff000040", part = "header") |> # red header
+  bg(bg = "#00cc0040", part = "body") |>   # green body
+  bg(bg = "#0000ff40", part = "footer") |> # blue footer
   theme_box()
 ```
 
 As you can see from this output, the default in flextable is to have a single header row containing the column names, a body comprised of the data values in the table, and no footer at all. We can add extra content to the header and footer if we want using the `add_header_lines()` and `add_footer_lines()` functions:
 
 ```{r}
-base %>%
-  add_header_lines("The Culture Novels") %>% 
-  add_footer_lines("by Iain M. Banks") %>% 
-  bg(bg = "#ff000040", part = "header") %>% # red header
-  bg(bg = "#00cc0040", part = "body") %>%   # green body
-  bg(bg = "#0000ff40", part = "footer") %>% # blue footer
+base |>
+  add_header_lines("The Culture Novels") |> 
+  add_footer_lines("by Iain M. Banks") |> 
+  bg(bg = "#ff000040", part = "header") |> # red header
+  bg(bg = "#00cc0040", part = "body") |>   # green body
+  bg(bg = "#0000ff40", part = "footer") |> # blue footer
   theme_box()
 ```
 
 Notice that the `add_header_lines()` and `add_footer_lines()` functions create extra rows that span all the cells in the table. Sometimes we might prefer a little more fine-grained control, by creating a new row that is subdivided into cells. We can do this with the `add_header_row()` and `add_footer_row()` functions:
 
 ```{r}
-base %>%
+base |>
   add_header_row(
     values = c("A", "Header", "Row"), 
     colwidths = c(1, 2, 1)
-  ) %>% 
+  ) |> 
   add_footer_row(
     values = c("And", "A", "Footer", "Row"), 
     colwidths = c(1, 1, 1, 1)
-  ) %>% 
-  bg(bg = "#ff000040", part = "header") %>% # red header
-  bg(bg = "#00cc0040", part = "body") %>%   # green body
-  bg(bg = "#0000ff40", part = "footer") %>% # blue footer
+  ) |> 
+  bg(bg = "#ff000040", part = "header") |> # red header
+  bg(bg = "#00cc0040", part = "body") |>   # green body
+  bg(bg = "#0000ff40", part = "footer") |> # blue footer
   theme_box()
 ```
 
@@ -234,41 +251,41 @@ The `part` argument discussed in the previous section allows you to apply format
 It's a lot easier to understand when you see it in action. In this example, I use `i = 1:2` (selection by indices) to set the background colour for the top two rows to purple, and `i = ~ publication_date > 2000` (logical selection) to set the background colour for the bottom three rows to orange: 
 
 ```{r}
-base %>% 
-  bg(i = 1:2, bg = "#cc22cc40") %>%                   # purple rows
+base |> 
+  bg(i = 1:2, bg = "#cc22cc40") |>                    # purple rows
   bg(i = ~ publication_date > 2000, bg = "#ffa50040") # orange rows
 ```
 
 Along the same lines the next example uses `j = 1:2` to set the background colour for the first two columns to brown, and `j = "isbn"` (selection by name) to set a teal background for the fourth column:
 
 ```{r}
-base %>% 
-  bg(j = 1:2, bg = "#80471c40") %>% # brown columns
+base |> 
+  bg(j = 1:2, bg = "#80471c40") |>  # brown columns
   bg(j = "isbn", bg = "#00808040")  # teal column
 ```
 
 Notice that these background colours are applied only to the body of the table. However, the `bg()` function has a `part` argument, and we can extend this background shading to the entire table by settingh `part = "all"`":
 
 ```{r}
-base %>% 
-  bg(j = 1:2, bg = "#80471c40", part = "all") %>% # brown columns
+base |> 
+  bg(j = 1:2, bg = "#80471c40", part = "all") |>  # brown columns
   bg(j = "isbn", bg = "#00808040", part = "all")  # teal column
 ```
 
 If you specify a row selection and column selection, the formatting rule is applied to those cells that satisfy both criteria:
 
 ```{r}
-base %>% 
-  bg(i = 1:2, j = 3:4, bg = "#cc22cc40") %>%  # purple cells
+base |> 
+  bg(i = 1:2, j = 3:4, bg = "#cc22cc40") |>   # purple cells
   bg(i = 7:8, j = 1:2, bg = "#00808040")      # teal cells  
 ```
 
 Note that formatting rules are applied sequentially, allowing you to override previously defined formatting. For example, in this example I set the top two rows to purple, then set the rightmost column to teal, and then finally set the bottom three rows to orange. The result looks like this:
 
 ```{r}
-base %>% 
-  bg(i = 1:2, bg = "#cc22cc40") %>%                   # purple rows
-  bg(j = "isbn", bg = "#00808040") %>%                # teal column
+base |> 
+  bg(i = 1:2, bg = "#cc22cc40") |>                    # purple rows
+  bg(j = "isbn", bg = "#00808040") |>                 # teal column
   bg(i = ~ publication_date > 2000, bg = "#ffa50040") # orange rows
 ```
 
@@ -304,9 +321,9 @@ Other:
 - `empty_blanks()`: Make blank columns as transparent 
 
 ```{r}
-base %>%
-  bg(part = "header", bg = "grey30") %>% 
-  color(part = "header", color = "ghostwhite") %>% 
+base |>
+  bg(part = "header", bg = "grey30") |> 
+  color(part = "header", color = "ghostwhite") |> 
   italic(j = "title")
 ```
 
@@ -336,12 +353,9 @@ Others:
 - `fp_border_default()`: Border formatting properties
 - `fix_border_issues()`: Fix border issues when cell are merged
 
-
-
-
 ```{r}
-base %>%
-  vline(j = "title") %>% 
+base |>
+  vline(j = "title") |> 
   border_outer(
     border = fp_border_default(
       color = "black", 
@@ -355,7 +369,7 @@ base %>%
 Use `compose()` or `mk_par()` (the latter is an alias to make life easier in case of conficts between `purrr::compose()` and `flextable::compose()` to build cell contents from constituent parts:
 
 ```{r}
-base %>% 
+base |> 
   compose(
     j = "publication_date",
     value = as_paragraph(as.character(publication_date), " CE")
@@ -365,7 +379,7 @@ base %>%
 Fancier formatting to a specific chunk using `as_chunk()` and `fp_text_default()`. Notice that `color()` here is just a convenience function. I could do the same thing using `compose()`, `as_paragraph()`, `as_chunk()`, and `fp_text_default()`:
 
 ```{r}
-base %>% 
+base |> 
   compose(
     i = ~ title == "Use of Weapons",
     j = "title",
@@ -373,7 +387,7 @@ base %>%
       title, 
       props = fp_text_default(color = "blue")
     ))
-  ) %>% 
+  ) |> 
   color(
     i = ~ title == "Surface Detail",
     j = "title",
@@ -383,44 +397,44 @@ base %>%
 
 ## Merging cells
 
-Data for the table:
+To construct the data for the table I put together a data set containing a [list of ships](https://theculture.fandom.com/wiki/List_of_spacecraft) that are referred to in the Culture novels. I'll use that to count the number of ships from each civilisation in each of the novels:
 
 ```{r}
 ships <- read_csv("ship-list.csv", show_col_types = FALSE)
 
-ship_count <- ships %>% 
+ship_count <- ships |> 
   mutate(Civilisation = case_when(
     str_detect(Civilisation, "^Culture ") ~ "Culture",
     str_detect(Civilisation, "^Non-aligned ") ~ "Non-aligned",
     TRUE ~ Civilisation
-  )) %>% 
-  group_by(Novel, Civilisation) %>%
-  count(name = "Ships") %>% 
-  ungroup() %>% 
+  )) |> 
+  group_by(Novel, Civilisation) |>
+  count(name = "Ships") |> 
+  ungroup() |> 
   arrange(Novel, desc(Ships))
 
 ship_count
 ```
 
 ```{r}
-ship_count %>% 
-  flextable() %>% 
-  autofit() %>% 
+ship_count |> 
+  flextable() |> 
+  autofit() |> 
   theme_box()
 ```
 
 ```{r}
-ship_count %>% 
-  flextable() %>% 
-  autofit() %>% 
-  merge_v(j = "Novel") %>% 
+ship_count |> 
+  flextable() |> 
+  autofit() |> 
+  merge_v(j = "Novel") |> 
   theme_box()
 ```
 
 ```{r}
-ship_count %>% 
-  as_grouped_data(groups = "Novel") %>% 
-  flextable() %>% 
+ship_count |> 
+  as_grouped_data(groups = "Novel") |> 
+  flextable() |> 
   autofit()
 ```
 
@@ -429,15 +443,15 @@ ship_count %>%
 Flextable doesn't natively support markdown syntax in data columns, but the [ftExtra](https://ftextra.atusy.net/) package provides this.
 
 ```{r}
-novels %>% 
-  mutate(title = paste0("[", title, "](", url, ")")) %>% 
-  select(title, description) %>% 
-  flextable(col_keys = c("title", "description")) %>% 
+novels |> 
+  mutate(title = paste0("[", title, "](", url, ")")) |> 
+  select(title, description) |> 
+  flextable(col_keys = c("title", "description")) |> 
   set_header_labels(
     title = "Book Title",
     description = "Description"
-  ) %>% 
-  colformat_md(j = "title") %>% 
+  ) |> 
+  colformat_md(j = "title") |> 
   autofit()
 ```
 
@@ -455,9 +469,9 @@ tbl
 ```
 
 ```{r}
-tbl %>% 
-  flextable() %>% 
-  colformat_md(j = "expression") %>% 
+tbl |> 
+  flextable() |> 
+  colformat_md(j = "expression") |> 
   autofit()
 ```
 
@@ -475,26 +489,26 @@ tbl
 ```
 
 ```{r}
-tbl %>% 
-  flextable() %>% 
-  colformat_md() %>% 
+tbl |> 
+  flextable() |> 
+  colformat_md() |> 
   autofit()
 ```
 
 ## Inserting images
 
 ```{r}
-novels %>% 
-  mutate(title = paste0("[", title, "](", url, ")")) %>% 
-  select(title, image, description) %>% 
-  flextable(col_keys = c("title", "image", "description")) %>% 
+novels |> 
+  mutate(title = paste0("[", title, "](", url, ")")) |> 
+  select(title, image, description) |> 
+  flextable(col_keys = c("title", "image", "description")) |> 
   set_header_labels(
     title = "Book Title",
     description = "Description",
     image = "Cover"
-  ) %>% 
-  colformat_md(j = "title") %>% 
-  colformat_image(j = "image", width = .75, height = 1.2) %>% 
+  ) |> 
+  colformat_md(j = "title") |> 
+  colformat_image(j = "image", width = .75, height = 1.2) |> 
   autofit()
 ```
 
@@ -533,13 +547,13 @@ df
 ```
 
 ```{r}
-flextable(df) %>% 
-  set_header_labels(seed = "Seed", plot = "Swatch") %>% 
+flextable(df) |> 
+  set_header_labels(seed = "Seed", plot = "Swatch") |> 
   compose(
     j = "plot", 
     value = as_paragraph(
       gg_chunk(value = plot, width = 4, height = .8)
     )
-  ) %>% 
+  ) |> 
   autofit()
 ```
