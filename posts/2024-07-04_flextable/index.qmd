@@ -30,7 +30,7 @@ There are nine books that make up the Culture novels, starting with the 1988 nov
 ```{r}
 #| echo: false
 #| message: false
-readr::read_csv("culture.csv", show_col_types = FALSE) |> 
+readr::read_csv("culture.csv", col_types = "ciccccc") |> 
   dplyr::mutate(title = paste0("[", title, "](", url, ")")) |> 
   dplyr::select(title, image, description) |> 
   flextable::flextable(col_keys = c("title", "image", "description")) |> 
@@ -63,7 +63,7 @@ library(ggplot2)
 For the purposes of this post I put together a small data set using information taken from the [wikipedia page](https://en.wikipedia.org/wiki/Culture_series) on the Culture novels:
 
 ```{r}
-novels <- read_csv("culture.csv", show_col_types = FALSE)
+novels <- read_csv("culture.csv", col_types = "ciccccc")
 novels
 ```
 
@@ -114,9 +114,21 @@ novels |>
 
 ## Column formats
 
+When deciding how to format the values displayed in the cells, flextable tries to supply sensible defaults for different data types, but you can override these defaults with the assistance of the `colformat_*()` functions:
+
+- `colformat_char()`: Format character cells
+- `colformat_date()`: Format date cells
+- `colformat_datetime()`: Format datetime cells
+- `colformat_double()`: Format numeric cells
+- `colformat_image()`: Format cells as images
+- `colformat_int()`: Format integer cells
+- `colformat_lgl()`: Format logical cells
+- `colformat_num()`: Format numeric cells
+
+To give an example, the table we have so far doesn't display the publication dates very nicely. The default convention for numeric values uses commas as the "big mark" character (e.g., one million would be written "1,000,000" not "1000000"). That isn't very helpful in this case because the column should actually be interpreted as year, and by convention we normally write "1987" for the year rather than "1,987". We can fix this by using the `colformat_int()` function to set `big.mark = ""`:
+
 ```{r}
 novels |>
-  mutate(publication_date = as.integer(publication_date)) |> 
   select(title:isbn) |> 
   flextable(cwidth = c(3, 1, 4, 2)) |> 
   set_header_labels(
@@ -128,11 +140,10 @@ novels |>
   colformat_int(big.mark = "")
 ```
 
-I'll store this as the `base` table to be modified later:
+I'm pretty happy with the contents of this table (though I'll tweak the style later), so I'll store this as the `base` table that I can use again later:
 
 ```{r}
 base <- novels |>
-  mutate(publication_date = as.integer(publication_date)) |> 
   select(title:isbn) |> 
   flextable(cwidth = c(3, 1, 4, 2)) |> 
   set_header_labels(
@@ -142,6 +153,21 @@ base <- novels |>
     isbn = "ISBN"
   ) |> 
   colformat_int(big.mark = "")
+```
+
+You can define your own formatter function to be applied to specific columns by using the `set_formatter()` function. Suppose, for example, that I wanted the book titles to be shown in all-caps, and wanted to simplify the setting date to (a) remove the ambigious entries (b) drop the "c." for circa, (c) remove the "CE" string for current era, and (d) replace the "BCE" string with the older "BC" convention. I could do that as follows:
+
+```{r}
+base |> 
+  set_formatter(
+    title = str_to_upper,
+    setting_date = function(x) x |> 
+      str_replace_all("BCE", "BC") |> 
+      str_remove_all("CE") |> 
+      str_remove_all("c\\.") |> 
+      str_remove_all("^(Varies|Unspe).*") |> 
+      str_squish() 
+  )
 ```
 
 ## Table themes
