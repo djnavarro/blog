@@ -95,12 +95,11 @@ novels %>%
   )
 ```
 
-## Themes
-
-Theme functions are simpler than ggplot2. It's a function that takes a flextable as input and returns a flextable as ouput. Default is `theme_booktabs()` but there are several that come bundled with the package:
+## Column formats
 
 ```{r}
-base <- novels %>%
+novels %>%
+  mutate(publication_date = as.integer(publication_date)) %>% 
   select(title:isbn) %>% 
   flextable(cwidth = c(3, 1, 4, 2)) %>% 
   set_header_labels(
@@ -108,8 +107,31 @@ base <- novels %>%
     publication_date = "Published",
     setting_date = "Story Date", 
     isbn = "ISBN"
-  )
+  ) %>% 
+  colformat_int(big.mark = "")
+```
 
+I'll store this as the `base` table to be modified later:
+
+```{r}
+base <- novels %>%
+  mutate(publication_date = as.integer(publication_date)) %>% 
+  select(title:isbn) %>% 
+  flextable(cwidth = c(3, 1, 4, 2)) %>% 
+  set_header_labels(
+    title = "Book Title",
+    publication_date = "Published",
+    setting_date = "Story Date", 
+    isbn = "ISBN"
+  ) %>% 
+  colformat_int(big.mark = "")
+```
+
+## Table themes
+
+Theme functions are simpler than ggplot2. It's a function that takes a flextable as input and returns a flextable as ouput. Default is `theme_booktabs()` but there are several that come bundled with the package:
+
+```{r}
 base %>% theme_box()
 ```
 
@@ -121,7 +143,7 @@ base %>% theme_alafoli()
 base %>% theme_tron()
 ```
 
-## Defaults
+## Table defaults
 
 At the time a table is constructed by calling `flextable()` a collection of default values are applied to the table. You can get a list of these valuse by calling `get_flextable_defaults()`, and you can modify them with `set_flextable_defaults()`
 
@@ -141,6 +163,86 @@ These defaults are applied to any new table, which I don't want. So I'll restore
 
 ```{r}
 init_flextable_defaults()
+```
+
+## Table parts
+
+It's often helpful to define formatting rules that apply only to a subset of the table. For instance, we might want to use boldface text for the column headers but not the body of the table. Or perhaps some rows or columns should appear in a different colour for one reason or another. To do this effectively it is helpful to understand how flextables are structured. All flextables are comprised of three parts: a set of **header** rows at the top, a grid of cells in the table **body**, and a set of footer rows at the bottom. Many functions in flextable have a `part` argument that you can use to select one (or all) of these three parts. For example, the `bg()` function is used to set the background colour, and the example below takes our `base` table and gives the header a red background, the body a green background, and the footer a blue background:
+
+```{r}
+base %>% 
+  bg(bg = "#ff000040", part = "header") %>% # red header
+  bg(bg = "#00cc0040", part = "body") %>%   # green body
+  bg(bg = "#0000ff40", part = "footer") %>% # blue footer
+  theme_box()
+```
+
+As you can see from this output, the default in flextable is to have a single header row containing the column names, a body comprised of the data values in the table, and no footer at all. We can add extra content to the header and footer if we want using the `add_header_lines()` and `add_footer_lines()` functions:
+
+```{r}
+base %>%
+  add_header_lines("The Culture Novels") %>% 
+  add_footer_lines("by Iain M. Banks") %>% 
+  bg(bg = "#ff000040", part = "header") %>% # red header
+  bg(bg = "#00cc0040", part = "body") %>%   # green body
+  bg(bg = "#0000ff40", part = "footer") %>% # blue footer
+  theme_box()
+```
+
+Notice that the `add_header_lines()` and `add_footer_lines()` functions create extra rows that span all the cells in the table. Sometimes we might prefer a little more fine-grained control, by creating a new row that is subdivided into cells. We can do this with the `add_header_row()` and `add_footer_row()` functions:
+
+```{r}
+base %>%
+  add_header_row(
+    values = c("A", "Header", "Row"), 
+    colwidths = c(1, 2, 1)
+  ) %>% 
+  add_footer_row(
+    values = c("And", "A", "Footer", "Row"), 
+    colwidths = c(1, 1, 1, 1)
+  ) %>% 
+  bg(bg = "#ff000040", part = "header") %>% # red header
+  bg(bg = "#00cc0040", part = "body") %>%   # green body
+  bg(bg = "#0000ff40", part = "footer") %>% # blue footer
+  theme_box()
+```
+
+Notice that these new rows are subdivided into cells. For the footer, I've not merged anything so there are four cells in the footer row; whereas for the new header row there are only three cells because I merged two of them using the `colwidths` argument. 
+
+If I were more serious about these particular tables, I'd use the `align()` function to tidy up the text alignment and other formatting in the new header and footer rows, but I'm not really interested in doing that here so I'll move on. 
+
+## Row and column selectors
+
+```{r}
+base %>% 
+  bg(i = 1:2, bg = "#cc22cc40") %>%                   # purple rows
+  bg(i = ~ publication_date > 2000, bg = "#ffa50040") # orange rows
+```
+
+```{r}
+base %>% 
+  bg(j = 1:2, bg = "#80471c40") %>% # brown columns
+  bg(j = "isbn", bg = "#00808040")  # teal column
+```
+
+
+```{r}
+base %>% 
+  bg(j = 1:2, bg = "#80471c40", part = "all") %>% # brown columns
+  bg(j = "isbn", bg = "#00808040", part = "all")  # teal column
+```
+
+```{r}
+base %>% 
+  bg(i = 1:2, j = 3:4, bg = "#cc22cc40") %>%  # purple cells
+  bg(i = 7:8, j = 1:2, bg = "#00808040")      # teal cells  
+```
+
+```{r}
+base %>% 
+  bg(i = 1:2, bg = "#cc22cc40") %>%                   # purple rows
+  bg(j = "isbn", bg = "#00808040") %>%                # teal column
+  bg(i = ~ publication_date > 2000, bg = "#ffa50040") # orange rows
 ```
 
 ## Tinkering
@@ -250,8 +352,9 @@ novels %>%
   autofit()
 ```
 
+## Inserting equations
 
-This can be handy for equations:
+Markdown columns are a very handy tool whenever you have tables that need to include equations or other kinds of cell content that have very specific formatting requirements. 
 
 ```{r}
 tbl <- tribble(
