@@ -140,7 +140,7 @@ novels |>
   colformat_int(big.mark = "")
 ```
 
-I'm pretty happy with the contents of this table (though I'll tweak the style later), so I'll store this as the `base` table that I can use again later:
+I'm pretty happy with the contents of this table (though I'll tweak the style later), so I'll store this as the `base` table that I can use it again:
 
 ```{r}
 base <- novels |>
@@ -541,45 +541,39 @@ novels |>
 ## Inserting plots
 
 ```{r}
-swatch <- function(seed, n = 2000) {
-  set.seed(seed)
-  ggplot(
-    data = tibble(
-      x = runif(n, -4, 3), 
-      y = runif(n),
-      len = runif(n), 
-      shade = runif(n)
-    ), 
-    mapping = aes(
-      x = x, 
-      y = y, 
-      xend = x + len,
-      yend = y,
-      color = shade
-    )
-  ) + 
-    geom_segment(show.legend = FALSE, alpha = .5, linetype = "dotted") + 
-    coord_cartesian(xlim = c(-3, 3)) + 
-    scale_color_gradientn(colors = sample(colors(), size = 3)) + 
+plot_name_lengths <- function(novel) {
+  ships |> 
+    filter(Novel == novel) |> 
+    mutate(len = Name |> replace_na("") |> nchar()) |> 
+    arrange(desc(len)) |> 
+    mutate(pos = row_number()) |> 
+    ggplot(aes(pos, len)) + 
+    geom_point() + 
+    geom_segment(aes(xend = pos, yend = 0)) + 
+    lims(x = c(0, 60), y = c(0, 65)) + 
     theme_void()
 }
 
-df <- tibble(
-  seed = 100:108,
-  plot = lapply(seed, swatch)
+ship_name_length <- tibble(
+  title = novels$title,
+  plot = lapply(title, plot_name_lengths)
 )
 
-df
+ship_name_length
 ```
 
 ```{r}
-flextable(df) |> 
-  set_header_labels(seed = "Seed", plot = "Swatch") |> 
+ship_name_length |> 
+  flextable(cwidth = c(2, 4)) |> 
+  set_header_labels(
+    title = "Title", 
+    plot = "Ship Name Lengths"
+  ) |> 
   compose(
     j = "plot", 
     value = as_paragraph(
-      gg_chunk(value = plot, width = 4, height = .8)
+      gg_chunk(value = plot, width = 6, height = .8)
     )
   ) |> 
-  autofit()
+  align_nottext_col(align = "center")
 ```
