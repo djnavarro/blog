@@ -131,6 +131,18 @@ base <- novels %>%
 
 Theme functions are simpler than ggplot2. It's a function that takes a flextable as input and returns a flextable as ouput. Default is `theme_booktabs()` but there are several that come bundled with the package:
 
+- `theme_alafoli()`
+- `theme_apa()`
+- `theme_booktabs()` (default)
+- `theme_box()`
+- `theme_tron()`
+- `theme_tron_legacy()`
+- `theme_vader()`
+- `theme_vanilla()`
+- `theme_zebra()`
+
+Here are a few of them:
+
 ```{r}
 base %>% theme_box()
 ```
@@ -145,7 +157,7 @@ base %>% theme_tron()
 
 ## Table defaults
 
-At the time a table is constructed by calling `flextable()` a collection of default values are applied to the table. You can get a list of these valuse by calling `get_flextable_defaults()`, and you can modify them with `set_flextable_defaults()`
+At the time a table is constructed by calling `flextable()` a collection of default values are applied to the table. You can get a list of these values by calling `get_flextable_defaults()`, and you can modify them with `set_flextable_defaults()`
 
 ```{r}
 set_flextable_defaults(
@@ -213,11 +225,21 @@ If I were more serious about these particular tables, I'd use the `align()` func
 
 ## Row and column selectors
 
+The `part` argument discussed in the previous section allows you to apply formatting rules selectively to the header, body, and footer of the table, but it doesn't let you apply rules selectively to a subset of rows or columns. If you need to do this, you can use the row selector argument `i` and the columns selector argument `j`. These selector arguments can be specified in three ways:
+
+- Numerical values select rows or columns using their numerical index
+- Character values can select one or more columns by name
+- Formulas can be used to define a logical selection
+
+It's a lot easier to understand when you see it in action. In this example, I use `i = 1:2` (selection by indices) to set the background colour for the top two rows to purple, and `i = ~ publication_date > 2000` (logical selection) to set the background colour for the bottom three rows to orange: 
+
 ```{r}
 base %>% 
   bg(i = 1:2, bg = "#cc22cc40") %>%                   # purple rows
   bg(i = ~ publication_date > 2000, bg = "#ffa50040") # orange rows
 ```
+
+Along the same lines the next example uses `j = 1:2` to set the background colour for the first two columns to brown, and `j = "isbn"` (selection by name) to set a teal background for the fourth column:
 
 ```{r}
 base %>% 
@@ -225,6 +247,7 @@ base %>%
   bg(j = "isbn", bg = "#00808040")  # teal column
 ```
 
+Notice that these background colours are applied only to the body of the table. However, the `bg()` function has a `part` argument, and we can extend this background shading to the entire table by settingh `part = "all"`":
 
 ```{r}
 base %>% 
@@ -232,11 +255,15 @@ base %>%
   bg(j = "isbn", bg = "#00808040", part = "all")  # teal column
 ```
 
+If you specify a row selection and column selection, the formatting rule is applied to those cells that satisfy both criteria:
+
 ```{r}
 base %>% 
   bg(i = 1:2, j = 3:4, bg = "#cc22cc40") %>%  # purple cells
   bg(i = 7:8, j = 1:2, bg = "#00808040")      # teal cells  
 ```
+
+Note that formatting rules are applied sequentially, allowing you to override previously defined formatting. For example, in this example I set the top two rows to purple, then set the rightmost column to teal, and then finally set the bottom three rows to orange. The result looks like this:
 
 ```{r}
 base %>% 
@@ -245,13 +272,75 @@ base %>%
   bg(i = ~ publication_date > 2000, bg = "#ffa50040") # orange rows
 ```
 
-## Tinkering
+## Visual style
+
+Controlling the appearance of the text:
+
+- `font()`: Set font
+- `fontsize()`: Set font size
+- `italic()`: Set italic font
+- `bold()`: Set bold font
+- `color()`: Set font color
+- `highlight()`: Text highlight color
+- `rotate()`: Rotate cell text
+
+Controlling alignment:
+
+- `align()`: Set horizontal alignment 
+- `align_text_col()`: Set horizontal alignment for text columns
+- `align_nottext_col()`: Set horizontal alignment for non-text columns
+- `valign()`: Set vertical alignment
+
+Cell appearance:
+
+- `bg()`: Set background color
+- `padding()`: Set paragraph paddings
+- `line_spacing()`: Set text alignment
+
+Other:
+
+- `style()`: Set flextable style
+- `tab_settings()`: Set tabulation marks configuration
+- `empty_blanks()`: Make blank columns as transparent 
 
 ```{r}
 base %>%
-  bg(part = "header", bg = "grey50") %>% 
+  bg(part = "header", bg = "grey30") %>% 
   color(part = "header", color = "ghostwhite") %>% 
-  italic(j = "title", part = "all") %>% 
+  italic(j = "title")
+```
+
+
+## Borders
+
+Horizontal and vertical lines:
+
+- `hline()`: Set horizontal borders
+- `hline_bottom()`: Set bottom horizontal border
+- `hline_top()`: Set top horizontal border
+- `vline()`: Set vertical borders
+- `vline_left()`: Set left vertical borders
+- `vline_right()`: Set right vertical borders
+
+Borders:
+
+- `border_inner()`: Set vertical and horizontal inner borders
+- `border_inner_h()`: Set horizontal inner borders
+- `border_inner_v()`: Set vertical inner borders
+- `border_outer()`: Set outer borders
+- `border_remove()`: Remove borders
+- `surround()`: Set borders for a selection of cells 
+
+Others:
+
+- `fp_border_default()`: Border formatting properties
+- `fix_border_issues()`: Fix border issues when cell are merged
+
+
+
+
+```{r}
+base %>%
   vline(j = "title") %>% 
   border_outer(
     border = fp_border_default(
