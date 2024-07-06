@@ -1,7 +1,10 @@
 ---
-title: "flextable"
+title: "Use of flextable"
 description: "This is a subtitle"
 date: "2024-07-04"
+image: "img/swatch.png"
+image-alt: "A table of four horizontal textured bands in pastel shades"
+categories: ["R", "Data Wrangling"]
 --- 
 
 <!--------------- my typical setup ----------------->
@@ -31,42 +34,31 @@ library(readr)
 library(ggplot2)
 ```
 
-
 - [flextable package](https://davidgohel.github.io/flextable/)
 - [flextable book](https://ardata-fr.github.io/flextable-book/)
 
-Data for the table:
+## Basic use
+
+To get started I'll need a data set to display as a table. 
 
 ```{r}
-sw <- starwars %>% 
-  select(name, height, mass, hair_color, eye_color, gender) %>% 
-  slice_head(n = 10)
-
-sw
+novels <- read_csv("culture.csv", show_col_types = FALSE)
+novels
 ```
-
-## Basic use
 
 Passing to `flextable()`
 
 ```{r}
-sw %>% 
+novels %>%
+  select(title:isbn) %>% 
   flextable()
 ```
 
 Using `autofit()` to produce nice column spacing:
 
 ```{r}
-sw %>% 
-  flextable() %>% 
-  autofit()
-```
-
-Combine with dplyr to tidy up printed values:
-
-```{e}
-sw %>% 
-  mutate(across(hair_color:gender, str_to_title)) %>% 
+novels %>%
+  select(title:isbn) %>% 
   flextable() %>% 
   autofit()
 ```
@@ -74,20 +66,93 @@ sw %>%
 Use `set_header_labels()` to format the column labels:
 
 ```{r}
-sw %>% 
-  mutate(across(hair_color:gender, str_to_title)) %>% 
+novels %>%
+  select(title:isbn) %>% 
+  flextable() %>% 
+  set_header_labels(
+    title = "Book Title",
+    publication_date = "Published",
+    setting_date = "Story Date", 
+    isbn = "ISBN"
+  ) %>% 
+  autofit()
+```
+
+## Switching themes
+
+Theme functions are simpler than ggplot2. It's a function that takes a flextable as input and returns a flextable as ouput. Default is `theme_booktabs()` but there are several that come bundled with the package:
+
+```{r}
+novels %>%
+  select(title:isbn) %>% 
   flextable() %>% 
   autofit() %>% 
-  set_header_labels(
-    name = "Character Name",
-    height = "Height (cm)",
-    mass = "Mass (kg)", 
-    hair_color = "Hair Color",
-    eye_color = "Eye Color", 
-    sex = "Sex",
-    gender = "Gender",
-    starships = "Starships"
+  theme_box()
+```
+
+```{r}
+novels %>%
+  select(title:isbn) %>% 
+  flextable() %>% 
+  autofit() %>% 
+  theme_alafoli()
+```
+
+```{r}
+novels %>%
+  select(title:isbn) %>% 
+  flextable() %>% 
+  autofit() %>% 
+  theme_tron()
+```
+
+## Tinkering
+
+```{r}
+novels %>%
+  select(title:isbn) %>% 
+  flextable() %>% 
+  autofit() %>% 
+  bg(part = "header", bg = "grey50") %>% 
+  color(part = "header", color = "ghostwhite") %>% 
+  italic(j = "title", part = "all") %>% 
+  vline(j = "title") %>% 
+  border_outer(
+    border = fp_border_default(
+      color = "black", 
+      width = 2
+    )
   )
+```
+
+## Setting defaults
+
+```{r}
+get_flextable_defaults()
+```
+
+Setting the defaults:
+
+```{r}
+set_flextable_defaults(
+  font.color = "purple",
+  background.color = "ghostwhite",
+  table.layout = "autofit"
+)
+
+novels %>%
+  select(title:isbn) %>% 
+  flextable() 
+```
+
+These defaults are applied to any new table, which I don't want. So I'll restore defaults with `init_flextable_defaults()`
+
+```{r}
+init_flextable_defaults()
+
+novels %>%
+  select(title:isbn) %>% 
+  flextable() 
 ```
 
 ## Cell contents
@@ -95,145 +160,53 @@ sw %>%
 Use `compose()` or `mk_par()` (the latter is an alias to make life easier in case of conficts between `purrr::compose()` and `flextable::compose()` to build cell contents from constituent parts:
 
 ```{r}
-sw %>% 
-  mutate(across(hair_color:gender, str_to_title)) %>% 
+novels %>%
+  select(title:isbn) %>% 
   flextable() %>% 
-  autofit() %>% 
   set_header_labels(
-    name = "Character Name",
-    height = "Height",
-    mass = "Mass", 
-    hair_color = "Hair Color",
-    eye_color = "Eye Color", 
-    sex = "Sex",
-    gender = "Gender",
-    starships = "Starships"
+    title = "Book Title",
+    publication_date = "Published",
+    setting_date = "Story Date", 
+    isbn = "ISBN"
   ) %>% 
   compose(
-    j = "height", 
-    value = as_paragraph(height, "cm")
+    j = "publication_date",
+    value = as_paragraph(as.character(publication_date), " CE")
   ) %>% 
-  compose(
-    j = "mass",
-    value = as_paragraph(mass, "kg")
-  )
+  autofit()
 ```
 
-Fancier formatting to a specific chunk using `as_chunk()` and `fp_text_default()`:
+Fancier formatting to a specific chunk using `as_chunk()` and `fp_text_default()`. Notice that `color()` here is just a convenience function. I could do the same thing using `compose()`, `as_paragraph()`, `as_chunk()`, and `fp_text_default()`:
+
 
 ```{r}
-sw %>% 
-  mutate(across(hair_color:gender, str_to_title)) %>% 
+novels %>%
+  select(title:isbn) %>% 
   flextable() %>% 
-  autofit() %>% 
   set_header_labels(
-    name = "Character Name",
-    height = "Height",
-    mass = "Mass", 
-    hair_color = "Hair Color",
-    eye_color = "Eye Color", 
-    sex = "Sex",
-    gender = "Gender",
-    starships = "Starships"
+    title = "Book Title",
+    publication_date = "Published",
+    setting_date = "Story Date", 
+    isbn = "ISBN"
   ) %>% 
   compose(
-    j = "height", 
-    value = as_paragraph(
-      height, 
-      as_chunk("cm", props = fp_text_default(color = "grey50"))
-    )
+    j = "publication_date",
+    value = as_paragraph(as.character(publication_date), " CE")
   ) %>% 
   compose(
-    j = "mass",
-    value = as_paragraph(
-      mass, 
-      as_chunk("kg", props = fp_text_default(color = "grey50"))
-    )
-  )
-```
-
-Using fancier row selectors to get contextual formatting:
-
-```{r}
-sw %>% 
-  mutate(across(hair_color:gender, str_to_title)) %>% 
-  flextable() %>% 
-  autofit() %>% 
-  set_header_labels(
-    name = "Character Name",
-    height = "Height",
-    mass = "Mass", 
-    hair_color = "Hair Color",
-    eye_color = "Eye Color", 
-    sex = "Sex",
-    gender = "Gender",
-    starships = "Starships"
-  ) %>% 
-  compose(
-    j = "height", 
-    value = as_paragraph(
-      height, 
-      as_chunk("cm", props = fp_text_default(color = "grey50"))
-    )
-  ) %>% 
-  compose(
-    j = "mass",
-    value = as_paragraph(
-      mass, 
-      as_chunk("kg", props = fp_text_default(color = "grey50"))
-    )
-  ) %>% 
-  color(
-    i = ~ eye_color == "Red",
-    j = "eye_color",
-    color = "red" 
-  )
-```
-
-Notice that `color()` here is just a convenience function. I could do the same thing using `compose()`, `as_paragraph()`, `as_chunk()`, and `fp_text_default()`:
-
-```{r}
-sw %>% 
-  mutate(across(hair_color:gender, str_to_title)) %>% 
-  flextable() %>% 
-  autofit() %>% 
-  set_header_labels(
-    name = "Character Name",
-    height = "Height",
-    mass = "Mass", 
-    hair_color = "Hair Color",
-    eye_color = "Eye Color", 
-    sex = "Sex",
-    gender = "Gender",
-    starships = "Starships"
-  ) %>% 
-  compose(
-    j = "height", 
-    value = as_paragraph(
-      height, 
-      as_chunk("cm", props = fp_text_default(color = "grey50"))
-    )
-  ) %>% 
-  compose(
-    j = "mass",
-    value = as_paragraph(
-      mass, 
-      as_chunk("kg", props = fp_text_default(color = "grey50"))
-    )
-  ) %>% 
-  compose(
-    i = ~ eye_color == "Blue",
-    j = "eye_color",
+    i = ~ title == "Use of Weapons",
+    j = "title",
     value = as_paragraph(as_chunk(
-      eye_color, 
+      title, 
       props = fp_text_default(color = "blue")
-    )
-  )) %>% 
+    ))
+  ) %>% 
   color(
-    i = ~ eye_color == "Red",
-    j = "eye_color",
+    i = ~ title == "Surface Detail",
+    j = "title",
     color = "red" 
-  )
+  ) %>% 
+  autofit()
 ```
 
 ## Merging cells
@@ -241,43 +214,63 @@ sw %>%
 Data for the table:
 
 ```{r}
-sw <- starwars %>% 
-  select(name, starships) %>% 
-  slice_head(n = 10) %>% 
-  unnest(cols = c(starships))
+ships <- read_csv("ship-list.csv", show_col_types = FALSE)
 
-sw
+ship_count <- ships %>% 
+  mutate(Civilisation = case_when(
+    str_detect(Civilisation, "^Culture ") ~ "Culture",
+    str_detect(Civilisation, "^Non-aligned ") ~ "Non-aligned",
+    TRUE ~ Civilisation
+  )) %>% 
+  group_by(Novel, Civilisation) %>%
+  count(name = "Ships") %>% 
+  ungroup() %>% 
+  arrange(Novel, desc(Ships))
+
+ship_count
 ```
 
 ```{r}
-sw %>% 
+ship_count %>% 
   flextable() %>% 
-  set_header_labels(name = "Name", starships = "Starships") %>% 
   autofit() %>% 
   theme_box()
 ```
 
 ```{r}
-sw %>% 
+ship_count %>% 
   flextable() %>% 
-  set_header_labels(name = "Name", starships = "Starships") %>% 
   autofit() %>% 
-  merge_v(j = "name") %>% 
+  merge_v(j = "Novel") %>% 
   theme_box()
 ```
 
 ```{r}
-sw %>% 
-  as_grouped_data(groups = "name") %>% 
+ship_count %>% 
+  as_grouped_data(groups = "Novel") %>% 
   flextable() %>% 
-  set_header_labels(name = "Name", starships = "Starships") %>% 
-  autofit() %>% 
-  theme_box()
+  autofit()
 ```
 
 ## Markdown columns
 
-Flextable doesn't natively support markdown syntax in data columns, but the [ftExtra](https://ftextra.atusy.net/) package provides this:
+Flextable doesn't natively support markdown syntax in data columns, but the [ftExtra](https://ftextra.atusy.net/) package provides this.
+
+```{r}
+novels %>% 
+  mutate(title = paste0("[", title, "](", url, ")")) %>% 
+  select(title, description) %>% 
+  flextable(col_keys = c("title", "description")) %>% 
+  set_header_labels(
+    title = "Book Title",
+    description = "Description"
+  ) %>% 
+  colformat_md(j = "title") %>% 
+  autofit()
+```
+
+
+This can be handy for equations:
 
 ```{r}
 tbl <- tribble(
@@ -315,51 +308,34 @@ tbl %>%
   autofit()
 ```
 
-
 ## Inserting images
 
 ```{r}
-galleries <- read_csv("galleries.csv", show_col_types = FALSE)
-galleries
-```
-
-```{r}
-galleries %>% 
-  flextable() %>% 
+novels %>% 
+  mutate(title = paste0("[", title, "](", url, ")")) %>% 
+  select(title, image, description) %>% 
+  flextable(col_keys = c("title", "image", "description")) %>% 
   set_header_labels(
-    name = "Series Name", 
-    image = "Image", 
-    repo = "GitHub Repository"
+    title = "Book Title",
+    description = "Description",
+    image = "Cover"
   ) %>% 
-  colformat_image(j = "image", width = 1, height = 1) %>% 
-  autofit()
-```
-
-```{r}
-galleries %>% 
-  mutate(repo = paste0("[", basename(repo), "](", repo, ")")) %>% 
-  flextable() %>% 
-  set_header_labels(
-    name = "Series Name", 
-    image = "Image", 
-    repo = "GitHub Repository"
-  ) %>% 
-  colformat_image(j = "image", width = 1, height = 1) %>% 
-  colformat_md(j = "repo") %>% 
+  colformat_md(j = "title") %>% 
+  colformat_image(j = "image", width = .75, height = 1.2) %>% 
   autofit()
 ```
 
 ## Inserting plots
 
 ```{r}
-streaks <- function(seed, n = 10) {
+swatch <- function(seed, n = 2000) {
   set.seed(seed)
   ggplot(
     data = tibble(
-      x = rnorm(n), 
-      y = rnorm(n, sd = .1),
+      x = runif(n, -4, 3), 
+      y = runif(n),
       len = runif(n), 
-      shade = sample(colors(), size = n)
+      shade = runif(n)
     ), 
     mapping = aes(
       x = x, 
@@ -369,14 +345,15 @@ streaks <- function(seed, n = 10) {
       color = shade
     )
   ) + 
-    geom_segment(linewidth = 2, show.legend = FALSE) + 
-    scale_color_identity() + 
+    geom_segment(show.legend = FALSE, alpha = .5, linetype = "dotted") + 
+    coord_cartesian(xlim = c(-3, 3)) + 
+    scale_color_gradientn(colors = sample(colors(), size = 3)) + 
     theme_void()
 }
 
 df <- tibble(
-  seed = 1:10,
-  plot = lapply(seed, streaks)
+  seed = 100:108,
+  plot = lapply(seed, swatch)
 )
 
 df
@@ -384,11 +361,11 @@ df
 
 ```{r}
 flextable(df) %>% 
-  set_header_labels(seed = "RNG Seed", plot = "Streaks Plot") %>% 
+  set_header_labels(seed = "Seed", plot = "Swatch") %>% 
   compose(
     j = "plot", 
     value = as_paragraph(
-      gg_chunk(value = plot, width = 4, height = .3)
+      gg_chunk(value = plot, width = 4, height = .8)
     )
   ) %>% 
   autofit()
