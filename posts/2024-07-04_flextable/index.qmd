@@ -52,7 +52,9 @@ readr::read_csv("culture.csv", col_types = "ciccccc") |>
   flextable::autofit()
 ```
 
-I made this table in R using flextable. It's surprisingly easy to do, once you wrap your head around how the package works. So let's have a look at how it all works, shall we?
+The little blurbs don't really do justice to the novels themselves, but that's hardly surprising as I took the text from wikipedia. Perhaps more to the point of the post, it's worth mentioning that I made this table in R using flextable, and that is maybe a little more surprising. As it happens, it's pretty easy to make these tables once you wrap your head around how the package works, which is terribly awesome really. 
+
+So let's have a look at how it all works, shall we?
 
 ```{r}
 #| message: false
@@ -68,8 +70,10 @@ library(ggplot2)
 
 ## Getting started
 
-> All great promises are threats, I suppose, to the way things have been until that point, to some aspect of our lives, and we all suddenly become conservative, even though we want and need what the promise holds, and look forward to the promised change at the same time. <br>
-> &nbsp; &nbsp; -- *The Hydrogen Sonata*
+> He looked out through the open faceplate, and wiped a little sweat from his brow. It was dusk over the plateau. A few metres away, by the light of two moons and a fading sun, he could see the rimrock, frost-whitened. Beyond was the great gash in the desert which provided the setting for the ancient half-empty city where Tsoldrin Beychae now lived. <br><br>
+> Clouds drifted, and the dust collected. <br><br>
+> "Well," he sighed, to no-one in particular, and looked up into yet another alien sky. <br><br>"Here we go again." <br><br>
+> &nbsp; &nbsp; &nbsp; &nbsp; -- *Use of Weapons*
 
 The pretty table in the opening section is based on the table shown in the [wikipedia page](https://en.wikipedia.org/wiki/Culture_series) on the Culture novels, along with a few other bits and pieces I found on wikipedia. More precisely, it derives from a small csv file that I put together using that page: 
 
@@ -143,8 +147,12 @@ In this extract, the call to `set_header_labels()` is fairly self-explanatory: w
 
 > YOU MAY ENTER. <br>
 > THERE IS DEATH HERE. <br>
-> BE WARNED. <br>
+> BE WARNED.^[With the benefit of hindsight I should probably have provided the reader with this warning a little earlier in the post. Oh well. But let's be honest, babes, you're reading my blog. You should be treating everything on here like one of the Planets of the Dead already.] <br>
 > &nbsp; &nbsp; -- *Consider Phlebas*
+
+In what can only be described as a blatant plot device, *Consider Phlebas* features an alien species called the Dra'Azon who, well, basically do nothing throughout the entire novel except loom over everyone else as a vaguely menacing presence that prevents them from doing the blindingly obvious thing that they all want to do, thereby setting into motion the entire convoluted sequence of events that comprise the novel. Only one Dra'Azon ever appears in the book, and it only communicates by text on a screen and that text is FORMATTED IN ALL CAPS. 
+
+That seems as good a reason as any to start talking about column formatting.
 
 When deciding how to format the values displayed in the cells, flextable tries to supply sensible defaults for different data types, but you can override these defaults with the assistance of the `colformat_*()` functions:
 
@@ -215,10 +223,12 @@ I'm not sure this version is actually any better, but this is of course not the 
 
 ## Table themes
 
-> Just before the *Clear Air Turbulence* went back into warp and its crew sat down at table, the ship expelled the limp corpse of Zallin. Where it had found a live man in a suit, it left a dead youth in shorts and a tattered shirt, tumbling and freezing while a thin shell of air molecules expanded around the body, like an image of departing life. <br>
+> By their names you could know them, Horza thought as he showered. The Culture's General Contact Units, which until now had borne the brunt of the first four years of the war in space, had always chosen jokey, facetious names. Even the new warships they were starting to produce, as their factory craft completed gearing up their war production, favoured either jocular, sombre or downright unpleasant names, as though the Culture could not take entirely seriously the vast conflict in which it had embroiled itself. <br>
 > &nbsp; &nbsp; -- *Consider Phlebas*
 
-The flextable package supports a system for visual themes, not entirely dissimilar to the way the ggplot2 data visualisation package does. Like ggplot2, the package supplies several themes that you can use right out of the box, simply by piping the flextable object to the relevant `theme_*()` function. If you're not keen on writing your own, a descriptor that I suspect applies to most of us, these are the options you have available to you:
+The peculiar conventions of Culture ship names are a recurring theme in the novels, and every Banks fan probably has their own personal favourite: mine is *Anticipation of a New Lover's Arrival, The*. The different ship classes have different proclivities, and you can often guess the ship class just by looking at the name. It's a whole thing.
+
+Since we are talking about thematic elements -- see how cleverly I worked that segue in? -- it is probably a good idea for me to talk about the theming system in flextable. The flextable package supports a system for visual themes, not entirely dissimilar to the way the ggplot2 data visualisation package does. Like ggplot2, the package supplies several themes that you can use right out of the box, simply by piping the flextable object to the relevant `theme_*()` function. If you're not keen on writing your own, a descriptor that I suspect applies to most of us, these are the options you have available to you:
 
 - `theme_alafoli()`
 - `theme_apa()`
@@ -246,12 +256,12 @@ base |> theme_tron()
 
 Sadly, despite its obvious awesomeness, I have not yet found an excuse to use `theme_tron()` in my analysis work. Life is so often filled with disappointment.
 
-## Table defaults
-
 > In life you hoped to do what you could <br> 
 > but mostly you did what you were told <br> 
 > and that was the end of it.^[The quote is not formatted like this in the original, but Banks' writing often has a poetic feel to it, and somehow this line works so well when written like this. Besides, if I hadn't done so the quote would have left a widowed word on the second line and I just hate that so much.] <br>
 > &nbsp; &nbsp; -- *Matter*
+
+## Table defaults
 
 In most cases that I've come across in real life, tables are not constructed in isolation from one another. Typically you have to produce a collection of tables for the same report, and as such all tables need to have the same visual style. At the time a table is constructed by calling `flextable()`, a collection of default values are applied to the table, values that shape the visual style of the resulting table. You can get a list of these values by calling `get_flextable_defaults()`. Conveniently, flextable allows you to modify them with `set_flextable_defaults()`, like so:
 
@@ -281,7 +291,7 @@ Seems like an especially good idea in this post, because frankly I do not want a
 
 ## Table parts
 
-> The rose-red stones were jumbled and askew. Most of the streets were gone, long ago buried under the soft encroaching sands. Ruined arches, fallen lintels, collapsed walls littered the slopes of sand; at the scalloped edge of shore, brushed by the waves, more fallen blocks broke the incoming waves. A little out to sea, tilted towers and the fragments of an arch rose from the waters, sucked at by the waves like the bones of the long-drowned. <br>
+> The rose-red stones were jumbled and askew. Most of the streets were gone, long ago buried under the soft encroaching sands. Ruined arches, fallen lintels, collapsed walls littered the slopes of sand; at the scalloped edge of shore, brushed by the waves, more fallen blocks broke the incoming waves. A little out to sea, tilted towers and the fragments of an arch rose from the waters, sucked at by the waves like the bones of the long-drowned.^[This quote doesn't really connect to the rest of the post, and *The Bridge* isn't a Culture novel, but it's an amazing work. Easily my favourite of Banks' literary fiction works.] <br>
 > &nbsp; &nbsp; -- [*The Bridge*](https://en.wikipedia.org/wiki/The_Bridge_%28novel%29)
 
 It's often helpful to define formatting rules that apply only to a subset of the table. For instance, we might want to use boldface text for the column headers but not the body of the table. Or perhaps some rows or columns should appear in a different colour for one reason or another. To do this effectively it is helpful to understand how flextables are structured. All flextables are comprised of three parts: a set of **header** rows at the top, a grid of cells in the table **body**, and a set of footer rows at the bottom. Many functions in flextable have a `part` argument that you can use to select one (or all) of these three parts. For example, the `bg()` function is used to set the background colour, and the example below takes our `base` table and gives the header a red background, the body a green background, and the footer a blue background:
@@ -330,10 +340,8 @@ If I were more serious about these particular tables, I'd use the `align()` func
 
 ## Row and column selectors
 
-> &nbsp; &nbsp; He looked out through the open faceplate, and wiped a little sweat from his brow. It was dusk over the plateau. A few metres away, by the light of two moons and a fading sun, he could see the rimrock, frost-whitened. Beyond was the great gash in the desert which provided the setting for the ancient half-empty city where Tsoldrin Beychae now lived. <br>
-> &nbsp; &nbsp; Clouds drifted, and the dust collected. <br>
-> &nbsp; &nbsp; "Well," he sighed, to no-one in particular, and looked up into yet another alien sky. "Here we go again." <br>
-> &nbsp; &nbsp; &nbsp; &nbsp; -- *Use of Weapons*
+> All great promises are threats, I suppose, to the way things have been until that point, to some aspect of our lives, and we all suddenly become conservative, even though we want and need what the promise holds, and look forward to the promised change at the same time. <br>
+> &nbsp; &nbsp; -- *The Hydrogen Sonata*
 
 The `part` argument discussed in the previous section allows you to apply formatting rules selectively to the header, body, and footer of the table, but it doesn't let you apply rules selectively to a subset of rows or columns. If you need to do this, you can use the row selector argument `i` and the columns selector argument `j`. These selector arguments can be specified in three ways:
 
@@ -439,7 +447,7 @@ In my own personal journey through the Culture novels, *Excession* suffered a li
 
 Oh how I wish I could write like that. 
 
-In any case, having mentioned the [Outside Context Problem](https://tvtropes.org/pmwiki/pmwiki.php/Main/OutsideContextProblem) trope, it seems like a good moment to discuss borders. The flextable package supplies a collection of functions you can use to control lines and borders that demarcate the cell and tables. You can use these functions to define horizontal and vertical lines:
+In any case, having mentioned the [Outside Context Problem](https://tvtropes.org/pmwiki/pmwiki.php/Main/OutsideContextProblem) trope in terms of a kind of civilisational border incursion, it seems like a good moment to discuss table borders. The flextable package supplies a collection of functions you can use to control lines and borders that demarcate the cell and tables. You can use these functions to define horizontal and vertical lines:
 
 - `hline()`: Set horizontal borders
 - `hline_bottom()`: Set bottom horizontal border
@@ -755,11 +763,14 @@ ship_name_length |>
 
 Looking at these distributions, I feel quite certain that this data set has used the abbreviated name of a certain ship in *The Hydrogen Sonata*, because -- at 206 characters -- "Mistake Not My Current State Of Joshing Gentle Peevishness For The Awesome And Terrible Majesty Of The Towering Seas Of Ire That Are Themselves The Mere Milquetoast Shallows Fringing My Vast Oceans Of Wrath" would probably show up as an outlier.
 
-
 ## Epilogue
 
 > Just as one might do useful work without fully understanding the job one was engaged in, or even what the point of it was, so the behaviour of devotion still mattered to the all-forgiving God, and just as the habitual performance of a task gradually raised one’s skills to something close to perfection, bringing a deeper understanding of the work, so the actions of faith would lead to the state of faith. <br>
 > &nbsp; &nbsp; -- *Surface Detail*
 
-So often I reach the end of these posts and wonder why I write them. Who is the target audience for this? What do I hope they get from reading? What did *I* get from the process? It's all a little vague to me. I'm hardly an expert on flextable, and I've only just started the process of developing a deeper understanding of how it works the way it does. It feels sometimes like I am indeed performing the rituals of code faith in the hope it leads me to a deeper state of faith in the gods of machine instruction.^[It's been a while since I read *Surface Detail*, but my recollection is that the quote above takes place in hell, which admittedly casts a dark shadow across the thought.] I have learned a great deal more about flextable through the act of writing, and of course I do love the act of writing. Perhaps that is justification enough.
+So often I reach the end of these posts and wonder why I write them. The girl reading science fiction on the library floor is long gone now, but so much of her confusion about the world remains. Who is the target audience for these posts? What do I hope they get from reading them? What did *I* get from the process? It's honestly a mystery to me. 
+
+Take this post, for example. I've written about flextable but I'm hardly an expert in it. I've only just started the process of developing a deeper understanding of how it works, and why it is the way it is. It feels sometimes like I am indeed performing the rituals of the code in the hope it leads me to a deeper state of faith in the gods of machine instruction.^[It's been a while since I read *Surface Detail*, but my recollection is that the quote above takes place in hell, which admittedly casts a dark shadow across the thought.] I have learned a great deal more about flextable through the act of writing, and of course I do love the act of writing. 
+
+In truth I write because I like to write, and perhaps that is justification enough.
 
