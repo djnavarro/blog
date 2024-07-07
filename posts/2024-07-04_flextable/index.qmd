@@ -282,7 +282,7 @@ Seems like an especially good idea in this post, because frankly I do not want a
 ## Table parts
 
 > The rose-red stones were jumbled and askew. Most of the streets were gone, long ago buried under the soft encroaching sands. Ruined arches, fallen lintels, collapsed walls littered the slopes of sand; at the scalloped edge of shore, brushed by the waves, more fallen blocks broke the incoming waves. A little out to sea, tilted towers and the fragments of an arch rose from the waters, sucked at by the waves like the bones of the long-drowned. <br>
-> &nbsp; &nbsp; -- *The Bridge*
+> &nbsp; &nbsp; -- [*The Bridge*](https://en.wikipedia.org/wiki/The_Bridge_%28novel%29)
 
 It's often helpful to define formatting rules that apply only to a subset of the table. For instance, we might want to use boldface text for the column headers but not the body of the table. Or perhaps some rows or columns should appear in a different colour for one reason or another. To do this effectively it is helpful to understand how flextables are structured. All flextables are comprised of three parts: a set of **header** rows at the top, a grid of cells in the table **body**, and a set of footer rows at the bottom. Many functions in flextable have a `part` argument that you can use to select one (or all) of these three parts. For example, the `bg()` function is used to set the background colour, and the example below takes our `base` table and gives the header a red background, the body a green background, and the footer a blue background:
 
@@ -608,29 +608,34 @@ Also a reasonable solution to the problem.
 > The point is, there is no feasible excuse for what are, for what we have made of ourselves. We have chosen to put profits before people, money before morality, dividends before decency, fanaticism before fairness, and our own trivial comforts before the unspeakable agonies of others <br>
 > &nbsp; &nbsp; -- *Complicity*
 
-Flextable doesn't natively support markdown syntax in data columns, but the [ftExtra](https://ftextra.atusy.net/) package provides this.
+I have to confess that I've read more of Banks' science fiction novels than his literary fiction work, but even so I've probably read half a dozen of them. They're very good, but I don't love them as much as the space operas. One of the ones that has stuck with me through the years is [*Complicity*](https://en.wikipedia.org/wiki/Complicity_(novel)), a nasty little story that doesn't shy away from expressing an opinion or two. Banks had a great deal to say about matters political, and I can't help but share a lot of his anger about the world we live in.
+
+Aaaaaaanyway...
+
+At this point in the post I reach the problem I encountered at work that provided the impetus to write this blog post. One irritating limitation to flextable is that it doesn't support markdown syntax within data columns. I've become so accustomed to (or spoiled by) tools that automatically support markdown that I habitually write in markdown syntax, and so it annoys me that I can't ask flextable to parse a data column as markdown. As it turns out though -- as I would have discovered had I been more diligent earlier on and read the book all the way through to the end -- this missing functionality is supported via the [ftExtra](https://ftextra.atusy.net/) package.
+
+Here's a fairly simple example. The `novels` data frame has a column called `url` that contains links to the individual wikipedia pages for each of the Culture novels. Suppose I wanted to create a table that contains two columns, one that displays the `title` of the novel and links to the `url` of the wikipedia page, and another that contains the `description` of the novel. One way to do that in flextable would be to construct a new column `title_md` that specifies the link in markdown format, and then format that column using the `colformat_md()` function supplied by the ftExtra package:
 
 ```{r}
 novels |> 
-  mutate(title = paste0("[", title, "](", url, ")")) |> 
-  select(title, description) |> 
-  flextable(col_keys = c("title", "description")) |> 
+  mutate(title_md = paste0("[", title, "](", url, ")")) |> 
+  flextable(col_keys = c("title_md", "description")) |> 
   set_header_labels(
-    title = "Book Title",
+    title_md = "Book Title",
     description = "Description"
   ) |> 
-  colformat_md(j = "title") |> 
+  colformat_md(j = "title_md") |> 
   autofit()
 ```
+
+Oh, look at that -- we're pretty close to constructing the table that I showed at the start of the post.
 
 ## Inserting equations
 
 > Allegedly there was some extra set of coordinates, or even a single mathematical operation, a transform, which, when applied to any given set of coordinates in the original list, somehow magically derived the exact position of that system's portal.<br>
-> &nbsp; &nbsp; -- *The Algebraist*
+> &nbsp; &nbsp; -- [*The Algebraist*](https://en.wikipedia.org/wiki/The_Algebraist)
 
-Again, not a Culture novel, but a standalone science fiction work by Banks. But it seems appropriate to quote from it given the topic of the section.
-
-Markdown columns are a very handy tool whenever you have tables that need to include equations or other kinds of cell content that have very specific formatting requirements. 
+Okay fine, I lied slightly in the last section. The problem I was trying to solve at work wasn't strictly "how to use markdown syntax in flextable" it was something more like "how to construct equations in flextable". Fortunately the two are related, since markdown supports a lot of the formatting rules you need to construct equations. Often you can solve your problem in "pure" markdown just by a judicious use of font formatts, subscripts, and superscripts. Here's a small table with some mathematical quantities constructed in plain markdown:
 
 ```{r}
 tbl <- tribble(
@@ -641,6 +646,8 @@ tbl <- tribble(
 tbl
 ```
 
+When the `expression` column is parsed as a markdown column we end up with a pretty respectable looking table:
+
 ```{r}
 tbl |> 
   flextable() |> 
@@ -648,7 +655,7 @@ tbl |>
   autofit()
 ```
 
-Math support:
+Happily, however, the `colformat_md()` function supports the much more flextible LaTeX equation syntax. So if you have some more elaborate equations that need to appear in a table, you can construct them that way. And as an added bonus, you can mix these equations with other markdown features like footnotes. As before we'll construct a simple table:
 
 ```{r}
 tbl <- tribble(
@@ -661,6 +668,8 @@ tbl <- tribble(
 tbl
 ```
 
+And now we can pass this table to `flextable()` and have it parse both columns as markdown:
+
 ```{r}
 tbl |> 
   flextable() |> 
@@ -668,25 +677,30 @@ tbl |>
   autofit()
 ```
 
+So nice. 
+
 ## Inserting images
 
-> That was how divorced from the human scale modern warfare had become. You could smash and destroy from unthinkable distances, obliterate planets from beyond their own system and provoke stars into novae from light-years off...and still have no good idea why you were really fighting. <br>
+> That was how divorced from the human scale modern warfare had become. You could smash and destroy from unthinkable distances, obliterate planets from beyond their own system and provoke stars into novae from light-years off ... and still have no good idea why you were really fighting. <br>
 > &nbsp; &nbsp; -- *Consider Phlebas*
+
+Having discussed markdown columns already, we are now almost at the point where we can construct the actual table that I showed at the start of the post. The only missing component here is the `colformat_image()` function, which you can use to parse a column like `image` (in the `novels` data frame) which specifies the path to image files that I'd like to display in the table. Using the now-familiar flextable syntax, all we have to do is pipe the table to `colformat_image()`, tell it to interpret the `image` column as an image, and give it the `width` and `height` dimensions (in inches) for the images: 
 
 ```{r}
 novels |> 
-  mutate(title = paste0("[", title, "](", url, ")")) |> 
-  select(title, image, description) |> 
-  flextable(col_keys = c("title", "image", "description")) |> 
+  mutate(title_md = paste0("[", title, "](", url, ")")) |> 
+  flextable(col_keys = c("title_md", "image", "description")) |> 
   set_header_labels(
-    title = "Book Title",
+    title_md = "Book Title",
     description = "Description",
     image = "Cover"
   ) |> 
-  colformat_md(j = "title") |> 
+  colformat_md(j = "title_md") |> 
   colformat_image(j = "image", width = .75, height = 1.2) |> 
   autofit()
 ```
+
+Easy as an easy thing, once you know the trick :) 
 
 ## Inserting plots
 
