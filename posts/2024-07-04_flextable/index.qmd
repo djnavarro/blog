@@ -101,7 +101,7 @@ Visually speaking, this table is... well, it's okay. It's readable, and it's not
 > He was tall and very dark-skinned and he had fabulously blond hair and a voice that could raise bumps on your skin at a hundred meters, or, better still, millimeters.^[Yes, there are a disproportionate number of quotes that she has selected based purely on their thirst potential. She is not admitting to anything but she may be struggling slightly with her recent decision to delete grindr.] <br>
 > &nbsp; &nbsp; -- *Excession*
 
-Let us begin the task of making our table a little more attractive. The most obvious shortcoming in the previous table is the column widths: all four columns are the same width, which makes very little sense when the content of the columns varies quite considerably in length. We can adjust the columnn widths manually by passing a vector of widths (in inches) as the `cwidth` argument to `flextable()`, like so:
+Let us begin the task of making our table a little more attractive. The most obvious shortcoming in the previous table is the column widths: all four columns are the same width, which makes very little sense when the content of the columns varies quite considerably in length. We can adjust the column widths manually by passing a vector of widths (in inches) as the `cwidth` argument to `flextable()`, like so:
 
 ```{r}
 novels |>
@@ -141,7 +141,9 @@ novels |>
   )
 ```
 
-In this extract, the call to `set_header_labels()` is fairly self-explanatory: when I pass a name-value pair like `title = "Book Title"` what doing is telling flextable to use `"Book Title"` as the displayed label for the data column called `title`. However, there's a little subtlety to call attention to here. Notice that this version of the code doesn't use `select()` to manipulate the data passed to `flextable()`. Instead, what I've done is specified the `col_keys` argument to `flextable()` as an alternative way to indicate which data columns to include. Most of the time you don't actually bother with this: it's usually easier to use `select()` to extract the relevant variables, and I totally could have done that here if I'd wanted to. However there are cases where you'll find yourself building a table column from multiple data columns, and in such cases it can be useful to be aware that "column keys are the data variable names" is merely a default, and one you can override. 
+In this extract, the call to `set_header_labels()` is fairly self-explanatory: when I pass a name-value pair like `title = "Book Title"` what doing is telling flextable to use `"Book Title"` as the displayed label for the data column called `title`. However, there's a little subtlety to call attention to here.
+
+Notice that this version of the code doesn't use `select()` to manipulate the data passed to `flextable()`. Instead, what I've done is specify the `col_keys` argument to `flextable()` as an alternative way to indicate which data columns to include. Most of the time you don't actually bother with this: it's usually easier to use `select()` to extract the relevant variables, and I totally could have done that here if I'd wanted to. However there are cases where you'll find yourself building a table column from multiple data columns, and in such cases it can be useful to be aware that "column keys are the data variable names" is merely a default, and one you can override. 
 
 ## Column formats
 
@@ -204,7 +206,7 @@ base |>
   set_formatter(title = str_to_upper)
 ```
 
-More elaborate formatting functions can be constructed in the call to `set_formatter()`. For instance, let's suppose that I have been instructed to modify the `setting_date` column such to (a) remove the ambigious entries entirely (b) drop the "c." for circa, (c) remove the "CE" string for current era, and (d) replace the "BCE" string with the older "BC" convention. This isn't hard to do with the help of a few text manipulation operations, so I might define a custom formatter as follows:
+More elaborate formatting functions can be constructed in the call to `set_formatter()`. For instance, let's suppose that I have been instructed to modify the `setting_date` column in order to (a) remove the ambigious entries entirely (b) drop the "c." for circa, (c) remove the "CE" string for current era, and (d) replace the "BCE" string with the older "BC" convention. This isn't hard to do with the help of a few text manipulation operations, so I might define a custom formatter as follows:
 
 ```{r}
 base |> 
@@ -294,7 +296,7 @@ Seems like an especially good idea in this post, because frankly I do not want a
 > The rose-red stones were jumbled and askew. Most of the streets were gone, long ago buried under the soft encroaching sands. Ruined arches, fallen lintels, collapsed walls littered the slopes of sand; at the scalloped edge of shore, brushed by the waves, more fallen blocks broke the incoming waves. A little out to sea, tilted towers and the fragments of an arch rose from the waters, sucked at by the waves like the bones of the long-drowned.^[This quote doesn't really connect to the rest of the post, and *The Bridge* isn't a Culture novel, but it's an amazing work. Easily my favourite of Banks' literary fiction works.] <br>
 > &nbsp; &nbsp; -- [*The Bridge*](https://en.wikipedia.org/wiki/The_Bridge_%28novel%29)
 
-It's often helpful to define formatting rules that apply only to a subset of the table. For instance, we might want to use boldface text for the column headers but not the body of the table. Or perhaps some rows or columns should appear in a different colour for one reason or another. To do this effectively it is helpful to understand how flextables are structured. All flextables are comprised of three parts: a set of **header** rows at the top, a grid of cells in the table **body**, and a set of footer rows at the bottom. Many functions in flextable have a `part` argument that you can use to select one (or all) of these three parts. For example, the `bg()` function is used to set the background colour, and the example below takes our `base` table and gives the header a red background, the body a green background, and the footer a blue background:
+It's often helpful to define formatting rules that apply only to a subset of the table. For instance, we might want to use boldface text for the column headers but not the body of the table. Or perhaps some rows or columns should appear in a different colour for one reason or another. To do this effectively it is helpful to understand how flextables are structured. All flextables are comprised of three parts: a set of **header** rows at the top, a grid of cells in the table **body**, and a set of **footer** rows at the bottom. Many functions in flextable have a `part` argument that you can use to select one (or all) of these three parts. For example, the `bg()` function is used to set the background colour, and the example below takes our `base` table and gives the header a red background, the body a green background, and the footer a blue background:
 
 ```{r}
 base |> 
@@ -407,8 +409,8 @@ Anyway... in that spirit, let us now forsake the substance of a table and consid
 - `fontsize()`: Set font size
 - `italic()`: Set italic font
 - `bold()`: Set bold font
-- `color()`: Set font color
-- `highlight()`: Text highlight color
+- `color()`: Set font colour
+- `highlight()`: Text highlight colour
 - `rotate()`: Rotate cell text
 
 To control the alignment of cell contents, you can use these:
@@ -420,7 +422,7 @@ To control the alignment of cell contents, you can use these:
 
 The appearance of the cell body itself can be controlled with these:
 
-- `bg()`: Set background color
+- `bg()`: Set background colour
 - `padding()`: Set paragraph paddings
 - `line_spacing()`: Set text spacing
 
@@ -515,7 +517,7 @@ as_paragraph(
 )
 ```
 
-Inspecting the contents of this data frame suggests that we've successfully defined the data structure we want, so now we can put into practice. Here's a very simple example in which I construct a single table column from two data columns, applying a different visual style to each of the two source components:
+Inspecting the contents of this data frame suggests that we've successfully defined the data structure we want, so now we can put it into practice. Here's a very simple example in which I construct a single table column from two data columns, applying a different visual style to each of the two source components:
 
 ```{r}
 dat <- tibble(
@@ -643,7 +645,7 @@ Oh, look at that -- we're pretty close to constructing the table that I showed a
 > Allegedly there was some extra set of coordinates, or even a single mathematical operation, a transform, which, when applied to any given set of coordinates in the original list, somehow magically derived the exact position of that system's portal.<br>
 > &nbsp; &nbsp; -- [*The Algebraist*](https://en.wikipedia.org/wiki/The_Algebraist)
 
-Okay fine, I lied slightly in the last section. The problem I was trying to solve at work wasn't strictly "how to use markdown syntax in flextable" it was something more like "how to construct equations in flextable". Fortunately the two are related, since markdown supports a lot of the formatting rules you need to construct equations. Often you can solve your problem in "pure" markdown just by a judicious use of font formatts, subscripts, and superscripts. Here's a small table with some mathematical quantities constructed in plain markdown:
+Okay fine, I lied slightly in the last section. The problem I was trying to solve at work wasn't strictly "how to use markdown syntax in flextable" it was something more like "how to construct equations in flextable". Fortunately the two are related, since markdown supports a lot of the formatting rules you need to construct equations. Often you can solve your problem in "pure" markdown just by a judicious use of font formats, subscripts, and superscripts. Here's a small table with some mathematical quantities constructed in plain markdown:
 
 ```{r}
 tbl <- tribble(
@@ -743,7 +745,7 @@ ship_name_length <- tibble(
 ship_name_length
 ```
 
-When construcing our table, we now use the `compose()` function to construct the column of plots, using `gg_chunk()` to control how the plot is rendered within the table. The result looks like this:
+When constructing our table, we now use the `compose()` function to construct the column of plots, using `gg_chunk()` to control how the plot is rendered within the table. The result looks like this:
 
 ```{r}
 ship_name_length |> 
