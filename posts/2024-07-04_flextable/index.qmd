@@ -386,7 +386,7 @@ As you can see from looking at this output, the formatting has been applied sequ
 
 ## Visual style
 
-> And in her mind saw again the line of desert hills beyond the stone balustrade of the hotel room balcony, and the faint crease of dawn-light above, suddenly swamped by the stuttering pulses of silent fire from beyond the horizon. She had watched -- dazed and dazzled and wondering -- as that distant eruption of annihilation had lit up the face of her lover.^[I think about this quote during sex a *lot*. More often than is healthy, quite frankly, and I am not prepared to look too closely at this habit to figure out what it says about me.] <br>
+> And in her mind saw again the line of desert hills beyond the stone balustrade of the hotel room balcony, and the faint crease of dawn-light above, suddenly swamped by the stuttering pulses of silent fire from beyond the horizon. She had watched -- dazed and dazzled and wondering -- as that distant eruption of annihilation had lit up the face of her lover.^[I think about this quote during sex a *lot*. More often than is healthy, quite frankly, and I am not prepared to look too closely at this habit to figure out what it says about me except that it's probably a good thing that I'm not on grindr right now.] <br>
 > &nbsp; &nbsp; &nbsp; &nbsp; -- *Against a Dark Background*
 
 [*Against a Dark Background*](https://en.wikipedia.org/wiki/Against_a_Dark_Background) is one of the most interesting Banks novels to me. Unlike the Culture novels in which the setting balances hope and despair, the world in *Against a Dark Background* is unrelentingly grim. Like all of his science fiction the writing is poetic, the setting is imaginative, and the story is gripping, but it is a very bleak novel. The main characters spend the entire novel being hunted for no good reason, the civilisation is perpetually on the edge of nihilistic self-destruction, and -- let's be honest -- despite having been written in 1993 the book feels better suited to the much darker world of 2024. There is no redemption, everyone dies, and the deaths are entirely pointless. 
@@ -529,14 +529,14 @@ dat |>
   autofit()
 ```
 
-I have no desire to dive much deeper than this in the current blog post, but I hope it's clear from this simple example that you can do a lot of work with a well-crafted call to `compose()`. 
+I have no desire to dive much deeper than this in the current blog post, but I hope it's clear from this simple example that you can do a lot of work with a well-crafted call to `compose()`. It is a powerful tool, and in some circumstances a weapon. 
 
 ## Merging cells
 
 > Oh, they never lie. They dissemble, evade, prevaricate, confound, confuse, distract, obscure, subtly misrepresent and willfully misunderstand with what often appears to be a positively gleeful relish and are generally perfectly capable of contriving to give one an utterly unambiguous impression of their future course of action while in fact intending to do exactly the opposite, but they never lie. Perish the thought. <br>
 > &nbsp; &nbsp; -- *Look to Windward*
 
-To construct the data for the table I put together a data set containing a [list of ships](https://theculture.fandom.com/wiki/List_of_spacecraft) that are referred to in the Culture novels. I'll use that to count the number of ships from each civilisation in each of the novels:
+A recurring theme in most of the Culture novels is that the spaceships constructed by the Culture are intelligent -- indeed hyper-intelligent -- machines that are often major characters in the books. Though mostly benevolent in their intentions, Culture ships are manipulative and intensely political actors, and a great deal of the action in the books stems from their scheming. There are a lot of ship characters in the books, and as such it seems appropriate at this point to pivot over to a data set I put together containing a [list of ships](https://theculture.fandom.com/wiki/List_of_spacecraft) that are referred to in the Culture novels. I'll use that to count the number of ships from each civilisation in each of the novels:
 
 ```{r}
 ships <- read_csv("ship-list.csv", show_col_types = FALSE)
@@ -555,12 +555,24 @@ ship_count <- ships |>
 ship_count
 ```
 
+Let's take a look at what happens when we pass this data frame to `flextable()`, using `theme_box()` so that I can call attention to the cell boundaries:
+
 ```{r}
 ship_count |> 
   flextable() |> 
   autofit() |> 
   theme_box()
 ```
+
+As a first pass this table is not terrible, but the repetitive text in the leftmost column is annoying. What we would really like to do here is merge those cells together so that each book title appears only once in the table. To that end, flextable supplies a collection of functions you can use to merge cells: 
+
+- `merge_at()`: Merge flextable cells into a single one
+- `merge_h()`: Merge flextable cells horizontally
+- `merge_h_range()`: Rowwise merge of a range of columns
+- `merge_none()`: Delete flextable merging information
+- `merge_v()`: Merge flextable cells vertically 
+
+For the current example, the one we want is `merge_v()`, and it's pretty straightforward:
 
 ```{r}
 ship_count |> 
@@ -570,12 +582,26 @@ ship_count |>
   theme_box()
 ```
 
+Much nicer.
+
+As an aside, while merging cells is one way to solve the "repeated entries" issue, there are other solutions. Another approach I've occasionally used is to use the `as_grouped_data()` function in flextable to modify the data structure *before* it is passed to `flextable()`. If we take that approach with our `ship_count` data set, this is what happens to the data frame:
+
+```{r}
+ship_count |> 
+  as_grouped_data(groups = "Novel") |> 
+  as_tibble()
+```
+
+As you can see from the output, the repeated values have been merged in the data set itself. As a general rule, when working with flextable you almost always have the choice between (a) doing the work by modifying the data frame itself or (b) modifying the table after it has been constructed. Sometimes it'se easier to modify the data set, other times it's easier to modify the table. Anyway, here's what happens when we construct a table from the "grouped data":
+  
 ```{r}
 ship_count |> 
   as_grouped_data(groups = "Novel") |> 
   flextable() |> 
   autofit()
 ```
+
+Also a reasonable solution to the problem. 
 
 ## Markdown columns
 
