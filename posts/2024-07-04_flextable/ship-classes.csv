@@ -1,0 +1,16 @@
+Class ,Acronym ,Description
+General Systems Vehicle ,GSV ,"Mobile habitats and factory ships, largest and most capable Culture ship type. Build and host other ships, including smaller Systems Vehicles. May be home to billions of people. Some militarised and used as giant warships during the Idiran–Culture War. They are described in the books as holograms of the whole Culture, each one containing all the knowledge and productive capacity needed to reconstruct the civilization in case of catastrophe."
+Medium Systems Vehicle ,MSV ,Smaller versions of the above. Sometimes former GSVs downgraded as larger GSV classes were developed.
+Limited Systems Vehicle ,LSV ,Smaller versions of the above. Sometimes former GSVs or MSVs downgraded as larger GSV classes were developed.
+General Contact Vehicle ,GCV ,Contact craft intermediate in size and function between Systems Vehicles and Contact Units. Capabilities include building other ships.
+General Contact Unit ,GCU ,"Standard Contact craft, used for exploration and for studying and interacting with other societies. Considerable combat capability, but less than dedicated warships. At the beginning of the Idiran–Culture War GCU craft were the primary offensive unit until Culture ship building moved to a war footing."
+Limited Contact Unit ,LCU ,"Smaller, less capable versions of the above."
+Rapid Offensive Unit ,ROU ,Dedicated fast warships.
+General Offensive Unit ,GOU ,Dedicated warships.
+Limited Offensive Unit ,LOU ,"Dedicated warships, smaller and less capable than GOUs and ROUs"
+Demilitarised ROU ,(D)ROU ,"ROUs with main armament removed, used as courier ships."
+Demilitarised GOU ,(D)GOU ,"GOUs with main armament removed, used as courier ships."
+Demilitarised LOU ,(D)LOU ,"LOUs with main armament removed, used as courier ships."
+Very Fast Picket ,VFP ,Synonym for (D)ROU.
+Fast Picket ,FP ,Synonym for (D)GOU or (D)LOU.
+Superlifter ,,"High-speed tugs, consisting largely of engine and used to accelerate or decelerate other ships. Some temporarily militarised as a stop-gap in the early stages of the Idiran–Culture War. "

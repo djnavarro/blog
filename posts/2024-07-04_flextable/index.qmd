@@ -1,0 +1,776 @@
+---
+title: "Use of flextable"
+description: "In which the author explores the flextable R package for table construction, and gushes far too much about the work of Iain M. Banks"
+date: "2024-07-04"
+image: "cover.jpg"
+image-alt: "Cover art to 'Use of Weapons' by Iain M. Banks"
+categories: ["R", "Data Wrangling"]
+--- 
+
+<!--------------- my typical setup ----------------->
+
+```{r}
+#| label: setup
+#| include: false
+very_wide <- 500
+wide <- 136
+narrow <- 76
+options(width = narrow)
+cache_images <- TRUE
+set.seed(1)
+```
+
+<!--------------- post begins here ----------------->
+
+> "Tell me, what is happiness?" <br>
+> "Happiness? Happiness ... is to wake up, on a bright spring morning, after an exhausting first night spent with a beautiful ... passionate ... multi-murderess." <br>
+> "... Shit, is *that* all?" <br>
+> &nbsp; &nbsp; &nbsp; &nbsp; -- *Use of Weapons*
+
+The year is 1994. A closeted, miserable girl sits on the floor in the library. She is 16, it is her first year at university, and her first time living in a city. She knows very little about the world, or herself for that matter. But the library has a copy of *Use of Weapons*, and for the moment at least she is somewhere else. Anywhere but here.  
+
+This is a post about making tables in R using the rather-lovely [flextable package](https://davidgohel.github.io/flextable/), documented terribly well in the [flextable book](https://ardata-fr.github.io/flextable-book/). I use flextable a lot at work, but until recently I hadn't explored it very thoroughly. Last week I ran into something I didn't know how to solve^[It was a markdown column issue, which I now realise is easy to address.] and found myself diving deeper and inevitably, ended up writing up some notes that by some inscrutable process have transformed themselves into a blog post.^[I'm mildly amused that the [previous post](/posts/2024-06-21_table1/) was also about making tables. It is mostly coincidental, though I suppose both were motivated by problems I've encountered in a work context.] 
+
+It is also a post about the [Culture novels](https://en.wikipedia.org/wiki/Culture_series) by Iain Banks, one of my all-time favourite science fiction series, and the work of Iain Banks more generally I suppose. I discovered the Culture novels as an undergraduate, and have loved them deeply ever since. There are nine books that make up the Culture novels, starting with the 1988 novel *Consider Phlebas* and finishing with *The Hydrogen Sonata* in 2012. Each of the books is a standalone story set in the same universe, and largely revolve around the Culture, a utopian anarchic society of hedonistic humans and manipulative machines. 
+
+I'd imagine that a great many people in my usual audience are familiar with the Culture novels, but for those who are not here's the wikipedia summary of each of the novels:
+
+```{r}
+#| echo: false
+#| message: false
+readr::read_csv("culture.csv", col_types = "ciccccc") |> 
+  dplyr::mutate(title = paste0("[", title, "](", url, ")")) |> 
+  dplyr::select(title, image, description) |> 
+  flextable::flextable(col_keys = c("title", "image", "description")) |> 
+  flextable::set_header_labels(
+    title = "Book Title",
+    description = "Description",
+    image = "Cover"
+  ) |> 
+  ftExtra::colformat_md(j = "title") |> 
+  flextable::colformat_image(j = "image", width = .75, height = 1.2) |> 
+  flextable::autofit()
+```
+
+The little blurbs don't really do justice to the novels themselves, but that's hardly surprising as I took the text from wikipedia. Perhaps more to the point of the post, it's worth mentioning that I made this table in R using flextable, and that is maybe a little more surprising. As it happens, it's pretty easy to make these tables once you wrap your head around how the package works, which is terribly awesome really. 
+
+So let's have a look at how it all works, shall we?
+
+```{r}
+#| message: false
+library(flextable)
+library(ftExtra)
+library(tibble)
+library(stringr)
+library(dplyr)
+library(tidyr)
+library(readr)
+library(ggplot2)
+```
+
+## Getting started
+
+> He looked out through the open faceplate, and wiped a little sweat from his brow. It was dusk over the plateau. A few metres away, by the light of two moons and a fading sun, he could see the rimrock, frost-whitened. Beyond was the great gash in the desert which provided the setting for the ancient half-empty city where Tsoldrin Beychae now lived. <br><br>
+> Clouds drifted, and the dust collected. <br><br>
+> "Well," he sighed, to no-one in particular, and looked up into yet another alien sky. <br><br>"Here we go again." <br><br>
+> &nbsp; &nbsp; &nbsp; &nbsp; -- *Use of Weapons*
+
+The pretty table in the opening section is based on the table shown in the [wikipedia page](https://en.wikipedia.org/wiki/Culture_series) on the Culture novels, along with a few other bits and pieces I found on wikipedia. More precisely, it derives from a small csv file that I put together using that page: 
+
+```{r}
+novels <- read_csv("culture.csv", col_types = "ciccccc")
+novels
+```
+
+The printed data frame is not quite as elegant as the table, but it's not too hard to see that I constructed the table using the `title`, `url`, `description`, and `image` columns in this table. As I meander my way through the post I'll use this data set to make many different tables. Some will be pretty, most will not. Table construction is akin to data visualisation in that respect: it's very easy to create something that looks "kinda okay", but takes a lot more effort to make it actually look good. 
+
+To illustrate this point, let's have a look at what happens if we use the flextable package to construct a table from the first four columns in the `novels` data frame, without doing any tinkering at all. The "workhorse" function in the package is called `flextable()`, and the usual workflow in the package is to (1) do a bit of data wrangling to reformat the data, (2) pipe the reformatted data to `flextable()`, and then (3) do a lot of finicky work to tidy up the table. Here's what we get in the simplest case where we only do the first two steps:
+
+```{r}
+novels |>
+  select(title:isbn) |> 
+  flextable()
+```
+
+The output, in the context of this quarto blog, is an HTML table. The flextable package supports a variety of output formats, not merely HTML, but in the interests of "brevity" -- she says, as if she were even capable of writing a short blog post -- I won't talk about other formats in this post. 
+
+Visually speaking, this table is... well, it's okay. It's readable, and it's not hideous, but it can be improved upon in any number of ways. 
+
+## Column widths
+
+> He was tall and very dark-skinned and he had fabulously blond hair and a voice that could raise bumps on your skin at a hundred meters, or, better still, millimeters.^[Yes, there are a disproportionate number of quotes that she has selected based purely on their thirst potential. She is not admitting to anything but she may be struggling slightly with her recent decision to delete grindr.] <br>
+> &nbsp; &nbsp; -- *Excession*
+
+Let us begin the task of making our table a little more attractive. The most obvious shortcoming in the previous table is the column widths: all four columns are the same width, which makes very little sense when the content of the columns varies quite considerably in length. We can adjust the columnn widths manually by passing a vector of widths (in inches) as the `cwidth` argument to `flextable()`, like so:
+
+```{r}
+novels |>
+  select(title:isbn) |> 
+  flextable(cwidth = c(3, 1, 4, 2))
+```
+
+There are situations where this manual control is helpful, and indeed I'll rely on the `cwidth` argument for several of the tables in this post, but it's often an annoying process of trial and error trying to find widths that you like. Fortunately, you can sometimes bypass this process with the `autofit()` function which attempts to select nice column widths for you. If we pipe the flextable to `autofit()` we get this...
+
+```{r}
+novels |>
+  select(title:isbn) |> 
+  flextable() |> 
+  autofit()
+```
+
+...and honestly that's pretty good. Not quite as nice as the widths I chose manually based on my personal sense of aesthetics, but good enough for a technical report. When you're working under time pressure the `autofit()` functionality is so helpful. 
+
+## Column labels
+
+> He looked up from it at the stars again, and the view was warped and distorted by something in his eyes, which at first he thought was rain. <br>
+> &nbsp; &nbsp; --*The Player of Games*
+
+It is the bitter nature of all data work that the moment you fix one problem with any analysis your attention is called immediately to the next thing that is wrong. So it goes with table construction. Having tidied up the column spacing, the eye is drawn to the glaring problem with the column headers. By default flextable will use the variable names as column headers, which is almost never a good idea: the properties that make a good variable name are rarely the same as those that make a nice column header, and so inevitable every flextable pipeline ends up calling `set_header_labels()` to override the default. This function takes name-value pairs as inputs, like this:
+
+```{r}
+novels |>
+  flextable(
+    col_keys = c("title", "publication_date", "setting_date", "isbn"),
+    cwidth = c(3, 1, 4, 2)
+  ) |> 
+  set_header_labels(
+    title = "Book Title",
+    publication_date = "Published",
+    setting_date = "Story Date", 
+    isbn = "ISBN"
+  )
+```
+
+In this extract, the call to `set_header_labels()` is fairly self-explanatory: when I pass a name-value pair like `title = "Book Title"` what doing is telling flextable to use `"Book Title"` as the displayed label for the data column called `title`. However, there's a little subtlety to call attention to here. Notice that this version of the code doesn't use `select()` to manipulate the data passed to `flextable()`. Instead, what I've done is specified the `col_keys` argument to `flextable()` as an alternative way to indicate which data columns to include. Most of the time you don't actually bother with this: it's usually easier to use `select()` to extract the relevant variables, and I totally could have done that here if I'd wanted to. However there are cases where you'll find yourself building a table column from multiple data columns, and in such cases it can be useful to be aware that "column keys are the data variable names" is merely a default, and one you can override. 
+
+## Column formats
+
+> YOU MAY ENTER. <br>
+> THERE IS DEATH HERE. <br>
+> BE WARNED.^[With the benefit of hindsight I should probably have provided the reader with this warning a little earlier in the post. Oh well. But let's be honest, babes, you're reading my blog. You should be treating everything on here like one of the Planets of the Dead already.] <br>
+> &nbsp; &nbsp; -- *Consider Phlebas*
+
+In what can only be described as a blatant plot device, *Consider Phlebas* features an alien species called the Dra'Azon who, well, basically do nothing throughout the entire novel except loom over everyone else as a vaguely menacing presence that prevents them from doing the blindingly obvious thing that they all want to do, thereby setting into motion the entire convoluted sequence of events that comprise the novel. Only one Dra'Azon ever appears in the book, and it only communicates by text on a screen and that text is FORMATTED IN ALL CAPS. 
+
+That seems as good a reason as any to start talking about column formatting.
+
+When deciding how to format the values displayed in the cells, flextable tries to supply sensible defaults for different data types, but you can override these defaults with the assistance of the `colformat_*()` functions:
+
+- `colformat_char()`: Format character cells
+- `colformat_date()`: Format date cells
+- `colformat_datetime()`: Format datetime cells
+- `colformat_double()`: Format numeric cells
+- `colformat_image()`: Format cells as images
+- `colformat_int()`: Format integer cells
+- `colformat_lgl()`: Format logical cells
+- `colformat_num()`: Format numeric cells
+
+To give an example, the table we have so far doesn't display the publication dates very nicely. The default convention for numeric values uses commas as the "big mark" character (e.g., one million would be written "1,000,000" not "1000000"). That isn't very helpful in this case because the column should actually be interpreted as year, and by convention we normally write "1987" for the year rather than "1,987". We can fix this by using the `colformat_int()` function to set `big.mark = ""`:
+
+```{r}
+novels |>
+  select(title:isbn) |> 
+  flextable(cwidth = c(3, 1, 4, 2)) |> 
+  set_header_labels(
+    title = "Book Title",
+    publication_date = "Published",
+    setting_date = "Story Date", 
+    isbn = "ISBN"
+  ) |> 
+  colformat_int(big.mark = "")
+```
+
+I'm pretty happy with this table. I might want to tweak the visual style a little, certainly, but in the normal course of events this is probably where I'd stop. But because there are several other flextable concepts that I want to illustrate using this table, I'll store it as the `base` table so that I can use it again without needing to repeat the code:
+
+```{r}
+base <- novels |>
+  select(title:isbn) |> 
+  flextable(cwidth = c(3, 1, 4, 2)) |> 
+  set_header_labels(
+    title = "Book Title",
+    publication_date = "Published",
+    setting_date = "Story Date", 
+    isbn = "ISBN"
+  ) |> 
+  colformat_int(big.mark = "")
+```
+
+Okay, now that this is done, there's a little more I want to say about column formatting. In my experience you can solve most formatting issues using the `colformat_*()` functions and a little data wrangling with dplyr, but occasionally you need to do something a little fancier. To that end, I'll briefly mention that you can specify your own formatter function to be applied to specific columns by using the `set_formatter()` function. 
+
+Suppose, for example, that I wanted the book titles to be shown in all-caps while leaving all other text columns alone. The `str_to_upper()` function from the stringr package will do this for me, so all I have to do is tell flextable to use it as the formatter for the `title` variable:
+
+```{r}
+base |> 
+  set_formatter(title = str_to_upper)
+```
+
+More elaborate formatting functions can be constructed in the call to `set_formatter()`. For instance, let's suppose that I have been instructed to modify the `setting_date` column such to (a) remove the ambigious entries entirely (b) drop the "c." for circa, (c) remove the "CE" string for current era, and (d) replace the "BCE" string with the older "BC" convention. This isn't hard to do with the help of a few text manipulation operations, so I might define a custom formatter as follows:
+
+```{r}
+base |> 
+  set_formatter(
+    title = str_to_upper,
+    setting_date = function(x) x |> 
+      str_replace_all("BCE", "BC") |> 
+      str_remove_all("CE") |> 
+      str_remove_all("c\\.") |> 
+      str_remove_all("^(Varies|Unspe).*") |> 
+      str_squish() 
+  )
+```
+
+I'm not sure this version is actually any better, but this is of course not the point.
+
+## Table themes
+
+> By their names you could know them, Horza thought as he showered. The Culture's General Contact Units, which until now had borne the brunt of the first four years of the war in space, had always chosen jokey, facetious names. Even the new warships they were starting to produce, as their factory craft completed gearing up their war production, favoured either jocular, sombre or downright unpleasant names, as though the Culture could not take entirely seriously the vast conflict in which it had embroiled itself. <br>
+> &nbsp; &nbsp; -- *Consider Phlebas*
+
+The peculiar conventions of Culture ship names are a recurring theme in the novels, and every Banks fan probably has their own personal favourite: mine is *Anticipation of a New Lover's Arrival, The*. The different ship classes have different proclivities, and you can often guess the ship class just by looking at the name. It's a whole thing.
+
+Since we are talking about thematic elements -- see how cleverly I worked that segue in? -- it is probably a good idea for me to talk about the theming system in flextable. The flextable package supports a system for visual themes, not entirely dissimilar to the way the ggplot2 data visualisation package does. Like ggplot2, the package supplies several themes that you can use right out of the box, simply by piping the flextable object to the relevant `theme_*()` function. If you're not keen on writing your own, a descriptor that I suspect applies to most of us, these are the options you have available to you:
+
+- `theme_alafoli()`
+- `theme_apa()`
+- `theme_booktabs()` (default)
+- `theme_box()`
+- `theme_tron()`
+- `theme_tron_legacy()`
+- `theme_vader()`
+- `theme_vanilla()`
+- `theme_zebra()`
+
+That being said, it's worth noting that the theming system in flextable is much, much simpler than the theme system in ggplot2. A theme function in flextable is defined solely by convention: it's just a function that takes a flextable as input and returns a modified flextable as output, so it's not particularly onerous to write your own if you feel like it.^[She says this slightly tongue-in-cheek, in full recognition of the fact that she has never bothered to actually *do* this herself.] In any case, just to give you a flavour of what is on offer, here's a few of the themes that come bundled with flextable:
+
+```{r}
+base |> theme_box()
+```
+
+```{r}
+base |> theme_alafoli()
+```
+
+```{r}
+base |> theme_tron()
+```
+
+Sadly, despite its obvious awesomeness, I have not yet found an excuse to use `theme_tron()` in my analysis work. Life is so often filled with disappointment.
+
+> In life you hoped to do what you could <br> 
+> but mostly you did what you were told <br> 
+> and that was the end of it.^[The quote is not formatted like this in the original, but Banks' writing often has a poetic feel to it, and somehow this line works so well when written like this. Besides, if I hadn't done so the quote would have left a widowed word on the second line and I just hate that so much.] <br>
+> &nbsp; &nbsp; -- *Matter*
+
+## Table defaults
+
+In most cases that I've come across in real life, tables are not constructed in isolation from one another. Typically you have to produce a collection of tables for the same report, and as such all tables need to have the same visual style. At the time a table is constructed by calling `flextable()`, a collection of default values are applied to the table, values that shape the visual style of the resulting table. You can get a list of these values by calling `get_flextable_defaults()`. Conveniently, flextable allows you to modify them with `set_flextable_defaults()`, like so:
+
+```{r}
+set_flextable_defaults(
+  font.color = "purple",
+  background.color = "ghostwhite",
+  table.layout = "autofit"
+)
+```
+
+When I set a default like this, it won't affect any table that I've already defined (e.g., if I print the `base` table now, it won't use the new style), but these defaults will be applied to any new table that I construct:
+
+```{r}
+novels |> 
+  select(title:isbn) |> 
+  flextable()
+```
+
+It's not uncommon, then, to call `set_flextable_defaults()` once at the top of a script. That way you can define a style that applies to all plots that get produced in the R session. As an act of politeness, it's probably wise to reset the defaults to their factory settings at the end of the script. You can do that as follows:
+
+```{r}
+init_flextable_defaults()
+```
+
+Seems like an especially good idea in this post, because frankly I do not want all my tables to be rendered in a lilac-and-ghost-white theme. Nice as a novelty, but it would get annoying very fast.
+
+## Table parts
+
+> The rose-red stones were jumbled and askew. Most of the streets were gone, long ago buried under the soft encroaching sands. Ruined arches, fallen lintels, collapsed walls littered the slopes of sand; at the scalloped edge of shore, brushed by the waves, more fallen blocks broke the incoming waves. A little out to sea, tilted towers and the fragments of an arch rose from the waters, sucked at by the waves like the bones of the long-drowned.^[This quote doesn't really connect to the rest of the post, and *The Bridge* isn't a Culture novel, but it's an amazing work. Easily my favourite of Banks' literary fiction works.] <br>
+> &nbsp; &nbsp; -- [*The Bridge*](https://en.wikipedia.org/wiki/The_Bridge_%28novel%29)
+
+It's often helpful to define formatting rules that apply only to a subset of the table. For instance, we might want to use boldface text for the column headers but not the body of the table. Or perhaps some rows or columns should appear in a different colour for one reason or another. To do this effectively it is helpful to understand how flextables are structured. All flextables are comprised of three parts: a set of **header** rows at the top, a grid of cells in the table **body**, and a set of footer rows at the bottom. Many functions in flextable have a `part` argument that you can use to select one (or all) of these three parts. For example, the `bg()` function is used to set the background colour, and the example below takes our `base` table and gives the header a red background, the body a green background, and the footer a blue background:
+
+```{r}
+base |> 
+  bg(bg = "#ff000040", part = "header") |> # red header
+  bg(bg = "#00cc0040", part = "body") |>   # green body
+  bg(bg = "#0000ff40", part = "footer") |> # blue footer
+  theme_box()
+```
+
+As you can see from this output, the default in flextable is to have a single header row containing the column labels, a body comprised of the data values in the table, and no footer at all. We can add extra content to the header and footer if we want using the `add_header_lines()` and `add_footer_lines()` functions:
+
+```{r}
+base |>
+  add_header_lines("The Culture Novels") |> 
+  add_footer_lines("by Iain M. Banks") |> 
+  bg(bg = "#ff000040", part = "header") |> # red header
+  bg(bg = "#00cc0040", part = "body") |>   # green body
+  bg(bg = "#0000ff40", part = "footer") |> # blue footer
+  theme_box()
+```
+
+Notice that the `add_header_lines()` and `add_footer_lines()` functions create extra rows that span all the cells in the table. Sometimes we might prefer a little more fine-grained control, by creating a new row that is subdivided into cells. We can do this with the `add_header_row()` and `add_footer_row()` functions:
+
+```{r}
+base |>
+  add_header_row(
+    values = c("A", "Header", "Row"), 
+    colwidths = c(1, 2, 1)
+  ) |> 
+  add_footer_row(
+    values = c("And", "A", "Footer", "Row"), 
+    colwidths = c(1, 1, 1, 1)
+  ) |> 
+  bg(bg = "#ff000040", part = "header") |> # red header
+  bg(bg = "#00cc0040", part = "body") |>   # green body
+  bg(bg = "#0000ff40", part = "footer") |> # blue footer
+  theme_box()
+```
+
+Notice that these new rows are subdivided into cells. For the footer, I've not merged anything so there are four cells in the footer row; whereas for the new header row there are only three cells because I merged two of them using the `colwidths` argument. 
+
+If I were more serious about these particular tables, I'd use the `align()` function to tidy up the text alignment and other formatting in the new header and footer rows, but I'm not really interested in doing that here so I'll move on.
+
+## Row and column selectors
+
+> All great promises are threats, I suppose, to the way things have been until that point, to some aspect of our lives, and we all suddenly become conservative, even though we want and need what the promise holds, and look forward to the promised change at the same time. <br>
+> &nbsp; &nbsp; -- *The Hydrogen Sonata*
+
+The `part` argument discussed in the previous section allows you to apply formatting rules selectively to the header, body, and footer of the table, but it doesn't let you apply rules selectively to a subset of rows or columns. If you need to do this, you can use the row selector argument `i` and the columns selector argument `j`. These selector arguments can be specified in three ways:
+
+- Numerical values select rows or columns using their numerical index
+- Character values can select one or more columns by name
+- Formulas can be used to define a logical selection
+
+It's a lot easier to understand when you see it in action. In this example, I use `i = 1:2` (selection by indices) to set the background colour for the top two rows to purple, and `i = ~ publication_date > 2000` (logical selection) to set the background colour for the bottom three rows to orange: 
+
+```{r}
+base |> 
+  bg(i = 1:2, bg = "#cc22cc40") |>                    # purple rows
+  bg(i = ~ publication_date > 2000, bg = "#ffa50040") # orange rows
+```
+
+Along the same lines the next example uses `j = 1:2` to set the background colour for the first two columns to brown, and `j = "isbn"` (selection by name) to set a teal background for the fourth column:
+
+```{r}
+base |> 
+  bg(j = 1:2, bg = "#80471c40") |>  # brown columns
+  bg(j = "isbn", bg = "#00808040")  # teal column
+```
+
+Notice that these background colours are applied only to the body of the table. However, the `bg()` function has a `part` argument, and we can extend this background shading to the entire table by settingh `part = "all"`":
+
+```{r}
+base |> 
+  bg(j = 1:2, bg = "#80471c40", part = "all") |>  # brown columns
+  bg(j = "isbn", bg = "#00808040", part = "all")  # teal column
+```
+
+If you specify a row selection and column selection, the formatting rule is applied to those cells that satisfy both criteria:
+
+```{r}
+base |> 
+  bg(i = 1:2, j = 3:4, bg = "#cc22cc40") |>   # purple cells
+  bg(i = 7:8, j = 1:2, bg = "#00808040")      # teal cells  
+```
+
+Note that formatting rules are applied sequentially, allowing you to override previously defined formatting. For example, in this example I set the top two rows to purple, then set the rightmost column to teal, and then finally set the bottom three rows to orange. The result looks like this:
+
+```{r}
+base |> 
+  bg(i = 1:2, bg = "#cc22cc40") |>                    # purple rows
+  bg(j = "isbn", bg = "#00808040") |>                 # teal column
+  bg(i = ~ publication_date > 2000, bg = "#ffa50040") # orange rows
+```
+
+As you can see from looking at this output, the formatting has been applied sequentially: the cells in the top right are shown in teal rather than purple because the teal-column formatting takes place after the purple-row formatting is applied; and the cells in the bottom-right are orange because the orange-row formatting occurs after the teal-column formatting. 
+
+## Visual style
+
+> And in her mind saw again the line of desert hills beyond the stone balustrade of the hotel room balcony, and the faint crease of dawn-light above, suddenly swamped by the stuttering pulses of silent fire from beyond the horizon. She had watched -- dazed and dazzled and wondering -- as that distant eruption of annihilation had lit up the face of her lover.^[I think about this quote during sex a *lot*. More often than is healthy, quite frankly, and I am not prepared to look too closely at this habit to figure out what it says about me except that it's probably a good thing that I'm not on grindr right now.] <br>
+> &nbsp; &nbsp; &nbsp; &nbsp; -- *Against a Dark Background*
+
+[*Against a Dark Background*](https://en.wikipedia.org/wiki/Against_a_Dark_Background) is one of the most interesting Banks novels to me. Unlike the Culture novels in which the setting balances hope and despair, the world in *Against a Dark Background* is unrelentingly grim. Like all of his science fiction the writing is poetic, the setting is imaginative, and the story is gripping, but it is a very bleak novel. The main characters spend the entire novel being hunted for no good reason, the civilisation is perpetually on the edge of nihilistic self-destruction, and -- let's be honest -- despite having been written in 1993 the book feels better suited to the much darker world of 2024. There is no redemption, everyone dies, and the deaths are entirely pointless. 
+
+Did she have a reason for mentioning this here? No, no she did not. 
+
+Anyway... in that spirit, let us now forsake the substance of a table and consider matters of style. Under the hood the flextable has a system that allows you to apply quite complex styling rules to the contents of a cell, but most of the time you don't need to use it. Instead, most of the time you will find yourself defining visual style using one or more of the convenience functions that flextable supplies. For instance, to control the appearance of the text you can use these functions:
+
+- `font()`: Set font
+- `fontsize()`: Set font size
+- `italic()`: Set italic font
+- `bold()`: Set bold font
+- `color()`: Set font color
+- `highlight()`: Text highlight color
+- `rotate()`: Rotate cell text
+
+To control the alignment of cell contents, you can use these:
+
+- `align()`: Set horizontal alignment 
+- `align_text_col()`: Set horizontal alignment for text columns
+- `align_nottext_col()`: Set horizontal alignment for non-text columns
+- `valign()`: Set vertical alignment
+
+The appearance of the cell body itself can be controlled with these:
+
+- `bg()`: Set background color
+- `padding()`: Set paragraph paddings
+- `line_spacing()`: Set text spacing
+
+To give a small flavour of how these functions can be used, here's an example where I've tweaked background colours, font formatting, and content alignment in various ways:
+
+```{r}
+base |>
+  bg(part = "header", bg = "grey30") |> 
+  color(part = "header", color = "ghostwhite") |> 
+  italic(j = "title") |> 
+  align_nottext_col(align = "left")
+```
+
+
+## Borders
+
+> An Outside Context Problem was the sort of thing most civilizations encountered just once, and which they tended to encounter rather in the same way a sentence encountered a full stop. <br>
+> &nbsp; &nbsp; -- *Excession*
+
+In my own personal journey through the Culture novels, *Excession* suffered a little unfairly because it was the book I read immediately after *Use of Weapons*. With the benefit of hindsight I think it's one of the better Culture novels, but at the time I was a little underwhelmed because I was comparing it to *Use of Weapons*, which remains my favourite work of the series by a long margin. When you view *Excession* on its own terms, however, it's a fabulous novel and the source of one of the most iconic sentences from the whole series: 
+
+> The usual example given to illustrate an Outside Context Problem was imagining you were a tribe on a largish, fertile island; you'd tamed the land, invented the wheel or writing or whatever, the neighbours were cooperative or enslaved but at any rate peaceful and you were busy raising temples to yourself with all the excess productive capacity you had, you were in a position of near-absolute power and control which your hallowed ancestors could hardly have dreamed of and the whole situation was just running along nicely like a canoe on wet grass... when suddenly this bristling lump of iron appears sailless and trailing steam in the bay and these guys carrying long funny-looking sticks come ashore and announce you've just been discovered, you're all subjects of the Emperor now, he's keen on presents called tax and these bright-eyed holy men would like a word with your priests. <br>
+> &nbsp; &nbsp; -- *Excession*
+
+Oh how I wish I could write like that. 
+
+In any case, having mentioned the [Outside Context Problem](https://tvtropes.org/pmwiki/pmwiki.php/Main/OutsideContextProblem) trope in terms of a kind of civilisational border incursion, it seems like a good moment to discuss table borders. The flextable package supplies a collection of functions you can use to control lines and borders that demarcate the cell and tables. You can use these functions to define horizontal and vertical lines:
+
+- `hline()`: Set horizontal borders
+- `hline_bottom()`: Set bottom horizontal border
+- `hline_top()`: Set top horizontal border
+- `vline()`: Set vertical borders
+- `vline_left()`: Set left vertical borders
+- `vline_right()`: Set right vertical borders
+
+Borders are defined using the following:
+
+- `border_inner()`: Set vertical and horizontal inner borders
+- `border_inner_h()`: Set horizontal inner borders
+- `border_inner_v()`: Set vertical inner borders
+- `border_outer()`: Set outer borders
+- `border_remove()`: Remove borders
+- `surround()`: Set borders for a selection of cells 
+
+To give an example, here's a table where I've added a vertical line to the right of the first column using `vline()`, and set a thick black border around the whole table using `border_outer()`
+
+```{r}
+base |>
+  vline(j = "title") |> 
+  border_outer(
+    border = fp_border_default(
+      color = "black", 
+      width = 2
+    )
+  )
+```
+
+Notice that when defining the outer border I called `fp_border_default()` to define the style that should be applied.
+
+## Composing cell contents
+
+> "In all the human societies we have ever reviewed, in every age and every state, there has seldom if ever been a shortage of eager young males prepared to kill and die to preserve the security, comfort and prejudices of their elders, and what you call heroism is just an expression of this fact; there is never a scarcity of idiots." <br>
+> &nbsp; &nbsp; -- *Use of Weapons*
+
+There are so many things I love about *Use of Weapons*. The structure of the book is amazing, with interwoven chapters alternating in two timelines, one moving forward and the other moving back, only to meet in the middle at the end.^[I once tried to write a long personal essay in the same structure, where one thread discussing the gganimate R package and moving forward in time, and the other discussing my transition moving backwards in time. It was a pale imitation of the original.] The interactions among the three main characters -- the traumatised psychotic Culture agent Cheradenine Zakalwe, his hedonistic handler Diziet Sma, and the sadistic suitcase-shaped drone Skaffen-Amtiskaw -- are amazing, and quotes like the one above are common. It is truly my favourite book in the series, and the theme of the book is brought out explicitly near the end with the following line...
+
+> But such consummate skill, such ability, such adaptability, such numbing ruthlessless, such a use of weapons when anything could become *weapon*...<br>
+> &nbsp; &nbsp; -- *Use of Weapons*
+
+It is with this quote in mind -- well, sort of -- that I'll now dive a little more deeply into the way cell contents are constructed in flextable. I try to avoid doing this too often in my own code because there is effort involved, but it is sometimes useful to know that flextable is very adaptable. You can `compose()` the contents of a cell in quite elaborate ways should you wish to do so.^[As an aside I should mention that because `flextable::compose()` creates a namespace collision with `purrr::compose()`, flextable also supplies `mk_par()` as an alias for `compose()` in case you happen to have both packages loaded.] The `compose()` function is a general-purpose tool for constructing the contents of (a subset of) the cells in a table, and as such it has the usual arguments `i`, `j`, and `part` that you can use to define the selection of cells to be composed. In addition, it has a `value` argument that you can use to specify precisely what should be displayed in the selected cells. I'll dive into this in more detail in a moment, but to start with let's do something simple, and use `compose()` to append a "CE" suffix to the publication dates in our table: 
+
+```{r}
+base |> 
+  compose(
+    j = "publication_date",
+    value = as_paragraph(as.character(publication_date), " CE")
+  )
+```
+
+To understand what's happening here, it's helpful to understand that in the language of flextable the contents of a cell are referred to as a **paragraph**. That's not normally how we think about tables, but it makes sense when you recognise that cells can contain long passages of text and even line breaks if you want. The underlying data structure for a paragraph is essentially a data frame:
+
+```{r}
+as_paragraph("Use of Weapons", "by Iain M. Banks")
+```
+
+Each row in the data frame defines a specific **chunk** that is associated with its own set of formatting rules. If I want to specify that the first chunk should be displayed in boldface and the second should be displayed in italic, I can use the `as_chunk()` function to construct each chunk separately, and use `fp_text_default()` to specify the style for the text chunk in question:
+
+```{r}
+as_paragraph(
+  as_chunk("Use of Weapons", props = fp_text_default(bold = TRUE)),
+  as_chunk("by Iain M. Banks", props = fp_text_default(italic = TRUE))
+)
+```
+
+Inspecting the contents of this data frame suggests that we've successfully defined the data structure we want, so now we can put into practice. Here's a very simple example in which I construct a single table column from two data columns, applying a different visual style to each of the two source components:
+
+```{r}
+dat <- tibble(
+  title = c("Consider Phlebas", "The Player of Games", "Use of Weapons"),
+  author = "Iain M. Banks"
+)
+
+dat |> 
+  flextable(col_keys = "book") |> 
+  set_header_labels(book = "Book") |> 
+  compose(
+    j = "book",
+    value = as_paragraph(
+      as_chunk(title, props = fp_text_default(bold = TRUE)),
+      " ", 
+      as_chunk(author, props = fp_text_default(italic = TRUE))
+    )
+  ) |>
+  autofit()
+```
+
+I have no desire to dive much deeper than this in the current blog post, but I hope it's clear from this simple example that you can do a lot of work with a well-crafted call to `compose()`. It is a powerful tool, and in some circumstances a weapon. 
+
+## Merging cells
+
+> Oh, they never lie. They dissemble, evade, prevaricate, confound, confuse, distract, obscure, subtly misrepresent and willfully misunderstand with what often appears to be a positively gleeful relish and are generally perfectly capable of contriving to give one an utterly unambiguous impression of their future course of action while in fact intending to do exactly the opposite, but they never lie. Perish the thought. <br>
+> &nbsp; &nbsp; -- *Look to Windward*
+
+A recurring theme in most of the Culture novels is that the spaceships constructed by the Culture are intelligent -- indeed hyper-intelligent -- machines that are often major characters in the books. Though mostly benevolent in their intentions, Culture ships are manipulative and intensely political actors, and a great deal of the action in the books stems from their scheming. There are a lot of ship characters in the books, and as such it seems appropriate at this point to pivot over to a data set I put together containing a [list of ships](https://theculture.fandom.com/wiki/List_of_spacecraft) that are referred to in the Culture novels. I'll use that to count the number of ships from each civilisation in each of the novels:
+
+```{r}
+ships <- read_csv("ship-list.csv", show_col_types = FALSE)
+
+ship_count <- ships |> 
+  mutate(Civilisation = case_when(
+    str_detect(Civilisation, "^Culture ") ~ "Culture",
+    str_detect(Civilisation, "^Non-aligned ") ~ "Non-aligned",
+    TRUE ~ Civilisation
+  )) |> 
+  group_by(Novel, Civilisation) |>
+  count(name = "Ships") |> 
+  ungroup() |> 
+  arrange(Novel, desc(Ships))
+
+ship_count
+```
+
+Let's take a look at what happens when we pass this data frame to `flextable()`, using `theme_box()` so that I can call attention to the cell boundaries:
+
+```{r}
+ship_count |> 
+  flextable() |> 
+  autofit() |> 
+  theme_box()
+```
+
+As a first pass this table is not terrible, but the repetitive text in the leftmost column is annoying. What we would really like to do here is merge those cells together so that each book title appears only once in the table. To that end, flextable supplies a collection of functions you can use to merge cells: 
+
+- `merge_at()`: Merge flextable cells into a single one
+- `merge_h()`: Merge flextable cells horizontally
+- `merge_h_range()`: Rowwise merge of a range of columns
+- `merge_none()`: Delete flextable merging information
+- `merge_v()`: Merge flextable cells vertically 
+
+For the current example, the one we want is `merge_v()`, and it's pretty straightforward:
+
+```{r}
+ship_count |> 
+  flextable() |> 
+  autofit() |> 
+  merge_v(j = "Novel") |> 
+  theme_box()
+```
+
+Much nicer.
+
+As an aside, while merging cells is one way to solve the "repeated entries" issue, there are other solutions. Another approach I've occasionally used is to use the `as_grouped_data()` function in flextable to modify the data structure *before* it is passed to `flextable()`. If we take that approach with our `ship_count` data set, this is what happens to the data frame:
+
+```{r}
+ship_count |> 
+  as_grouped_data(groups = "Novel") |> 
+  as_tibble()
+```
+
+As you can see from the output, the repeated values have been merged in the data set itself. As a general rule, when working with flextable you almost always have the choice between (a) doing the work by modifying the data frame itself or (b) modifying the table after it has been constructed. Sometimes it'se easier to modify the data set, other times it's easier to modify the table. Anyway, here's what happens when we construct a table from the "grouped data":
+  
+```{r}
+ship_count |> 
+  as_grouped_data(groups = "Novel") |> 
+  flextable() |> 
+  autofit()
+```
+
+Also a reasonable solution to the problem. 
+
+## Markdown columns
+
+> The point is, there is no feasible excuse for what are, for what we have made of ourselves. We have chosen to put profits before people, money before morality, dividends before decency, fanaticism before fairness, and our own trivial comforts before the unspeakable agonies of others <br>
+> &nbsp; &nbsp; -- *Complicity*
+
+I have to confess that I've read more of Banks' science fiction novels than his literary fiction work, but even so I've probably read half a dozen of them. They're very good, but I don't love them as much as the space operas. One of the ones that has stuck with me through the years is [*Complicity*](https://en.wikipedia.org/wiki/Complicity_(novel)), a nasty little story that doesn't shy away from expressing an opinion or two. Banks had a great deal to say about matters political, and I can't help but share a lot of his anger about the world we live in.
+
+Aaaaaaanyway...
+
+At this point in the post I reach the problem I encountered at work that provided the impetus to write this blog post. One irritating limitation to flextable is that it doesn't support markdown syntax within data columns. I've become so accustomed to (or spoiled by) tools that automatically support markdown that I habitually write in markdown syntax, and so it annoys me that I can't ask flextable to parse a data column as markdown. As it turns out though -- as I would have discovered had I been more diligent earlier on and read the book all the way through to the end -- this missing functionality is supported via the [ftExtra](https://ftextra.atusy.net/) package.
+
+Here's a fairly simple example. The `novels` data frame has a column called `url` that contains links to the individual wikipedia pages for each of the Culture novels. Suppose I wanted to create a table that contains two columns, one that displays the `title` of the novel and links to the `url` of the wikipedia page, and another that contains the `description` of the novel. One way to do that in flextable would be to construct a new column `title_md` that specifies the link in markdown format, and then format that column using the `colformat_md()` function supplied by the ftExtra package:
+
+```{r}
+novels |> 
+  mutate(title_md = paste0("[", title, "](", url, ")")) |> 
+  flextable(col_keys = c("title_md", "description")) |> 
+  set_header_labels(
+    title_md = "Book Title",
+    description = "Description"
+  ) |> 
+  colformat_md(j = "title_md") |> 
+  autofit()
+```
+
+Oh, look at that -- we're pretty close to constructing the table that I showed at the start of the post.
+
+## Inserting equations
+
+> Allegedly there was some extra set of coordinates, or even a single mathematical operation, a transform, which, when applied to any given set of coordinates in the original list, somehow magically derived the exact position of that system's portal.<br>
+> &nbsp; &nbsp; -- [*The Algebraist*](https://en.wikipedia.org/wiki/The_Algebraist)
+
+Okay fine, I lied slightly in the last section. The problem I was trying to solve at work wasn't strictly "how to use markdown syntax in flextable" it was something more like "how to construct equations in flextable". Fortunately the two are related, since markdown supports a lot of the formatting rules you need to construct equations. Often you can solve your problem in "pure" markdown just by a judicious use of font formatts, subscripts, and superscripts. Here's a small table with some mathematical quantities constructed in plain markdown:
+
+```{r}
+tbl <- tribble(
+  ~expression,                  ~text,
+  "x^2^ + y^2^ = 1",            "Formula for the unit circle",
+  "**x** = (x~1~, ..., x~n~)" , "A vector of length n"
+)
+tbl
+```
+
+When the `expression` column is parsed as a markdown column we end up with a pretty respectable looking table:
+
+```{r}
+tbl |> 
+  flextable() |> 
+  colformat_md(j = "expression") |> 
+  autofit()
+```
+
+Happily, however, the `colformat_md()` function supports the much more flextible LaTeX equation syntax. So if you have some more elaborate equations that need to appear in a table, you can construct them that way. And as an added bonus, you can mix these equations with other markdown features like footnotes. As before we'll construct a simple table:
+
+```{r}
+tbl <- tribble(
+  ~expression,                       ~text,
+  "$x^2 + y^2 = 1$",                 "Formula for the unit circle",
+  "$\\bm{x} = (x_1, \\ldots, x_n)$", "A vector of length $n$",
+  "$\\mathcal{R}^n$",                 "$n$-dimensional real space",
+  "$e^{i\\pi} + 1 = 0$",             "Euler's identity^[A special case of Euler's formula]"
+)
+tbl
+```
+
+And now we can pass this table to `flextable()` and have it parse both columns as markdown:
+
+```{r}
+tbl |> 
+  flextable() |> 
+  colformat_md() |> 
+  autofit()
+```
+
+So nice. 
+
+## Inserting images
+
+> That was how divorced from the human scale modern warfare had become. You could smash and destroy from unthinkable distances, obliterate planets from beyond their own system and provoke stars into novae from light-years off ... and still have no good idea why you were really fighting. <br>
+> &nbsp; &nbsp; -- *Consider Phlebas*
+
+Having discussed markdown columns already, we are now almost at the point where we can construct the actual table that I showed at the start of the post. The only missing component here is the `colformat_image()` function, which you can use to parse a column like `image` (in the `novels` data frame) which specifies the path to image files that I'd like to display in the table. Using the now-familiar flextable syntax, all we have to do is pipe the table to `colformat_image()`, tell it to interpret the `image` column as an image, and give it the `width` and `height` dimensions (in inches) for the images: 
+
+```{r}
+novels |> 
+  mutate(title_md = paste0("[", title, "](", url, ")")) |> 
+  flextable(col_keys = c("title_md", "image", "description")) |> 
+  set_header_labels(
+    title_md = "Book Title",
+    description = "Description",
+    image = "Cover"
+  ) |> 
+  colformat_md(j = "title_md") |> 
+  colformat_image(j = "image", width = .75, height = 1.2) |> 
+  autofit()
+```
+
+Easy as an easy thing, once you know the trick :) 
+
+## Inserting plots
+
+> People were always sorry. Sorry they had done what they had done, sorry they were doing what they were doing, sorry they were going to do what they were going to do; but they still did whatever it is. The sorrow never stopped them; it just made them feel better. And so the sorrow never stopped. <br>
+> &nbsp; &nbsp; -- *Against a Dark Background*
+
+There's one more topic I want to talk about before wrapping up. Sorry.
+
+One feature of flextable that I really love but have never yet had call to use in real life is that it permits you to embed plots within table cells. You can do this in several different ways, but the one I want to mention is embedding ggplot2 graphics. You can do this with the help of the `gg_chunk()` function that allows you to pass ggplot2 objects to flextable. 
+
+To illustrate this functionality, I'll define a silly little plotting function called `plot_name_lengths()`. This function takes the name of one of the Culture novels as its argument, looks up the names of all the ships referred to in that novel, and then plots a tiny graph listing the number of characters in each ship name (which is, of course, entertaining to Banks readers because the names of Culture ships are famously long and absurd). Then I'll construct a data frame called `ship_name_length` that contains the names of the novels as one column, and includes a list of ggplot2 objects as the second column:
+
+```{r}
+plot_name_lengths <- function(novel) {
+  ships |> 
+    filter(Novel == novel) |> 
+    mutate(len = Name |> replace_na("") |> nchar()) |> 
+    arrange(desc(len)) |> 
+    mutate(pos = row_number()) |> 
+    ggplot(aes(pos, len)) + 
+    geom_point() + 
+    geom_segment(aes(xend = pos, yend = 0)) + 
+    lims(x = c(0, 60), y = c(0, 65)) + 
+    theme_void()
+}
+
+ship_name_length <- tibble(
+  title = novels$title,
+  plot = lapply(title, plot_name_lengths)
+)
+
+ship_name_length
+```
+
+When construcing our table, we now use the `compose()` function to construct the column of plots, using `gg_chunk()` to control how the plot is rendered within the table. The result looks like this:
+
+```{r}
+ship_name_length |> 
+  flextable(cwidth = c(2, 4)) |> 
+  set_header_labels(
+    title = "Title", 
+    plot = "Ship Name Lengths"
+  ) |> 
+  compose(
+    j = "plot", 
+    value = as_paragraph(
+      gg_chunk(value = plot, width = 6, height = .8)
+    )
+  ) |> 
+  align_nottext_col(align = "center")
+```
+
+Looking at these distributions, I feel quite certain that this data set has used the abbreviated name of a certain ship in *The Hydrogen Sonata*, because -- at 206 characters -- "Mistake Not My Current State Of Joshing Gentle Peevishness For The Awesome And Terrible Majesty Of The Towering Seas Of Ire That Are Themselves The Mere Milquetoast Shallows Fringing My Vast Oceans Of Wrath" would probably show up as an outlier.
+
+## Epilogue
+
+> Just as one might do useful work without fully understanding the job one was engaged in, or even what the point of it was, so the behaviour of devotion still mattered to the all-forgiving God, and just as the habitual performance of a task gradually raised one’s skills to something close to perfection, bringing a deeper understanding of the work, so the actions of faith would lead to the state of faith. <br>
+> &nbsp; &nbsp; -- *Surface Detail*
+
+So often I reach the end of these posts and wonder why I write them. The girl reading science fiction on the library floor is long gone now, but so much of her confusion about the world remains. Who is the target audience for these posts? What do I hope they get from reading them? What did *I* get from the process? It's honestly a mystery to me. 
+
+Take this post, for example. I've written about flextable but I'm hardly an expert in it. I've only just started the process of developing a deeper understanding of how it works, and why it is the way it is. It feels sometimes like I am indeed performing the rituals of the code in the hope it leads me to a deeper state of faith in the gods of machine instruction.^[It's been a while since I read *Surface Detail*, but my recollection is that the quote above takes place in hell, which admittedly casts a dark shadow across the thought.] I have learned a great deal more about flextable through the act of writing, and of course I do love the act of writing. 
+
+In truth I write because I like to write, and perhaps that is justification enough.
+
