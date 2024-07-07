@@ -22,10 +22,17 @@ set.seed(1)
 
 <!--------------- post begins here ----------------->
 
-- [flextable package](https://davidgohel.github.io/flextable/)
-- [flextable book](https://ardata-fr.github.io/flextable-book/)
+> "Tell me, what is happiness?" <br>
+> "Happiness? Happiness ... is to wake up, on a bright spring morning, after an exhausting first night spent with a beautiful ... passionate ... multi-murderess." <br>
+> "... Shit, is *that* all?" <br>
+> &nbsp; &nbsp; &nbsp; &nbsp; -- *Use of Weapons*
 
-There are nine books that make up the Culture novels, starting with the 1988 novel *Consider Phlebas* and finishing with *The Hydrogen Sonata* in 2012. 
+The year is 1994. A closeted, miserable girl sits on the floor in the library. She is 16, it is her first year at university, and her first time living in a city. She knows very little about the world, or herself for that matter. But the library has a copy of *Use of Weapons*, and for the moment at least she is somewhere else. 
+
+This is a post about making tables in R using the rather-lovely [flextable package](https://davidgohel.github.io/flextable/), documented terribly well in the [flextable book](https://ardata-fr.github.io/flextable-book/). I use flextable a lot at work, but until recently I hadn't explored it very thoroughly. Last week I ran into something I didn't know how to solve^[It was a markdown column issue, which I now realise is easy to address.] and found myself diving deeper and inevitably, ended up writing up some notes. 
+It is also a post about the [Culture novels](https://en.wikipedia.org/wiki/Culture_series) by Iain Banks, one of my all-time favourite science fiction series, and the work of Iain Banks more generally I suppose. 
+
+I discovered the Culture novels as an undergraduate, and have loved them deeply ever since. There are nine books that make up the Culture novels, starting with the 1988 novel *Consider Phlebas* and finishing with *The Hydrogen Sonata* in 2012. Each of the books is a standalone story set in the same universe, and largely revolve around the Culture, a utopian anarchic society of hedonistic humans and scheming hyper-intelligent machines. I'd imagine that a great many people in my usual audience are familiar with the Culture novels, but for those who are not here's the wikipedia summary of each of the novels:
 
 ```{r}
 #| echo: false
@@ -44,9 +51,7 @@ readr::read_csv("culture.csv", col_types = "ciccccc") |>
   flextable::autofit()
 ```
 
-## Basic use
-
-To get started, I'll load all the packages needed to create the various tables that appeatr in this post:
+I made this table in R using flextable. It's surprisingly easy to do, once you wrap your head around how the package works. So let's have a look at how it all works, shall we?
 
 ```{r}
 #| message: false
@@ -59,6 +64,11 @@ library(tidyr)
 library(readr)
 library(ggplot2)
 ```
+
+## Getting started
+
+> All great promises are threats, I suppose, to the way things have been until that point, to some aspect of our lives, and we all suddenly become conservative, even though we want and need what the promise holds, and look forward to the promised change at the same time. <br>
+> &nbsp; &nbsp; -- *The Hydrogen Sonata*
 
 For the purposes of this post I put together a small data set using information taken from the [wikipedia page](https://en.wikipedia.org/wiki/Culture_series) on the Culture novels:
 
@@ -79,6 +89,9 @@ This is a promising beginning, but it can be improved in any number of ways.
 
 ## Column widths
 
+> He was tall and very dark-skinned and he had fabulously blond hair and a voice that could raise bumps on your skin at a hundred meters, or, better still, millimeters. <br>
+> &nbsp; &nbsp; -- *Excession*
+
 The most obvious shortcoming in the previous table is the column widths, which we can adjust manually by passing a vector of widths (in inches) as the `cwidth` argument to `flextable()`:
 
 ```{r}
@@ -98,6 +111,12 @@ novels |>
 
 ## Column labels
 
+> YOU MAY ENTER. <br>
+> THERE IS DEATH HERE. <br>
+> BE WARNED. <br>
+> &nbsp; &nbsp; -- *Consider Phlebas*
+
+
 Now that we have better-spaced columns, the thing that pops out at us next is the column headers. We can do better than using variable names as column headers. To do so we can use `set_header_labels()`, which takes name-value pairs as inputs, like this:
 
 ```{r}
@@ -113,6 +132,9 @@ novels |>
 ```
 
 ## Column formats
+
+> He looked up from it at the stars again, and the view was warped and distorted by something in his eyes, which at first he thought was rain. <br>
+> &nbsp; &nbsp; --*The Player of Games*
 
 When deciding how to format the values displayed in the cells, flextable tries to supply sensible defaults for different data types, but you can override these defaults with the assistance of the `colformat_*()` functions:
 
@@ -172,6 +194,9 @@ base |>
 
 ## Table themes
 
+> Just before the *Clear Air Turbulence* went back into warp and its crew sat down at table, the ship expelled the limp corpse of Zallin. Where it had found a live man in a suit, it left a dead youth in shorts and a tattered shirt, tumbling and freezing while a thin shell of air molecules expanded around the body, like an image of departing life. <br>
+> &nbsp; &nbsp; -- *Consider Phlebas*
+
 Theme functions are simpler than ggplot2. It's a function that takes a flextable as input and returns a flextable as ouput. Default is `theme_booktabs()` but there are several that come bundled with the package:
 
 - `theme_alafoli()`
@@ -200,6 +225,9 @@ base |> theme_tron()
 
 ## Table defaults
 
+> In life you hoped to do what you could but mostly you did what you were told and that was the end of it. <br>
+> &nbsp; &nbsp; -- *Matter*
+
 At the time a table is constructed by calling `flextable()` a collection of default values are applied to the table. You can get a list of these values by calling `get_flextable_defaults()`, and you can modify them with `set_flextable_defaults()`
 
 ```{r}
@@ -221,6 +249,10 @@ init_flextable_defaults()
 ```
 
 ## Table parts
+
+> The rose-red stones were jumbled and askew. Most of the streets were gone, long ago buried under the soft encroaching sands. Ruined arches, fallen lintels, collapsed walls littered the slopes of sand; at the scalloped edge of shore, brushed by the waves, more fallen blocks broke the incoming waves. A little out to sea, tilted towers and the fragments of an arch rose from the waters, sucked at by the waves like the bones of the long-drowned. <br>
+> &nbsp; &nbsp; -- *The Bridge*
+
 
 It's often helpful to define formatting rules that apply only to a subset of the table. For instance, we might want to use boldface text for the column headers but not the body of the table. Or perhaps some rows or columns should appear in a different colour for one reason or another. To do this effectively it is helpful to understand how flextables are structured. All flextables are comprised of three parts: a set of **header** rows at the top, a grid of cells in the table **body**, and a set of footer rows at the bottom. Many functions in flextable have a `part` argument that you can use to select one (or all) of these three parts. For example, the `bg()` function is used to set the background colour, and the example below takes our `base` table and gives the header a red background, the body a green background, and the footer a blue background:
 
@@ -267,6 +299,11 @@ Notice that these new rows are subdivided into cells. For the footer, I've not m
 If I were more serious about these particular tables, I'd use the `align()` function to tidy up the text alignment and other formatting in the new header and footer rows, but I'm not really interested in doing that here so I'll move on. 
 
 ## Row and column selectors
+
+> &nbsp; &nbsp; He looked out through the open faceplate, and wiped a little sweat from his brow. It was dusk over the plateau. A few metres away, by the light of two moons and a fading sun, he could see the rimrock, frost-whitened. Beyond was the great gash in the desert which provided the setting for the ancient half-empty city where Tsoldrin Beychae now lived. <br>
+> &nbsp; &nbsp; Clouds drifted, and the dust collected. <br>
+> &nbsp; &nbsp; "Well," he sighed, to no-one in particular, and looked up into yet another alien sky. "Here we go again." <br>
+> &nbsp; &nbsp; &nbsp; &nbsp; -- *Use of Weapons*
 
 The `part` argument discussed in the previous section allows you to apply formatting rules selectively to the header, body, and footer of the table, but it doesn't let you apply rules selectively to a subset of rows or columns. If you need to do this, you can use the row selector argument `i` and the columns selector argument `j`. These selector arguments can be specified in three ways:
 
@@ -317,6 +354,11 @@ base |>
 
 ## Visual style
 
+> And in her mind saw again the line of desert hills beyond the stone balustrade of the hotel room balcony, and the faint crease of dawn-light above, suddenly swamped by the stuttering pulses of silent fire from beyond the horizon. She had watched -- dazed and dazzled and wondering -- as that distant eruption of annihilation had lit up the face of her lover <br>
+> &nbsp; &nbsp; &nbsp; &nbsp; -- *Against a Dark Background*
+
+*Against a Dark Background* is not really a Culture novel, it's more of a standalone work with different premises. But consistency has never been much of a concern on this blog, and I'll quote what I want with merry abandon.
+
 Controlling the appearance of the text:
 
 - `font()`: Set font
@@ -356,6 +398,10 @@ base |>
 
 ## Borders
 
+> The usual example given to illustrate an Outside Context Problem was imagining you were a tribe on a largish, fertile island; you'd tamed the land, invented the wheel or writing or whatever, the neighbours were cooperative or enslaved but at any rate peaceful and you were busy raising temples to yourself with all the excess productive capacity you had, you were in a position of near-absolute power and control which your hallowed ancestors could hardly have dreamed of and the whole situation was just running along nicely like a canoe on wet grass... when suddenly this bristling lump of iron appears sailless and trailing steam in the bay and these guys carrying long funny-looking sticks come ashore and announce you've just been discovered, you're all subjects of the Emperor now, he's keen on presents called tax and these bright-eyed holy men would like a word with your priests. <br>
+> &nbsp; &nbsp; -- *Excession*
+
+
 Horizontal and vertical lines:
 
 - `hline()`: Set horizontal borders
@@ -392,6 +438,9 @@ base |>
 
 ## Cell contents
 
+> "In all the human societies we have ever reviewed, in every age and every state, there has seldom if ever been a shortage of eager young males prepared to kill and die to preserve the security, comfort and prejudices of their elders, and what you call heroism is just an expression of this fact; there is never a scarcity of idiots." <br>
+> &nbsp; &nbsp; -- *Use of Weapons*
+
 Use `compose()` or `mk_par()` (the latter is an alias to make life easier in case of conficts between `purrr::compose()` and `flextable::compose()` to build cell contents from constituent parts:
 
 ```{r}
@@ -422,6 +471,9 @@ base |>
 ```
 
 ## Merging cells
+
+> Oh, they never lie. They dissemble, evade, prevaricate, confound, confuse, distract, obscure, subtly misrepresent and willfully misunderstand with what often appears to be a positively gleeful relish and are generally perfectly capable of contriving to give one an utterly unambiguous impression of their future course of action while in fact intending to do exactly the opposite, but they never lie. Perish the thought. <br>
+> &nbsp; &nbsp; -- *Look to Windward*
 
 To construct the data for the table I put together a data set containing a [list of ships](https://theculture.fandom.com/wiki/List_of_spacecraft) that are referred to in the Culture novels. I'll use that to count the number of ships from each civilisation in each of the novels:
 
@@ -466,6 +518,9 @@ ship_count |>
 
 ## Markdown columns
 
+> The point is, there is no feasible excuse for what are, for what we have made of ourselves. We have chosen to put profits before people, money before morality, dividends before decency, fanaticism before fairness, and our own trivial comforts before the unspeakable agonies of others <br>
+> &nbsp; &nbsp; -- *Complicity*
+
 Flextable doesn't natively support markdown syntax in data columns, but the [ftExtra](https://ftextra.atusy.net/) package provides this.
 
 ```{r}
@@ -482,6 +537,11 @@ novels |>
 ```
 
 ## Inserting equations
+
+> Allegedly there was some extra set of coordinates, or even a single mathematical operation, a transform, which, when applied to any given set of coordinates in the original list, somehow magically derived the exact position of that system's portal.<br>
+> &nbsp; &nbsp; -- *The Algebraist*
+
+Again, not a Culture novel, but a standalone science fiction work by Banks. But it seems appropriate to quote from it given the topic of the section.
 
 Markdown columns are a very handy tool whenever you have tables that need to include equations or other kinds of cell content that have very specific formatting requirements. 
 
@@ -523,6 +583,9 @@ tbl |>
 
 ## Inserting images
 
+> That was how divorced from the human scale modern warfare had become. You could smash and destroy from unthinkable distances, obliterate planets from beyond their own system and provoke stars into novae from light-years off...and still have no good idea why you were really fighting. <br>
+> &nbsp; &nbsp; -- *Consider Phlebas*
+
 ```{r}
 novels |> 
   mutate(title = paste0("[", title, "](", url, ")")) |> 
@@ -539,6 +602,9 @@ novels |>
 ```
 
 ## Inserting plots
+
+> People were always sorry. Sorry they had done what they had done, sorry they were doing what they were doing, sorry they were going to do what they were going to do; but they still did whatever it is. The sorrow never stopped them; it just made them feel better. And so the sorrow never stopped. <br>
+> &nbsp; &nbsp; -- *Against a Dark Background*
 
 ```{r}
 plot_name_lengths <- function(novel) {
@@ -577,3 +643,9 @@ ship_name_length |>
   ) |> 
   align_nottext_col(align = "center")
 ```
+
+
+## Epilogue
+
+> Just as one might do useful work without fully understanding the job one was engaged in, or even what the point of it was, so the behaviour of devotion still mattered to the all-forgiving God, and just as the habitual performance of a task gradually raised one’s skills to something close to perfection, bringing a deeper understanding of the work, so the actions of faith would lead to the state of faith. <br>
+> &nbsp; &nbsp; -- *Surface Detail*
