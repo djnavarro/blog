@@ -707,6 +707,12 @@ Easy as an easy thing, once you know the trick :)
 > People were always sorry. Sorry they had done what they had done, sorry they were doing what they were doing, sorry they were going to do what they were going to do; but they still did whatever it is. The sorrow never stopped them; it just made them feel better. And so the sorrow never stopped. <br>
 > &nbsp; &nbsp; -- *Against a Dark Background*
 
+There's one more topic I want to talk about before wrapping up. Sorry.
+
+One feature of flextable that I really love but have never yet had call to use in real life is that it permits you to embed plots within table cells. You can do this in several different ways, but the one I want to mention is embedding ggplot2 graphics. You can do this with the help of the `gg_chunk()` function that allows you to pass ggplot2 objects to flextable. 
+
+To illustrate this functionality, I'll define a silly little plotting function called `plot_name_lengths()`. This function takes the name of one of the Culture novels as its argument, looks up the names of all the ships referred to in that novel, and then plots a tiny graph listing the number of characters in each ship name (which is, of course, entertaining to Banks readers because the names of Culture ships are famously long and absurd). Then I'll construct a data frame called `ship_name_length` that contains the names of the novels as one column, and includes a list of ggplot2 objects as the second column:
+
 ```{r}
 plot_name_lengths <- function(novel) {
   ships |> 
@@ -729,6 +735,8 @@ ship_name_length <- tibble(
 ship_name_length
 ```
 
+When construcing our table, we now use the `compose()` function to construct the column of plots, using `gg_chunk()` to control how the plot is rendered within the table. The result looks like this:
+
 ```{r}
 ship_name_length |> 
   flextable(cwidth = c(2, 4)) |> 
@@ -744,6 +752,8 @@ ship_name_length |>
   ) |> 
   align_nottext_col(align = "center")
 ```
+
+Looking at these distributions, I feel quite certain that this data set has used the abbreviated name of a certain ship in *The Hydrogen Sonata*, because -- at 206 characters -- "Mistake Not My Current State Of Joshing Gentle Peevishness For The Awesome And Terrible Majesty Of The Towering Seas Of Ire That Are Themselves The Mere Milquetoast Shallows Fringing My Vast Oceans Of Wrath" would probably show up as an outlier.
 
 
 ## Epilogue
