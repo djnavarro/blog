@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.4.549">
+<meta name="generator" content="quarto-1.5.52">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -10,7 +10,7 @@
 <meta name="dcterms.date" content="2022-03-04">
 <meta name="description" content="A post describing fundamental data types in R and Apache Arrow, and how data is exchanged between the two systems. It covers conversion of logicals, integers, floats, decimals, strings, date, and times, among other things. It talks about higher level structures like tables, data frames, and so on. For reasons that now escape me, esoteric authors are quoted, and I try to bribe the audience into reading the whole thing by adding artwork. This post is, um… long">
 
-<title>Notes from a data witch - Data types in Arrow and R</title>
+<title>Data types in Arrow and R – Notes from a data witch</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -36,7 +36,7 @@ div.sourceCode { overflow: auto; }
 }
 @media print {
 pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
 }
 pre.numberSource code
   { counter-reset: source-line 0; }
@@ -94,7 +94,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       }
 </style>
 
-  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
 
 <script type="text/javascript">
@@ -125,12 +125,12 @@ window.Quarto = {
 </script>
 
 <link rel="stylesheet" href="../../styles.css">
-<meta property="og:title" content="Notes from a data witch - Data types in Arrow and R">
+<meta property="og:title" content="Data types in Arrow and R – Notes from a data witch">
 <meta property="og:description" content="A post describing fundamental data types in R and Apache Arrow, and how data is exchanged between the two systems. It covers conversion of logicals, integers, floats, decimals, strings, date, and times, among other things. It talks about higher level structures like tables, data frames, and so on. For reasons that now escape me, esoteric authors are quoted, and I try to bribe the audience into reading the whole thing by adding artwork. This post is, um… long">
 <meta property="og:image" content="https://blog.djnavarro.net/posts/2022-03-04_data-types-in-arrow-and-r/img/cover.jpg">
 <meta property="og:site_name" content="Notes from a data witch">
 <meta property="og:image:alt" content="Abstract generative art in red and black">
-<meta name="twitter:title" content="Notes from a data witch - Data types in Arrow and R">
+<meta name="twitter:title" content="Data types in Arrow and R – Notes from a data witch">
 <meta name="twitter:description" content="A post describing fundamental data types in R and Apache Arrow, and how data is exchanged between the two systems. It covers conversion of logicals, integers, floats, decimals, strings, date, and times, among other things. It talks about higher level structures like tables, data frames, and so on. For reasons that now escape me, esoteric authors are quoted, and I try to bribe the audience into reading the whole thing by adding artwork. This post is, um… long">
 <meta name="twitter:image" content="https://blog.djnavarro.net/posts/2022-03-04_data-types-in-arrow-and-r/img/cover.jpg">
 <meta name="twitter:creator" content="@djnavarro">
@@ -144,7 +144,7 @@ window.Quarto = {
   <header id="quarto-header" class="headroom fixed-top quarto-banner">
     <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
-          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
   <span class="navbar-toggler-icon"></span>
 </button>
           <div class="collapse navbar-collapse" id="navbarCollapse">
@@ -160,7 +160,7 @@ window.Quarto = {
 </ul>
             <ul class="navbar-nav navbar-nav-scroll ms-auto">
   <li class="nav-item dropdown ">
-    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-sites" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-sites" role="link" data-bs-toggle="dropdown" aria-expanded="false">
  <span class="menu-text">Sites</span>
     </a>
     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="nav-menu-sites">    
@@ -188,7 +188,7 @@ window.Quarto = {
   </li>
 </ul>
           </div> <!-- /navcollapse -->
-          <div class="quarto-navbar-tools">
+            <div class="quarto-navbar-tools">
 </div>
       </div> <!-- /container-fluid -->
     </nav>
@@ -293,7 +293,7 @@ window.Quarto = {
 </nav>
 <div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
 <!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
     </div>
 <!-- main -->
 <main class="content quarto-banner-title-block page-columns page-full" id="quarto-document-content">
@@ -317,7 +317,7 @@ window.Quarto = {
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="art/pollen_46_4699.jpg" class="img-fluid quarto-figure quarto-figure-center figure-img" width="2880"></p>
+<p><img src="art/pollen_46_4699.jpg" class="img-fluid figure-img" width="2880"></p>
 <figcaption>Art</figcaption>
 </figure>
 </div>
@@ -418,7 +418,7 @@ It’s not standard, but since this is a post about data types, I’ll italicise
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="img/data-types-overview.png" class="img-fluid quarto-figure quarto-figure-center figure-img" width="2135"></p>
+<p><img src="img/data-types-overview.png" class="img-fluid figure-img" width="2135"></p>
 <figcaption>A miniature translation guide. On the left a data frame in R is shown: it is comprised of three columns. Each columns is an R vector. We use the term ‘element’ to refer to any length-1 constituent of a vector, even though it isn’t really a distinct object in its own right. On the right is a Table in Arrow: it too is comprised of three columns, encoded as ChunkedArrays. Each ChunkedArray is comprised of one or more Arrays, and each Array contains one or more Scalars, which (unlike elements of R vectors) are distinct objects. The data structure that translates one into the other is called a Schema.</figcaption>
 </figure>
 </div>
@@ -455,7 +455,7 @@ Variable names like <code>arrowmagicks</code> and function calls like <code>arro
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="img/visual-convention.png" class="img-fluid quarto-figure quarto-figure-center figure-img" width="960"></p>
+<p><img src="img/visual-convention.png" class="img-fluid figure-img" width="960"></p>
 <figcaption>Illustration of the graphical convention used in the later diagrams, showing R on the left side (against a blue background) and Arrow on the right side (against an orange background).</figcaption>
 </figure>
 </div>
@@ -499,7 +499,7 @@ $viewers &lt;double&gt;</code></pre>
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="art/pollen_49_4937.jpg" class="img-fluid quarto-figure quarto-figure-center figure-img" width="2880"></p>
+<p><img src="art/pollen_49_4937.jpg" class="img-fluid figure-img" width="2880"></p>
 <figcaption>Art</figcaption>
 </figure>
 </div>
@@ -571,7 +571,7 @@ $viewers &lt;double&gt;</code></pre>
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="art/pollen_47_4893.jpg" class="img-fluid quarto-figure quarto-figure-center figure-img" width="2880"></p>
+<p><img src="art/pollen_47_4893.jpg" class="img-fluid figure-img" width="2880"></p>
 <figcaption>Art</figcaption>
 </figure>
 </div>
@@ -601,7 +601,7 @@ $viewers &lt;double&gt;</code></pre>
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="img/logical-types.png" class="img-fluid quarto-figure quarto-figure-center figure-img" width="960"></p>
+<p><img src="img/logical-types.png" class="img-fluid figure-img" width="960"></p>
 <figcaption>Default mappings for logical types</figcaption>
 </figure>
 </div>
@@ -682,7 +682,7 @@ true</code></pre>
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="art/pollen_47_4897.jpg" class="img-fluid quarto-figure quarto-figure-center figure-img" width="2880"></p>
+<p><img src="art/pollen_47_4897.jpg" class="img-fluid figure-img" width="2880"></p>
 <figcaption>Art</figcaption>
 </figure>
 </div>
@@ -699,7 +699,7 @@ true</code></pre>
 <h3 class="anchored" data-anchor-id="arrow-eight-types-of-integer">[Arrow] Eight types of integer</h3>
 <p>To make sense of the different types, it helps to take a moment to think about how integers are represented in a binary format. Let’s suppose we allocate 8 bits to specify an integer. If we do that, then there are <span class="math inline">\(2^8 = 256\)</span> unique binary patterns we can create with these bits. Because of this, there is a fundamental constraint: no matter how we choose to set it up, 8-bit integers can only represent 256 distinct numbers. Technically, we could choose any 256 numbers we like, but in practice there are only two schemes used for 8-bit integers: “unsigned” 8-bit integers (<em>uint8</em>) use those bits to represent integers from 0 to 255, whereas “signed” 8-bit integers (<em>int8</em>) can represent integers from -128 to 127.</p>
 <p>More generally, an unsigned n-bit integer can represent integers from 0 to <span class="math inline">\(2^n - 1\)</span>, whereas a signed n-bit integer can represent integers from <span class="math inline">\(-2^{n-1}\)</span> to <span class="math inline">\(2^{n-1} - 1\)</span>. Here’s what that looks like for all the integer types supported by Arrow:</p>
-<table class="table">
+<table class="caption-top table">
 <colgroup>
 <col style="width: 23%">
 <col style="width: 12%">
@@ -814,7 +814,7 @@ int32</code></pre>
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="img/integer-types-03.png" class="img-fluid quarto-figure quarto-figure-center figure-img" width="274"></p>
+<p><img src="img/integer-types-03.png" class="img-fluid figure-img" width="274"></p>
 <figcaption>Containment relationships between the integer types.</figcaption>
 </figure>
 </div>
@@ -825,7 +825,7 @@ int32</code></pre>
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="img/integer-types-01.png" class="img-fluid quarto-figure quarto-figure-center figure-img" width="960"></p>
+<p><img src="img/integer-types-01.png" class="img-fluid figure-img" width="960"></p>
 <figcaption>Default mappings for some integer types</figcaption>
 </figure>
 </div>
@@ -841,7 +841,7 @@ int32</code></pre>
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="img/integer-types-02.png" class="img-fluid quarto-figure quarto-figure-center figure-img" width="960"></p>
+<p><img src="img/integer-types-02.png" class="img-fluid figure-img" width="960"></p>
 <figcaption>Default mappings for other integer types. The asterisk notation here is intended to indicate that the path <strong>arrow</strong> follows can depend on the data values and other settings.</figcaption>
 </figure>
 </div>
@@ -922,7 +922,7 @@ int32</code></pre>
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="art/pollen_46_4628.jpg" class="img-fluid quarto-figure quarto-figure-center figure-img" width="2880"></p>
+<p><img src="art/pollen_46_4628.jpg" class="img-fluid figure-img" width="2880"></p>
 <figcaption>Art</figcaption>
 </figure>
 </div>
@@ -1076,7 +1076,7 @@ int32</code></pre>
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="img/numeric-types.png" class="img-fluid quarto-figure quarto-figure-center figure-img" width="960"></p>
+<p><img src="img/numeric-types.png" class="img-fluid figure-img" width="960"></p>
 <figcaption>Default mappings for numeric types</figcaption>
 </figure>
 </div>
@@ -1272,7 +1272,7 @@ Scalar
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="art/pollen_47_4857.jpg" class="img-fluid quarto-figure quarto-figure-center figure-img" width="2880"></p>
+<p><img src="art/pollen_47_4857.jpg" class="img-fluid figure-img" width="2880"></p>
 <figcaption>Art</figcaption>
 </figure>
 </div>
@@ -1289,7 +1289,7 @@ Scalar
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="img/character-types.png" class="img-fluid quarto-figure quarto-figure-center figure-img" width="960"></p>
+<p><img src="img/character-types.png" class="img-fluid figure-img" width="960"></p>
 <figcaption>Default mappings for character types</figcaption>
 </figure>
 </div>
@@ -1313,7 +1313,7 @@ Samantha Fox</code></pre>
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="img/character-types-02.png" class="img-fluid quarto-figure quarto-figure-center figure-img" width="2400"></p>
+<p><img src="img/character-types-02.png" class="img-fluid figure-img" width="2400"></p>
 <figcaption>Simplified representation of how character vectors are represented in R</figcaption>
 </figure>
 </div>
@@ -1332,7 +1332,7 @@ Samantha Fox</code></pre>
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="img/character-types-03.png" class="img-fluid quarto-figure quarto-figure-center figure-img" width="1331"></p>
+<p><img src="img/character-types-03.png" class="img-fluid figure-img" width="1331"></p>
 <figcaption>Simplified representation of how character vectors are represented in Arrow</figcaption>
 </figure>
 </div>
@@ -1391,7 +1391,7 @@ large_string</code></pre>
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="art/pollen_47_4828.jpg" class="img-fluid quarto-figure quarto-figure-center figure-img" width="2880"></p>
+<p><img src="art/pollen_47_4828.jpg" class="img-fluid figure-img" width="2880"></p>
 <figcaption>Art</figcaption>
 </figure>
 </div>
@@ -1408,7 +1408,7 @@ large_string</code></pre>
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="img/date-types.png" class="img-fluid quarto-figure quarto-figure-center figure-img" width="960"></p>
+<p><img src="img/date-types.png" class="img-fluid figure-img" width="960"></p>
 <figcaption>Default mappings for date/time types</figcaption>
 </figure>
 </div>
@@ -1721,7 +1721,7 @@ timestamp[us, tz=Australia/Sydney]</code></pre>
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="art/pollen_47_4836.jpg" class="img-fluid quarto-figure quarto-figure-center figure-img" width="2880"></p>
+<p><img src="art/pollen_47_4836.jpg" class="img-fluid figure-img" width="2880"></p>
 <figcaption>Art</figcaption>
 </figure>
 </div>
@@ -1737,7 +1737,7 @@ timestamp[us, tz=Australia/Sydney]</code></pre>
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="img/duration-types.png" class="img-fluid quarto-figure quarto-figure-center figure-img" width="960"></p>
+<p><img src="img/duration-types.png" class="img-fluid figure-img" width="960"></p>
 <figcaption>Default mappings for duration types</figcaption>
 </figure>
 </div>
@@ -1913,7 +1913,7 @@ time64[ns]</code></pre>
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="art/pollen_47_4783.jpg" class="img-fluid quarto-figure quarto-figure-center figure-img" width="2880"></p>
+<p><img src="art/pollen_47_4783.jpg" class="img-fluid figure-img" width="2880"></p>
 <figcaption>Art</figcaption>
 </figure>
 </div>
@@ -1936,7 +1936,7 @@ time64[ns]</code></pre>
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="art/pollen_47_4784.jpg" class="img-fluid quarto-figure quarto-figure-center figure-img" width="2880"></p>
+<p><img src="art/pollen_47_4784.jpg" class="img-fluid figure-img" width="2880"></p>
 <figcaption>Art</figcaption>
 </figure>
 </div>
@@ -2046,18 +2046,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     }
     return false;
   }
-  const clipboard = new window.ClipboardJS('.code-copy-button', {
-    text: function(trigger) {
-      const codeEl = trigger.previousElementSibling.cloneNode(true);
-      for (const childEl of codeEl.children) {
-        if (isCodeAnnotation(childEl)) {
-          childEl.remove();
-        }
-      }
-      return codeEl.innerText;
-    }
-  });
-  clipboard.on('success', function(e) {
+  const onCopySuccess = function(e) {
     // button target
     const button = e.trigger;
     // don't keep focus
@@ -2089,7 +2078,47 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     }, 1000);
     // clear code selection
     e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
   });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp("https:\/\/blog\.djnavarro\.net");
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
   function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
     const config = {
       allowHTML: true,
@@ -2124,7 +2153,11 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
       try { href = new URL(href).hash; } catch {}
       const id = href.replace(/^#\/?/, "");
       const note = window.document.getElementById(id);
-      return note.innerHTML;
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
     });
   }
   const xrefs = window.document.querySelectorAll('a.quarto-xref');

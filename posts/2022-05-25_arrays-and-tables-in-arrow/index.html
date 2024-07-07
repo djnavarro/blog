@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.4.549">
+<meta name="generator" content="quarto-1.5.52">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -10,7 +10,7 @@
 <meta name="dcterms.date" content="2022-05-25">
 <meta name="description" content="In which the author discusses arrays, chunked arrays, record batches, tables, and datasets in the R interface to Apache Arrow. Masochism is mentioned, and the music of Florence + The Machine makes a guest appearance">
 
-<title>Notes from a data witch - Arrays and tables in Arrow</title>
+<title>Arrays and tables in Arrow – Notes from a data witch</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -36,7 +36,7 @@ div.sourceCode { overflow: auto; }
 }
 @media print {
 pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
 }
 pre.numberSource code
   { counter-reset: source-line 0; }
@@ -96,12 +96,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 <link rel="stylesheet" href="../../styles.css">
-<meta property="og:title" content="Notes from a data witch - Arrays and tables in Arrow">
+<meta property="og:title" content="Arrays and tables in Arrow – Notes from a data witch">
 <meta property="og:description" content="In which the author discusses arrays, chunked arrays, record batches, tables, and datasets in the R interface to Apache Arrow. Masochism is mentioned, and the music of Florence + The Machine makes a guest appearance">
 <meta property="og:image" content="https://blog.djnavarro.net/posts/2022-05-25_arrays-and-tables-in-arrow/img/cover.jpg">
 <meta property="og:site_name" content="Notes from a data witch">
 <meta property="og:image:alt" content="Image of a woman dancing surrounded by tables">
-<meta name="twitter:title" content="Notes from a data witch - Arrays and tables in Arrow">
+<meta name="twitter:title" content="Arrays and tables in Arrow – Notes from a data witch">
 <meta name="twitter:description" content="In which the author discusses arrays, chunked arrays, record batches, tables, and datasets in the R interface to Apache Arrow. Masochism is mentioned, and the music of Florence + The Machine makes a guest appearance">
 <meta name="twitter:image" content="https://blog.djnavarro.net/posts/2022-05-25_arrays-and-tables-in-arrow/img/cover.jpg">
 <meta name="twitter:creator" content="@djnavarro">
@@ -115,7 +115,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <header id="quarto-header" class="headroom fixed-top quarto-banner">
     <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
-          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
   <span class="navbar-toggler-icon"></span>
 </button>
           <div class="collapse navbar-collapse" id="navbarCollapse">
@@ -131,7 +131,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </ul>
             <ul class="navbar-nav navbar-nav-scroll ms-auto">
   <li class="nav-item dropdown ">
-    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-sites" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-sites" role="link" data-bs-toggle="dropdown" aria-expanded="false">
  <span class="menu-text">Sites</span>
     </a>
     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="nav-menu-sites">    
@@ -159,7 +159,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>
 </ul>
           </div> <!-- /navcollapse -->
-          <div class="quarto-navbar-tools">
+            <div class="quarto-navbar-tools">
 </div>
       </div> <!-- /container-fluid -->
     </nav>
@@ -233,7 +233,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </nav>
 <div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
 <!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
     </div>
 <!-- main -->
 <main class="content quarto-banner-title-block page-columns page-full" id="quarto-document-content">
@@ -267,7 +267,7 @@ Hell, if it glitters, I’m going<br>
 <p>Here’s the thing that has been giving me grief. Suppose you are an R user who is new to this whole Apache Arrow business. You’ve installed the <strong>arrow</strong> package, and you’re now reading the <a href="https://arrow.apache.org/docs/r/articles/arrow.html">Get Started</a> page in the hopes that you too will be able to, well, get started. When you visit this page, one of the very first things you encounter is a table listing a variety of data structures used by Arrow. Specifically, the table tells you that Arrow has classes for zero-dimensional data (scalars), one-dimensional data (arrays and other vector-like data), and two-dimensional data (tabular or data frame-like data). It shows you that…</p>
 <p>…actually, you know what? Instead of describing it, let’s take a look at the actual table. Here’s what it tells you about the hierarchy of data structures in <strong>arrow</strong>:</p>
 <p><br></p>
-<table class="table">
+<table class="caption-top table">
 <colgroup>
 <col style="width: 1%">
 <col style="width: 8%">
@@ -471,7 +471,7 @@ int32</code></pre>
 <p>Except… this isn’t really true, for three reasons. First, memory is allocated in byte-size units, so we have to pad it out to the full 8 bits. That gives us the bitmap <code>10111000</code>. Second, that’s still a little inaccurate because – assuming you read left to right – you’re looking it with the “most significant bit” first (i.e., <a href="https://en.wikipedia.org/wiki/Endianness">big endian format</a>), and the bits are actually organised with the least significant bit first (i.e., little endian format) so the bits in this byte should be shown in the reverse order, <code>00011101</code>. Third, this is still misleading because I’ve not padded it enough. For reasons that make a lot of sense if you start diving into the Arrow specifications at a low level, you have to imagine another 503 trailing zeros.<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a> So that the nice and neat <code>10111</code> I’ve shown above actually looks like this in memory:</p>
 <div class="grid">
 <div class="g-col-6">
-<table class="table">
+<table class="caption-top table">
 <thead>
 <tr class="header">
 <th>Byte 0 (validity bitmap)</th>
@@ -496,7 +496,7 @@ int32</code></pre>
 <p>Okay, now let’s have a look at the value buffer. It’s essentially the same logic. Again notice that its padded out to a length of 64 bytes to preserve natural alignment, but for our purposes those details don’t matter too much. Here’s the diagram showing the physical layout, again lifted straight from the Arrow specification page:</p>
 <div class="grid">
 <div class="g-col-12">
-<table class="table">
+<table class="caption-top table">
 <colgroup>
 <col style="width: 14%">
 <col style="width: 17%">
@@ -1509,12 +1509,12 @@ See $metadata for additional Schema metadata</code></pre>
   author = {Navarro, Danielle},
   title = {Arrays and Tables in {Arrow}},
   date = {2022-05-25},
-  url = {https://blog.djnavarro.net/posts/2022-05-25_arrays-and-tables-in-arrow},
+  url = {https://blog.djnavarro.net/posts/2022-05-25_arrays-and-tables-in-arrow/},
   langid = {en}
 }
 </code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre><div class="quarto-appendix-secondary-label">For attribution, please cite this work as:</div><div id="ref-navarro2022" class="csl-entry quarto-appendix-citeas" role="listitem">
 Navarro, Danielle. 2022. <span>“Arrays and Tables in Arrow.”</span> May
-25, 2022. <a href="https://blog.djnavarro.net/posts/2022-05-25_arrays-and-tables-in-arrow">https://blog.djnavarro.net/posts/2022-05-25_arrays-and-tables-in-arrow</a>.
+25, 2022. <a href="https://blog.djnavarro.net/posts/2022-05-25_arrays-and-tables-in-arrow/">https://blog.djnavarro.net/posts/2022-05-25_arrays-and-tables-in-arrow/</a>.
 </div></div></section></div></main> <!-- /main -->
 <!-- plausible -->
 <script async="" defer="" data-domain="blog.djnavarro.net" src="https://plausible.io/js/plausible.js"></script>
@@ -1553,18 +1553,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     }
     return false;
   }
-  const clipboard = new window.ClipboardJS('.code-copy-button', {
-    text: function(trigger) {
-      const codeEl = trigger.previousElementSibling.cloneNode(true);
-      for (const childEl of codeEl.children) {
-        if (isCodeAnnotation(childEl)) {
-          childEl.remove();
-        }
-      }
-      return codeEl.innerText;
-    }
-  });
-  clipboard.on('success', function(e) {
+  const onCopySuccess = function(e) {
     // button target
     const button = e.trigger;
     // don't keep focus
@@ -1596,7 +1585,47 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     }, 1000);
     // clear code selection
     e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
   });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp("https:\/\/blog\.djnavarro\.net");
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
   function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
     const config = {
       allowHTML: true,
@@ -1631,7 +1660,11 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
       try { href = new URL(href).hash; } catch {}
       const id = href.replace(/^#\/?/, "");
       const note = window.document.getElementById(id);
-      return note.innerHTML;
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
     });
   }
   const xrefs = window.document.querySelectorAll('a.quarto-xref');

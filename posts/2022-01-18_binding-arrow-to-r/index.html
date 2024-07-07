@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.4.549">
+<meta name="generator" content="quarto-1.5.52">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -10,7 +10,7 @@
 <meta name="dcterms.date" content="2022-01-18">
 <meta name="description" content="I’ve been learning how to program with Apache Arrow inside R, and also I have been watching the SyFy show “The Magicians” obsessively. For no sensible reason I wrote a blog post that combines these two fixations">
 
-<title>Notes from a data witch - Binding Apache Arrow to R</title>
+<title>Binding Apache Arrow to R – Notes from a data witch</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -36,7 +36,7 @@ div.sourceCode { overflow: auto; }
 }
 @media print {
 pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
 }
 pre.numberSource code
   { counter-reset: source-line 0; }
@@ -96,12 +96,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 <link rel="stylesheet" href="../../styles.css">
-<meta property="og:title" content="Notes from a data witch - Binding Apache Arrow to R">
+<meta property="og:title" content="Binding Apache Arrow to R – Notes from a data witch">
 <meta property="og:description" content="I’ve been learning how to program with Apache Arrow inside R, and also I have been watching the SyFy show “The Magicians” obsessively. For no sensible reason I wrote a blog post that combines these two fixations">
 <meta property="og:image" content="https://blog.djnavarro.net/posts/2022-01-18_binding-arrow-to-r/img/magicians_hard_glossy_armour.jpg">
 <meta property="og:site_name" content="Notes from a data witch">
 <meta property="og:image:alt" content="Photo of the cast of The Magicians">
-<meta name="twitter:title" content="Notes from a data witch - Binding Apache Arrow to R">
+<meta name="twitter:title" content="Binding Apache Arrow to R – Notes from a data witch">
 <meta name="twitter:description" content="I’ve been learning how to program with Apache Arrow inside R, and also I have been watching the SyFy show “The Magicians” obsessively. For no sensible reason I wrote a blog post that combines these two fixations">
 <meta name="twitter:image" content="https://blog.djnavarro.net/posts/2022-01-18_binding-arrow-to-r/img/magicians_hard_glossy_armour.jpg">
 <meta name="twitter:creator" content="@djnavarro">
@@ -115,7 +115,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <header id="quarto-header" class="headroom fixed-top quarto-banner">
     <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
-          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
   <span class="navbar-toggler-icon"></span>
 </button>
           <div class="collapse navbar-collapse" id="navbarCollapse">
@@ -131,7 +131,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </ul>
             <ul class="navbar-nav navbar-nav-scroll ms-auto">
   <li class="nav-item dropdown ">
-    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-sites" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-sites" role="link" data-bs-toggle="dropdown" aria-expanded="false">
  <span class="menu-text">Sites</span>
     </a>
     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="nav-menu-sites">    
@@ -159,7 +159,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>
 </ul>
           </div> <!-- /navcollapse -->
-          <div class="quarto-navbar-tools">
+            <div class="quarto-navbar-tools">
 </div>
       </div> <!-- /container-fluid -->
     </nav>
@@ -229,7 +229,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </nav>
 <div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
 <!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
     </div>
 <!-- main -->
 <main class="content quarto-banner-title-block page-columns page-full" id="quarto-document-content">
@@ -248,7 +248,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell-output-display page-columns page-full">
 <div class="quarto-figure quarto-figure-center page-columns page-full">
 <figure class="figure page-columns page-full">
-<p><img src="https://media.giphy.com/media/3o7ZePnuDJ1EiNsK3u/giphy.gif" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+<p><img src="https://media.giphy.com/media/3o7ZePnuDJ1EiNsK3u/giphy.gif" class="img-fluid figure-img"></p>
 <figcaption class="margin-caption">Yes I have been binge watching <a href="https://en.wikipedia.org/wiki/The_Magicians_(American_TV_series)"><em>The Magicians</em></a> lately. My preemptive apologies to everyone for the gif spam. This is Eliot Waugh. All I can say at this point is that thanks to his magnificent performance I have developed a terribly awkward crush on Hale Appleman. Image via <a href="https://giphy.com/gifs/syfy-the-magicians-3o7ZePnuDJ1EiNsK3u">giphy</a>, copyright <a href="https://www.syfy.com">syfy</a></figcaption>
 </figure>
 </div>
@@ -281,7 +281,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell-output-display page-columns page-full">
 <div class="quarto-figure quarto-figure-center page-columns page-full">
 <figure class="figure page-columns page-full">
-<p><img src="https://media.giphy.com/media/xUA7b94cNgJ4qoi532/giphy-downsized-large.gif" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+<p><img src="https://media.giphy.com/media/xUA7b94cNgJ4qoi532/giphy-downsized-large.gif" class="img-fluid figure-img"></p>
 <figcaption class="margin-caption">Two key moments in “The Magicians” when Julia Wicker discovers she can do magic, defying the expectations of others. One moment occurs at the start of Season 1 as a novice, after she had been told she failed the magic exams at Brakebills University; another moment occurs at the end of Season 2 after all magic has supposedly been turned off by the Old Gods or something. The parallel between the two moments is striking. Oh and Quentin Coldwater is in both scenes too I guess. Whatevs. Image via <a href="https://giphy.com/gifs/syfy-magic-julia-xUA7b94cNgJ4qoi532">giphy</a>, copyright <a href="https://www.syfy.com">syfy</a></figcaption>
 </figure>
 </div>
@@ -310,7 +310,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell-output-display page-columns page-full">
 <div class="quarto-figure quarto-figure-center page-columns page-full">
 <figure class="figure page-columns page-full">
-<p><img src="https://media.giphy.com/media/26gswa3eMvprpfjSE/giphy.gif" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+<p><img src="https://media.giphy.com/media/26gswa3eMvprpfjSE/giphy.gif" class="img-fluid figure-img"></p>
 <figcaption class="margin-caption">The Great God Ember. Capricious, chaotic, and utterly unreliable unless what you’re looking for is a whimsical death. Pretty much the opposite of what we’d hope for in a healthy open source community really! He is, however, a very entertaining character. Image via <a href="https://giphy.com/gifs/syfy-the-magicians-fillory-26gswa3eMvprpfjSE">giphy</a>, copyright <a href="https://www.syfy.com">syfy</a></figcaption>
 </figure>
 </div>
@@ -348,7 +348,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell-output-display page-columns page-full">
 <div class="quarto-figure quarto-figure-center page-columns page-full">
 <figure class="figure page-columns page-full">
-<p><img src="https://media.giphy.com/media/26gscWcSEXuJH91tK/giphy.gif" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+<p><img src="https://media.giphy.com/media/26gscWcSEXuJH91tK/giphy.gif" class="img-fluid figure-img"></p>
 <figcaption class="margin-caption">Penny Adiyodi in the Neitherlands, diving head first into a fountain that transports him to a new and magical world. I cannot stress enough that Penny does not, by and large, make good choices. Impulse control is a virtue, but not one that he possesses in abundance. Image via <a href="https://giphy.com/gifs/syfy-penny-alice-26gscWcSEXuJH91tK">giphy</a>, copyright <a href="https://www.syfy.com">syfy</a></figcaption>
 </figure>
 </div>
@@ -532,7 +532,7 @@ $year &lt;int64&gt;</code></pre>
 <div class="cell-output-display page-columns page-full">
 <div class="quarto-figure quarto-figure-center page-columns page-full">
 <figure class="figure page-columns page-full">
-<p><img src="https://media.giphy.com/media/xUPGcJ8PkgoCQFMjHW/giphy.gif" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+<p><img src="https://media.giphy.com/media/xUPGcJ8PkgoCQFMjHW/giphy.gif" class="img-fluid figure-img"></p>
 <figcaption class="margin-caption">Quentin from timeline 40 talking to Alice from timeline 23. Communication across incommensurate universes is difficult. In the show it requires a Tesla Flexion. In Arrow, we use dplyr bindings. Image via <a href="https://giphy.com/gifs/syfy-alice-love-you-xUPGcJ8PkgoCQFMjHW">giphy</a>, copyright <a href="https://www.syfy.com">syfy</a>”</figcaption>
 </figure>
 </div>
@@ -679,7 +679,7 @@ $year &lt;int64&gt;</code></pre>
 <div class="cell-output-display page-columns page-full">
 <div class="quarto-figure quarto-figure-center page-columns page-full">
 <figure class="figure page-columns page-full">
-<p><img src="https://media.giphy.com/media/l0IydgNESZjrALWqA/giphy.gif" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+<p><img src="https://media.giphy.com/media/l0IydgNESZjrALWqA/giphy.gif" class="img-fluid figure-img"></p>
 <figcaption class="margin-caption">I guess there’s a connection between slightly-evil-Julia burning down the talking trees and my slightly-evil digression? Sort of. I mean the truth is just that I just love this scene and secretly wish I was her. Of all the characters Julia has the most personally transformative arc (in my opinion), in both good ways and bad. There’s a lot going on with her life, her person, and her body. I relate to that. Image via <a href="https://giphy.com/gifs/syfy-l0IydgNESZjrALWqA">giphy</a>, copyright <a href="https://www.syfy.com">syfy</a></figcaption>
 </figure>
 </div>
@@ -726,7 +726,7 @@ $year &lt;int64&gt;</code></pre>
 <div class="cell-output-display page-columns page-full">
 <div class="quarto-figure quarto-figure-center page-columns page-full">
 <figure class="figure page-columns page-full">
-<p><img src="https://media.giphy.com/media/26AHOmyGvNBim4GHK/giphy.gif" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+<p><img src="https://media.giphy.com/media/26AHOmyGvNBim4GHK/giphy.gif" class="img-fluid figure-img"></p>
 <figcaption class="margin-caption">I’m getting lazier with these connections. Using a Library gif because I’m talking about the C++ library? I mean really, you’d think I’d be better than that wouldn’t you? But no. I am not. Image via <a href="https://giphy.com/gifs/syfy-the-magicians-26AHOmyGvNBim4GHK">giphy</a>, copyright <a href="https://www.syfy.com">syfy</a></figcaption>
 </figure>
 </div>
@@ -793,7 +793,7 @@ utf8_capitalize("A world as intricate as filigree")</code></pre>
 <div class="cell-output-display page-columns page-full">
 <div class="quarto-figure quarto-figure-center page-columns page-full">
 <figure class="figure page-columns page-full">
-<p><img src="https://media.giphy.com/media/xUA7aOXC4Lrm8p2Ofm/giphy.gif" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+<p><img src="https://media.giphy.com/media/xUA7aOXC4Lrm8p2Ofm/giphy.gif" class="img-fluid figure-img"></p>
 <figcaption class="margin-caption">Okay look, I’ll level with you. At this point there is absolutely no connection between the gifs and the content. This post is getting very long and my brain is fried. I need a short break to appreciate the beautiful people, and Kings Idri and Eliot are both very beautiful people. Image via <a href="https://media.giphy.com/media/xUA7aOXC4Lrm8p2Ofm/giphy.gif">giphy</a>, copyright <a href="https://www.syfy.com">syfy</a></figcaption>
 </figure>
 </div>
@@ -880,7 +880,7 @@ utf8_capitalize("A world as intricate as filigree")</code></pre>
 <div class="cell-output-display page-columns page-full">
 <div class="quarto-figure quarto-figure-center page-columns page-full">
 <figure class="figure page-columns page-full">
-<p><img src="https://media.giphy.com/media/l2Sq18e02qsxjKfBK/giphy.gif" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+<p><img src="https://media.giphy.com/media/l2Sq18e02qsxjKfBK/giphy.gif" class="img-fluid figure-img"></p>
 <figcaption class="margin-caption">Eliot and Margo applaud your success. They are the best characters, and you are also the best because you have made it to the end of a long and strange blog post. Image via <a href="https://giphy.com/gifs/syfy-bravo-the-magicians-l2Sq18e02qsxjKfBK">giphy</a>, copyright <a href="https://www.syfy.com">syfy</a></figcaption>
 </figure>
 </div>
@@ -963,18 +963,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     }
     return false;
   }
-  const clipboard = new window.ClipboardJS('.code-copy-button', {
-    text: function(trigger) {
-      const codeEl = trigger.previousElementSibling.cloneNode(true);
-      for (const childEl of codeEl.children) {
-        if (isCodeAnnotation(childEl)) {
-          childEl.remove();
-        }
-      }
-      return codeEl.innerText;
-    }
-  });
-  clipboard.on('success', function(e) {
+  const onCopySuccess = function(e) {
     // button target
     const button = e.trigger;
     // don't keep focus
@@ -1006,7 +995,47 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     }, 1000);
     // clear code selection
     e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
   });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp("https:\/\/blog\.djnavarro\.net");
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
   function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
     const config = {
       allowHTML: true,
@@ -1041,7 +1070,11 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
       try { href = new URL(href).hash; } catch {}
       const id = href.replace(/^#\/?/, "");
       const note = window.document.getElementById(id);
-      return note.innerHTML;
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
     });
   }
   const xrefs = window.document.querySelectorAll('a.quarto-xref');

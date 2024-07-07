@@ -2,6 +2,7 @@
   {
     "listing": "/index.html",
     "items": [
+      "/posts/2024-07-04_flextable/index.html",
       "/posts/2024-06-21_table1/index.html",
       "/posts/2024-03-03_julia-plots/index.html",
       "/posts/2024-03-02_julia-data-frames/index.html",
