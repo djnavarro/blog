@@ -1,0 +1,139 @@
+---
+title: "For fs"
+description: "This is a subtitle"
+date: "2024-08-14"
+--- 
+
+<!--------------- my typical setup ----------------->
+
+```{r}
+#| label: setup
+#| include: false
+very_wide <- 500
+wide <- 136
+narrow <- 76
+options(width = narrow)
+cache_images <- TRUE
+set.seed(1)
+```
+
+<!--------------- post begins here ----------------->
+
+
+```{r}
+library(fs)
+```
+
+
+```{r}
+#| include: false
+dirs <- c("hello", "sentence")
+for(d in dirs) if(dir_exists(d)) dir_delete(d)
+```
+
+```{r}
+path("hello", "world.txt")
+```
+
+```{r}
+words <- c(
+  "in",
+  "bold",
+  "fine",
+  "evoke",
+  "kings",
+  "grained",
+  "dinosaurs",
+  "happiness",
+  "janitorial",
+  "captivating",
+  "anatomically"
+)
+path("sentence", words)
+```
+
+```{r}
+dir_create("sentence")
+file_create(path("sentence", words))
+```
+
+```{r}
+dir_ls("sentence")
+```
+
+```{r}
+dir_tree("sentence")
+```
+
+```{r}
+file_move(
+  path = path("sentence", words),
+  new_path = path("sentence", toupper(words))
+)
+dir_ls("sentence")
+```
+
+```{r}
+dir_create(path("sentence", "NP"))
+file_move(
+  path = path("sentence", sort(toupper(words))[1:4]),
+  new_path = path("sentence", "NP")
+)
+dir_tree("sentence")
+```
+
+```{r}
+dir_ls("sentence", type = "file")
+```
+
+```{r}
+dir_create(path("sentence", "VP"))
+file_move(
+  path = dir_ls("sentence", type = "file"),
+  new_path = path("sentence", "VP")
+)
+dir_tree("sentence")
+```
+
+```{r}
+#| include: false
+options(width = very_wide)
+```
+
+```{r}
+#| column: screen-inset
+dir_info("sentence", recurse = TRUE)
+```
+
+```{r}
+#| include: false
+options(width = narrow)
+```
+
+
+```{r}
+files <- dir_ls("sentence", recurse = TRUE, type = "file")
+file_move(
+  files,
+  path_ext_set(files, "txt")
+)
+files <- dir_ls("sentence", recurse = TRUE, type = "file")
+files
+```
+
+```{r}
+path_file(files)
+```
+
+```{r}
+path_abs(files)
+```
+
+```{r}
+path_split(files)
+```
+
+
+```{r}
+file_size(files)
+```
