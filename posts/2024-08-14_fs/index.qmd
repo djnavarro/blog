@@ -1,7 +1,8 @@
 ---
 title: "For fs"
-description: "This is a subtitle"
+description: "Let's be honest... I wrote this post because I wanted an excuse to be sweary. But I guess it's also a post about interacting with the file system in R"
 date: "2024-08-14"
+categories: ["R", "Command Line"]
 --- 
 
 <!--------------- my typical setup ----------------->
@@ -19,21 +20,77 @@ set.seed(1)
 
 <!--------------- post begins here ----------------->
 
-
-```{r}
-library(fs)
-```
-
-
 ```{r}
 #| include: false
 dirs <- c("hello", "sentence")
-for(d in dirs) if(dir_exists(d)) dir_delete(d)
+for(d in dirs) if(fs::dir_exists(d)) fs::dir_delete(d)
 ```
 
+
+-- okay i'm doing it. gonna write a post about the fs package <br>
+-- **but why tho?** <br>
+-- because it's cool and fun <br>
+-- **girl it's literally a tool for interacting with the file system within a statistical programming language. in no possible universe is this cool, fun, or exciting. you are the absolute worst engagement farmer in the history of engagement farming** <br>
+-- pfft, everyone's gonna love it babe, you'll see. this shit is girt af <br>
+-- **hon "girt" died the moment the olympics ended. it is as passé as a raygun meme, and raygun is so far past her cultural moment that even jimmy bloody fallon already did an achingly unfunny bit on her. but hey you do you. i just wanna see how this ends...** <br>
+
+Um. So. 
+
+Now that my alter ego has so very kindly shattered all my hopes and dreams for this blog post, I suppose I should introduce it properly? This is a post about the [fs](https://fs.r-lib.org/) R package, and as I *tried* to explain to that bitch who lives in the back of my head and kills every source of love and joy in my world, it provides a cross-platform, uniform interface to file system operations. It is, in a sense, a drop-in replacement for base R functions like `file.path()`, `list.files()` and so on. It supplies a cleaner and more consistent interface to these functions, and provides a few other handy tools that aren't available in the base R equivalents. It's a
+
+-- **no sorry gonna have to step in here. where are you going with this? you just lost like 99% of your possible readership the moment you plagiarised from the package documentation you twat**
+
+really lovely little package. Sheesh. She's not very nice, is she?
+
+<br>
+
+## Why should anyone care about this?
+
+A package like fs is hard to write about. It's not a sparkly shiny thing, it's not the new hotness, and low-level utility tooling is... well, it's inherently boring. In everyday life, about 90% of my usage of the fs package is just me using the `path()` function to specify a file path, and... okay, let's load the package and see what that looks like, yeah?
+
 ```{r}
+library(fs)
 path("hello", "world.txt")
 ```
+
+In this example I'm passing two input strings, `"hello"` and `"world.txt"`, and from these the `path()` function has concatenated them using an appropriate separator character so that the output can be interpreted as a (relative) path to a file. Even in the world of statistical programming it is hard to think of anything you could do with a computer that is less exciting than this. It is undeniably, unequivocally, unbelievably dull.
+
+-- **no shit** <br>
+-- do you mind? i'm trying to set the stage here <br>
+-- **fine. please, do continue. this should be good**
+
+Interruptions notwithstanding, the thing about boring tasks is that they're often neglected. Especially if those boring things look simple. And to be fair, neglecting a thing that looks simple is probably an okay thing to do if it actually *is* simple, but it can create problems if there are hidden nuances underneath the apparently-simple appearance. Interacting with the file system is one of those things. I cannot count the number of times when I've encountered code that looks like this:
+
+```{r}
+# I am setting up my project now...
+dir1  <- "project_root/a_folder/another_folder"
+file <- "file.ext" 
+
+# ...and 3000 lines of code later I do this
+paste(dir1, file, sep = "")
+```
+
+Obviously, this is not the result we wanted. Unlike `path()`, the `paste()` function is not specifically designed to construct file paths: it's a tool for concatenating strings and so it will assume that the user knows what they are doing. 
+
+And yeah, it's so very easy to think "well I would never be that dumb", but the "3000 lines later" part is crucial here. The moment any project -- be it a developer project or an analysis project -- starts to become big enough that you can't remember what you did earlier, it is *horrifyingly* easy to be exactly that stupid. Besides. If you managed not to make the error above, there's a pretty good chance you'll mess up the other way and write code like this:
+
+```{r}
+# this time I terminate my folder path with a slash...
+dir2 <- "project_root/a_folder/"
+
+# ...and 3000 lines later I forget I did that
+paste(dir2, file, sep = "/")
+```
+
+In a weird way, this is a worse mistake. In the first example you'll definitely notice the problem because your code breaks the moment you try to find a file that doesn't exist, and R will throw an error. But the second one won't do that. You'll find the file you're looking for and everything will work just fine... right up to the point that you try to write a regular expression that operates on paths and that extra slash breaks something. And of course by the time you're writing a regex to operate on vectors of paths you can be entirely certain you've lost tract of the initial mistake that created the problem, and you're trapped in debugging mode for an hour and a half trying to work out where you went wrong.
+
+ASK. ME. HOW. I. KNOW.
+
+In any case, the point in all this is that human [working memory capacity](https://en.wikipedia.org/wiki/Working_memory) is about 7 plus or minus 2 "chunks" of meaninful information:^[No I absolutely will not be going into details about the subtle differences in working memory capacity as a function of modality and age, or the nuances about what precisely comprises as chunk, or whatever in the well-actually fuck you want to nitpick. Do I look like a cognitive scientist to you?] we literally do not have the ability to hold a lot of code in our mind at once. So if you manage your file paths using `paste()` I guarantee you that you *will* fuck this up eventually. Not because you're stupid, but because you are human.
+
+Wouldn't it be nice if we had a function... let's call it `path()`... that protects us from this particular kind of human frailty? Of course it would.
+
+## dfgsdfgadfgdf
 
 ```{r}
 words <- c(
