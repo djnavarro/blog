@@ -1,7 +1,7 @@
 ---
 title: "For fs"
 description: "Let's be honest... I wrote this post because I wanted an excuse to be sweary. But I guess it's also a post about interacting with the file system in R"
-date: "2024-08-14"
+date: "2024-09-15"
 categories: ["R", "Command Line"]
 --- 
 
@@ -22,7 +22,7 @@ set.seed(1)
 
 ```{r}
 #| include: false
-dirs <- c("hello", "sentence")
+dirs <- c("lorem")
 for(d in dirs) if(fs::dir_exists(d)) fs::dir_delete(d)
 ```
 
@@ -90,72 +90,128 @@ In any case, the point in all this is that human [working memory capacity](https
 
 Wouldn't it be nice if we had a function... let's call it `path()`... that protects us from this particular kind of human frailty? Of course it would.
 
-## Basic functionality
+## Lorem ipsum text
 
-In practice, about 90% of my usage of the fs package is via the `path()` function used to construct file paths, so it's the natural place to start. Here's a very simple example that specifies the path from my blog root to this quarto document:
+Before diving in, I'm going to define a `lorem_text()` function that uses the [lorem](http://pkg.garrickadenbuie.com/lorem/) and [withr](https://withr.r-lib.org/) packages to reproducibly generate paragraphs of lorem ipsum text:
+
+```{r}
+lorem_text <- function(seed, paragraphs, digit_pad = 3) {
+  lorem <- withr::with_seed(seed, lorem::ipsum(paragraphs))
+  names(lorem) <- purrr::imap_chr(lorem, \(x, y) paste(
+    stringr::str_pad(seed, width = digit_pad, pad = "0"),
+    stringr::str_pad(y, width = digit_pad, pad = "0"),
+    stringr::str_to_lower(stringr::str_remove_all(x, " .*$")),
+    sep = "_"
+  ))
+  lorem
+}
+```
+
+
+```{r}
+lorem_text(seed = 1, paragraphs = 3)
+```
+
+Though not obvious from the printed output, this is a named list:
+
+```{r}
+names(lorem_text(seed = 1, paragraphs = 3))
+```
+
+
+## Building paths
+
+So as I was saying earlier, about 90% of my usage of the fs package is via the `path()` function used to construct file paths, so it's the natural place to start. Here's a very simple example that specifies the path from my blog root to this quarto document:
 
 ```{r}
 path("posts", "2024-09-15_fs", "index.qmd")
 ```
 
+I'm building this post on linux, so paths are separated by the `"/"` character. If I were building on windows, I'd get a different result. The `path()` function is vectorised and doesn't require that the paths in question actually exist on the machine, so I can do something like this:
+
+
+
 ```{r}
-words <- c(
-  "in",
-  "bold",
-  "fine",
-  "evoke",
-  "kings",
-  "grained",
-  "dinosaurs",
-  "happiness",
-  "janitorial",
-  "captivating",
-  "anatomically"
+lorem <- lorem_text(seed = 1, paragraphs = 20)
+lorem_paths <- path("lorem", names(lorem))
+lorem_paths
+```
+
+These are relative paths, and since (by default) quarto blog posts are executed with the working directory set to the folder that contains the document, these paths are implicitly taken relative to this folder.
+
+## File system operations
+
+The second most common thing I find myself using the fs package for is basic file system operations: creating files and folders, copying, deleting, and moving files, etc. For example, the paths I specified in the previous section all refer to a folder called "sentence", but that folder doesn't currently exist. I can check this using the `dir_exists()` function":
+
+```{r}
+dir_exists("lorem")
+```
+
+I can create this folder using `dir_create()`, and verify that it exists:
+
+```{r}
+dir_create("lorem")
+dir_exists("lorem")
+```
+
+Now that the directory exists, I can use `file_create()` to create files that correspond to all the file paths I specified earlier. Like other functions in the fs package, `file_create()` is vectorised, so I can pass the `word_paths` vector to create empty files corresponding to each path listed:
+
+```{r}
+file_create(lorem_paths)
+```
+
+To see what files we've created, I can use `dir_ls()` to return a vector containing all the file names within a specified folder:
+
+```{r}
+dir_ls("lorem")
+```
+
+Okay, that's nice, but I don't actually want a folder full of empty files. So let's delete the folder and everything in it. That's easy enough to do with `dir_delete()`
+
+```{r}
+dir_delete("lorem")
+```
+
+Alternatively, if I wanted only to delete some of the files I could have used `file_delete()`
+
+
+## File trees
+
+```{r}
+lorem_dirs <- unique(stringr::str_remove(names(lorem), "^.*_"))
+lorem_dirs
+```
+
+```{r}
+dir_create("lorem")
+dir_create(path("lorem", lorem_dirs))
+```
+
+```{r}
+dir_tree("lorem")
+```
+
+```{r}
+lorem_paths <- path(
+  "lorem", 
+  stringr::str_remove(names(lorem), "^.*_"), 
+  names(lorem)
 )
-path("sentence", words)
+lorem_paths
 ```
 
 ```{r}
-dir_create("sentence")
-file_create(path("sentence", words))
-```
-
-```{r}
-dir_ls("sentence")
-```
-
-```{r}
-dir_tree("sentence")
-```
-
-```{r}
-file_move(
-  path = path("sentence", words),
-  new_path = path("sentence", toupper(words))
+purrr::walk(
+  seq_along(lorem),
+  \(x) brio::write_lines(
+    text = lorem[[x]],
+    path = lorem_paths[x]
+  )
 )
-dir_ls("sentence")
 ```
 
 ```{r}
-dir_create(path("sentence", "NP"))
-file_move(
-  path = path("sentence", sort(toupper(words))[1:4]),
-  new_path = path("sentence", "NP")
-)
-dir_tree("sentence")
-```
-
-```{r}
-dir_ls("sentence", type = "file")
-```
-
-```{r}
-dir_create(path("sentence", "VP"))
-file_move(
-  path = dir_ls("sentence", type = "file"),
-  new_path = path("sentence", "VP")
-)
-dir_tree("sentence")
+dir_tree("lorem")
 ```
 
 ```{r}
@@ -165,7 +221,7 @@ options(width = very_wide)
 
 ```{r}
 #| column: screen-inset
-dir_info("sentence", recurse = TRUE)
+dir_info("lorem", recurse = TRUE)
 ```
 
 ```{r}
@@ -175,13 +231,7 @@ options(width = narrow)
 
 
 ```{r}
-files <- dir_ls("sentence", recurse = TRUE, type = "file")
-file_move(
-  files,
-  path_ext_set(files, "txt")
-)
-files <- dir_ls("sentence", recurse = TRUE, type = "file")
-files
+files <- dir_ls("lorem", recurse = TRUE, type = "file")
 ```
 
 ```{r}
