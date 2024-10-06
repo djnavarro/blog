@@ -15,7 +15,878 @@
 <link>https://blog.djnavarro.net/</link>
 </image>
 <generator>quarto-1.5.52</generator>
-<lastBuildDate>Wed, 03 Jul 2024 14:00:00 GMT</lastBuildDate>
+<lastBuildDate>Sat, 05 Oct 2024 14:00:00 GMT</lastBuildDate>
+<item>
+  <title>For fs</title>
+  <dc:creator>Danielle Navarro</dc:creator>
+  <link>https://blog.djnavarro.net/posts/2024-10-06_fs/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<!--------------- my typical setup ----------------->
+<!--------------- post begins here ----------------->
+<p>– okay i’m doing it. gonna write a post about the fs package <br> – <strong>but why tho?</strong> <br> – because it’s cool and fun <br> – <strong>girl it’s literally a tool for interacting with the file system within a statistical programming language. in no possible universe is this cool, fun, or exciting. you are the absolute worst engagement farmer in the history of engagement farming</strong> <br> – pfft, everyone’s gonna love it babe, you’ll see. this shit is girt af <br> – <strong>hon “girt” died the moment the olympics ended. it is as passé as a raygun meme. we’re all doing moo deng now, so all you’re accomplishing here is giving away just how long this post has been in drafts. but hey you do you. i just wanna see how this ends…</strong> <br></p>
+<p>Um. So.</p>
+<p>Now that my alter ego has brutally shattered all my hopes and dreams for this blog post, I suppose I should introduce it properly? This is a post about the <a href="https://fs.r-lib.org/">fs</a> R package, and as I <em>tried</em> to explain to that bitch who lives in the back of my head and kills every source of love and joy in my world, it provides a cross-platform, uniform interface to file system operations. It is, in a sense, a drop-in replacement for base R functions like <code>file.path()</code>, <code>list.files()</code> and so on. It supplies a cleaner and more consistent interface to these functions, and provides a few other handy tools that aren’t available in the base R equivalents. It’s a</p>
+<p>– <strong>no sorry gonna have to step in here. where are you going with this? you just lost like 99% of your possible readership the moment you plagiarised from the package documentation. wtf girl</strong></p>
+<p>lovely little package. Sheesh. She’s not very nice, is she?</p>
+<p><br></p>
+<p><img src="https://blog.djnavarro.net/posts/2024-10-06_fs/images/national-cancer-institute-89rul39ox2I-unsplash.jpg" class="img-fluid"></p>
+<p><br></p>
+<section id="why-should-anyone-care-about-this" class="level2">
+<h2 class="anchored" data-anchor-id="why-should-anyone-care-about-this">Why should anyone care about this?</h2>
+<p>A package like fs is hard to write about. It’s not a sparkly shiny thing, it’s not the new hotness, and low-level utility tooling is… well, it’s inherently boring. In everyday life, about 90% of my usage of the fs package is just me using the <code>path()</code> function to specify a file path, and… okay, let’s load the package and see what that looks like, yeah?</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(fs)</span>
+<span id="cb1-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">path</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"hello"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"world.txt"</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>hello/world.txt</code></pre>
+</div>
+</div>
+<p>In this example I’m passing two input strings, <code>"hello"</code> and <code>"world.txt"</code>, and from these the <code>path()</code> function has concatenated them using an appropriate separator character so that the output can be interpreted as a (relative) path to a file. Even in the world of statistical programming it is hard to think of anything you could do with a computer that is less exciting than this. It is undeniably, unequivocally, unbelievably dull.</p>
+<p>– <strong>no shit</strong> <br> – do you mind? i’m trying to set the stage here <br> – <strong>fine. please, do continue. this should be good</strong></p>
+<p>Interruptions notwithstanding, the thing about boring tasks is that they’re often neglected. Especially if those boring things look simple. And to be fair, neglecting a thing that looks simple is probably an okay thing to do if it actually <em>is</em> simple, but it can create problems if there are hidden nuances underneath the apparently-simple appearance. Interacting with the file system is one of those things. I cannot count the number of times when I’ve encountered code that looks like this:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># I am setting up my project now...</span></span>
+<span id="cb3-2">dir1  <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"project_root/a_folder/another_folder"</span></span>
+<span id="cb3-3">file <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"file.ext"</span> </span>
+<span id="cb3-4"></span>
+<span id="cb3-5"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># ...and 3000 lines of code later I do this</span></span>
+<span id="cb3-6"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">paste</span>(dir1, file, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">sep =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">""</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "project_root/a_folder/another_folderfile.ext"</code></pre>
+</div>
+</div>
+<p>Obviously, this is not the result we wanted. Unlike <code>path()</code>, the <code>paste()</code> function is not specifically designed to construct file paths: it’s a tool for concatenating strings and it makes no distinction between strings that look like file paths and strings that don’t.</p>
+<p>When looking at a code extract like the one above, it’s so very easy to think “well I would never be that dumb”, but the “3000 lines later” part is crucial here. The moment any project starts to grow in scope – be it a developer project or an analysis project – you reach a point where the code base is large enough that you can’t remember what you did earlier, and it is <em>horrifyingly</em> easy to be exactly that stupid.</p>
+<p>On top of that, if you happened to be lucky enough not to make the error above, there’s a pretty good chance you’ll mess up the other way and write code like this:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># this time I terminate my folder path with a slash...</span></span>
+<span id="cb5-2">dir2 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"project_root/a_folder/"</span></span>
+<span id="cb5-3"></span>
+<span id="cb5-4"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># ...and 3000 lines later I forget I did that</span></span>
+<span id="cb5-5"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">paste</span>(dir2, file, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">sep =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"/"</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "project_root/a_folder//file.ext"</code></pre>
+</div>
+</div>
+<p>In a way, this is a worse mistake. In the first example you’ll definitely notice the problem because your code breaks the moment you try to work with a file that doesn’t exist, and R will throw an error. But the second one won’t do that. It’s a valid path to the relevant file, so your code will work just fine… right up to the point that you try to write a regular expression that operates on paths and that extra slash breaks something. Worse yet, if your project has expanded to the point that you’re writing a regex to operate on vectors of paths you can be <em>entirely</em> certain you’ve lost tract of the initial mistake that created the problem, and you’re trapped in debugging mode for an hour and a half trying to work out where you went wrong.</p>
+<p>ASK. ME. HOW. I. KNOW.</p>
+<p>In any case, the point in all this is that human <a href="https://en.wikipedia.org/wiki/Working_memory">working memory capacity</a> is about 7 plus or minus 2 “chunks” of meaninful information:<sup>1</sup> we literally do not have the ability to hold a lot of code in our mind at once. So if you manage your file paths using <code>paste()</code> I guarantee you that you <em>will</em> mess this up eventually. Not because you’re stupid, but because you are human.</p>
+<p>Wouldn’t it be nice if we had a function… let’s call it <code>path()</code>… that protects us from this particular kind of human frailty? Of course it would.</p>
+<p><br></p>
+</section>
+<section id="lorem-ipsum-text" class="level2">
+<h2 class="anchored" data-anchor-id="lorem-ipsum-text">Lorem ipsum text</h2>
+<p>Now that we’ve established some motivation for caring about this topic</p>
+<p>– <strong>lol. lmao even</strong> <br> – oh hush <br></p>
+<p>it will be convenient to have a little tool that generates <a href="https://en.wikipedia.org/wiki/Lorem_ipsum">lorem ipsum text</a> that we can write to files that we’ll then manipulate using fs. To that end, I’ll define a <code>lorem_text()</code> function that uses the <a href="http://pkg.garrickadenbuie.com/lorem/">lorem</a> and <a href="https://withr.r-lib.org/">withr</a> packages to reproducibly generate paragraphs of lorem ipsum text:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1">lorem_text <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">function</span>(seed, paragraphs, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">digit_pad =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>) {</span>
+<span id="cb7-2">  lorem <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> withr<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">with_seed</span>(seed, lorem<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ipsum</span>(paragraphs))</span>
+<span id="cb7-3">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">names</span>(lorem) <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> purrr<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">imap_chr</span>(lorem, \(x, y) <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">paste</span>(</span>
+<span id="cb7-4">    stringr<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">str_pad</span>(seed, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">width =</span> digit_pad, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">pad =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"0"</span>),</span>
+<span id="cb7-5">    stringr<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">str_pad</span>(y, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">width =</span> digit_pad, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">pad =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"0"</span>),</span>
+<span id="cb7-6">    stringr<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">str_to_lower</span>(stringr<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">str_remove_all</span>(x, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">" .*$"</span>)),</span>
+<span id="cb7-7">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">sep =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"_"</span></span>
+<span id="cb7-8">  ))</span>
+<span id="cb7-9">  lorem</span>
+<span id="cb7-10">}</span></code></pre></div>
+</div>
+<p>To call this function we pass the <code>seed</code> value for the random number generator to use, and the number of <code>paragraphs</code> of lorem ipsum text to create:<sup>2</sup></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">lorem_text</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">seed =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">999</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">paragraphs =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>)</span></code></pre></div>
+</div>
+<p><em>Amet arcu suscipit donec cras inceptos rhoncus varius hac? Sociosqu luctus iaculis; ut sociosqu porta risus tristique phasellus? Duis porta in placerat phasellus class. Dapibus nostra ac, aptent nam tempus mattis eleifend metus.</em></p>
+<p><em>Lorem molestie in elementum nascetur scelerisque cum pulvinar felis massa. Fringilla est tortor auctor nulla tristique ac mi commodo vitae. Torquent sodales eget lacinia quam elementum sodales. Cras porttitor iaculis curae eleifend fringilla pellentesque nascetur. Integer ligula per dignissim, dapibus feugiat nullam urna tristique viverra sociis felis etiam.</em></p>
+<p><em>Sit posuere suscipit accumsan mus curabitur nullam, etiam scelerisque donec justo libero posuere. Mattis curae et litora.</em></p>
+<p>Though not obvious from the printed output, the data structure that this function returns is a named list under the hood:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">names</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">lorem_text</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">seed =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">999</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">paragraphs =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>))</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "999_001_amet"  "999_002_lorem" "999_003_sit"  </code></pre>
+</div>
+</div>
+<p>The names here follow a regular pattern: they contain the seed number, the paragraph number, and the first word in the paragraph, separated by underscores. In the examples below, these names become file names, and the text in each paragraph become the content written to the various files.</p>
+<p>– <strong>thrilling</strong> <br> – so you’re just set on doing this? you’re going to snipe at me the whole way through?<br> – <br> – <br> – <br> – <br> – <strong>yes.</strong></p>
+<p><br></p>
+<p><img src="https://blog.djnavarro.net/posts/2024-10-06_fs/images/mr-cup-fabien-barral-o6GEPQXnqMY-unsplash.jpg" class="img-fluid"></p>
+<p><br></p>
+</section>
+<section id="building-paths" class="level2">
+<h2 class="anchored" data-anchor-id="building-paths">Building paths</h2>
+<p>So as I was saying earlier, about 90% of my usage of the fs package is via the <code>path()</code> function used to construct file paths, so it’s the natural place to start. Here’s a very simple example that specifies the path from my blog root to this quarto document:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">path</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"posts"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"2024-09-15_fs"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"index.qmd"</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>posts/2024-09-15_fs/index.qmd</code></pre>
+</div>
+</div>
+<p>I’m building this post on linux, so paths are separated by the <code>"/"</code> character. If I were building on windows, I’d get a different result.</p>
+<p>The <code>path()</code> function is vectorised and doesn’t require that the paths in question actually exist on the machine, so I can do something like this to define a vector of paths that I can work with later on:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1">lorem <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">lorem_text</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">seed =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">paragraphs =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">20</span>)</span>
+<span id="cb13-2">lorem_paths <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">path</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"lorem"</span>, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">names</span>(lorem))</span>
+<span id="cb13-3">lorem_paths</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>lorem/001_001_consectetur lorem/001_002_ipsum       
+lorem/001_003_elit        lorem/001_004_lorem       
+lorem/001_005_consectetur lorem/001_006_sit         
+lorem/001_007_sit         lorem/001_008_adipiscing  
+lorem/001_009_adipiscing  lorem/001_010_lorem       
+lorem/001_011_lorem       lorem/001_012_adipiscing  
+lorem/001_013_amet        lorem/001_014_sit         
+lorem/001_015_elit        lorem/001_016_ipsum       
+lorem/001_017_adipiscing  lorem/001_018_consectetur 
+lorem/001_019_amet        lorem/001_020_consectetur </code></pre>
+</div>
+</div>
+<p>These are relative paths, and since (by default) quarto blog posts are executed with the working directory set to the folder that contains the document, these paths are implicitly taken relative to this folder.</p>
+<p>– <strong>wow how exci…</strong> <br> – shut up, nobody wants to hear from you <br> – <strong>uh huh</strong> <br></p>
+<p><br></p>
+</section>
+<section id="file-system-operations" class="level2">
+<h2 class="anchored" data-anchor-id="file-system-operations">File system operations</h2>
+<p>The second most common thing I find myself using the fs package for is basic file system operations: creating files and folders, copying, deleting, and moving files, etc. For example, the paths I specified in the previous section all refer to a folder called “lorem”, but that folder doesn’t currently exist. Indeed, I can verify that no such folder exists using the <code>dir_exists()</code> function”:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">dir_exists</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"lorem"</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>lorem 
+FALSE </code></pre>
+</div>
+</div>
+<p>That’s handy to know, because I actually <em>do</em> want this folder to exist, and fortunately I can create the folder I want from R by using <code>dir_create()</code>, and then verify that it now exists:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">dir_create</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"lorem"</span>)</span>
+<span id="cb17-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">dir_exists</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"lorem"</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>lorem 
+ TRUE </code></pre>
+</div>
+</div>
+<p>Like all functions in fs, these are vectorised operations. For example, I can test for the existence of multiple folders at once like this:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">dir_exists</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"lorem"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"ipsum"</span>))</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>lorem ipsum 
+ TRUE FALSE </code></pre>
+</div>
+</div>
+<p>In any case, now that the “lorem” directory exists, I can use <code>file_create()</code> to create the files listed in the <code>lorem_paths</code> vector I defined earlier. Again, <code>file_create()</code> is vectorised, so I can pass the vector of file names directly with no need to write a loop:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">file_create</span>(lorem_paths)</span></code></pre></div>
+</div>
+<p>Though there is no output printed to the console, all the files I requested have now been created. To see this, I can use <code>dir_ls()</code> to return a vector containing all the file names within a specified folder:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">dir_ls</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"lorem"</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>lorem/001_001_consectetur lorem/001_002_ipsum       
+lorem/001_003_elit        lorem/001_004_lorem       
+lorem/001_005_consectetur lorem/001_006_sit         
+lorem/001_007_sit         lorem/001_008_adipiscing  
+lorem/001_009_adipiscing  lorem/001_010_lorem       
+lorem/001_011_lorem       lorem/001_012_adipiscing  
+lorem/001_013_amet        lorem/001_014_sit         
+lorem/001_015_elit        lorem/001_016_ipsum       
+lorem/001_017_adipiscing  lorem/001_018_consectetur 
+lorem/001_019_amet        lorem/001_020_consectetur </code></pre>
+</div>
+</div>
+<p>Okay, that’s nice, but I don’t actually want a folder full of empty files. So let’s delete the folder and everything in it. That’s easy enough to do with <code>dir_delete()</code></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">dir_delete</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"lorem"</span>)</span></code></pre></div>
+</div>
+<p>And just like that, the files and folder are gone. Alternatively, if I had wanted only to delete some of the files I could have used <code>file_delete()</code> to be a little more selective!</p>
+<p><br></p>
+<p><img src="https://blog.djnavarro.net/posts/2024-10-06_fs/images/chuttersnap-aT5-sSYP6e4-unsplash.jpg" class="img-fluid"></p>
+<p><br></p>
+</section>
+<section id="file-trees" class="level2">
+<h2 class="anchored" data-anchor-id="file-trees">File trees</h2>
+<p>Okay that’s handy. As a slightly fancier example, though, let’s try creating files with a little more structure to them. Rather than write each of the lorem files to the same directory, we can place them in subfolders based on the first word in the lorem text. To do that, I’ll need to create these directories:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb25" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1">lorem_dirs <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">unique</span>(stringr<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">str_remove</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">names</span>(lorem), <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"^.*_"</span>))</span>
+<span id="cb25-2">lorem_dirs</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "consectetur" "ipsum"       "elit"        "lorem"       "sit"        
+[6] "adipiscing"  "amet"       </code></pre>
+</div>
+</div>
+<p>However, I don’t want to create these as top level folders: my file structure could become a mess if I do that. Instead, I’ll create them as subfolders of a “nonsense” folder. I can do this with a single call to <code>dir_create()</code>:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb27" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">dir_create</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">path</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"nonsense"</span>, lorem_dirs))</span></code></pre></div>
+</div>
+<p>This command creates the “nonsense” folder itself, and populates it with all the subfolders listed in <code>lorem_dirs</code>. To see this displayed as a nice file tree, I’ll use the <code>dir_tree()</code> function:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb28" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">dir_tree</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"nonsense"</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>nonsense
+├── adipiscing
+├── amet
+├── consectetur
+├── elit
+├── ipsum
+├── lorem
+└── sit</code></pre>
+</div>
+</div>
+<p>Having created a nested directory structure, I can now define the paths to which I want to write files:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb30" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1">lorem_paths <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">path</span>(</span>
+<span id="cb30-2">  <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"nonsense"</span>, </span>
+<span id="cb30-3">  stringr<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">str_remove</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">names</span>(lorem), <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"^.*_"</span>), </span>
+<span id="cb30-4">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">names</span>(lorem)</span>
+<span id="cb30-5">)</span>
+<span id="cb30-6">lorem_paths</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>nonsense/consectetur/001_001_consectetur
+nonsense/ipsum/001_002_ipsum
+nonsense/elit/001_003_elit
+nonsense/lorem/001_004_lorem
+nonsense/consectetur/001_005_consectetur
+nonsense/sit/001_006_sit
+nonsense/sit/001_007_sit
+nonsense/adipiscing/001_008_adipiscing
+nonsense/adipiscing/001_009_adipiscing
+nonsense/lorem/001_010_lorem
+nonsense/lorem/001_011_lorem
+nonsense/adipiscing/001_012_adipiscing
+nonsense/amet/001_013_amet
+nonsense/sit/001_014_sit
+nonsense/elit/001_015_elit
+nonsense/ipsum/001_016_ipsum
+nonsense/adipiscing/001_017_adipiscing
+nonsense/consectetur/001_018_consectetur
+nonsense/amet/001_019_amet
+nonsense/consectetur/001_020_consectetur</code></pre>
+</div>
+</div>
+<p>For each path in the <code>lorem_paths</code> vector, and each passage of text in the <code>lorem</code> object, we can write the text to the corresponding file like this:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb32" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1">purrr<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">walk</span>(</span>
+<span id="cb32-2">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">seq_along</span>(lorem),</span>
+<span id="cb32-3">  \(x) brio<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">write_lines</span>(</span>
+<span id="cb32-4">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">text =</span> lorem[[x]],</span>
+<span id="cb32-5">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">path =</span> lorem_paths[x]</span>
+<span id="cb32-6">  )</span>
+<span id="cb32-7">)</span></code></pre></div>
+</div>
+<p>The file tree now looks like this:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb33" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">dir_tree</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"nonsense"</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>nonsense
+├── adipiscing
+│   ├── 001_008_adipiscing
+│   ├── 001_009_adipiscing
+│   ├── 001_012_adipiscing
+│   └── 001_017_adipiscing
+├── amet
+│   ├── 001_013_amet
+│   └── 001_019_amet
+├── consectetur
+│   ├── 001_001_consectetur
+│   ├── 001_005_consectetur
+│   ├── 001_018_consectetur
+│   └── 001_020_consectetur
+├── elit
+│   ├── 001_003_elit
+│   └── 001_015_elit
+├── ipsum
+│   ├── 001_002_ipsum
+│   └── 001_016_ipsum
+├── lorem
+│   ├── 001_004_lorem
+│   ├── 001_010_lorem
+│   └── 001_011_lorem
+└── sit
+    ├── 001_006_sit
+    ├── 001_007_sit
+    └── 001_014_sit</code></pre>
+</div>
+</div>
+<p><br></p>
+</section>
+<section id="file-information" class="level2 page-columns page-full">
+<h2 class="anchored" data-anchor-id="file-information">File information</h2>
+<p>Sometimes it is useful to retrieve information about a file, analogous to the <a href="https://www.man7.org/linux/man-pages/man2/stat.2.html"><code>stat</code></a> command on linux systems. From the terminal, you’d get output that looks like this:<sup>3</sup></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb35" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">system</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"stat nonsense/lorem/001_004_lorem"</span>)</span></code></pre></div>
+</div>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>  File: nonsense/lorem/001_004_lorem
+  Size: 474         Blocks: 8          IO Block: 4096   regular file
+Device: 252,1   Inode: 1586402     Links: 1
+Access: (0664/-rw-rw-r--)  Uid: ( 1000/danielle)   Gid: ( 1000/danielle)
+Access: 2024-10-06 14:10:44.468497699 +1100
+Modify: 2024-10-06 14:10:44.468497699 +1100
+Change: 2024-10-06 14:10:44.468497699 +1100
+ Birth: 2024-10-06 14:10:44.468497699 +1100</code></pre>
+</div>
+</div>
+<p>The <code>file_info()</code> function in the fs package mirrors this behaviour, all nicely vectorised so you can pass a vector of file paths, and with output organised into a tidy little tibble to make it easy to work with programmatically:</p>
+<div class="cell column-screen-inset">
+<div class="sourceCode cell-code" id="cb37" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">file_info</span>(lorem_paths[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">4</span>])</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 4 × 18
+  path                                     type         size permissions modification_time   user     group    device_id hard_links special_device_id   inode block_size blocks flags generation access_time         change_time         birth_time         
+  &lt;fs::path&gt;                               &lt;fct&gt; &lt;fs::bytes&gt; &lt;fs::perms&gt; &lt;dttm&gt;              &lt;chr&gt;    &lt;chr&gt;        &lt;dbl&gt;      &lt;dbl&gt;             &lt;dbl&gt;   &lt;dbl&gt;      &lt;dbl&gt;  &lt;dbl&gt; &lt;int&gt;      &lt;dbl&gt; &lt;dttm&gt;              &lt;dttm&gt;              &lt;dttm&gt;             
+1 nonsense/consectetur/001_001_consectetur file          307 rw-rw-r--   2024-10-06 14:10:44 danielle danielle     64513          1                 0 1586371       4096      8     0          0 2024-10-06 14:10:44 2024-10-06 14:10:44 2024-10-06 14:10:44
+2 nonsense/ipsum/001_002_ipsum             file          322 rw-rw-r--   2024-10-06 14:10:44 danielle danielle     64513          1                 0 1586372       4096      8     0          0 2024-10-06 14:10:44 2024-10-06 14:10:44 2024-10-06 14:10:44
+3 nonsense/elit/001_003_elit               file          397 rw-rw-r--   2024-10-06 14:10:44 danielle danielle     64513          1                 0 1586401       4096      8     0          0 2024-10-06 14:10:44 2024-10-06 14:10:44 2024-10-06 14:10:44
+4 nonsense/lorem/001_004_lorem             file          474 rw-rw-r--   2024-10-06 14:10:44 danielle danielle     64513          1                 0 1586402       4096      8     0          0 2024-10-06 14:10:44 2024-10-06 14:10:44 2024-10-06 14:10:44</code></pre>
+</div>
+</div>
+<p>There is an analogous function <code>dir_info()</code> that can be applied to a directory, and the output is structured the same way:</p>
+<div class="cell column-screen-inset">
+<div class="sourceCode cell-code" id="cb39" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">dir_info</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"nonsense"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">recurse =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 27 × 18
+   path                                     type             size permissions modification_time   user     group    device_id hard_links special_device_id   inode block_size blocks flags generation access_time         change_time         birth_time         
+   &lt;fs::path&gt;                               &lt;fct&gt;     &lt;fs::bytes&gt; &lt;fs::perms&gt; &lt;dttm&gt;              &lt;chr&gt;    &lt;chr&gt;        &lt;dbl&gt;      &lt;dbl&gt;             &lt;dbl&gt;   &lt;dbl&gt;      &lt;dbl&gt;  &lt;dbl&gt; &lt;int&gt;      &lt;dbl&gt; &lt;dttm&gt;              &lt;dttm&gt;              &lt;dttm&gt;             
+ 1 nonsense/adipiscing                      directory          4K rwxr-xr-x   2024-10-06 14:10:44 danielle danielle     64513          2                 0 1586368       4096      8     0          0 2024-10-06 14:10:44 2024-10-06 14:10:44 2024-10-06 14:10:44
+ 2 nonsense/adipiscing/001_008_adipiscing   file              415 rw-rw-r--   2024-10-06 14:10:44 danielle danielle     64513          1                 0 1586419       4096      8     0          0 2024-10-06 14:10:44 2024-10-06 14:10:44 2024-10-06 14:10:44
+ 3 nonsense/adipiscing/001_009_adipiscing   file              370 rw-rw-r--   2024-10-06 14:10:44 danielle danielle     64513          1                 0 1586420       4096      8     0          0 2024-10-06 14:10:44 2024-10-06 14:10:44 2024-10-06 14:10:44
+ 4 nonsense/adipiscing/001_012_adipiscing   file              254 rw-rw-r--   2024-10-06 14:10:44 danielle danielle     64513          1                 0 1586514       4096      8     0          0 2024-10-06 14:10:44 2024-10-06 14:10:44 2024-10-06 14:10:44
+ 5 nonsense/adipiscing/001_017_adipiscing   file              393 rw-rw-r--   2024-10-06 14:10:44 danielle danielle     64513          1                 0 1589481       4096      8     0          0 2024-10-06 14:10:44 2024-10-06 14:10:44 2024-10-06 14:10:44
+ 6 nonsense/amet                            directory          4K rwxr-xr-x   2024-10-06 14:10:44 danielle danielle     64513          2                 0 1586369       4096      8     0          0 2024-10-06 14:10:44 2024-10-06 14:10:44 2024-10-06 14:10:44
+ 7 nonsense/amet/001_013_amet               file              367 rw-rw-r--   2024-10-06 14:10:44 danielle danielle     64513          1                 0 1586515       4096      8     0          0 2024-10-06 14:10:44 2024-10-06 14:10:44 2024-10-06 14:10:44
+ 8 nonsense/amet/001_019_amet               file              313 rw-rw-r--   2024-10-06 14:10:44 danielle danielle     64513          1                 0 1589484       4096      8     0          0 2024-10-06 14:10:44 2024-10-06 14:10:44 2024-10-06 14:10:44
+ 9 nonsense/consectetur                     directory          4K rwxr-xr-x   2024-10-06 14:10:44 danielle danielle     64513          2                 0 1586360       4096      8     0          0 2024-10-06 14:10:44 2024-10-06 14:10:44 2024-10-06 14:10:44
+10 nonsense/consectetur/001_001_consectetur file              307 rw-rw-r--   2024-10-06 14:10:44 danielle danielle     64513          1                 0 1586371       4096      8     0          0 2024-10-06 14:10:44 2024-10-06 14:10:44 2024-10-06 14:10:44
+# ℹ 17 more rows</code></pre>
+</div>
+</div>
+<p>That being said, it’s pretty uncommon in my experience to need all that information. Often the only thing you’re interested in is the file size column, and the fs package provides a convenience function that extracts that information for you:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb41" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">file_size</span>(lorem_paths)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>307 322 397 474 196 599 501 415 370 135 228 254 367 360 357 375 393 552 313 523</code></pre>
+</div>
+</div>
+<p><br></p>
+<p>– <strong>wha… oh, huh, i guess i lost consciousness there. so you’re still talking huh?</strong> <br> – sweetie you’re literally a figment of my imagination you don’t have a consciousness to lose <br> – <strong>bitch</strong> <br> – <code>¯\_(ツ)_/¯</code></p>
+</section>
+<section id="path-arithmetic" class="level2">
+<h2 class="anchored" data-anchor-id="path-arithmetic">Path arithmetic</h2>
+<p>My absolute favourite collection of functions within fs are the ones that can be used to perform “path arithmetic”, by which what I really mean is handy string manipulations for common tasks that save me from the horrior of writing a regular expression. Because, like all right-thinking people, I loathe regular expressions with a passion I usually reserve for real estate agents and people who don’t pick up after their dogs.</p>
+<p>To illustrate the idea, let’s think about some common tasks we might need to perform using the <code>lorem_paths</code> vector:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb43" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1">lorem_paths</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>nonsense/consectetur/001_001_consectetur
+nonsense/ipsum/001_002_ipsum
+nonsense/elit/001_003_elit
+nonsense/lorem/001_004_lorem
+nonsense/consectetur/001_005_consectetur
+nonsense/sit/001_006_sit
+nonsense/sit/001_007_sit
+nonsense/adipiscing/001_008_adipiscing
+nonsense/adipiscing/001_009_adipiscing
+nonsense/lorem/001_010_lorem
+nonsense/lorem/001_011_lorem
+nonsense/adipiscing/001_012_adipiscing
+nonsense/amet/001_013_amet
+nonsense/sit/001_014_sit
+nonsense/elit/001_015_elit
+nonsense/ipsum/001_016_ipsum
+nonsense/adipiscing/001_017_adipiscing
+nonsense/consectetur/001_018_consectetur
+nonsense/amet/001_019_amet
+nonsense/consectetur/001_020_consectetur</code></pre>
+</div>
+</div>
+<p>The most common task that I have to do regularly with paths like this is extract the file name. Under other circumstances I’d have to spend time asking myself “are these paths correctly formatted?” and “god, how do I write a basic regex again????” but thankfully the <code>path_file()</code> functions saves me from this terrible fate:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb45" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">path_file</span>(lorem_paths)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] "001_001_consectetur" "001_002_ipsum"       "001_003_elit"       
+ [4] "001_004_lorem"       "001_005_consectetur" "001_006_sit"        
+ [7] "001_007_sit"         "001_008_adipiscing"  "001_009_adipiscing" 
+[10] "001_010_lorem"       "001_011_lorem"       "001_012_adipiscing" 
+[13] "001_013_amet"        "001_014_sit"         "001_015_elit"       
+[16] "001_016_ipsum"       "001_017_adipiscing"  "001_018_consectetur"
+[19] "001_019_amet"        "001_020_consectetur"</code></pre>
+</div>
+</div>
+<p>Analogously, if I need to extract the directory name and ignore the file name, I could waste precious seconds of my life thinking about this tedious task using first principles, or I could simply use <code>path_dir()</code> to do this:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb47" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">path_dir</span>(lorem_paths)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] "nonsense/consectetur" "nonsense/ipsum"       "nonsense/elit"       
+ [4] "nonsense/lorem"       "nonsense/consectetur" "nonsense/sit"        
+ [7] "nonsense/sit"         "nonsense/adipiscing"  "nonsense/adipiscing" 
+[10] "nonsense/lorem"       "nonsense/lorem"       "nonsense/adipiscing" 
+[13] "nonsense/amet"        "nonsense/sit"         "nonsense/elit"       
+[16] "nonsense/ipsum"       "nonsense/adipiscing"  "nonsense/consectetur"
+[19] "nonsense/amet"        "nonsense/consectetur"</code></pre>
+</div>
+</div>
+<p>Much easier, and frankly more reliable, than trying to do the job myself.</p>
+<p>There’s even a <code>path_common()</code> function that returns the part of the path that is shared by all paths in the vector. I’ll admit I don’t use that one as often, but it’s kind of nice that the package supplies this. I appreciate the attention to detail involved in recognising that sometimes you do actually need this:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb49" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">path_common</span>(lorem_paths)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>nonsense</code></pre>
+</div>
+</div>
+<p>Sure, I already knew that “nonsense” is the folder containing all these files because I designed this little exercise that way, but still pretty handy, especially when you combine it with <code>path_abs()</code> that converts a relative path to an absolute path to find the actual location on my machine that contains all these files:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb51" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1">lorem_paths <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span> </span>
+<span id="cb51-2">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">path_common</span>() <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span> </span>
+<span id="cb51-3">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">path_abs</span>()</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>/home/danielle/GitHub/djnavarro/blog/posts/2024-10-06_fs/nonsense</code></pre>
+</div>
+</div>
+<p>You can also call <code>path_split()</code> to split paths into a list of character vectors, where each such vector contains one element per level in the file hierarchy. This behaves analogously to base <code>split()</code> or <code>stringr::str_split()</code>, but automatically splits using the relevant file separator character on your operating system:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb53" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb53-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">path_split</span>(lorem_paths[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>])</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[[1]]
+[1] "nonsense"            "consectetur"         "001_001_consectetur"
+
+[[2]]
+[1] "nonsense"      "ipsum"         "001_002_ipsum"</code></pre>
+</div>
+</div>
+<p>It’s not the prettiest of outputs, but notice that you can use this as the basis for a list column in a data frame that you can then unnest with the assistance of tidyr:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb55" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb55-1">lorem_paths <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span> </span>
+<span id="cb55-2">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">path_split</span>() <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span> </span>
+<span id="cb55-3">  tibble<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">tibble</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">level =</span> _) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span> </span>
+<span id="cb55-4">  tidyr<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">unnest_wider</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"level"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">names_sep =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"_"</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 20 × 3
+   level_1  level_2     level_3            
+   &lt;chr&gt;    &lt;chr&gt;       &lt;chr&gt;              
+ 1 nonsense consectetur 001_001_consectetur
+ 2 nonsense ipsum       001_002_ipsum      
+ 3 nonsense elit        001_003_elit       
+ 4 nonsense lorem       001_004_lorem      
+ 5 nonsense consectetur 001_005_consectetur
+ 6 nonsense sit         001_006_sit        
+ 7 nonsense sit         001_007_sit        
+ 8 nonsense adipiscing  001_008_adipiscing 
+ 9 nonsense adipiscing  001_009_adipiscing 
+10 nonsense lorem       001_010_lorem      
+11 nonsense lorem       001_011_lorem      
+12 nonsense adipiscing  001_012_adipiscing 
+13 nonsense amet        001_013_amet       
+14 nonsense sit         001_014_sit        
+15 nonsense elit        001_015_elit       
+16 nonsense ipsum       001_016_ipsum      
+17 nonsense adipiscing  001_017_adipiscing 
+18 nonsense consectetur 001_018_consectetur
+19 nonsense amet        001_019_amet       
+20 nonsense consectetur 001_020_consectetur</code></pre>
+</div>
+</div>
+<p>Note that this trick also works when the paths are of different lengths. For example, suppose I were to use <code>dir_ls()</code> to return the complete list of all files <em>and</em> folders contained within the “nonsense” folder, some of the paths will be length 2 rather than length 3, because the folder paths are also included in the output. Because <code>unnest_wider()</code> is able to handle ragged list columns, you get this as the output:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb57" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb57-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">dir_ls</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"nonsense"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">recurse =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span> </span>
+<span id="cb57-2">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">path_split</span>() <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span> </span>
+<span id="cb57-3">  tibble<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">tibble</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">level =</span> _) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span> </span>
+<span id="cb57-4">  tidyr<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">unnest_wider</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"level"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">names_sep =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"_"</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 27 × 3
+   level_1  level_2     level_3            
+   &lt;chr&gt;    &lt;chr&gt;       &lt;chr&gt;              
+ 1 nonsense adipiscing  &lt;NA&gt;               
+ 2 nonsense adipiscing  001_008_adipiscing 
+ 3 nonsense adipiscing  001_009_adipiscing 
+ 4 nonsense adipiscing  001_012_adipiscing 
+ 5 nonsense adipiscing  001_017_adipiscing 
+ 6 nonsense amet        &lt;NA&gt;               
+ 7 nonsense amet        001_013_amet       
+ 8 nonsense amet        001_019_amet       
+ 9 nonsense consectetur &lt;NA&gt;               
+10 nonsense consectetur 001_001_consectetur
+# ℹ 17 more rows</code></pre>
+</div>
+</div>
+<p><br></p>
+<p><img src="https://blog.djnavarro.net/posts/2024-10-06_fs/images/leone-venter-mTkXSSScrzw-unsplash.jpg" class="img-fluid"> <br></p>
+</section>
+<section id="epilogue" class="level2">
+<h2 class="anchored" data-anchor-id="epilogue">Epilogue</h2>
+<p>So anyway, that’s about everything I wanted to talk about. It’s not an exhaustive listing of course, and there are a variety of other helper functions in fs, some of which I very occasionally make use of. For instance, you can use <code>file_chmod()</code> to change file permissions, <code>file_touch()</code> to change file access and modification time metadata, <code>file_temp()</code> to create a temporary file, and so on. I find I don’t use these as often, but I’m glad they exist.</p>
+<p>– <strong>thats nice hon but seriously, why write any of this? i don’t see the point</strong> <br> – isnt it enough that i wanted to write it? i mean, why else do we even have a blog, if not to write about whatever we feel like writing about? if other people want to read it, good for them, and if they dont… also good for them. ffs, the whole idea of “blogging as thought leadership” needs to die in a fire <br> – <strong>so i guess we really <em>are</em> here to fuck spiders huh?</strong> <br> – always, babe. always</p>
+
+
+</section>
+
+
+<div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p>No I absolutely will not be going into details about the subtle differences in working memory capacity as a function of modality and age, or the nuances about what precisely comprises as chunk, or whatever in the well-actually fuck you want to nitpick. Do I look like a cognitive scientist to you?↩︎</p></li>
+<li id="fn2"><p>In the interests of tranparency I should mention that if you tried this code as-is within a quarto or R markdown document, it wouldn’t necessarily be displayed in italics like this. That’s a personal affectation I added in this post to more clearly delineate the end of the R output from the start of the markdown text.↩︎</p></li>
+<li id="fn3"><p>Sigh. I’m hiding something. If you do this command at the R console, you will indeed get the output shown below. However, if you try to do this from within R markdown or quarto you will not. This is because the output you see here reflects the system stdout, which is different from the R console stdout, and if you want to capture this within the HTML document you have to do something a little fancier, setting <code>intern = TRUE</code> to ensure <code>system()</code> returns the terminal output as a character vector that you can then print to the R console in the usual way with <code>cat()</code>. See <a href="https://stackoverflow.com/questions/36928322/how-to-capture-the-output-of-system">this</a> discussion on stackoverflow.↩︎</p></li>
+</ol>
+</section><section class="quarto-appendix-contents" id="quarto-reuse"><h2 class="anchored quarto-appendix-heading">Reuse</h2><div class="quarto-appendix-contents"><div><a rel="license" href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></div></div></section><section class="quarto-appendix-contents" id="quarto-citation"><h2 class="anchored quarto-appendix-heading">Citation</h2><div><div class="quarto-appendix-secondary-label">BibTeX citation:</div><pre class="sourceCode code-with-copy quarto-appendix-bibtex"><code class="sourceCode bibtex">@online{navarro2024,
+  author = {Navarro, Danielle},
+  title = {For Fs},
+  date = {2024-10-06},
+  url = {https://blog.djnavarro.net/posts/2024-10-06_fs/},
+  langid = {en}
+}
+</code></pre><div class="quarto-appendix-secondary-label">For attribution, please cite this work as:</div><div id="ref-navarro2024" class="csl-entry quarto-appendix-citeas">
+Navarro, Danielle. 2024. <span>“For Fs.”</span> October 6, 2024. <a href="https://blog.djnavarro.net/posts/2024-10-06_fs/">https://blog.djnavarro.net/posts/2024-10-06_fs/</a>.
+</div></div></section></div> ]]></description>
+  <category>R</category>
+  <category>Command Line</category>
+  <guid>https://blog.djnavarro.net/posts/2024-10-06_fs/</guid>
+  <pubDate>Sat, 05 Oct 2024 14:00:00 GMT</pubDate>
+  <media:content url="https://blog.djnavarro.net/posts/2024-10-06_fs/images/mr-cup-fabien-barral-o6GEPQXnqMY-unsplash.jpg" medium="image" type="image/jpeg"/>
+</item>
 <item>
   <title>Use of flextable</title>
   <dc:creator>Danielle Navarro</dc:creator>
@@ -29494,1608 +30365,6 @@ for Linux).”</span> July 2, 2023. <a href="https://blog.djnavarro.net/posts/20
   <guid>https://blog.djnavarro.net/posts/2023-07-02_the-ides-of-wsl/</guid>
   <pubDate>Sat, 01 Jul 2023 14:00:00 GMT</pubDate>
   <media:content url="https://blog.djnavarro.net/posts/2023-07-02_the-ides-of-wsl/img/death-of-ceasar.jpg" medium="image" type="image/jpeg"/>
-</item>
-<item>
-  <title>Makefiles. Or, the balrog and the submersible</title>
-  <dc:creator>Danielle Navarro</dc:creator>
-  <link>https://blog.djnavarro.net/posts/2023-06-30_makefiles/</link>
-  <description><![CDATA[ 
-
-
-
-
-
-<!--------------- my typical setup ----------------->
-<!--------------- post begins here ----------------->
-<p>I have a secret to confess: I have been writing code for over 20 years, and until about a month ago I have been loathe even to try using <a href="https://en.wikipedia.org/wiki/Make_(software)">Make</a>. For too long I have feared catastrophic implosion should I be reckless enough attempt to dive into these dark waters.<sup>1</sup> Even now, as the sunlight fades and I pass below the surface into the treacherous realm below, I can hear the ominous sounds of compressive stress upon my psyche. I imagine the betentacled krakenlike beasts native to this realm congregating outside the hull.</p>
-<p>Drums, drums in the deep.</p>
-<p>But I am here now and I cannot get out. I shall have to complete this blog post in the hope that a wizard and his merry little troupe of clueless hobbits may one day discover the tale of my tragic descent and eventual demise at the hands of build automation balrogs.</p>
-<p><br></p>
-<div class="quarto-figure quarto-figure-center page-columns page-full">
-<figure class="figure page-columns page-full">
-<p><img src="https://blog.djnavarro.net/posts/2023-06-30_makefiles/img/gothmog.jpg" class="img-fluid figure-img" alt="Stylised art showing a balrog riding a dragon."></p>
-<figcaption class="margin-caption">“Gothmog at the Storming of Gondolin”, depicting a balrog riding a dragon. The piece is CC-BY licenced by the artist <a href="https://en.wikipedia.org/wiki/Tom_Loback">Tom Loback</a></figcaption>
-</figure>
-</div>
-<p><br></p>
-<section id="farewell-to-the-broad-sunlit-uplands" class="level2">
-<h2 class="anchored" data-anchor-id="farewell-to-the-broad-sunlit-uplands">Farewell to the broad, Sunlit Uplands</h2>
-<p>Every tragic narrative begins with a fatal mistake, the hubris of the doomed making the terrible choice that sealed their fate well before the story gets underway. In this case, that mistake was deciding that now is the time to read a 1200 page book on C++. Absolutely cursed decision. There was no way I wasn’t going to end up swallowed by a yawning hellmouth once that choice had been made. But – as the saying goes – when one descends into the abyss to be crushed by lovecraftian horrors, it’s all about the journey and not the destination.</p>
-<p>Here’s how the sad story unfolded. Having read through the first hundred or so pages of the C++ necronomicon (the “fucking around” stage), I started encountering the inevitable consequences of the fact that (a) C++ is a compiled language, and (b) I am a person who obsessively takes notes as she reads and writes her own code to accompany the notes. And so it came to pass that (in the “finding out” stage of this tragedy) I was barely one chapter into the book and I’d written almost 50 little baby C++ programs, every one of them a helpless monster gnashing it’s tiny teeth in ravenous hunger, demanding to be compiled before it can do anything useful.</p>
-<p>Oh no, my precious abominations, I said to them. I already have human children to feed and care for, I’ll not fall into the trap of lovingly passing each of you individually to the compiler for nurture and sustenance with bespoke hand crafted calls to clang++. That way lies madness and chaos. No, I shall hire a metaphorical nanny/butler/build-manager to feed you and compile you when you need compiling, to politely inform me each time a little C++ demon has grown into to a new binary file, and to take care of sundry other drudgeries with which I do not wish to be burdened. I shall write a <code>Makefile</code>.</p>
-<p>And with that my doomed submersible slipped below the waves.</p>
-</section>
-<section id="the-decay-of-that-colossal-wreck" class="level2 page-columns page-full">
-<h2 class="anchored" data-anchor-id="the-decay-of-that-colossal-wreck">The decay of that colossal Wreck</h2>
-<p>As the light fades away visions of my Ozymandian future cross my eyes. I imagine the Works that I will construct, upon which even the Mighty will gaze and despair. Hints of make targets that I will specify and the wonders that will get built with automations.</p>
-<p>Behold!</p>
-<p>Here is the <code>Makefile</code> I wrote for my side project. It’s a minor incantation at best, a small spell to feed my tiresome C++ babies into the maw of clang++ whenever necessary, and renders all my boring markdown scratchings into graven html with the help of pandoc.</p>
-<div class="cell" data-file="_examples/learning-cpp/Makefile">
-<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode numberSource makefile number-lines code-with-copy"><code class="sourceCode makefile"><span id="cb1-1"><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">cpp</span> <span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">:=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$(</span><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">patsubst</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> src/%.cpp</span><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">,</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> bin/%</span><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">,</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$(</span><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">wildcard</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> src/*.cpp</span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">))</span></span>
-<span id="cb1-2"><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">notes</span> <span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">:=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$(</span><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">patsubst</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> notes/%.md</span><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">,</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> docs/%.html</span><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">,</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$(</span><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">wildcard</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> notes/*.md</span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">))</span></span>
-<span id="cb1-3"><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">static</span> <span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">:=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> docs/.nojekyll docs/CNAME docs/style.css</span></span>
-<span id="cb1-4"></span>
-<span id="cb1-5"><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">all:</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;"> dirs </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$(</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">cpp</span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">)</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;"> </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$(</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">static</span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">)</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;"> </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$(</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">notes</span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">)</span></span>
-<span id="cb1-6"></span>
-<span id="cb1-7"><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">dirs:</span></span>
-<span id="cb1-8"><span class="er" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">    </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">@</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">mkdir -p ./bin</span></span>
-<span id="cb1-9">    <span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">@</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">mkdir -p ./docs</span></span>
-<span id="cb1-10"></span>
-<span id="cb1-11"><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">$(cpp):</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;"> bin/%: src/%.cpp</span></span>
-<span id="cb1-12"><span class="er" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">    </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">@</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">echo </span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"[compiling]"</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;"> </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$&lt;</span></span>
-<span id="cb1-13">    <span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">@</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">clang++-15 --std=c++20 </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$&lt;</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;"> -o </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$@</span></span>
-<span id="cb1-14"></span>
-<span id="cb1-15"><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">$(static):</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;"> docs/%: static/%</span></span>
-<span id="cb1-16"><span class="er" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">    </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">@</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">echo </span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"[copying]"</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;"> </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$&lt;</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;"> </span></span>
-<span id="cb1-17">    <span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">@</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">cp </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$&lt;</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;"> </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$@</span></span>
-<span id="cb1-18"></span>
-<span id="cb1-19"><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">$(notes):</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;"> docs/%.html: notes/%.md</span></span>
-<span id="cb1-20"><span class="er" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">    </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">@</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">echo </span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"[rendering]"</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;"> </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$&lt;</span></span>
-<span id="cb1-21">    <span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">@</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">pandoc </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$&lt;</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;"> -o </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$@</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;"> --template=./pandoc/template.html </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">\</span></span>
-<span id="cb1-22"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">        --standalone --mathjax --toc --toc-depth 2</span></span>
-<span id="cb1-23"></span>
-<span id="cb1-24"><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">clean:</span></span>
-<span id="cb1-25"><span class="er" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">    </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">@</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">echo </span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"[deleting] docs"</span></span>
-<span id="cb1-26">    <span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">@</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">echo </span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"[deleting] bin"</span></span>
-<span id="cb1-27">    <span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">@</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rm -rf docs</span></span>
-<span id="cb1-28">    <span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">@</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rm -rf bin</span></span></code></pre></div>
-</div>
-<p>It is not very impressive, I know. But it does work, and it does help. So perhaps I should say a little about how I got to there from here?</p>
-<p><br></p>
-<div class="quarto-figure quarto-figure-center page-columns page-full">
-<figure class="figure page-columns page-full">
-<p><img src="https://blog.djnavarro.net/posts/2023-06-30_makefiles/img/odysseus-and-the-sirens.jpg" class="img-fluid figure-img" alt="Mosaic depicting the temptation of Odysseus by the Sirens."></p>
-<figcaption class="margin-caption">The Ulysses mosaic at the Bardo Museum in Tunis, Tunisia (2nd century AD), depicting the temptation of Odysseus by the Sirens. (Image appears to be public domain)</figcaption>
-</figure>
-</div>
-<p><br></p>
-</section>
-<section id="love-me-while-your-wrists-are-bound" class="level2 page-columns page-full">
-<h2 class="anchored" data-anchor-id="love-me-while-your-wrists-are-bound">Love me while your wrists are bound</h2>
-<p>If I’m going to write something about Makefiles, I should perhaps start by acknowledging a few important truths:</p>
-<ul>
-<li>I’m not an expert. Everything I know about Makefiles is from <a href="https://makefiletutorial.com">makefiletutorial.com</a>. This post is not going to tell you anything you cannot find in Chase Lambert’s lovely tutorial.</li>
-<li>There are many alternatives to Make. I’ve seen many projects use <a href="https://cmake.org/">CMake</a> for build automation, for example. Alternatively, if you’re working in R you might prefer to use the <a href="https://docs.ropensci.org/targets/">targets</a> package by Will Landau (<a href="https://books.ropensci.org/targets/">user manual here</a>). There is nothing particularly special about Make per se that made me decide to learn it: it just happens to be a thing that has been around for a long time, and it was irritating me that I didn’t know how to use it.</li>
-<li>Like all things created by humans, it is cursed. Makefiles are indeed the Night That is Dark and Full of Terrors. The red priestesses warned us.</li>
-</ul>
-<p>With that out of the way, let’s begin. Reduced to its simplest form a Makefile is a collection of build <strong>targets</strong>, each of which is defined using syntax that looks something like this:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode makefile code-with-copy"><code class="sourceCode makefile"><span id="cb2-1"><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">targets:</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;"> prerequisites</span></span>
-<span id="cb2-2"><span class="er" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">    </span>command</span>
-<span id="cb2-3">    command</span>
-<span id="cb2-4">    command</span></code></pre></div>
-</div>
-<p>It seems simple enough. The top level command provides the name of the target. In the simplest case, a target is a specific file that <code>make</code> needs to build, and the name of the target is the path to that file, though it’s also possible to specify targets using arbitrary names</p>
-<p>Optionally, a target can have a set of <strong>prerequisites</strong> associated with that target. Prerequisites provide a method for specifying the dependencies for a build target. If the files listed as prerequisites have changed more recently than the output target, the build target is deemed to be “out of date”, and the <strong>commands</strong> listed beneath it will be executed in order to rebuild that target.</p>
-<p>A concrete example might help to make this a little clearer:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode makefile code-with-copy"><code class="sourceCode makefile"><span id="cb3-1"><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">bin/collatz:</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;"> src/collatz.cpp</span></span>
-<span id="cb3-2"><span class="er" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">    </span>clang++ --std=c++20 src/collatz.cpp -o bin/collatz</span></code></pre></div>
-</div>
-<p>Let’s unpack what each part of this target means:</p>
-<ul>
-<li><code>bin/collatz</code> is the target, and is specified as the path to the output file that we’re asking <code>make</code> to build for us.</li>
-<li><code>src/collatz.cpp</code> is a prerequisite file. If the <code>src/collatz.cpp</code> file has been modified more recently than the <code>bin/collatz</code> file created by the compilation command underneath, then that command will be executed when <code>make</code> is called</li>
-<li>The third line is a shell command. In this instance, the command takes the <code>src/collatz.cpp</code> source file and uses clang to compile it to a binary executable file <code>bin/collatz</code>. (The <code>--std=c++20</code> flag indicates that C++ version 20 should be assumed)</li>
-</ul>
-<p>Targets and their prerequisites provide a mechanism by which a Makefile can be used to track the dependencies among the various files in your project. It’s worth noting a few special cases:</p>
-<ul>
-<li>If a target has no prerequisites it is always deemed out of date, so the commands will be executed every time.</li>
-<li>If the name of the target doesn’t correspond to an actual output file, it’s considered to be a “phony” target and is always considered out of date, and hence the commands will always be executed.</li>
-<li>A target can be explicitly labelled as “phony” even if the target name happens to be the same as a file in the project using the <code>.PHONY</code> keyword. We’ll see an example of this later.</li>
-</ul>
-<p>It seems lovely, does it not? Of course it does my sweet Odysseus. You’ve been listening to the Sirens again, and fortunate indeed that your loved ones have tied you to the mast to prevent you from casting yourself overboard and drowning.</p>
-<blockquote class="blockquote">
-<p><em>“But Danielle, this seems so simple! It is lovely, alluring and sweet. I see no sign of eldritch horrors or evil creatures lurking in the depths here”</em></p>
-</blockquote>
-<p>You say that, so I presume that you have absolutely noticed that all those <code>command</code> lines in the code snippet above are indented with tabs and not spaces, yes? No? Those tabs are like little glass knives buried in the sand beneath your soft, bare feet. You must use tabs for indentations in your Makefile, or it won’t work.</p>
-<blockquote class="blockquote">
-<p><em>“But Danielle, my IDE is set to automatically convert tabs to spaces! This is going to mess me up and now I have to faff about making exceptions for specific files”</em></p>
-</blockquote>
-<p>Indeed. Don’t say I didn’t warn you.</p>
-
-<div class="no-row-height column-margin column-container"><div class="">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="https://blog.djnavarro.net/posts/2023-06-30_makefiles/img/hope-in-hell.jpg" class="img-fluid figure-img" alt="Cover art to 'A Hope in Hell', a Sandman comic."></p>
-<figcaption>The cover art to “A Hope in Hell”, the fourth of <a href="https://en.wikipedia.org/wiki/The_Sandman_(comic_book)">The Sandman comics</a>. Written by Neil Gaiman, Sam Kieth and Mike Dringenberg, and part of the “Preludes and Nocturnes” collection. Likely a copyrighted image, but hopefully okay to reproduce here under fair use etc.</figcaption>
-</figure>
-</div>
-</div></div></section>
-<section id="hope-in-hell" class="level2">
-<h2 class="anchored" data-anchor-id="hope-in-hell">Hope in hell</h2>
-<p><em>Perhaps we won’t die</em>, we whisper to ourselves as we open a blank Makefile, and point our vessel towards Scylla and Charybdis with the kind of blind optimism that typically ends with the Coroners Court issuing a lengthy report several months later. After all, our project is so very small. We are but hobbits crossing the Brandywine river looking for mushrooms or something, surely the Willow at the heart of the Old Forest won’t eat us?</p>
-<p>Sorry. Got a little distracted there, didn’t I? I’m going to blame Morpheus… I haven’t slept very well lately and my writing gets very weird when that happens.</p>
-<p>Getting back on track now. When your project is very small, it isn’t hard to write a basic Makefile. Again, it helps to use concrete examples. Let us imagine a project that has this structure:</p>
-<div class="cell">
-<div class="cell-output cell-output-stdout">
-<pre><code>./_examples/version1
-├── .gitignore
-├── Makefile
-└── src
-    ├── collatz.cpp
-    ├── species.cpp
-    └── swap.cpp</code></pre>
-</div>
-</div>
-<p>In this happy fantasy Narnia – which absolutely will never turn into a Fillory because happy endings are real, and life really truly is more than one barely-sublimated trauma after another – we have a very easy thing to work with. In the <code>src</code> folder we have three .cpp files that each correspond to a small C++ program that needs to be compiled.</p>
-<p>Being the sort of person who likes to separate inputs from outputs, we decide that the executable binary files should all be stored in a <code>bin</code> folder. Being also the cautious sort of person who understands the difference between inputs and outputs, our project has a <code>.gitignore</code> file that ensures that nothing we write to <code>bin</code> is placed under version control.</p>
-<p>We also have a a file called <code>Makefile</code>,<sup>2</sup> whose contents are as follows:</p>
-<div class="cell" data-file="_examples/version1/Makefile">
-<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode numberSource makefile number-lines code-with-copy"><code class="sourceCode makefile"><span id="cb5-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># the "all" target is a set of other targets</span></span>
-<span id="cb5-2"><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">all:</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;"> dir bin/collatz bin/species bin/swap</span></span>
-<span id="cb5-3"></span>
-<span id="cb5-4"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># the "dir" target creates a directory for the binaries</span></span>
-<span id="cb5-5"><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">dir:</span></span>
-<span id="cb5-6"><span class="er" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">    </span>mkdir -p ./bin</span>
-<span id="cb5-7"></span>
-<span id="cb5-8"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># the "bin/collatz" target compiles the collatz.cpp program</span></span>
-<span id="cb5-9"><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">bin/collatz:</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;"> src/collatz.cpp</span></span>
-<span id="cb5-10"><span class="er" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">    </span>clang++ --std=c++20 src/collatz.cpp -o bin/collatz</span>
-<span id="cb5-11"></span>
-<span id="cb5-12"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># the "bin/species" target compiles the species.cpp program</span></span>
-<span id="cb5-13"><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">bin/species:</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;"> src/species.cpp</span></span>
-<span id="cb5-14"><span class="er" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">    </span>clang++ --std=c++20 src/species.cpp -o bin/species</span>
-<span id="cb5-15"></span>
-<span id="cb5-16"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># the "bin/swap" target compiles the swap.cpp program</span></span>
-<span id="cb5-17"><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">bin/swap:</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;"> src/swap.cpp</span></span>
-<span id="cb5-18"><span class="er" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">    </span>clang++ --std=c++20 src/swap.cpp -o bin/swap</span>
-<span id="cb5-19"></span>
-<span id="cb5-20"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># the "clean" target deletes all binary files</span></span>
-<span id="cb5-21"><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">clean:</span></span>
-<span id="cb5-22"><span class="er" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">    </span>rm -rf bin</span></code></pre></div>
-</div>
-<p>The central part of the Makefile is familiar. We’re taking the “compile a C++ source file” recipe that I previously used as an example of makefile target, and repeating it three times over. It’s so utterly dull that it actually reads better if we strip the comments:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode makefile code-with-copy"><code class="sourceCode makefile"><span id="cb6-1"><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">bin/collatz:</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;"> src/collatz.cpp</span></span>
-<span id="cb6-2"><span class="er" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">    </span>clang++ --std=c++20 src/collatz.cpp -o bin/collatz</span>
-<span id="cb6-3"></span>
-<span id="cb6-4"><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">bin/species:</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;"> src/species.cpp</span></span>
-<span id="cb6-5"><span class="er" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">    </span>clang++ --std=c++20 src/species.cpp -o bin/species</span>
-<span id="cb6-6"></span>
-<span id="cb6-7"><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">bin/swap:</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;"> src/swap.cpp</span></span>
-<span id="cb6-8"><span class="er" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">    </span>clang++ --std=c++20 src/swap.cpp -o bin/swap</span></code></pre></div>
-</div>
-<p>It’s repetitive, but for this toy project it works. If we want this project to build, we require that all three of these C++ source files be compiled to binaries.</p>
-<p>Sisyphus should be so lucky.</p>
-<p>The nature of make targets is that you can call them by name. In the snippet above I have three targets. To build each of these I could type this mind-meltingly tedious sequence of commands at the terminal:</p>
-<div class="sourceCode" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb7-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">make</span> bin/collatz</span>
-<span id="cb7-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">make</span> bin/species</span>
-<span id="cb7-3"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">make</span> bin/swap</span></code></pre></div>
-<p>It works fine when there are only a few targets, but becomes extremely painful once there are dozens of them. Life is short, and this is not the kind of masochism I enjoy. Building each target individually is simply not on my to-do list. Not now, not as Valyria sinks into its Doom, and not as Rome is burning. My fiddling time is preserved for something better than this, my babes.</p>
-<p>To accommodate the need of the dead things like myself, <code>make</code> makes it possible to group multiple targets together:</p>
-<div class="sourceCode" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode makefile code-with-copy"><code class="sourceCode makefile"><span id="cb8-1"><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">all:</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;"> dir bin/collatz bin/species bin/swap</span></span></code></pre></div>
-<p>This is very helpful. Instead of typing this to make all four targets…</p>
-<div class="sourceCode" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb9-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">make</span> dir</span>
-<span id="cb9-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">make</span> bin/collatz</span>
-<span id="cb9-3"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">make</span> bin/species</span>
-<span id="cb9-4"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">make</span> bin/swap</span></code></pre></div>
-<p>…I can now type this and get the same result:</p>
-<div class="sourceCode" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb10-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">make</span> all</span></code></pre></div>
-<p>In fact, even this can be shortened, because “all” happens to be the first target listed in the Makefile. If you don’t specify a target to build, <code>make</code> will use the first target in the file. It is conventional, then, to call the first target “all”, and have that target consist of a list of all the <em>other</em> targets needed to build the whole project. Consequently, I can do this:<sup>3</sup></p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb11-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">make</span></span></code></pre></div>
-</div>
-<p>Here’s what we get as output…</p>
-<div class="cell">
-<div class="cell-output cell-output-stdout">
-<pre><code>mkdir -p ./bin
-clang++ --std=c++20 src/collatz.cpp -o bin/collatz
-clang++ --std=c++20 src/species.cpp -o bin/species
-clang++ --std=c++20 src/swap.cpp -o bin/swap</code></pre>
-</div>
-</div>
-<p>…and our project now contains the binary files:</p>
-<div class="cell">
-<div class="cell-output cell-output-stdout">
-<pre><code>./_examples/version1
-├── .gitignore
-├── Makefile
-├── bin
-│   ├── collatz
-│   ├── species
-│   └── swap
-└── src
-    ├── collatz.cpp
-    ├── species.cpp
-    └── swap.cpp</code></pre>
-</div>
-</div>
-<p>Nice.</p>
-<p>So, okay. This is the explanation of lines 1-19 of our Makefile. What’s going on in lines 20-22?</p>
-<p>I’m so glad you asked.</p>
-<p>What happens if you want to burn it all down and revert to the initial (unbuilt) state of the project? <code>make</code> doesn’t provide that functionality automatically, but it is traditional for writers of Makefiles to include a target called <code>clean</code> that includes commands that will perform this clean up job for you.<sup>4</sup> That’s generally a good thing to do, and for this project the cleanup process is very simple. All we have to do delete the <code>bin</code> folder and everything in it, so that’s what our “clean” target does.</p>
-<p>Because we have this target in the Makefile, all we have to do is type <code>make clean</code>:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb14" style="background: #f1f3f5;"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb14-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">make</span> clean</span></code></pre></div>
-</div>
-<div class="cell">
-<div class="cell-output cell-output-stdout">
-<pre><code>rm -rf bin</code></pre>
-</div>
-</div>
-<p>And just like that, we are back to the clean (unbuilt) state for our project:</p>
-<div class="cell">
-<div class="cell-output cell-output-stdout">
-<pre><code>./_examples/version1
-├── .gitignore
-├── Makefile
-└── src
-    ├── collatz.cpp
-    ├── species.cpp
-    └── swap.cpp</code></pre>
-</div>
-</div>
-<p>Hope yet lives, despite our descent into Hell.</p>
-</section>
-<section id="the-filetree-yggdrasil-reaching-to-the-heavens" class="level2 page-columns page-full">
-<h2 class="anchored" data-anchor-id="the-filetree-yggdrasil-reaching-to-the-heavens">The filetree Yggdrasil, reaching to the heavens</h2>
-<p>In the Makefile I used in the last section, I created a separate target for every file, and wrote the code manually for every one of them. It’s a little repetitive, but when you only have a handful of files that need to be processed (… regardless of whether “processing” means compiling a source file, rendering a markdown document, or anything else), it’s not too onerous. However, it’s very common for a project to grow much too large for this to be ideal. For example, here’s the filetree for the side-project (including source files and output files) that motivated me to learn how to write Makefiles in the first place:</p>
-
-<div class="no-row-height column-margin column-container"><div class="">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="https://blog.djnavarro.net/posts/2023-06-30_makefiles/img/yggdrasil.jpg" class="img-fluid figure-img" alt="The world tree Yggdrasil."></p>
-<figcaption>The world tree Yggdrasil from Norse mythology, as depicted by <a href="https://en.wikipedia.org/wiki/Friedrich_Wilhelm_Heine">Friedrich Wilhelm Heine</a> in 1886. (Public domain image)</figcaption>
-</figure>
-</div>
-</div></div><div class="cell">
-<div class="cell-output cell-output-stdout">
-<pre><code>./_examples/learning-cpp
-├── .gitignore
-├── LICENSE.md
-├── Makefile
-├── README.md
-├── bin
-│   ├── add-with-logging
-│   ├── add-with-overloading
-│   ├── append-c-strings
-│   ├── array-danielle
-│   ├── array-iterator
-│   ├── beta-sample
-│   ├── beta-sample-2
-│   ├── char-code
-│   ├── circles
-│   ├── collatz
-│   ├── employee
-│   ├── enumerated-types
-│   ├── extended-raw-string-literal
-│   ├── file-extension
-│   ├── file-extension-2
-│   ├── gender-switch
-│   ├── gender-switch-2
-│   ├── helloworld
-│   ├── helloworld-using
-│   ├── immovable-reference
-│   ├── mean-value
-│   ├── na-na-hey-hey
-│   ├── pass-by-reference-to-const
-│   ├── pointer-free-store
-│   ├── pointer-stack
-│   ├── poisson-conditional
-│   ├── poisson-initialised-conditional
-│   ├── poisson-sample
-│   ├── raw-string-literal
-│   ├── scope-resolution
-│   ├── simple-reference
-│   ├── simple-string
-│   ├── species-first-pass
-│   ├── stoi
-│   ├── string-class-examples
-│   ├── string-class-handy
-│   ├── string-class-logical
-│   ├── string-escapes
-│   ├── string-to-numeric
-│   ├── string-vectors
-│   ├── structured-binding
-│   ├── structured-binding-asl
-│   ├── swap
-│   ├── try-catch
-│   ├── typecasting
-│   └── validation-check
-├── docs
-│   ├── .nojekyll
-│   ├── CNAME
-│   ├── chapter-01.html
-│   ├── chapter-02.html
-│   ├── chapter-03.html
-│   ├── chapter-04.html
-│   ├── index.html
-│   └── style.css
-├── notes
-│   ├── chapter-01.md
-│   ├── chapter-02.md
-│   ├── chapter-03.md
-│   ├── chapter-04.md
-│   └── index.md
-├── pandoc
-│   ├── README.md
-│   └── template.html
-├── src
-│   ├── add-with-logging.cpp
-│   ├── add-with-overloading.cpp
-│   ├── append-c-strings.cpp
-│   ├── array-danielle.cpp
-│   ├── array-iterator.cpp
-│   ├── beta-sample-2.cpp
-│   ├── beta-sample.cpp
-│   ├── char-code.cpp
-│   ├── circles.cpp
-│   ├── collatz.cpp
-│   ├── employee.cpp
-│   ├── employee.h
-│   ├── enumerated-types.cpp
-│   ├── extended-raw-string-literal.cpp
-│   ├── file-extension-2.cpp
-│   ├── file-extension.cpp
-│   ├── gender-switch-2.cpp
-│   ├── gender-switch.cpp
-│   ├── helloworld-using.cpp
-│   ├── helloworld.cpp
-│   ├── immovable-reference.cpp
-│   ├── mean-value.cpp
-│   ├── na-na-hey-hey.cpp
-│   ├── pass-by-reference-to-const.cpp
-│   ├── pointer-free-store.cpp
-│   ├── pointer-stack.cpp
-│   ├── poisson-conditional.cpp
-│   ├── poisson-initialised-conditional.cpp
-│   ├── poisson-sample.cpp
-│   ├── raw-string-literal.cpp
-│   ├── scope-resolution.cpp
-│   ├── simple-reference.cpp
-│   ├── simple-string.cpp
-│   ├── species-first-pass.cpp
-│   ├── stoi.cpp
-│   ├── string-class-examples.cpp
-│   ├── string-class-handy.cpp
-│   ├── string-class-logical.cpp
-│   ├── string-escapes.cpp
-│   ├── string-to-numeric.cpp
-│   ├── string-vectors.cpp
-│   ├── structured-binding-asl.cpp
-│   ├── structured-binding.cpp
-│   ├── swap.cpp
-│   ├── try-catch.cpp
-│   ├── typecasting.cpp
-│   └── validation-check.cpp
-└── static
-    ├── .nojekyll
-    ├── CNAME
-    └── style.css</code></pre>
-</div>
-</div>
-<p>It’s not a huge project by any stretch of the imagination, but it’s big enough to illustrate the point. If I had to write a separate target telling <code>make</code> how to process each of these files I’d quickly lose my mind. Not only that, it would be difficult to maintain if – for example – I needed to change the command used to compile the C++ source files.</p>
-<p>In practice, then, we want to write Makefiles that use pattern matching to process every file that matches that pattern. For instance, in the “learning-cpp” project shown above, one of the pattern rules I need is one that automatically compiles every .cpp file in the <code>src</code> folder to a binary file of the same name in the <code>bin</code> folder.<sup>5</sup> Conveniently enough, that’s exactly the same problem we needed to solve for the toy example. So let’s revisit it, keeping in mind that although you don’t really need pattern rules for a project as tiny as the toy project I’m using here, you really do need them as soon as your project moves into the real world.</p>
-<p><br></p>
-<div class="quarto-figure quarto-figure-center page-columns page-full">
-<figure class="figure page-columns page-full">
-<p><img src="https://blog.djnavarro.net/posts/2023-06-30_makefiles/img/kraken.jpg" class="img-fluid figure-img" alt="'Kraken of the imagination', by John Gibson. 1887"></p>
-<figcaption class="margin-caption">“The kraken, as seen by the eye of imagination”. Public domain image by John Gibson, published in <a href="https://www.biodiversitylibrary.org/page/54285093#page/85/mode/1up">Monsters of the sea, legendary and authentic</a>, 1887</figcaption>
-</figure>
-</div>
-<p><br></p>
-</section>
-<section id="release-the-kraken-of-the-imagination" class="level2 page-columns page-full">
-<h2 class="anchored" data-anchor-id="release-the-kraken-of-the-imagination">Release the kraken of the imagination</h2>
-<p>Now comes the part of the post where turbulent waters are encountered, and we the dark beasts of the depths might claim us. That is to say, we’ll start creating targets programmatically within our Makefile. To that end we’ll return to the toy project. As before, our project has the following source files:</p>
-<div class="cell">
-<div class="cell-output cell-output-stdout">
-<pre><code>./_examples/version2
-├── .gitignore
-├── Makefile
-└── src
-    ├── collatz.cpp
-    ├── species.cpp
-    └── swap.cpp</code></pre>
-</div>
-</div>
-<p>However, our Makefile this time around is a little different:</p>
-<div class="cell" data-file="_examples/version2/Makefile">
-<div class="sourceCode cell-code" id="cb19" style="background: #f1f3f5;"><pre class="sourceCode numberSource makefile number-lines code-with-copy"><code class="sourceCode makefile"><span id="cb19-1"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># lists of filenames</span></span>
-<span id="cb19-2"><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">src_files</span> <span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">:=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$(</span><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">wildcard</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> src/*.cpp</span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">)</span></span>
-<span id="cb19-3"><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">bin_files</span> <span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">:=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$(</span><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">patsubst</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> src/%.cpp</span><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">,</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> bin/%</span><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">,</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$(</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">src_files</span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">))</span></span>
-<span id="cb19-4"></span>
-<span id="cb19-5"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># the "all" target is much simpler now</span></span>
-<span id="cb19-6"><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">all:</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;"> dir </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$(</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">bin_files</span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">)</span></span>
-<span id="cb19-7"></span>
-<span id="cb19-8"><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">dir:</span></span>
-<span id="cb19-9"><span class="er" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">    </span>mkdir -p ./bin</span>
-<span id="cb19-10"></span>
-<span id="cb19-11"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># each C++ binary is a target, the source is its prerequisite</span></span>
-<span id="cb19-12"><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">$(bin_files):</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;"> bin/%: src/%.cpp</span></span>
-<span id="cb19-13"><span class="er" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">    </span>clang++ --std=c++20 <span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$&lt;</span> -o <span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$@</span></span>
-<span id="cb19-14"></span>
-<span id="cb19-15"><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">clean:</span></span>
-<span id="cb19-16"><span class="er" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">    </span>rm -rf bin</span></code></pre></div>
-</div>
-<p>Let’s go through this line by line. First, we can use wildcard matching to find all files in the <code>src</code> folder that end with the <code>.cpp</code> file extension:</p>
-<div class="sourceCode" id="cb20" style="background: #f1f3f5;"><pre class="sourceCode makefile code-with-copy"><code class="sourceCode makefile"><span id="cb20-1"><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">src_files</span> <span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">:=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$(</span><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">wildcard</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> src/*.cpp</span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">)</span></span></code></pre></div>
-<p>It may not be immediately apparent to – oh, say, humans – but this is in fact a function call. The name of the function is <code>wildcard</code>, the <code>$( )</code> syntax with the function name inside the parentheses is the way you call functions in <code>make</code>,<sup>6</sup> and <code>src/*.cpp</code> is the argument passed to the function.</p>
-<p>It may also not be obvious upon first inspection – because again, why would it be? – why I’ve used <code>:=</code> instead of <code>=</code> in my assignment statement. The goal here is to create a new variable called <code>src_files</code> that contains the names of the various source files, that much is clear. But why use <code>:=</code>, exactly? The answer, of course, is that <code>make</code> supports several different kinds of assignment operators, and confusingly enough <code>=</code> is <em>not</em> the operator for “simple” assignment:</p>
-<ul>
-<li>Use <code>:=</code> if you want “simple assignment”: the assignment happens once and only once, the first time the assignment statement is encountered</li>
-<li>Use <code>=</code> if you want “recursive assignment”: the assignment is reevaluated every time the value of the right hand side changes (e.g., in this example, if a later make target changes the list of source files in the <code>src</code> folder, the value of <code>src_files</code> changes too)</li>
-<li>Use <code>?=</code> if you want “conditional assignment”: the assignment only happens if the variable doesn’t already have a value (sure, normal humans would use an if-statement for this, but as we all know keystrokes are a precious resource and must be conserved; preserving human sanity is of course a much less important goal)</li>
-<li>Use <code>+=</code> if you want the value of the right hand side to be added to the variable rather than replacing its existing value.</li>
-</ul>
-
-<div class="no-row-height column-margin column-container"><div class="">
-<p>It sure doesn’t seem like I should have had to write a small manuscript simply to explain one very modest line of code, does it? But such is the nature of <code>make</code>.</p>
-</div></div><p>In any case, the thing that matters here is we’ve scanned the <code>src</code> folder and created a variable called <code>src_files</code> that lists all the C++ source code files in that folder. In other words, <code>src_files</code> is now a synonym for this:</p>
-<pre><code>src/collatz.cpp src/species.cpp src/swap.cpp</code></pre>
-<p>This will now form the basis by which we construct a list of build targets. Because our project is very simple and has a nice one-to-one mapping between source files and output files, what we really want to construct now is a variable that contains a list of build targets like this:</p>
-<pre><code>bin/collatz bin/species bin/swap</code></pre>
-<p>If we could be assured that the binary files always exist, we could use the same trick to list all binaries in the <code>bin</code> folder. But because those might not exist (e.g., if we delete the binaries when calling <code>make clean</code>), we can’t be assured of that. So instead, we’ll use the <code>patsubst</code> function to do a pattern substitution: we’ll take the <code>src_files</code> variable as input, strip the <code>.cpp</code> extension from the files, and replace <code>src</code> with <code>bin</code>. Here’s what that looks like:</p>
-<div class="sourceCode" id="cb23" style="background: #f1f3f5;"><pre class="sourceCode makefile code-with-copy"><code class="sourceCode makefile"><span id="cb23-1"><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">bin_files</span> <span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">:=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$(</span><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">patsubst</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> src/%.cpp</span><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">,</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> bin/%</span><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">,</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$(</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">src_files</span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">))</span></span></code></pre></div>
-<p>The <code>patsubst</code> function takes three arguments, and – of course – they are specified in a weird order. The data argument appears in the third position, because again… why not? The pattern to which we match the data appears in the first position, and the replacement pattern appears in the second position.<sup>7</sup> Anyway, the point here is that what this function call does is as follows: it takes all the filenames in <code>src_files</code>, matches them against <code>src/%.cpp</code> to find the “stem” (e.g., the stem for <code>src/collatz.cpp</code> is the part that matches the <code>%</code> operator, i.e., <code>collatz</code>), and then uses the replacement pattern <code>bin/%</code> to construct output values from the stems (e.g., <code>collatz</code> is transformed to <code>bin/collatz</code>). And so we end up with a variable <code>bin_files</code> that contains the list of target files we want to build:</p>
-<pre><code>bin/collatz bin/species bin/swap</code></pre>
-<p>Now that we have this, we can define the “all” target using this variable, as follows:</p>
-<div class="sourceCode" id="cb25" style="background: #f1f3f5;"><pre class="sourceCode makefile code-with-copy"><code class="sourceCode makefile"><span id="cb25-1"><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">all:</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;"> dir </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$(</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">bin_files</span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">)</span></span></code></pre></div>
-<p>From the <code>make</code> perspective this is equivalent to:</p>
-<div class="sourceCode" id="cb26" style="background: #f1f3f5;"><pre class="sourceCode makefile code-with-copy"><code class="sourceCode makefile"><span id="cb26-1"><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">all:</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;"> dir bin/collatz bin/species bin/swap</span></span></code></pre></div>
-<p>Or, to put it another way, by using the <code>bin_files</code> variable, we can programmatically ensure that the “all” target includes a target for every binary file that needs to be compiled.</p>
-<p>Having defined a list of targets programmatically, our next task<sup>8</sup> is to write a <a href="https://www.gnu.org/software/make/manual/html_node/Static-Usage.html">static pattern rule</a> that programmatically defines the targets themselves. Specifically, for every target listed in <code>bin_files</code>, we want (1) to assert that it relies on the corresponding source file as a prerequisite, and (2) to specify a build action that compiles the binary from the corresponding source.</p>
-<p>Here’s some code that does this:</p>
-<div class="sourceCode" id="cb27" style="background: #f1f3f5;"><pre class="sourceCode makefile code-with-copy"><code class="sourceCode makefile"><span id="cb27-1"><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">$(bin_files):</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;"> bin/%: src/%.cpp</span></span>
-<span id="cb27-2"><span class="er" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">    </span>clang++ --std=c++20 <span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$&lt;</span> -o <span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$@</span></span></code></pre></div>
-<p>The underlying syntax here is as follows:</p>
-<div class="sourceCode" id="cb28" style="background: #f1f3f5;"><pre class="sourceCode makefile code-with-copy"><code class="sourceCode makefile"><span id="cb28-1"><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">targets:</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;"> target-pattern: prerequisites-patterns</span></span>
-<span id="cb28-2"><span class="er" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">    </span>commands</span></code></pre></div>
-<p>For our example, the <code>bin_files</code> variable contains the list of targets specified by the pattern rule. The <code>bin/%</code> part (the target pattern) and the <code>src/%.cpp</code> part (the prerequisites pattern) are used for pattern substitution purposes. It’s essentially the same task that we saw when I called <code>patsubst</code> using these patterns earlier: in the previous example I used them to construct the name of a binary file from the corresponding source file, this time I’m going the other direction and constructing the name of the source file (to use as a rerequisite) from the binary file (which is used as the target).</p>
-<p>Okay, now let’s turn to the second line of the code snippet. In the orginal version of the code I wrote targets like this:</p>
-<div class="sourceCode" id="cb29" style="background: #f1f3f5;"><pre class="sourceCode makefile code-with-copy"><code class="sourceCode makefile"><span id="cb29-1"><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">bin/collatz:</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;"> src/collatz.cpp</span></span>
-<span id="cb29-2"><span class="er" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">    </span>clang++ --std=c++20 src/collatz.cpp -o bin/collatz</span></code></pre></div>
-<p>But in the static pattern rule version I’ve used <code>$&lt;</code> to refer to the prerequisite file (e.g., the source file <code>src/collatz.cpp</code>) and <code>$@</code> to refer to the file name of the target (e.g., the binary file <code>bin/collatz</code>). These are both examples of <a href="https://www.gnu.org/software/make/manual/html_node/Automatic-Variables.html">automatic variables</a> in <code>make</code>. There are quite a lot of these: <code>$@</code>, <code>$%</code>, <code>$&lt;</code>, <code>$?</code>, <code>$^</code>, <code>$+</code>, <code>$|</code>, <code>$*</code>. Some of these have “D” and “F” variants that specifically refer to directory paths or filenames: <code>$(@D)</code> and <code>$(@F)</code> are variations on <code>$@</code>, <code>$(*D)</code> and <code>$(*F)</code> are variants of <code>$*</code> and so on. If you desperately want to learn all these details the linked page explains them all. For our purposes it’s enough to note that in the example above, I’ve used <code>$&lt;</code> to refer to the source file and <code>$@</code> to refer to the output file.</p>
-<p>Right. After all that as explanatory background we can run <code>make</code>, and happily see that the results are indeed the same as before:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb30" style="background: #f1f3f5;"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb30-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">make</span></span></code></pre></div>
-</div>
-<div class="cell">
-<div class="cell-output cell-output-stdout">
-<pre><code>mkdir -p ./bin
-clang++ --std=c++20 src/collatz.cpp -o bin/collatz
-clang++ --std=c++20 src/species.cpp -o bin/species
-clang++ --std=c++20 src/swap.cpp -o bin/swap</code></pre>
-</div>
-</div>
-<p>And now that we’ve built the project we see that the filetree now contains the binaries:</p>
-<div class="cell">
-<div class="cell-output cell-output-stdout">
-<pre><code>./_examples/version2
-├── .gitignore
-├── Makefile
-├── bin
-│   ├── collatz
-│   ├── species
-│   └── swap
-└── src
-    ├── collatz.cpp
-    ├── species.cpp
-    └── swap.cpp</code></pre>
-</div>
-</div>
-
-<div class="no-row-height column-margin column-container"><div class="">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="https://blog.djnavarro.net/posts/2023-06-30_makefiles/img/medusa-too.jpg" class="img-fluid figure-img" alt="Oil painting of the mythological character, Medusa, reimagined through a contemporary feminist lens"></p>
-<figcaption>“Me(dusa) too”. Oil painting of the mythological character, Medusa, reimagined through a contemporary feminist lens, in response to the #metoo movement.<sup>9</sup> Art by <a href="https://en.wikipedia.org/wiki/Judy_Tak%C3%A1cs">Judy Takács</a>. Released by the artist as CC-BY.</figcaption>
-</figure>
-</div>
-</div></div></section>
-<section id="the-tragedy-of-medusa-and-what-is-permitted-to-be-seen-and-said" class="level2 page-columns page-full">
-<h2 class="anchored" data-anchor-id="the-tragedy-of-medusa-and-what-is-permitted-to-be-seen-and-said">The tragedy of Medusa, and what is permitted to be seen and said</h2>
-<p>The last step in putting together a Makefile for our toy project is to tidy some of the code, and make choices about what messages are printed to the terminal when <code>make</code> is called. Let’s start with the tidying. It was convenient for expository purposes to create the list of targets as a two-step process, so that I could talk about the <code>wildcard</code> function before introducing the <code>patsubst</code> function:</p>
-<div class="sourceCode" id="cb33" style="background: #f1f3f5;"><pre class="sourceCode makefile code-with-copy"><code class="sourceCode makefile"><span id="cb33-1"><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">src_files</span> <span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">:=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$(</span><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">wildcard</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> src/*.cpp</span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">)</span></span>
-<span id="cb33-2"><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">bin_files</span> <span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">:=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$(</span><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">patsubst</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> src/%.cpp</span><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">,</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> bin/%</span><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">,</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$(</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">src_files</span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">))</span></span></code></pre></div>
-<p>But realistically this doesn’t need to be two lines, so I’ll shorten it to a single line that generates the list of compilation targets:</p>
-<div class="sourceCode" id="cb34" style="background: #f1f3f5;"><pre class="sourceCode makefile code-with-copy"><code class="sourceCode makefile"><span id="cb34-1"><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">compile</span> <span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">:=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$(</span><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">patsubst</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> src/%.cpp</span><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">,</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> bin/%</span><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">,</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$(</span><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">wildcard</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> src/*.cpp</span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">))</span></span></code></pre></div>
-<p>The second task is to add some code modifying the messages printed when targets are built. To do this, I’ll preface all my commands with the <code>@</code> symbol, which silences their raw output, thereby preventing them from being printed to the terminal whenever <code>make</code> is called. In place of the automatic printing, I’ll use <code>echo</code> to write my own, more human-friendly output lines. So now my Makefile looks like this:</p>
-<div class="cell" data-file="_examples/version3/Makefile">
-<div class="sourceCode cell-code" id="cb35" style="background: #f1f3f5;"><pre class="sourceCode numberSource makefile number-lines code-with-copy"><code class="sourceCode makefile"><span id="cb35-1"><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">compile</span> <span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">:=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$(</span><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">patsubst</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> src/%.cpp</span><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">,</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> bin/%</span><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">,</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$(</span><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">wildcard</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> src/*.cpp</span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">))</span></span>
-<span id="cb35-2"></span>
-<span id="cb35-3"><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">all:</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;"> dir </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$(</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">compile</span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">)</span></span>
-<span id="cb35-4"></span>
-<span id="cb35-5"><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">dir:</span></span>
-<span id="cb35-6"><span class="er" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">    </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">@</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">mkdir -p ./bin</span></span>
-<span id="cb35-7"></span>
-<span id="cb35-8"><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">$(compile):</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;"> bin/%: src/%.cpp</span></span>
-<span id="cb35-9"><span class="er" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">    </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">@</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">echo </span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"compiling"</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;"> </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$&lt;</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;"> </span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"to"</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;"> </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$@</span></span>
-<span id="cb35-10">    <span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">@</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">clang++ --std=c++20 </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$&lt;</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;"> -o </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$@</span></span>
-<span id="cb35-11"></span>
-<span id="cb35-12"><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">clean:</span></span>
-<span id="cb35-13"><span class="er" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">    </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">@</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">echo </span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"deleting binary files"</span></span>
-<span id="cb35-14">    <span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">@</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rm -rf bin</span></span></code></pre></div>
-</div>
-<p>Let’s have a look at what happens when we call <code>make</code> using this version of the Makefile. The same files are compiled, but the printed messages are prettier:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb36" style="background: #f1f3f5;"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb36-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">make</span></span></code></pre></div>
-</div>
-<div class="cell">
-<div class="cell-output cell-output-stdout">
-<pre><code>compiling src/collatz.cpp to bin/collatz
-compiling src/species.cpp to bin/species
-compiling src/swap.cpp to bin/swap</code></pre>
-</div>
-</div>
-<p>Much nicer.</p>
-<p><br></p>
-<div class="quarto-figure quarto-figure-center page-columns page-full">
-<figure class="figure page-columns page-full">
-<p><img src="https://blog.djnavarro.net/posts/2023-06-30_makefiles/img/hercules-slaying-the-hydra.jpg" class="img-fluid figure-img" alt="Mosaic depicting Hercules and Iolaus slaying the Hydra of Lerna."></p>
-<figcaption class="margin-caption">Mosaic by <a href="https://en.wikipedia.org/wiki/Sebald_Beham">Sebald Beham</a> depicting Hercules and Iolaus slaying the many-headed Hydra of Lerna, 1545. Public domain image.</figcaption>
-</figure>
-</div>
-<p><br></p>
-</section>
-<section id="the-fourth-wall-shatters-into-little-shards-of-recursion" class="level2">
-<h2 class="anchored" data-anchor-id="the-fourth-wall-shatters-into-little-shards-of-recursion">The fourth wall shatters into little shards of Recursion</h2>
-<p>At this point, this post <em>has</em> covered all the tricks that I’m using in the Makefile for the accursed C++ side project that motivated me to learn <code>make</code>. What this post <em>hasn’t</em> yet covered, though, are some of the tricks that I needed to use for… um… this post. This quarto blog post is a project, and it has a Makefile. But the folder that contains all the source for this blog post <em>also</em> contains source files for all the sub-projects that I’ve used as the examples… and each of those has its own Makefile. Our simple project has become a multi-headed monster, a poisonous serpentine water beast.</p>
-<p>To create a Makefile that works in this situation we need to call <a href="https://www.gnu.org/software/make/manual/make.html#Recursion">call make recursively</a>, and though much beloved by computer scientists, I personally view recursion as the little death and the exsanguination of hope. To do this with <code>make</code> some care is required. The thing you <em>don’t</em> want to do is literally use the <code>make</code> command inside a Makefile. That’s exactly the kind of intuitive strategy that get us slain by the poison breath of the Hydra. Instead, we use the <code>$(MAKE)</code> variable as an alias for <code>make</code>. To illustrate this let’s take a look at the actual Makefile used to build this post:</p>
-<div class="cell" data-file="Makefile">
-<div class="sourceCode cell-code" id="cb38" style="background: #f1f3f5;"><pre class="sourceCode numberSource makefile number-lines code-with-copy"><code class="sourceCode makefile"><span id="cb38-1"><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">post</span> <span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">:=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> 2023-06-30_makefiles</span></span>
-<span id="cb38-2"><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">html</span> <span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">:=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> ../../_site/posts/</span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$(</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">post</span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">)</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">/index.html</span></span>
-<span id="cb38-3"><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">examples</span> <span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">=</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> version1 version2 version3</span></span>
-<span id="cb38-4"></span>
-<span id="cb38-5"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># explicitly state that these targets aren't file names</span></span>
-<span id="cb38-6"><span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">.PHONY:</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;"> all clean clean_quarto</span></span>
-<span id="cb38-7"><span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">.PHONY:</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;"> </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$(</span><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">patsubst</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> %</span><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">,</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> build_%</span><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">,</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$(</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">examples</span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">))</span></span>
-<span id="cb38-8"><span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">.PHONY:</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;"> </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$(</span><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">patsubst</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> %</span><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">,</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> clean_%</span><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">,</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$(</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">examples</span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">))</span></span>
-<span id="cb38-9"></span>
-<span id="cb38-10"><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">all:</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;"> </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$(</span><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">patsubst</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> %</span><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">,</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> build_%</span><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">,</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$(</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">examples</span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">))</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;"> </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$(</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">html</span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">)</span></span>
-<span id="cb38-11"></span>
-<span id="cb38-12"><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">$(patsubst %, build_%, $(examples)):</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;"> build_%: _examples/%</span></span>
-<span id="cb38-13"><span class="er" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">    </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">@</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">echo </span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"------------ building"</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;"> </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$&lt;</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;"> </span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"------------"</span></span>
-<span id="cb38-14">    <span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">@$(</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">MAKE</span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">)</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;"> -C </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$&lt;</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;"> --no-print-directory</span></span>
-<span id="cb38-15"></span>
-<span id="cb38-16"><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">$(html):</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;"> index.qmd</span></span>
-<span id="cb38-17"><span class="er" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">    </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">@</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">echo </span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"------------ rendering quarto ------------"</span></span>
-<span id="cb38-18">    <span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">@</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">echo </span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"rendering"</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;"> </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$@</span></span>
-<span id="cb38-19">    <span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">@</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">quarto render </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$&lt;</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;"> --quiet</span></span>
-<span id="cb38-20"></span>
-<span id="cb38-21"><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">$(patsubst %, clean_%, $(examples)):</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;"> clean_%: _examples/%</span></span>
-<span id="cb38-22"><span class="er" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">    </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">@$(</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">MAKE</span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">)</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;"> clean -C </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$&lt;</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;"> --no-print-directory</span></span>
-<span id="cb38-23"></span>
-<span id="cb38-24"><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">clean_quarto:</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;"> </span></span>
-<span id="cb38-25"><span class="er" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">    </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">@</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rm -rf ../../_site/posts/</span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$(</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">post</span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">)</span></span>
-<span id="cb38-26">    <span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">@</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rm -rf ../../_freeze/posts/</span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$(</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">post</span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">)</span></span>
-<span id="cb38-27"></span>
-<span id="cb38-28"><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">clean:</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;"> </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$(</span><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">patsubst</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> %</span><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">,</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> clean_%</span><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">,</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$(</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">examples</span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">))</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;"> clean_quarto</span></span></code></pre></div>
-</div>
-<p>There are some other new tricks in play here. When I call <code>make</code> via the <code>$(MAKE)</code> alias, I’m passing some additional flags: the <code>-C</code> flag tells <code>make</code> to change directories (I could also have used <code>--directory</code> here in place of <code>-C</code>), and the <code>--no-print-directory</code> flag asks <code>make</code> to do so without printing an annoyingly long message informing me that it has done so. As usual <code>$&lt;</code> refers to a prerequisite (e.g., <code>_examples/version1</code>). In other words, this command…</p>
-<div class="sourceCode" id="cb39" style="background: #f1f3f5;"><pre class="sourceCode makefile code-with-copy"><code class="sourceCode makefile"><span id="cb39-1"><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">@$(</span><span class="dt" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">MAKE</span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">)</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;"> -C </span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">$&lt;</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;"> --no-print-directory</span></span></code></pre></div>
-<p>… has essentially the same effect as a bash command that changes to the appropriate directory, calling <code>make</code> there, and then returning to the original directory:</p>
-<div class="sourceCode" id="cb40" style="background: #f1f3f5;"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb40-1"><span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">cd</span> _examples/version1</span>
-<span id="cb40-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">make</span></span>
-<span id="cb40-3"><span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">cd</span> ../..</span></code></pre></div>
-<p>There’s another trick in play here too. At the start of the file I’ve made use of <code>.PHONY</code> to declare explicitly that many of my targets don’t refer to real files, and are merely labels for recipes. I’ve been lazy about that up till now,<sup>10</sup> but it does matter in a lot of contexts.</p>
-<p>In any case, here’s what I get as output when I <code>make</code> this post:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb41" style="background: #f1f3f5;"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb41-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">make</span></span></code></pre></div>
-</div>
-<pre><code>------------ building _examples/version1 ------------
-mkdir -p ./bin
-clang++ --std=c++20 src/collatz.cpp -o bin/collatz
-clang++ --std=c++20 src/species.cpp -o bin/species
-clang++ --std=c++20 src/swap.cpp -o bin/swap
------------- building _examples/version2 ------------
-mkdir -p ./bin
-clang++ --std=c++20 src/collatz.cpp -o bin/collatz
-clang++ --std=c++20 src/species.cpp -o bin/species
-clang++ --std=c++20 src/swap.cpp -o bin/swap
------------- building _examples/version3 ------------
-compiling src/collatz.cpp to bin/collatz
-compiling src/species.cpp to bin/species
-compiling src/swap.cpp to bin/swap
------------- rendering quarto ------------
-rendering ../../_site/posts/2023-06-23_makefiles/index.html</code></pre>
-<p>Each of the example projects gets built, with a pretty header line to explain which project is building at each step of the process, and then finally the quarto document is rendered also. Somewhat awkwardly though, there’s some indirect recursion going on also: the quarto document calls <code>make</code> several times internally in order to generate much of the output shown in this post. It doesn’t actually break anything, but it does mean it’s a little harder for <code>make</code> to infer when one of the submakes is out of date. Indirect recursion is a strange beast at the best of times, but fortunately it doesn’t cause a lot of problems in this case.</p>
-</section>
-<section id="epilogue-and-the-death-of-the-author" class="level2">
-<h2 class="anchored" data-anchor-id="epilogue-and-the-death-of-the-author">Epilogue, and the Death of the Author</h2>
-<p>This was a strange post, and I honestly have no idea how to wrap it all up. If you do want to learn more about Makefiles, I highly recommend the walkthrough at <a href="https://makefiletutorial.com">makefiletutorial.com</a>. It’s how I learned. As for the rest of the narrative… I don’t know what that was all about? I was bored, I guess.</p>
-</section>
-<section id="postscript" class="level2">
-<h2 class="anchored" data-anchor-id="postscript">Postscript</h2>
-<p>After sharing this post on mastodon some folks suggested a few other resources related to make and other build automation tools. So here’s a list of resources I’ve either used in this post, or someone else suggested to me afterwards:</p>
-<ul>
-<li><a href="https://makefiletutorial.com">makefiletutorial.com</a> is the tutorial I learned from</li>
-<li>here’s the <a href="https://www.gnu.org/software/make/manual/html_node/index.html">documentation for GNU make</a></li>
-<li>a blog post by Mike Bostock: <a href="https://bost.ocks.org/mike/make/">why use make</a></li>
-<li>a blog post by Jake Howard: <a href="https://theorangeone.net/posts/just-stop-using-makefile/">just! stop using make</a></li>
-<li>for R users, there is the <code>usethis::use_make()</code> function which was new to me</li>
-</ul>
-<p>Links to some related tools:</p>
-<ul>
-<li><a href="https://docs.ropensci.org/targets/">targets</a></li>
-<li><a href="https://cmake.org/">cmake</a></li>
-<li><a href="https://snakemake.github.io/">snakemake</a></li>
-<li><a href="https://ruby.github.io/rake/">rake</a></li>
-<li><a href="https://microsoft.github.io/just/">just</a></li>
-<li><a href="https://www.pyinvoke.org/">invoke</a></li>
-<li><a href="https://taskfile.dev/">task</a></li>
-</ul>
-
-
-</section>
-
-
-<div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
-
-<ol>
-<li id="fn1"><p>I did ponder briefly the question of whether this joke is in poor taste. On the one hand, it probably is. On the other hand, I can’t help but notice there’s a remarkable number of people who suddenly come out of the woodwork to handwringing about the horrors of ordinary people making jokes at the expense of reckless rich people who came to a relatively painless end due to their own overwhelming hubris, while Dave Chappelle and Ricky Gervais are both out there making bank by mocking and belittling the most vulnerable people in society. Pick your battles my sweet things. Pick your battles.↩︎</p></li>
-<li id="fn2"><p>Traditionally a Makefile is simply named <code>Makefile</code> or <code>makefile</code>. It doesn’t have to be, but if you call it something else you need to explicitly tell <code>make</code> where to find the file using the <code>-f</code> flag. A command like <code>make -f my_make_file</code>, for example, specifies that the Makefile is called <code>my_make_file</code>.↩︎</p></li>
-<li id="fn3"><p>Admittedly, this implicitly assumes that I’m executing the <code>make</code> command from the same directory as the <code>Makefile</code> itself. That creates some awkwardness for this blog post because the quarto file is not in the same folder as the Makefile. So when you look at the source code for this post you’ll see I’m doing something slightly different. But let’s put those particular nightmares on layby shall we? Instead, let’s see what horrors escape from the particular Pandora’s box that happens to sit before us.↩︎</p></li>
-<li id="fn4"><p>Don’t include “clean” in the list of “all” targets, obviously: that would defeat the point entirely.↩︎</p></li>
-<li id="fn5"><p>This seems as good a moment as any to mention that yes, I am indeed aware of the <a href="https://www.gnu.org/software/make/manual/html_node/Implicit-Rules.html">implicit rules</a> that are very often used in Makefiles to do common tasks like compiling C code without explicitly calling the compiler. I’ve chosen not to use those here because, quite frankly, implicit compilation rules make me uncomfortable.↩︎</p></li>
-<li id="fn6"><p>Oh yes, <code>make</code> uses infix notation for functions. Of course it does, for the same reason that it mandates tab indentation… because <code>make</code> is the very quintessence of evil design. It’s useful enough to weasel its way into your projects, at which point it then slowly drives you toward the pit of despair by making design choices that seem chosen deliberately to make you feel like an idiot. Case in point, you can use <code>${ }</code> instead of <code>$( )</code> to call a function if you like. Because why not?↩︎</p></li>
-<li id="fn7"><p>The fact that this happens to be the same batshit argument ordering used in the base R <code>gsub()</code> function makes me suspect that there is some historical reason for this that involves being lectured about grep for about an hour. Anyway there’s a reason why almost everyone who uses R in real world vastly prefers the stringr pattern matching API over the base R API. But I digress.↩︎</p></li>
-<li id="fn8"><p>I’m skipping over the <code>dir</code> target on lines 8 and 9, because the code here is the same as it was in the original version. It’s very boring: it just makes sure that a <code>bin</code> folder exists.↩︎</p></li>
-<li id="fn9"><p>You probably know why this piece speaks to me, and why I chose to include it even though it’s a slight departure from the narrative. If not, well, I’ll leave it for you to guess.↩︎</p></li>
-<li id="fn10"><p>The <code>.ALLCAPS</code> thing going on here tells us that <code>.PHONY</code> is one of the <a href="https://www.gnu.org/software/make/manual/html_node/Special-Targets.html">special built-in target names</a> that have particular meaning in <code>make</code>.↩︎</p></li>
-</ol>
-</section><section class="quarto-appendix-contents" id="quarto-reuse"><h2 class="anchored quarto-appendix-heading">Reuse</h2><div class="quarto-appendix-contents"><div><a rel="license" href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></div></div></section><section class="quarto-appendix-contents" id="quarto-citation"><h2 class="anchored quarto-appendix-heading">Citation</h2><div><div class="quarto-appendix-secondary-label">BibTeX citation:</div><pre class="sourceCode code-with-copy quarto-appendix-bibtex"><code class="sourceCode bibtex">@online{navarro2023,
-  author = {Navarro, Danielle},
-  title = {Makefiles. {Or,} the Balrog and the Submersible},
-  date = {2023-06-30},
-  url = {https://blog.djnavarro.net/posts/2023-06-30_makefiles/},
-  langid = {en}
-}
-</code></pre><div class="quarto-appendix-secondary-label">For attribution, please cite this work as:</div><div id="ref-navarro2023" class="csl-entry quarto-appendix-citeas">
-Navarro, Danielle. 2023. <span>“Makefiles. Or, the Balrog and the
-Submersible.”</span> June 30, 2023. <a href="https://blog.djnavarro.net/posts/2023-06-30_makefiles/">https://blog.djnavarro.net/posts/2023-06-30_makefiles/</a>.
-</div></div></section></div> ]]></description>
-  <category>Reproducibility</category>
-  <guid>https://blog.djnavarro.net/posts/2023-06-30_makefiles/</guid>
-  <pubDate>Thu, 29 Jun 2023 14:00:00 GMT</pubDate>
-  <media:content url="https://blog.djnavarro.net/posts/2023-06-30_makefiles/img/gothmog.jpg" medium="image" type="image/jpeg"/>
 </item>
 </channel>
 </rss>
