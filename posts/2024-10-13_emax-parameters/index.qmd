@@ -1,0 +1,424 @@
+---
+title: "emax-parameters"
+description: "This is a subtitle"
+date: "2024-10-13"
+editor_options: 
+  chunk_output_type: console
+--- 
+
+<!--------------- my typical setup ----------------->
+
+```{r}
+#| label: setup
+#| include: false
+very_wide <- 500
+wide <- 136
+narrow <- 76
+options(width = narrow, scipen = 10)
+cache_images <- TRUE
+set.seed(100)
+```
+
+<!--------------- post begins here ----------------->
+
+```{r}
+#| message: false
+library(rstanemax)
+library(ggplot2)
+library(tibble)
+library(tidyr)
+library(dplyr)
+```
+
+## The emax model
+
+```{r}
+emax_fn <- function(exposure, emax, ec50, e0, gamma = 1) {
+  e0 + emax * (exposure ^ gamma) / (ec50 ^ gamma + exposure ^ gamma)
+}
+```
+
+```{r}
+par_effect <- function(exposure = 1:1500, 
+                       emax = 10, 
+                       ec50 = 200, 
+                       e0 = 10, 
+                       gamma = 1, 
+                       ...) {
+  expand_grid(
+    exposure = exposure,
+    emax = emax, 
+    ec50 = ec50, 
+    e0 = e0,
+    gamma = gamma
+  ) |> 
+    mutate(
+      response = emax_fn(exposure, emax, ec50, e0, gamma),
+      emax = factor(emax),
+      ec50 = factor(ec50),
+      e0 = factor(e0),
+      gamma = factor(gamma)
+    ) |> 
+    ggplot(aes(exposure, response, ...)) + 
+    geom_line() +
+    theme_bw()
+}
+```
+
+```{r}
+#| fig-height: 4
+#| fig-width: 4
+#| layout-ncol: 2
+par_effect(emax = seq(2, 10, 2), color = emax)
+par_effect(emax = seq(2, 10, 2), color = emax) + scale_x_log10()
+```
+
+
+```{r}
+#| fig-height: 4
+#| fig-width: 4
+#| layout-ncol: 2
+par_effect(e0 = seq(2, 10, 2), color = e0)
+par_effect(e0 = seq(2, 10, 2), color = e0) + scale_x_log10()
+```
+
+
+```{r}
+#| fig-height: 4
+#| fig-width: 4
+#| layout-ncol: 2
+par_effect(ec50 = seq(50, 400, 50), color = ec50)
+par_effect(ec50 = seq(50, 400, 50), color = ec50) + scale_x_log10()
+```
+
+
+```{r}
+#| fig-height: 4
+#| fig-width: 4
+#| layout-ncol: 2
+par_effect(gamma = 1:5, color = gamma)
+par_effect(gamma = 1:5, color = gamma) + scale_x_log10()
+```
+
+
+## Data in an emax model context
+
+Some fake exposures:
+
+```{r}
+#| fig-height: 4
+#| fig-width: 4
+#| layout-ncol: 2
+
+draw_exposure <- function(dose, n) {
+  dose * qlnorm(
+    p = runif(n, min = .01, max = .99), 
+    meanlog = 4,
+    sdlog = 0.5
+  )
+}
+
+design <- bind_rows(
+  tibble(
+    dose = 100, 
+    exposure = draw_exposure(dose, n = 100)
+  ),
+  tibble(
+    dose = 50, 
+    exposure = draw_exposure(dose, n = 100)
+  ),
+  tibble(
+    dose = 0, 
+    exposure = draw_exposure(.01, n = 20)
+  )
+) |> 
+  mutate(
+    condition = dose |> factor(
+      levels = c(0, 50, 100),
+      labels = c("placebo", "50 mg", "100 mg")
+    )
+  )
+
+
+ggplot(design, aes(exposure, fill = condition)) +
+  geom_histogram(bins = 20) + 
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+ggplot(design, aes(exposure, fill = condition)) +
+  geom_histogram(bins = 20) +
+  scale_x_log10() +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+ggplot(design, aes(condition, exposure, fill = condition)) +
+  geom_boxplot(show.legend = FALSE) + 
+  theme_bw()
+
+ggplot(design, aes(condition, exposure, fill = condition)) +
+  scale_y_log10() +
+  geom_boxplot(show.legend = FALSE) + 
+  theme_bw()
+```
+
+Remove placebo (for now):
+
+```{r}
+design <- design |> 
+  filter(dose > 0)
+```
+
+Quantiles for the exposures:
+
+```{r}
+tibble(
+  level = seq(0, 1, by = .1),
+  quantile = quantile(design$exposure, probs = level)
+)
+```
+
+Some simulated data:
+
+```{r}
+# helper to supply defaults
+emax_parameters <- function(emax  = 10, 
+                            ec50  = 4000, 
+                            e0    = 10,
+                            gamma = 1,
+                            sigma = .6) {
+  list(
+    emax = emax,
+    ec50 = ec50,
+    e0 = e0,
+    gamma = gamma,
+    sigma = sigma 
+  )
+}
+
+generate_emax_data <- function(exposure, par = list()) {
+  par <- do.call(emax_parameters, args = par)
+  n <- length(exposure)
+  tibble(
+    exposure = exposure,
+    emax_val = emax_fn(
+      exposure, 
+      emax = par$emax, 
+      ec50 = par$ec50, 
+      e0 = par$e0, 
+      gamma = par$gamma
+    ),
+    response = emax_val + rnorm(n, 0, par$sigma)
+  )
+}
+
+# generate data using default parameters
+par1 <- emax_parameters() 
+dat1 <- generate_emax_data(design$exposure, par1)
+dat1
+```
+
+What do our data look like?
+
+```{r}
+#| fig-height: 4
+#| fig-width: 4
+#| layout-ncol: 2
+plot_emax_data <- function(data, par) {
+  p <- data |> 
+    ggplot(aes(exposure, response)) + 
+    theme_bw()    
+  if (!is.null(par$ec50)) {
+    p <- p + geom_vline(xintercept = par$ec50, color = "red")
+  }
+  if (!is.null(par$e0) & !is.null(par$emax)) {
+    p <- p +
+      geom_hline(yintercept = par$e0 + par$emax, color = "red") +
+      geom_hline(yintercept = par$e0 + par$emax/2, color = "red") +
+      geom_hline(yintercept = par$e0, color = "red")
+  }
+  p +   
+    geom_line(aes(y = emax_val)) +
+    geom_point() 
+}
+
+plot_emax_data(dat1, par1) 
+plot_emax_data(dat1, par1) + scale_x_log10()
+```
+
+
+## Sometimes the data are good
+
+The data set I've simulated here is one where the emax model works well. Let's have a look, Fit the model using rstanemax:
+
+```{r}
+#| message: false
+#| results: hide
+emax_priors <- function(par) {
+  list(
+    e0 = c(par$e0, 100),
+    ec50 = c(par$ec50, 1000),
+    emax = c(par$emax, 100),
+    sigma = c(par$sigma, 1)
+  )
+}
+
+mod1 <- stan_emax(
+  formula = response ~ exposure, 
+  data = dat1,
+  priors = emax_priors(par1)
+)
+```
+
+```{r}
+mod1
+```
+
+```{r}
+smp1 <- extract_param(mod1)
+smp1
+```
+
+```{r}
+plot_emax_pars <- function(data, par = list()) {
+  
+  plot_pair <- function(data, x, y, true_x, true_y) {
+    est <- data |> 
+      summarise(
+        mx = mean({{x}}),
+        my = mean({{y}})
+      )
+    ggplot(data, aes({{x}}, {{y}})) + 
+      geom_point(size = .5, color = "lightblue") + 
+      annotate("point", x = true_x, y = true_y, color = "red", size = 4) +
+      annotate("point", x = est$mx, y = est$my, color = "darkblue", size = 4) +
+      theme_bw()
+  }
+  
+  list(
+    plot_pair(data, emax, ec50, par$emax, par$ec50),
+    plot_pair(data, emax, e0, par$emax, par$e0),
+    plot_pair(data, ec50, e0, par$ec50, par$e0)
+  )
+}
+```
+
+```{r}
+#| fig-height: 3
+#| fig-width: 3
+#| layout-ncol: 3
+smp1 |> 
+  plot_emax_pars(par1) |> 
+  purrr::walk(print)
+```
+
+
+## Too few data at low exposures
+
+An alternative case to think about is one where the underlying effect is quite strong, but alas your design wasn't optimal and your log-exposures are mostly on one side of the logistic curve. Or, to put it another way, this happens when the true value of `ec50` is substantially below the median exposure in your data set
+
+```{r}
+#| fig-height: 4
+#| fig-width: 4
+#| layout-ncol: 2
+par2 <- emax_parameters(ec50 = 2000) # around 10th percentile
+dat2 <- generate_emax_data(design$exposure, par2)
+
+plot_emax_data(dat2, par2) 
+plot_emax_data(dat2, par2) + scale_x_log10()
+```
+
+```{r}
+#| message: false
+#| results: hide
+mod2 <- stan_emax(
+  formula = response ~ exposure, 
+  data = dat2,
+  priors = emax_priors(par2)
+)
+```
+
+
+```{r}
+#| fig-height: 3
+#| fig-width: 3
+#| layout-ncol: 3
+mod2 |> 
+  extract_param() |> 
+  plot_emax_pars(par2) |> 
+  purrr::walk(print)
+```
+
+
+## Too few data at high exposures
+
+```{r}
+#| fig-height: 4
+#| fig-width: 4
+#| layout-ncol: 2
+par3 <- emax_parameters(ec50 = 6500) # around 80th percentile
+dat3 <- generate_emax_data(design$exposure, par3)
+
+plot_emax_data(dat3, par3) 
+plot_emax_data(dat3, par3) + scale_x_log10()
+```
+
+```{r}
+#| message: false
+#| results: hide
+mod3 <- stan_emax(
+  formula = response ~ exposure, 
+  data = dat3,
+  priors = emax_priors(par3)
+)
+```
+
+```{r}
+#| fig-height: 3
+#| fig-width: 3
+#| layout-ncol: 3
+mod3 |> 
+  extract_param() |> 
+  plot_emax_pars(par3) |> 
+  purrr::walk(print)
+```
+
+
+## Effect is too small
+
+Naturally, I have saved the worst for last (I am the antithesis of Vanessa Redgrave). The last scenario to consider is one where the true effect size is very close to zero, and everything goes to hell
+
+```{r}
+#| fig-height: 4
+#| fig-width: 4
+#| layout-ncol: 2
+
+par4 <- emax_parameters(emax = .1) # very small effect
+dat4 <- generate_emax_data(design$exposure, par4)
+
+plot_emax_data(dat4, par4) 
+plot_emax_data(dat4, par4) + scale_x_log10()
+```
+
+```{r}
+#| message: false
+#| results: hide
+mod4 <- stan_emax(
+  formula = response ~ exposure, 
+  data = dat4,
+  priors = emax_priors(par4)
+)
+```
+
+```{r}
+#| fig-height: 3
+#| fig-width: 3
+#| layout-ncol: 3
+mod4 |> 
+  extract_param() |> 
+  plot_emax_pars(par4) |> 
+  purrr::walk(print)
+```
+
+
+
+
