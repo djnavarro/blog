@@ -58,10 +58,10 @@ where we typically assume iid normal residual error, $\epsilon_i \sim \mbox{Norm
 
 This situation is about as simple as you can possibly get within the Emax context: we're abstracting over questions about how exposure is defined^[I have now been working in pharamacometrics long enough to be painfully aware that there are a *lot* of different measures used to formalise some notion of "drug exposure" that have different properties and different applicability to specific problems. This post is not for talking about such things: I will merely assume that some measure of exposure exists and has been chosen sensibly.], there are no covariates in the model, and we are assuming that the response variable $y$ is continuous valued with normally distributed measurement error. It does not get any simpler than this in Emax-land.  
 
-To give a sense of what the Emax model equation (i.e., ignoring the $\epsilon_i$ terms) looks like, we can implement in R like this:
+To give a sense of what the Emax model equation (i.e., ignoring the $\epsilon_i$ terms) looks like, we can implement in R like this:^[This function doesn't really need the dots. I'm adding them here solely so that `emax_fn()` can silently ignore parameters that aren't used in the model, which happens later in the document because the model also has a `sigma` parameter to describe residual variance. If I were a less lazy woman I'd write this in a tighter way but this is just a blog post, and the level of rigour I'm aiming for is not super high here.]
 
 ```{r}
-emax_fn <- function(exposure, emax, ec50, e0, gamma = 1) {
+emax_fn <- function(exposure, emax, ec50, e0, gamma = 1, ...) {
   e0 + emax * (exposure ^ gamma) / (ec50 ^ gamma + exposure ^ gamma)
 }
 ```
@@ -89,11 +89,11 @@ To flesh out the intuition a little better, let's systematically vary one parame
 
 ```{r}
 emax_effect <- function(exposure = 1:10000, 
-                       emax = 10, 
-                       ec50 = 200, 
-                       e0 = 10, 
-                       gamma = 1, 
-                       ...) {
+                        emax = 10, 
+                        ec50 = 200, 
+                        e0 = 10, 
+                        gamma = 1, 
+                        ...) {
   expand_grid(
     exposure = exposure,
     emax = emax, 
@@ -160,86 +160,96 @@ emax_effect(gamma = 1:5, color = gamma) + scale_x_log10()
 
 Now that we have a general sense of how the Emax function behaves, we can start thinking about it as a statistical model and look at what we expect data to look like when the Emax model applies. 
 
-## Data in an emax model context
+## Simulated exposures
 
-Some fake exposures:
+Generating simulated data to fit with an Emax model is slightly tricky, even in the very simple scenario I'm considering. Generating fictitious response data conditional on having a set of observed exposures is easy: the Emax function itself tells you how to generate $y_i$ (response) values given $x_i$ (exposures). Yes, there's some nuance involved because the additive normal error model for $\epsilon_i$ (residuals) is a bit silly if you take it literally, but that's not the hard part. 
+
+The hard part is generating a set of exposures $x_i$ that are presumed to arise from your experimental design.
+
+The reason this part is difficult is that the Emax model is silent on where those exposures come from. As I talked about in the [notes on the Emax model post](/posts/2024-01-09_emax-models/), the scientific justification for the Emax function is based on some (not unreasonable) assumptions about the mechanism of action for the drug. It has a clear interpretation for exposure measures (e.g., $C_{max,ss}$, $C_{min,ss}$) that correspond to the concentration at a specific moment in time, and while you do have to hand-wave a little more when considering time-averaged exposures or area under the curve ($AUC_{ss}$) measures, it does make a certain amount of biological sense. Even so, the Emax model is a pharmacodynamic model and is not in any meaningful sense a pharmacokinetic model: you can't extract exposure measures PK profiles from the Emax model in the same way you can for a compartmental model (e.g. [here](/posts/2023-05-16_stan-ode/), [here](/posts/2023-06-10_pop-pk-models/), and [here](/posts/2023-08-28_rxode2/)). It's not designed for that purpose, and I have absolutely no intention of trying to generate fictitious exposures based on a compartmental model simply to play around with Emax. 
+
+With that in mind I've adopted a semi-plausible compromise. Conditional on dose, I will assume for the current purposes that our exposure measure (whatever exposure measure we're using) is approximately lognormally distributed,^[As you can see in the code I've actually used a truncated lognormal, chopping off the lower and upper 1% of the distribution. That subtlety does matter a bit, actually, because extreme values of the exposures end up being high-leverage points when you fit the regression model (I think: to be honest I haven't bothered to look at this in detail), and I don't want to deal with outliers in this post.] and I'll assume that exposure scales linearly with dose. Neither of those two assumptions holds true in general, but it's good enough for a blog post. You can do this with a simple function like `generate_exposure()` below, and that will be good enough for now:
+
+```{r}
+generate_exposure <- function(dose, n, meanlog = 4, sdlog = 0.5) {
+  dose * qlnorm(
+    p = runif(n, min = .01, max = .99), 
+    meanlog = meanlog,
+    sdlog = sdlog
+  )
+}
+```
+
+Next we need to make some assumptions about an experimental design. Let's suppose for simplicity we have a three-arm design, with 20 subjects in a placebo arm, alongside 100 subjects each in a 100 mg arm,and a 50 mg arm. Then, for each subject we use the `generate_exposure()` function to assign them an exposure level:^[Sigh. Yes, I know: the dose I've passed to `generate_exposure()` in the placebo condition is weird: you wouldn't actually expect a .01 mg dose in a placebo condition, this is purely a hack I introduced so that the data from the placebo condition doesn't look super weird] ^[Double sigh. I am not considering the role played by BLQ censoring either. Look, this is a blog post: I am not trying to write an academic paper here. I've had quite enough of that for one lifetime already tyvm.]
+
+```{r}
+design <- bind_rows(
+  tibble(dose = 100, exposure = generate_exposure(dose, n = 100)),
+  tibble(dose = 50,  exposure = generate_exposure(dose, n = 100)),
+  tibble(dose = 0,   exposure = generate_exposure(.01, n = 20))
+) |> 
+  mutate(
+    condition = dose |> 
+      factor(
+        levels = c(0, 50, 100),
+        labels = c("placebo", "50 mg", "100 mg")
+      )
+  )
+design
+```
+
+This is all a bit hand-wavy, as any pharmacometrician will immediately note. The dosing and sampling regimen aren't specified in any detail: I am simply assuming that whatever happens on the PK side is such that we can pretend that exposure is approximately lognormal and scales with dose. But let's set all that to one side and take a look at what the distribution of exposures looks like in an experimental design like this:
 
 ```{r}
 #| fig-height: 4
 #| fig-width: 4
 #| layout-ncol: 2
 
-draw_exposure <- function(dose, n) {
-  dose * qlnorm(
-    p = runif(n, min = .01, max = .99), 
-    meanlog = 4,
-    sdlog = 0.5
-  )
-}
-
-design <- bind_rows(
-  tibble(
-    dose = 100, 
-    exposure = draw_exposure(dose, n = 100)
-  ),
-  tibble(
-    dose = 50, 
-    exposure = draw_exposure(dose, n = 100)
-  ),
-  tibble(
-    dose = 0, 
-    exposure = draw_exposure(.01, n = 20)
-  )
-) |> 
-  mutate(
-    condition = dose |> factor(
-      levels = c(0, 50, 100),
-      labels = c("placebo", "50 mg", "100 mg")
-    )
-  )
-
-
-ggplot(design, aes(exposure, fill = condition)) +
+pic <- ggplot(design, aes(exposure, fill = condition)) +
   geom_histogram(bins = 20) + 
   theme_bw() +
   theme(legend.position = "bottom")
 
-ggplot(design, aes(exposure, fill = condition)) +
-  geom_histogram(bins = 20) +
-  scale_x_log10() +
-  theme_bw() +
-  theme(legend.position = "bottom")
+pic
+pic + scale_x_log10()
+```
 
-ggplot(design, aes(condition, exposure, fill = condition)) +
+The main thing to note, looking at the histograms that come from this highly-stylised simulated design, is the data that would end up being "visible" as the predictor in an Emax model are a set of exposures $x_i$ that have a positively skewed distribution and are rather unevenly distributed across the exposure range.^[A part of me wants to discuss kurtosis at this point but perhaps I should just bite my tongue instead? You don't make friends with kurtosis.] A somewhat more conventional way of looking at this would be to show exposure boxplots stratified by condition, on both a linear scale and a logarithmic scale:
+
+```{r}
+#| fig-height: 4
+#| fig-width: 4
+#| layout-ncol: 2
+
+pic <- ggplot(design, aes(condition, exposure, fill = condition)) +
   geom_boxplot(show.legend = FALSE) + 
   theme_bw()
 
-ggplot(design, aes(condition, exposure, fill = condition)) +
-  scale_y_log10() +
-  geom_boxplot(show.legend = FALSE) + 
+pic
+pic + scale_y_log10()
+```
+
+For the purposes of this post I'm going to simplify this further and drop the placebo group. There's both a practical reason for doing this. On the statistical side, I want to be able to highlight some of the issues that can arise when you *don't* have exposures from a placebo group to "pin out" the lower end of the exposure-response range. Because this situation does arise in pratice sometimes, it's worth looking at.
+
+And so, at the end of all this, what we end up with is a vector of exposure values $x_i$ that basically looks a bit like a log-normal distribution...
+
+```{r}
+exposure <- design |> 
+  filter(dose > 0) |> 
+  pull(exposure)
+
+ggplot(tibble(exposure), aes(exposure)) +
+  geom_histogram(bins = 20) + 
   theme_bw()
 ```
 
-Remove placebo (for now):
+It's this `exposure` vector that I'll use to supply the $x_i$ values in the remainder of the post. Let's move on, shall we?
+
+## Simulated data
+
+Having made some choices about the `exposure` vector that will be supplied to our Emax model, the rest of the simulation process is "just" a matter of writing some convenience functions that we can use later for exploring the behaviour of the model. First, I'll write an `emax_parameters()` function that supplies default values, so that if I call `emax_parameters(emax = 20)`, I end up with a list that stores this `emax` value alongside all the defaults:
 
 ```{r}
-design <- design |> 
-  filter(dose > 0)
-```
-
-Quantiles for the exposures:
-
-```{r}
-tibble(
-  level = seq(0, 1, by = .1),
-  quantile = quantile(design$exposure, probs = level)
-)
-```
-
-Some simulated data:
-
-```{r}
-# helper to supply defaults
 emax_parameters <- function(emax  = 10, 
                             ec50  = 4000, 
                             e0    = 10,
@@ -254,6 +264,15 @@ emax_parameters <- function(emax  = 10,
   )
 }
 
+par1 <- emax_parameters() # default paramerters
+par1
+```
+
+Truly exciting work, I know, but my experience with statistical programming has always been that it pays to take care of these little niceties. Convenience functions like this one don't play any meaningful scientific role, nor are they important for understanding the statistical properties of the Emax model, but they do make the *code* easier to read and write. 
+
+Along the same lines, I'll also write a `generate_emax_data()` function that takes an `exposure` vector and a parameter list (`par`) as its arguments, and returns a nicely formatted data frame:
+
+```{r}
 generate_emax_data <- function(exposure, par = list()) {
   par <- do.call(emax_parameters, args = par)
   n <- length(exposure)
@@ -269,10 +288,15 @@ generate_emax_data <- function(exposure, par = list()) {
     response = emax_val + rnorm(n, 0, par$sigma)
   )
 }
+```
 
-# generate data using default parameters
-par1 <- emax_parameters() 
-dat1 <- generate_emax_data(design$exposure, par1)
+And just like that we can generate fictitious data sets to which an Emax model can be applied:
+
+```{r}
+dat1 <- generate_emax_data(
+  exposure = exposure, # use the exposure vector from last section
+  par = par1           # use the default parameters supplied above
+)
 dat1
 ```
 
@@ -283,29 +307,50 @@ What do our data look like?
 #| fig-width: 4
 #| layout-ncol: 2
 plot_emax_data <- function(data, par) {
-  p <- data |> 
+  min_x <- min(data$exposure)
+  max_x <- max(data$exposure)
+  pred <- tibble(
+    exp = seq(min_x, max_x, length.out = 1000),
+    rsp = do.call(emax_fn, args = c(list(exposure = exp), par))
+  )
+  data |> 
     ggplot(aes(exposure, response)) + 
+    geom_vline(xintercept = par$ec50, color = "red") +
+    geom_hline(yintercept = par$e0 + par$emax, color = "red") +
+    geom_hline(yintercept = par$e0 + par$emax/2, color = "red") +
+    geom_hline(yintercept = par$e0, color = "red") +
+    geom_line(
+      data = pred,
+      mapping = aes(exp, rsp)
+    ) +
+    geom_point() + 
     theme_bw()    
-  if (!is.null(par$ec50)) {
-    p <- p + geom_vline(xintercept = par$ec50, color = "red")
-  }
-  if (!is.null(par$e0) & !is.null(par$emax)) {
-    p <- p +
-      geom_hline(yintercept = par$e0 + par$emax, color = "red") +
-      geom_hline(yintercept = par$e0 + par$emax/2, color = "red") +
-      geom_hline(yintercept = par$e0, color = "red")
-  }
-  p +   
-    geom_line(aes(y = emax_val)) +
-    geom_point() 
 }
 
+# plot using all exposures, including placebo
+pic <- design |> 
+  pull(exposure) |> 
+  generate_emax_data(par = par1) |> 
+  plot_emax_data(par = par1)
+
+pic 
+pic + scale_x_log10()
+```
+
+
+
+## Sometimes the data are good
+
+Let's consider the case where there is no placebo...
+
+```{r}
+#| fig-height: 4
+#| fig-width: 4
+#| layout-ncol: 2
 plot_emax_data(dat1, par1) 
 plot_emax_data(dat1, par1) + scale_x_log10()
 ```
 
-
-## Sometimes the data are good
 
 The data set I've simulated here is one where the emax model works well. Let's have a look, Fit the model using rstanemax:
 
@@ -380,7 +425,7 @@ An alternative case to think about is one where the underlying effect is quite s
 #| fig-width: 4
 #| layout-ncol: 2
 par2 <- emax_parameters(ec50 = 2000) # around 10th percentile
-dat2 <- generate_emax_data(design$exposure, par2)
+dat2 <- generate_emax_data(exposure, par2)
 
 plot_emax_data(dat2, par2) 
 plot_emax_data(dat2, par2) + scale_x_log10()
@@ -415,7 +460,7 @@ mod2 |>
 #| fig-width: 4
 #| layout-ncol: 2
 par3 <- emax_parameters(ec50 = 6500) # around 80th percentile
-dat3 <- generate_emax_data(design$exposure, par3)
+dat3 <- generate_emax_data(exposure, par3)
 
 plot_emax_data(dat3, par3) 
 plot_emax_data(dat3, par3) + scale_x_log10()
@@ -452,7 +497,7 @@ Naturally, I have saved the worst for last (I am the antithesis of Vanessa Redgr
 #| layout-ncol: 2
 
 par4 <- emax_parameters(emax = .1) # very small effect
-dat4 <- generate_emax_data(design$exposure, par4)
+dat4 <- generate_emax_data(exposure, par4)
 
 plot_emax_data(dat4, par4) 
 plot_emax_data(dat4, par4) + scale_x_log10()
