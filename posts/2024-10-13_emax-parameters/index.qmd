@@ -1,7 +1,8 @@
 ---
-title: "emax-parameters"
-description: "This is a subtitle"
+title: "Bayesian parameter estimation in the Emax model"
+description: "In which the author sighs as she discovers another case where the structure of the likelihood function makes things... tricky"
 date: "2024-10-13"
+categories: ["R", "Pharmacometrics", "Bayes", "Statistics", "Stan"]
 editor_options: 
   chunk_output_type: console
 --- 
@@ -30,7 +31,34 @@ library(tidyr)
 library(dplyr)
 ```
 
-## The emax model
+
+## Motivation for the post
+
+This is a post about the Emax model, a commonly-used tool in pharmacometrics. I've written about it before. At the start of this year I wrote up some [notes on the Emax model](/posts/2024-01-09_emax-models/) approaching it from a purely pharmacological perspective, discussing the *mechanistic* motivation for Emax when working with pharmacodynamic data. What I didn't talk about in that post is the behaviour of Emax as a *statistical* model. It is time to redress that limitation, and talk a little about some issues that can arise when estimating the parameters of an Emax model.
+
+It is also a post about the [rstanemax](https://yoshidk6.github.io/rstanemax/) package, a handy tool by Kenta Yoshida that I've only recently discovered, which provides for Bayesian estimation in R for the Emax model. The rstanemax package supplies a pre-defined implementation of the Emax model in Stan that you can call from R via [rstan](https://mc-stan.org/users/interfaces/rstan), and while I won't be doing a deep dive into the package here, it's a very convenient way for me to talk about some statistical issues that can arise in Emax modelling.
+
+
+## The Emax model
+
+Letting $x_i$ denote the observed exposure for the $i$-th subject, and letting $y_i$ denote the observed reponse, the form of the Emax model for a continuous-valued response^[You can run Emax models with binary outcomes, in which case the approach is to recast this within a logistic regression framework, but in the interest of simplicity I'm not going to cover that situation in this post.] is typically written as the following nonlinear regression model:
+
+$$
+y_i = E_0 + E_{max} \frac{x_i^\gamma}{EC_{50}^\gamma + x_i^\gamma} + \epsilon_i 
+$$
+
+where we typically assume iid normal residual error, $\epsilon_i \sim \mbox{Normal}(0, \sigma^2)$. This model has five parameters that need to be estimated:
+
+- $E_0$ is an intercept term and represents the baseline response when drug exposure is zero
+- $E_{max}$ is an asymptote term and defines the maximum change from baseline as the drug exposure becomes arbitrarily large
+- $EC_{50}$ is a location parameter, and defines the exposure level at which the change from baseline is 50% of the maximum possible change
+- $\gamma$ is the "Hill coefficient" that describes the steepness of the response curve. It is not uncommon to fix $\gamma = 1$ in Emax modelling, and for the purposes of this post that's what I'll be doing here
+- $\sigma^2$ is the residual variance used to describe the level of measurement error in the data
+
+
+This situation is about as simple as you can possibly get within the Emax context: we're abstracting over questions about how exposure is defined^[I have now been working in pharamacometrics long enough to be painfully aware that there are a *lot* of different measures used to formalise some notion of "drug exposure" that have different properties and different applicability to specific problems. This post is not for talking about such things: I will merely assume that some measure of exposure exists and has been chosen sensibly.], there are no covariates in the model, and we are assuming that the response variable $y$ is continuous valued with normally distributed measurement error. It does not get any simpler than this in Emax-land.  
+
+To give a sense of what the Emax model equation (i.e., ignoring the $\epsilon_i$ terms) looks like, we can implement in R like this:
 
 ```{r}
 emax_fn <- function(exposure, emax, ec50, e0, gamma = 1) {
@@ -38,8 +66,29 @@ emax_fn <- function(exposure, emax, ec50, e0, gamma = 1) {
 }
 ```
 
+Here's what the function looks like when visualised. On the left hand side the plot shows the exposure-response curve on a linear scale, whereas on the right hand side the exposure is plotted on a logarithmic scale. 
+
 ```{r}
-par_effect <- function(exposure = 1:1500, 
+#| fig-height: 4
+#| fig-width: 4
+#| layout-ncol: 2
+dat <- tibble(
+  exposure = 1:10000,
+  response = emax_fn(exposure, emax = 10, ec50 = 200, e0 = 10)
+)
+pic <- ggplot(dat, aes(exposure, response)) + 
+  geom_line() + 
+  theme_bw()
+pic
+pic + scale_x_log10()
+```
+
+In the linear version of the plot we see a steep initial rise in the response, followed by saturation as exposure increases. The logarithmic scale plot allows us to see what is happening with a little more precision: the Emax model implies a logistic relationship between response and log-exposure.^[When $\gamma=1$ this is the usual two-parameter logistic function, but more generally Emax uses the three-parameter logistic curve.] 
+
+To flesh out the intuition a little better, let's systematically vary one parameter at a time and show what effect each parameter has on the Emax function. To that end I'll first write a convenience function `emax_effect()`...
+
+```{r}
+emax_effect <- function(exposure = 1:10000, 
                        emax = 10, 
                        ec50 = 200, 
                        e0 = 10, 
@@ -65,41 +114,51 @@ par_effect <- function(exposure = 1:1500,
 }
 ```
 
-```{r}
-#| fig-height: 4
-#| fig-width: 4
-#| layout-ncol: 2
-par_effect(emax = seq(2, 10, 2), color = emax)
-par_effect(emax = seq(2, 10, 2), color = emax) + scale_x_log10()
-```
-
+The simplest parameter to understand us $E_0$. It's an intercept parameter pure and simple. The whole curve shifts up and down as you vary $E_0$, exactly like it would in linear regression:
 
 ```{r}
 #| fig-height: 4
 #| fig-width: 4
 #| layout-ncol: 2
-par_effect(e0 = seq(2, 10, 2), color = e0)
-par_effect(e0 = seq(2, 10, 2), color = e0) + scale_x_log10()
+emax_effect(e0 = seq(2, 10, 2), color = e0)
+emax_effect(e0 = seq(2, 10, 2), color = e0) + scale_x_log10()
 ```
 
+The $E_{max}$ parameter is a scaling coefficient applied to the exposure. It is roughly analogous to a slope parameter in linear regression, in the sense that increasing $E_{max}$ "stretches" the curve vertically. More precisely though, increasing $E_{max}$ shifts the asymptotic value for the response: at large exposures the response saturates at $E_0 + E_{max}$, and the curve is scaled to accomodate this. 
 
 ```{r}
 #| fig-height: 4
 #| fig-width: 4
 #| layout-ncol: 2
-par_effect(ec50 = seq(50, 400, 50), color = ec50)
-par_effect(ec50 = seq(50, 400, 50), color = ec50) + scale_x_log10()
+emax_effect(emax = seq(2, 10, 2), color = emax)
+emax_effect(emax = seq(2, 10, 2), color = emax) + scale_x_log10()
 ```
 
+If you compare these plots to the previous ones, you can see why its important to look at the Emax function on the logarithmic scale as well as the linear scale. The difference between how $E_0$ and $E_{max}$ affect the curve are difficult to see on the linear scale, but are very pronounced on the logarithmic scale. This will turn out to be relevant later: if you don't have a lot of data at the lower end of the log-exposure distribution, it is very hard to estimate $E_0$ and $E_{max}$ separately. But I am getting ahead of myself.
+
+Let's now look at the effect of $EC_{50}$. This parameter doesn't have an exact analog in the linear regression context, but the plots below illustrate the effect this parameter has rather nicely: it's a shift parameter that moves the whole curve (on the log-scale) rightwards as it increases.
 
 ```{r}
 #| fig-height: 4
 #| fig-width: 4
 #| layout-ncol: 2
-par_effect(gamma = 1:5, color = gamma)
-par_effect(gamma = 1:5, color = gamma) + scale_x_log10()
+emax_effect(ec50 = seq(50, 400, 50), color = ec50)
+emax_effect(ec50 = seq(50, 400, 50), color = ec50) + scale_x_log10()
 ```
 
+Because $EC_{50}$ is on the same scale as the exposure, the size of the rightward shift scales logarithmically rather than linearly as the parameter is varied.
+
+Finally, let's quickly look at what happens when the Hill coefficient $\gamma$ is varied. To be honest, I'm not going consider $\gamma$ in this post, but it's still kind of useful to visualise what it does. As usual it's easier to see the effect on the log-exposure scale. As you can see from the plot on the right, at higher $\gamma$ values the logistic curve is steeper.
+
+```{r}
+#| fig-height: 4
+#| fig-width: 4
+#| layout-ncol: 2
+emax_effect(gamma = 1:5, color = gamma)
+emax_effect(gamma = 1:5, color = gamma) + scale_x_log10()
+```
+
+Now that we have a general sense of how the Emax function behaves, we can start thinking about it as a statistical model and look at what we expect data to look like when the Emax model applies. 
 
 ## Data in an emax model context
 
@@ -383,7 +442,7 @@ mod3 |>
 ```
 
 
-## Effect is too small
+## Effect is very small
 
 Naturally, I have saved the worst for last (I am the antithesis of Vanessa Redgrave). The last scenario to consider is one where the true effect size is very close to zero, and everything goes to hell
 
@@ -418,7 +477,6 @@ mod4 |>
   plot_emax_pars(par4) |> 
   purrr::walk(print)
 ```
-
 
 
 
