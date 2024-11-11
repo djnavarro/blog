@@ -5,6 +5,7 @@ library(ggplot2)
 library(tibble)
 library(tidyr)
 library(dplyr)
+library(purrr)
 
 # the emax function
 emax_fn <- function(exposure, emax, ec50, e0, gamma = 1, ...) {
@@ -74,13 +75,13 @@ generate_emax_data <- function(exposure, par = list()) {
 
 # convenience function to specify emax model priors for the simulation; this is
 # written assuming rstanemax will be used, which assumes iid normal priors on
-# all parameters; because this simulation is designed to look at biases that
-# emerge from the likelihood/design, the prior is always rigged so as to be
-# centred on the true mean
+# all parameters, truncated at 0 in some cases; the prior mode is "rigged" to
+# be identical to the true value, but note that truncation creates asymmetric
+# priors, so the prior mean and median will higher for ec50 and sigma
 emax_priors <- function(par) {
   list(
     e0 = c(par$e0, 100),
-    ec50 = c(par$ec50, 1000),
+    ec50 = c(par$ec50, 5000),
     emax = c(par$emax, 100),
     sigma = c(par$sigma, 1)
   )
@@ -162,7 +163,7 @@ simulate_many <- function(k = 5,
 
 
 # paths
-post <- "2024-10-13_emax-parameters"
+post <- "2024-11-11_emax-parameters"
 csv_dir <- here::here("posts", post, "csv")
 
 # toggles
@@ -175,7 +176,7 @@ if (vary_ec50) {
   ests <- list()
   for(i in seq_along(ec50)) {
     ests[[i]] <- simulate_many(
-      k = 1000,
+      k = 100,
       par = emax_parameters(ec50 = ec50[i])
     )
   }
