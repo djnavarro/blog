@@ -1,0 +1,1748 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.5.52">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Danielle Navarro">
+<meta name="dcterms.date" content="2024-11-11">
+<meta name="description" content="In which the author sighs a lot">
+
+<title>Bayesian estimation for Emax regression – Notes from a data witch</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<style>
+
+      .quarto-title-block .quarto-title-banner {
+        background: #eeeeee;
+      }
+</style>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="Bayesian estimation for Emax regression – Notes from a data witch">
+<meta property="og:description" content="In which the author sighs a lot">
+<meta property="og:image" content="https://blog.djnavarro.net/posts/2024-11-11_emax-parameters/img/joshua-coleman-AVqs0ItdMQM-unsplash.jpg">
+<meta property="og:site_name" content="Notes from a data witch">
+<meta name="twitter:title" content="Bayesian estimation for Emax regression – Notes from a data witch">
+<meta name="twitter:description" content="In which the author sighs a lot">
+<meta name="twitter:image" content="https://blog.djnavarro.net/posts/2024-11-11_emax-parameters/img/joshua-coleman-AVqs0ItdMQM-unsplash.jpg">
+<meta name="twitter:creator" content="@djnavarro">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="floating nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.xml"> 
+<span class="menu-text">RSS</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-sites" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Sites</span>
+    </a>
+    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="nav-menu-sites">    
+        <li>
+    <a class="dropdown-item" href="https://djnavarro.net">
+ <span class="dropdown-text">Homepage</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://blog.djnavarro.net">
+ <span class="dropdown-text">Data science blog</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://art.djnavarro.net">
+ <span class="dropdown-text">Generative art</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://papers.djnavarro.net">
+ <span class="dropdown-text">Academic papers</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://djnavarro.net/sites">
+ <span class="dropdown-text">More…</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default toc-left page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Bayesian estimation for Emax regression</h1>
+                  <div>
+        <div class="description">
+          In which the author sighs a lot
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">R</div>
+                <div class="quarto-category">Pharmacometrics</div>
+                <div class="quarto-category">Bayes</div>
+                <div class="quarto-category">Statistics</div>
+                <div class="quarto-category">Stan</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p><a href="https://djnavarro.net">Danielle Navarro</a> <a href="https://orcid.org/0000-0001-7648-6578" class="quarto-title-author-orcid"> <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA2ZpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYwIDYxLjEzNDc3NywgMjAxMC8wMi8xMi0xNzozMjowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo1N0NEMjA4MDI1MjA2ODExOTk0QzkzNTEzRjZEQTg1NyIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDozM0NDOEJGNEZGNTcxMUUxODdBOEVCODg2RjdCQ0QwOSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDozM0NDOEJGM0ZGNTcxMUUxODdBOEVCODg2RjdCQ0QwOSIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ1M1IE1hY2ludG9zaCI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOkZDN0YxMTc0MDcyMDY4MTE5NUZFRDc5MUM2MUUwNEREIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjU3Q0QyMDgwMjUyMDY4MTE5OTRDOTM1MTNGNkRBODU3Ii8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+84NovQAAAR1JREFUeNpiZEADy85ZJgCpeCB2QJM6AMQLo4yOL0AWZETSqACk1gOxAQN+cAGIA4EGPQBxmJA0nwdpjjQ8xqArmczw5tMHXAaALDgP1QMxAGqzAAPxQACqh4ER6uf5MBlkm0X4EGayMfMw/Pr7Bd2gRBZogMFBrv01hisv5jLsv9nLAPIOMnjy8RDDyYctyAbFM2EJbRQw+aAWw/LzVgx7b+cwCHKqMhjJFCBLOzAR6+lXX84xnHjYyqAo5IUizkRCwIENQQckGSDGY4TVgAPEaraQr2a4/24bSuoExcJCfAEJihXkWDj3ZAKy9EJGaEo8T0QSxkjSwORsCAuDQCD+QILmD1A9kECEZgxDaEZhICIzGcIyEyOl2RkgwAAhkmC+eAm0TAAAAABJRU5ErkJggg=="></a></p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">November 11, 2024</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#the-emax-model" id="toc-the-emax-model" class="nav-link active" data-scroll-target="#the-emax-model">The Emax model</a></li>
+  <li><a href="#simulated-exposures" id="toc-simulated-exposures" class="nav-link" data-scroll-target="#simulated-exposures">Simulated exposures</a></li>
+  <li><a href="#simulated-data" id="toc-simulated-data" class="nav-link" data-scroll-target="#simulated-data">Simulated data</a></li>
+  <li><a href="#specifying-the-priors" id="toc-specifying-the-priors" class="nav-link" data-scroll-target="#specifying-the-priors">Specifying the priors</a>
+  <ul class="collapse">
+  <li><a href="#setting-priors-in-rstanemax" id="toc-setting-priors-in-rstanemax" class="nav-link" data-scroll-target="#setting-priors-in-rstanemax">Setting priors in rstanemax</a></li>
+  <li><a href="#truncated-normals-are-weird" id="toc-truncated-normals-are-weird" class="nav-link" data-scroll-target="#truncated-normals-are-weird">Truncated normals are weird</a></li>
+  <li><a href="#implied-prior-over-emax-functions" id="toc-implied-prior-over-emax-functions" class="nav-link" data-scroll-target="#implied-prior-over-emax-functions">Implied prior over Emax functions</a></li>
+  </ul></li>
+  <li><a href="#fitting-the-model" id="toc-fitting-the-model" class="nav-link" data-scroll-target="#fitting-the-model">Fitting the model</a></li>
+  <li><a href="#identifiability-issues" id="toc-identifiability-issues" class="nav-link" data-scroll-target="#identifiability-issues">Identifiability issues</a>
+  <ul class="collapse">
+  <li><a href="#scenario-1" id="toc-scenario-1" class="nav-link" data-scroll-target="#scenario-1">Scenario 1</a></li>
+  <li><a href="#scenario-2" id="toc-scenario-2" class="nav-link" data-scroll-target="#scenario-2">Scenario 2</a></li>
+  <li><a href="#scenario-3" id="toc-scenario-3" class="nav-link" data-scroll-target="#scenario-3">Scenario 3</a></li>
+  </ul></li>
+  <li><a href="#a-final-word-of-warning" id="toc-a-final-word-of-warning" class="nav-link" data-scroll-target="#a-final-word-of-warning">A final word of warning</a></li>
+  </ul>
+</nav>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<!--------------- my typical setup ----------------->
+<!--------------- post begins here ----------------->
+<p>And so we are writing again. Sort of.</p>
+<p>This is a post about the Emax model, a commonly-used tool in pharmacometrics. I’ve written about it before. At the start of this year I wrote up some <a href="../../posts/2024-01-09_emax-models/">notes on the Emax model</a> approaching it from a purely pharmacological perspective, discussing the <em>mechanistic</em> motivation for Emax when working with pharmacodynamic data. What I didn’t talk about in that post is the behaviour of Emax as a <em>statistical</em> model. It is time to redress that limitation, and talk a little about some issues that can arise when estimating the parameters of an Emax model.</p>
+<p>It is also a post about the <a href="https://yoshidk6.github.io/rstanemax/">rstanemax</a> package, a handy tool by Kenta Yoshida that I’ve only recently discovered, which provides for Bayesian estimation in R for the Emax model.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> The rstanemax package supplies a pre-defined implementation of the Emax model in Stan that you can call from R via <a href="https://mc-stan.org/users/interfaces/rstan">rstan</a>, and while I won’t be doing a deep dive into the package here, it’s a very convenient way for me to talk about some statistical issues that can arise in Emax modelling.</p>
+<p>It’s also a rather long post, and I’ll confess it doesn’t have the same level of “authorial voice” that I usually bring to my blog. I have been feeling pretty miserable ever since the US election, and my energy levels are pretty low right now.<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a> Sorry.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(rstanemax)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tibble)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyr)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(purrr)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="the-emax-model" class="level2">
+<h2 class="anchored" data-anchor-id="the-emax-model">The Emax model</h2>
+<p>Letting <span class="math inline">\(x_i\)</span> denote the observed exposure for the <span class="math inline">\(i\)</span>-th subject, and letting <span class="math inline">\(y_i\)</span> denote the observed reponse, the form of the Emax model for a continuous-valued response<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a> is typically written as the following nonlinear regression model:</p>
+<p><span class="math display">\[
+y_i = E_0 + E_{max} \frac{x_i^\gamma}{EC_{50}^\gamma + x_i^\gamma} + \epsilon_i
+\]</span></p>
+<p>where we typically assume iid normal residual error, <span class="math inline">\(\epsilon_i \sim \mbox{Normal}(0, \sigma^2)\)</span>. This model has five parameters that need to be estimated:</p>
+<ul>
+<li><span class="math inline">\(E_0\)</span> is an intercept term and represents the baseline response when drug exposure is zero</li>
+<li><span class="math inline">\(E_{max}\)</span> is an asymptote term and defines the maximum change from baseline as the drug exposure becomes arbitrarily large</li>
+<li><span class="math inline">\(EC_{50}\)</span> is a location parameter, and defines the exposure level at which the change from baseline is 50% of the maximum possible change</li>
+<li><span class="math inline">\(\gamma\)</span> is the “Hill coefficient” that describes the steepness of the response curve. It is not uncommon to fix <span class="math inline">\(\gamma = 1\)</span> in Emax modelling, and for the purposes of this post that’s what I’ll be doing here</li>
+<li><span class="math inline">\(\sigma^2\)</span> is the residual variance used to describe the level of measurement error in the data</li>
+</ul>
+<p>This situation is about as simple as you can possibly get within the Emax context: we’re abstracting over questions about how exposure is defined<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a>, there are no covariates in the model, and we are assuming that the response variable <span class="math inline">\(y\)</span> is continuous valued with normally distributed measurement error. It does not get any simpler than this in Emax-land.</p>
+<p>To give a sense of what the Emax model equation (i.e., ignoring the <span class="math inline">\(\epsilon_i\)</span> terms) looks like, we can implement in R like this:<a href="#fn5" class="footnote-ref" id="fnref5" role="doc-noteref"><sup>5</sup></a></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>emax_fn <span class="ot">&lt;-</span> <span class="cf">function</span>(exposure, emax, ec50, e0, <span class="at">gamma =</span> <span class="dv">1</span>, ...) {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  e0 <span class="sc">+</span> emax <span class="sc">*</span> (exposure <span class="sc">^</span> gamma) <span class="sc">/</span> (ec50 <span class="sc">^</span> gamma <span class="sc">+</span> exposure <span class="sc">^</span> gamma)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Here’s what the function looks like when visualised. On the left hand side the plot shows the exposure-response curve on a linear scale, whereas on the right hand side the exposure is plotted on a logarithmic scale.</p>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>dat <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">exposure =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">10000</span>,</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">response =</span> <span class="fu">emax_fn</span>(exposure, <span class="at">emax =</span> <span class="dv">10</span>, <span class="at">ec50 =</span> <span class="dv">200</span>, <span class="at">e0 =</span> <span class="dv">10</span>)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>pic <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(dat, <span class="fu">aes</span>(exposure, response)) <span class="sc">+</span> </span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>() <span class="sc">+</span> </span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>()</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>pic</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>pic <span class="sc">+</span> <span class="fu">scale_x_log10</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell quarto-layout-panel" data-layout-ncol="2">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid" width="384"></p>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-4-2.png" class="img-fluid" width="384"></p>
+</div>
+</div>
+</div>
+<p>In the linear version of the plot we see a steep initial rise in the response, followed by saturation as exposure increases. The logarithmic scale plot allows us to see what is happening with a little more precision: the Emax model implies a logistic relationship between response and log-exposure.<a href="#fn6" class="footnote-ref" id="fnref6" role="doc-noteref"><sup>6</sup></a></p>
+<p>To flesh out the intuition a little better, let’s systematically vary one parameter at a time and show what effect each parameter has on the Emax function. To that end I’ll first write a convenience function <code>emax_effect()</code>…</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>emax_effect <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">exposure =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">10000</span>, </span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>                        <span class="at">emax =</span> <span class="dv">10</span>, </span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>                        <span class="at">ec50 =</span> <span class="dv">200</span>, </span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>                        <span class="at">e0 =</span> <span class="dv">10</span>, </span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>                        <span class="at">gamma =</span> <span class="dv">1</span>, </span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>                        ...) {</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">expand_grid</span>(</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">exposure =</span> exposure,</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">emax =</span> emax, </span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">ec50 =</span> ec50, </span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">e0 =</span> e0,</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">gamma =</span> gamma</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>      <span class="at">response =</span> <span class="fu">emax_fn</span>(exposure, emax, ec50, e0, gamma),</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>      <span class="at">emax =</span> <span class="fu">factor</span>(emax),</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>      <span class="at">ec50 =</span> <span class="fu">factor</span>(ec50),</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>      <span class="at">e0 =</span> <span class="fu">factor</span>(e0),</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>      <span class="at">gamma =</span> <span class="fu">factor</span>(gamma)</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">|&gt;</span> </span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ggplot</span>(<span class="fu">aes</span>(exposure, response, ...)) <span class="sc">+</span> </span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_line</span>() <span class="sc">+</span></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>    <span class="fu">theme_bw</span>()</span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The simplest parameter to understand is <span class="math inline">\(E_0\)</span>. It’s an intercept parameter pure and simple. The whole curve shifts up and down as you vary <span class="math inline">\(E_0\)</span>, exactly like it would in linear regression:</p>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">emax_effect</span>(<span class="at">e0 =</span> <span class="fu">seq</span>(<span class="dv">2</span>, <span class="dv">10</span>, <span class="dv">2</span>), <span class="at">color =</span> e0)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">emax_effect</span>(<span class="at">e0 =</span> <span class="fu">seq</span>(<span class="dv">2</span>, <span class="dv">10</span>, <span class="dv">2</span>), <span class="at">color =</span> e0) <span class="sc">+</span> <span class="fu">scale_x_log10</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell quarto-layout-panel" data-layout-ncol="2">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid" width="384"></p>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-6-2.png" class="img-fluid" width="384"></p>
+</div>
+</div>
+</div>
+<p>The <span class="math inline">\(E_{max}\)</span> parameter is a scaling coefficient applied to the exposure. It is roughly analogous to a slope parameter in linear regression, in the sense that increasing <span class="math inline">\(E_{max}\)</span> “stretches” the curve vertically. More precisely though, increasing <span class="math inline">\(E_{max}\)</span> shifts the asymptotic value for the response: at large exposures the response saturates at <span class="math inline">\(E_0 + E_{max}\)</span>, and the curve is scaled to accomodate this.</p>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">emax_effect</span>(<span class="at">emax =</span> <span class="fu">seq</span>(<span class="dv">2</span>, <span class="dv">10</span>, <span class="dv">2</span>), <span class="at">color =</span> emax)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">emax_effect</span>(<span class="at">emax =</span> <span class="fu">seq</span>(<span class="dv">2</span>, <span class="dv">10</span>, <span class="dv">2</span>), <span class="at">color =</span> emax) <span class="sc">+</span> <span class="fu">scale_x_log10</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell quarto-layout-panel" data-layout-ncol="2">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid" width="384"></p>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-7-2.png" class="img-fluid" width="384"></p>
+</div>
+</div>
+</div>
+<p>If you compare these plots to the previous ones, you can see why its important to look at the Emax function on the logarithmic scale as well as the linear scale. The difference between how <span class="math inline">\(E_0\)</span> and <span class="math inline">\(E_{max}\)</span> affect the curve are difficult to see on the linear scale, but are very pronounced on the logarithmic scale. This will turn out to be relevant later: if you don’t have a lot of data at the lower end of the log-exposure distribution, it is very hard to estimate <span class="math inline">\(E_0\)</span> and <span class="math inline">\(E_{max}\)</span> separately. But I am getting ahead of myself.</p>
+<p>Let’s now look at the effect of <span class="math inline">\(EC_{50}\)</span>. This parameter doesn’t have an exact analog in the linear regression context, but the plots below illustrate the effect this parameter has rather nicely: it’s a shift parameter that moves the whole curve (on the log-scale) rightwards as it increases.</p>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">emax_effect</span>(<span class="at">ec50 =</span> <span class="fu">seq</span>(<span class="dv">50</span>, <span class="dv">400</span>, <span class="dv">50</span>), <span class="at">color =</span> ec50)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">emax_effect</span>(<span class="at">ec50 =</span> <span class="fu">seq</span>(<span class="dv">50</span>, <span class="dv">400</span>, <span class="dv">50</span>), <span class="at">color =</span> ec50) <span class="sc">+</span> <span class="fu">scale_x_log10</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell quarto-layout-panel" data-layout-ncol="2">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid" width="384"></p>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-8-2.png" class="img-fluid" width="384"></p>
+</div>
+</div>
+</div>
+<p>Because <span class="math inline">\(EC_{50}\)</span> is on the same scale as the exposure, the size of the rightward shift scales logarithmically rather than linearly as the parameter is varied.</p>
+<p>Finally, let’s quickly look at what happens when the Hill coefficient <span class="math inline">\(\gamma\)</span> is varied. To be honest, I’m not going consider <span class="math inline">\(\gamma\)</span> in this post, but it’s still kind of useful to visualise what it does. As usual it’s easier to see the effect on the log-exposure scale. As you can see from the plot on the right, at higher <span class="math inline">\(\gamma\)</span> values the logistic curve is steeper.</p>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">emax_effect</span>(<span class="at">gamma =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>, <span class="at">color =</span> gamma)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">emax_effect</span>(<span class="at">gamma =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>, <span class="at">color =</span> gamma) <span class="sc">+</span> <span class="fu">scale_x_log10</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell quarto-layout-panel" data-layout-ncol="2">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid" width="384"></p>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-9-2.png" class="img-fluid" width="384"></p>
+</div>
+</div>
+</div>
+<p>Now that we have a general sense of how the Emax function behaves, we can start thinking about it as a statistical model and look at what we expect data to look like when the Emax model applies.</p>
+</section>
+<section id="simulated-exposures" class="level2">
+<h2 class="anchored" data-anchor-id="simulated-exposures">Simulated exposures</h2>
+<p>Generating simulated data to fit with an Emax model is slightly tricky, even in the very simple scenario I’m considering. Generating fictitious response data conditional on having a set of observed exposures is easy: the Emax function itself tells you how to generate <span class="math inline">\(y_i\)</span> (response) values given <span class="math inline">\(x_i\)</span> (exposures). Yes, there’s some nuance involved because the additive normal error model for <span class="math inline">\(\epsilon_i\)</span> (residuals) is a bit silly if you take it literally, but that’s not the hard part.</p>
+<p>The hard part is generating a set of exposures <span class="math inline">\(x_i\)</span> that are presumed to arise from your experimental design.</p>
+<p>The reason this part is difficult is that the Emax model is silent on where those exposures come from. As I talked about in the <a href="../../posts/2024-01-09_emax-models/">notes on the Emax model post</a>, the scientific justification for the Emax function is based on some (not unreasonable) assumptions about the mechanism of action for the drug. It has a clear interpretation for exposure measures (e.g., <span class="math inline">\(C_{max,ss}\)</span>, <span class="math inline">\(C_{min,ss}\)</span>) that correspond to the concentration at a specific moment in time, and while you do have to hand-wave a little more when considering time-averaged exposures or area under the curve (<span class="math inline">\(AUC_{ss}\)</span>) measures, it does make a certain amount of biological sense. Even so, the Emax model is a pharmacodynamic model and is not in any meaningful sense a pharmacokinetic model: you can’t extract exposure measures PK profiles from the Emax model in the same way you can for a compartmental model (e.g.&nbsp;<a href="../../posts/2023-05-16_stan-ode/">here</a>, <a href="../../posts/2023-06-10_pop-pk-models/">here</a>, and <a href="../../posts/2023-08-28_rxode2/">here</a>). It’s not designed for that purpose, and I have absolutely no intention of trying to generate fictitious exposures based on a compartmental model simply to play around with Emax. With that in mind I’ve adopted a semi-plausible compromise. Conditional on dose, I will assume for the current purposes that our exposure measure (whatever exposure measure we’re using) is approximately lognormally distributed,<a href="#fn7" class="footnote-ref" id="fnref7" role="doc-noteref"><sup>7</sup></a> and I’ll assume that exposure scales linearly with dose. Neither of those two assumptions holds true in general, but it’s good enough for a blog post. You can do this with a simple function like <code>generate_exposure()</code> below, and that will be good enough for now:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>generate_exposure <span class="ot">&lt;-</span> <span class="cf">function</span>(dose, n, <span class="at">meanlog =</span> <span class="dv">4</span>, <span class="at">sdlog =</span> <span class="fl">0.5</span>) {</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  dose <span class="sc">*</span> <span class="fu">qlnorm</span>(</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">p =</span> <span class="fu">runif</span>(n, <span class="at">min =</span> .<span class="dv">01</span>, <span class="at">max =</span> .<span class="dv">99</span>), </span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">meanlog =</span> meanlog,</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">sdlog =</span> sdlog</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Next we need to make some assumptions about the study design.</p>
+<p>Let’s suppose for simplicity we have a three-arm design in a phase 2 study that consists of 20 subjects in a placebo arm, alongside 100 subjects each in a 100 mg dosing arm and a 50 mg dosing arm.<a href="#fn8" class="footnote-ref" id="fnref8" role="doc-noteref"><sup>8</sup></a> However, it’s not uncommon to encounter exposure-response data sets where these phase 2 data are intermixed with a smaller data set from a phase 1 dose escalation trial (e.g., from a 3+3 design), and these samples can span a substantially wider range of exposures. Rather than try to simulate this in full, I’ll approximate this by including “phase 1” arms that have 3 subjects each at 25, 50, 100, 200, 300, 400, 500, and 600 mg doses.<a href="#fn9" class="footnote-ref" id="fnref9" role="doc-noteref"><sup>9</sup></a></p>
+<p>Given this, for each subject we use the <code>generate_exposure()</code> function to assign them an exposure level:<a href="#fn10" class="footnote-ref" id="fnref10" role="doc-noteref"><sup>10</sup></a> <a href="#fn11" class="footnote-ref" id="fnref11" role="doc-noteref"><sup>11</sup></a></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>make_data <span class="ot">&lt;-</span> <span class="cf">function</span>(dose, n, condition) {</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tibble</span>(</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">dose =</span> dose, </span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">exposure =</span> <span class="fu">generate_exposure</span>(<span class="fu">max</span>(dose, .<span class="dv">01</span>), <span class="at">n =</span> n), </span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">condition =</span> condition</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  ) </span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>full_design <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">make_data</span>(<span class="at">dose =</span> <span class="dv">100</span>, <span class="at">n =</span> <span class="dv">100</span>, <span class="at">condition =</span> <span class="st">"100 mg"</span>),</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">make_data</span>(<span class="at">dose =</span> <span class="dv">50</span>, <span class="at">n =</span> <span class="dv">100</span>, <span class="at">condition =</span> <span class="st">"50 mg"</span>),</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">make_data</span>(<span class="at">dose =</span> <span class="dv">0</span>, <span class="at">n =</span> <span class="dv">20</span>, <span class="at">condition =</span> <span class="st">"placebo"</span>),</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">make_data</span>(<span class="at">dose =</span> <span class="dv">25</span>, <span class="at">n =</span> <span class="dv">3</span>, <span class="at">condition =</span> <span class="st">"phase 1"</span>),</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">make_data</span>(<span class="at">dose =</span> <span class="dv">50</span>, <span class="at">n =</span> <span class="dv">3</span>, <span class="at">condition =</span> <span class="st">"phase 1"</span>),</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">make_data</span>(<span class="at">dose =</span> <span class="dv">100</span>, <span class="at">n =</span> <span class="dv">3</span>, <span class="at">condition =</span> <span class="st">"phase 1"</span>),</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">make_data</span>(<span class="at">dose =</span> <span class="dv">200</span>, <span class="at">n =</span> <span class="dv">3</span>, <span class="at">condition =</span> <span class="st">"phase 1"</span>),</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">make_data</span>(<span class="at">dose =</span> <span class="dv">300</span>, <span class="at">n =</span> <span class="dv">3</span>, <span class="at">condition =</span> <span class="st">"phase 1"</span>),</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">make_data</span>(<span class="at">dose =</span> <span class="dv">400</span>, <span class="at">n =</span> <span class="dv">3</span>, <span class="at">condition =</span> <span class="st">"phase 1"</span>),</span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">make_data</span>(<span class="at">dose =</span> <span class="dv">500</span>, <span class="at">n =</span> <span class="dv">3</span>, <span class="at">condition =</span> <span class="st">"phase 1"</span>),</span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">make_data</span>(<span class="at">dose =</span> <span class="dv">600</span>, <span class="at">n =</span> <span class="dv">3</span>, <span class="at">condition =</span> <span class="st">"phase 1"</span>)</span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>) </span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>full_design</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 244 × 3
+    dose exposure condition
+   &lt;dbl&gt;    &lt;dbl&gt; &lt;chr&gt;    
+ 1   100    4271. 100 mg   
+ 2   100    3973. 100 mg   
+ 3   100    5823. 100 mg   
+ 4   100    2563. 100 mg   
+ 5   100    5253. 100 mg   
+ 6   100    5352. 100 mg   
+ 7   100    8409. 100 mg   
+ 8   100    4643. 100 mg   
+ 9   100    5782. 100 mg   
+10   100    3434. 100 mg   
+# ℹ 234 more rows</code></pre>
+</div>
+</div>
+<p>This is all a bit hand-wavy, as any pharmacometrician will immediately note. The dosing and sampling regimen aren’t specified in any detail: I am simply assuming that whatever happens on the PK side is such that we can pretend that exposure is approximately lognormal and scales with dose.</p>
+<p>But let’s set all that to one side and take a look at the distribution of exposures we end up with in an experimental design like this:</p>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>pic <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(full_design, <span class="fu">aes</span>(exposure, <span class="at">fill =</span> condition)) <span class="sc">+</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_histogram</span>(<span class="at">bins =</span> <span class="dv">20</span>) <span class="sc">+</span> </span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>() <span class="sc">+</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"bottom"</span>)</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>pic</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>pic <span class="sc">+</span> <span class="fu">scale_x_log10</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell quarto-layout-panel" data-layout-ncol="2">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-12-1.png" class="img-fluid" width="384"></p>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-12-2.png" class="img-fluid" width="384"></p>
+</div>
+</div>
+</div>
+<p>The main thing to note, looking at the histograms that come from this highly-stylised simulated design, is the data that would end up being “visible” as the predictor in an Emax model are a set of exposures <span class="math inline">\(x_i\)</span> that have a positively skewed distribution and are rather unevenly distributed across the exposure range.<a href="#fn12" class="footnote-ref" id="fnref12" role="doc-noteref"><sup>12</sup></a> A somewhat more conventional way of looking at this would be to show exposure boxplots stratified by condition, on both a linear scale and a logarithmic scale:</p>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>pic <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(full_design, <span class="fu">aes</span>(condition, exposure, <span class="at">fill =</span> condition)) <span class="sc">+</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>(<span class="at">show.legend =</span> <span class="cn">FALSE</span>) <span class="sc">+</span> </span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>()</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>pic</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>pic <span class="sc">+</span> <span class="fu">scale_y_log10</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell quarto-layout-panel" data-layout-ncol="2">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-13-1.png" class="img-fluid" width="384"></p>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-13-2.png" class="img-fluid" width="384"></p>
+</div>
+</div>
+</div>
+<p>Later in this post I’ll come back to this “full” data set that contains placebo samples and phase 1 dose-escalation samples. But I also want to consider the behaviour of the Emax model when you don’t have either of those two groups in the data set. The reason I want to do this is because an Emax model carries a strong assumption that lower and upper bounds for the response can be identified from the data, and it’s not obvious to me that it will behave well if the range of exposures is somewhat restricted.</p>
+<p>In any case, when we restrict ourselves to the data that emerge from the 50 mg and 100 mg arms of our hypothetical study data, we end up with a vector of exposure values <span class="math inline">\(x_i\)</span> that looks a little bit like a log-normal distribution:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>small_design <span class="ot">&lt;-</span> full_design <span class="sc">|&gt;</span> </span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(condition <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"50 mg"</span>, <span class="st">"100 mg"</span>)) </span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(small_design, <span class="fu">aes</span>(exposure)) <span class="sc">+</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_histogram</span>(<span class="at">bins =</span> <span class="dv">20</span>) <span class="sc">+</span> </span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-14-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Hopefully this gives you a sense of what both designs look like.<a href="#fn13" class="footnote-ref" id="fnref13" role="doc-noteref"><sup>13</sup></a> Let’s move on, shall we?</p>
+</section>
+<section id="simulated-data" class="level2">
+<h2 class="anchored" data-anchor-id="simulated-data">Simulated data</h2>
+<p>Having made some choices about the <code>exposure</code> vector that will be supplied to our Emax model, the rest of the simulation process is “just” a matter of writing some convenience functions that we can use later for exploring the behaviour of the model. First, I’ll write an <code>emax_parameters()</code> function that supplies default values, so that if I call <code>emax_parameters(emax = 20)</code>, I end up with a list that stores this <code>emax</code> value alongside all the defaults:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>emax_parameters <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">emax  =</span> <span class="dv">10</span>, </span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>                            <span class="at">ec50  =</span> <span class="dv">4000</span>, </span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>                            <span class="at">e0    =</span> <span class="dv">10</span>,</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>                            <span class="at">gamma =</span> <span class="dv">1</span>,</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>                            <span class="at">sigma =</span> .<span class="dv">6</span>) {</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">emax =</span> emax,</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">ec50 =</span> ec50,</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">e0 =</span> e0,</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">gamma =</span> gamma,</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">sigma =</span> sigma </span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>par1 <span class="ot">&lt;-</span> <span class="fu">emax_parameters</span>() <span class="co"># default parameters</span></span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>par1</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$emax
+[1] 10
+
+$ec50
+[1] 4000
+
+$e0
+[1] 10
+
+$gamma
+[1] 1
+
+$sigma
+[1] 0.6</code></pre>
+</div>
+</div>
+<p>Truly exciting work, I know, but my experience with statistical programming has always been that it pays to take care of these little niceties. Convenience functions like this one don’t play any meaningful scientific role, nor are they important for understanding the statistical properties of the Emax model, but they do make the <em>code</em> easier to read and write.</p>
+<p>Along the same lines, I’ll also write a <code>generate_emax_data()</code> function that takes an <code>exposure</code> vector and a parameter list (<code>par</code>) as its arguments, and returns a nicely formatted data frame:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>generate_emax_data <span class="ot">&lt;-</span> <span class="cf">function</span>(exposure, <span class="at">par =</span> <span class="fu">list</span>()) {</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  par <span class="ot">&lt;-</span> <span class="fu">do.call</span>(emax_parameters, <span class="at">args =</span> par)</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>  n <span class="ot">&lt;-</span> <span class="fu">length</span>(exposure)</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tibble</span>(</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">exposure =</span> exposure,</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">emax_val =</span> <span class="fu">emax_fn</span>(</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>      exposure, </span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>      <span class="at">emax =</span> par<span class="sc">$</span>emax, </span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>      <span class="at">ec50 =</span> par<span class="sc">$</span>ec50, </span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>      <span class="at">e0 =</span> par<span class="sc">$</span>e0, </span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>      <span class="at">gamma =</span> par<span class="sc">$</span>gamma</span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">response =</span> emax_val <span class="sc">+</span> <span class="fu">rnorm</span>(n, <span class="dv">0</span>, par<span class="sc">$</span>sigma)</span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>And just like that we can generate fictitious data sets to which an Emax model can be applied, containing <code>exposure</code> and <code>response</code> columns that are broadly analogous to those we encounter in real data (albeit without any covariate information, etc), along with an <code>emax_val</code> column that removes measurement error from the response, and of course wouldn’t be available in real life:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>dat1 <span class="ot">&lt;-</span> <span class="fu">generate_emax_data</span>(</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">exposure =</span> small_design<span class="sc">$</span>exposure, </span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">par =</span> par1</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>dat1</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 200 × 3
+   exposure emax_val response
+      &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;
+ 1    4271.     15.2     14.8
+ 2    3973.     15.0     15.2
+ 3    5823.     15.9     15.0
+ 4    2563.     13.9     13.6
+ 5    5253.     15.7     15.5
+ 6    5352.     15.7     16.3
+ 7    8409.     16.8     16.5
+ 8    4643.     15.4     15.6
+ 9    5782.     15.9     15.7
+10    3434.     14.6     14.1
+# ℹ 190 more rows</code></pre>
+</div>
+</div>
+<p>To get a better sense of what these data look like I wrote a convenient <code>plot_emax_data()</code> function that draws a scatterplot of observed response values against observed exposures (black dots), with the true emax function plotted as an underlay (black line), plus a few guide lines that I’ll explain in a moment. Here’s the code for the plotting function:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>plot_emax_data <span class="ot">&lt;-</span> <span class="cf">function</span>(data, par) {</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  min_x <span class="ot">&lt;-</span> <span class="fu">min</span>(data<span class="sc">$</span>exposure)</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  max_x <span class="ot">&lt;-</span> <span class="fu">max</span>(data<span class="sc">$</span>exposure)</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>  pred <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">exp =</span> <span class="fu">seq</span>(min_x, max_x, <span class="at">length.out =</span> <span class="dv">1000</span>),</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">rsp =</span> <span class="fu">do.call</span>(emax_fn, <span class="at">args =</span> <span class="fu">c</span>(<span class="fu">list</span>(<span class="at">exposure =</span> exp), par))</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>  data <span class="sc">|&gt;</span> </span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ggplot</span>(<span class="fu">aes</span>(exposure, response)) <span class="sc">+</span> </span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> par<span class="sc">$</span>ec50, <span class="at">color =</span> <span class="st">"red"</span>) <span class="sc">+</span></span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> par<span class="sc">$</span>e0 <span class="sc">+</span> par<span class="sc">$</span>emax, <span class="at">color =</span> <span class="st">"red"</span>) <span class="sc">+</span></span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> par<span class="sc">$</span>e0 <span class="sc">+</span> par<span class="sc">$</span>emax<span class="sc">/</span><span class="dv">2</span>, <span class="at">color =</span> <span class="st">"red"</span>) <span class="sc">+</span></span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> par<span class="sc">$</span>e0, <span class="at">color =</span> <span class="st">"red"</span>) <span class="sc">+</span></span>
+<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_line</span>(</span>
+<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a>      <span class="at">data =</span> pred,</span>
+<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a>      <span class="at">mapping =</span> <span class="fu">aes</span>(exp, rsp)</span>
+<span id="cb20-17"><a href="#cb20-17" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">+</span></span>
+<span id="cb20-18"><a href="#cb20-18" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_point</span>() <span class="sc">+</span> </span>
+<span id="cb20-19"><a href="#cb20-19" aria-hidden="true" tabindex="-1"></a>    <span class="fu">theme_bw</span>()    </span>
+<span id="cb20-20"><a href="#cb20-20" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The data set <code>dat1</code> I generated previously is the one I’m going to use later when considering ways in which the Emax regression model can behave poorly, but for reasons that will become clear, I’m actually going to illustrate the <code>plot_emax_data()</code> function by generating a data set that all samples in the full design. Here’s what we get:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>pic <span class="ot">&lt;-</span> full_design<span class="sc">$</span>exposure <span class="sc">|&gt;</span> </span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">generate_emax_data</span>(<span class="at">par =</span> par1) <span class="sc">|&gt;</span> </span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">plot_emax_data</span>(<span class="at">par =</span> par1)</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>pic </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-19-1.png" class="img-fluid figure-img" width="384"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Looking at this we can see that the black dots are our observed<a href="#fn14" class="footnote-ref" id="fnref14" role="doc-noteref"><sup>14</sup></a> data, and the black line is the true Emax function that descrives the exposure-response relationship. Moving upwards from bottom to top, the three red horizontal lines correspond to the baseline response (i.e., <span class="math inline">\(E_0\)</span>), the 50% response (i.e., <span class="math inline">\(E_0 + E_{max}/2\)</span>), and the maximum response (i.e., <span class="math inline">\(E_0 + E_{max}\)</span>). The vertical red line is the concentration at which the 50% response is attained (i.e., <span class="math inline">\(EC_{50}\)</span>). In other words, the red lines exist to highlight the parameter values for the Emax function.</p>
+<p>Next, let’s redraw this with a logarithmic x-axis scale:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>pic <span class="sc">+</span> <span class="fu">scale_x_log10</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-20-1.png" class="img-fluid figure-img" width="384"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>When plotted like this, you get a much stronger sense of how much influence a placebo sample<a href="#fn15" class="footnote-ref" id="fnref15" role="doc-noteref"><sup>15</sup></a> can have on the model. In the first plot you could be forgiven for thinking it doesn’t matter much, but when you see it on a logarithmic scale you realise how big a role a placebo group can play in ensuring you can correctly identify the baseline response!</p>
+<p>You can also understand why, all of a sudden, I am wondering if the Emax model might start to misbehave if we feed it data that <em>don’t</em> have any placebo samples.</p>
+<p>With that as our motivation, let’s go back to our <code>dat1</code> data set (constructed using the small design), since that one deliberately doesn’t contain the placebo group. Here’s what the plots look like for this data set:</p>
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_emax_data</span>(dat1, par1) </span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_emax_data</span>(dat1, par1) <span class="sc">+</span> <span class="fu">scale_x_log10</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell quarto-layout-panel" data-layout-ncol="2">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-21-1.png" class="img-fluid" width="384"></p>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-21-2.png" class="img-fluid" width="384"></p>
+</div>
+</div>
+</div>
+<p>This is a pretty interesting test case for our Emax model. Will it work out okay, or not? There’s two different factors to consider:</p>
+<p>On the one hand, even a moments inspection of the red lines in the plot (which, I cannot stress enough, you never have access to in real life) tells us that the observed exposures and responses are somewhat truncated compared to the full range: the true response should vary between 10 and 20 units, but the vast majority of our observed responses fall between 12.5 and 17.5 units. Crudely put, we’re missing about half of the response range. It’s a difficult test case in that sense, but it’s also not that unrealistic: I’ve seen a lot of data sets where the exposure-response relationship looks awfully linear on the log-exposure scale.</p>
+<p>On the other hand, it’s not the worst possible scenario to think about. If you look at the distribution of the black dots you can they’re nicely distributed on either size of the vertical red line: about half of our observed exposures are below the true <span class="math inline">\(EC_{50}\)</span> value, and about half are above. Consequently, the model can “see” both sides of the log-logistic function when estimating parameters. So that’s a plus.</p>
+</section>
+<section id="specifying-the-priors" class="level2">
+<h2 class="anchored" data-anchor-id="specifying-the-priors">Specifying the priors</h2>
+<p>To find out what actually happens, we can use <code>stan_emax()</code> from the rstanemax package to estimate parameters. However, because we will be fitting a Bayesian model, we need to do a little more work to complete the model specification. Specifically, we need to set priors.<a href="#fn16" class="footnote-ref" id="fnref16" role="doc-noteref"><sup>16</sup></a></p>
+<section id="setting-priors-in-rstanemax" class="level3">
+<h3 class="anchored" data-anchor-id="setting-priors-in-rstanemax">Setting priors in rstanemax</h3>
+<p>The rstanemax package assumes that the priors for the four Emax parameters are independent and normal, and as such we simply describe the prior mean and prior standard deviation for each parameter.<a href="#fn17" class="footnote-ref" id="fnref17" role="doc-noteref"><sup>17</sup></a> The <code>priors</code> argument to <code>stan_emax()</code> takes a named list as input, where each element is a vector specifying the mean and standard deviation of the corresponding normal distribution. So we could construct an object like <code>my_prior</code> below,</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>my_prior <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">e0 =</span> <span class="fu">c</span>(<span class="dv">10</span>, <span class="dv">5</span>),        <span class="co"># e0 prior has mean = 10, sd = 5</span></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">ec50 =</span> <span class="fu">c</span>(<span class="dv">4000</span>, <span class="dv">1000</span>), <span class="co"># ec50 prior has mean = 4000, sd = 1000</span></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">emax =</span> <span class="fu">c</span>(<span class="dv">5</span>, <span class="dv">5</span>),       <span class="co"># emax prior has mean = 5, sd = 5</span></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">sigma =</span> <span class="fu">c</span>(.<span class="dv">6</span>, <span class="dv">1</span>)      <span class="co"># sigma prior has mean = .6, sd = 1</span></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>and then pass <code>prior = my_prior</code> when calling <code>stan_emax()</code>. In the simulations that follow, I’m going to “cheat” a little by specifying priors that always – somewhat miraculously – place the prior mode on the true parameter values that generate the data to be fit, and always have a rather large variance. This is not a very reasonable way of working with priors in real life: I am cutting corners here.</p>
+<p>Having said all that, this is the rather silly <code>emax_priors()</code> function I’m going to use:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>emax_priors <span class="ot">&lt;-</span> <span class="cf">function</span>(par) {</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">e0 =</span> <span class="fu">c</span>(par<span class="sc">$</span>e0, <span class="dv">100</span>),</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">ec50 =</span> <span class="fu">c</span>(par<span class="sc">$</span>ec50, <span class="dv">5000</span>),</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">emax =</span> <span class="fu">c</span>(par<span class="sc">$</span>emax, <span class="dv">100</span>),</span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">sigma =</span> <span class="fu">c</span>(par<span class="sc">$</span>sigma, <span class="dv">1</span>)</span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>It’s very boring.</p>
+<p>The thing you actually want to pay attention to here are the standard deviations: they’re all very big. While I’m “centering” my priors (sort of: see next section) so that the prior mode will always be the “true” parameter set (passed via <code>par</code>) that was used to generate the data, the prior variability is set very high… the models I’ll be fitting are extremely agnostic about what parameter values and what data sets they’re expecting to see.</p>
+</section>
+<section id="truncated-normals-are-weird" class="level3">
+<h3 class="anchored" data-anchor-id="truncated-normals-are-weird">Truncated normals are weird</h3>
+<p>At this point in the post, any Bayesian who isn’t new to this game is sighing wearily and muttering darkly about the dangers of setting “agnostic” priors. They would be right to do so. There’s this very naive idea in Bayesian analysis that the best thing to do when fitting models is to set an “uninformative” prior, in order to “let the data speak for themselves”. While that intuition has a certain appeal, it often creates new problems when it runs head first into the data.</p>
+<p>With that in mind, I’ll highlight one example that is particularly relevant if you’re fitting Emax models using the rstanemax pacakge: truncation matters. Although the documentation to <code>stan_emax()</code> indicates that the priors are normal, this is not entirely true due to the logical constraints imposed on the model parameters: <code>ec50</code> and <code>sigma</code> <em>cannot</em> be negative valued, and when you peek inside at the stan code you can see that this constraint is enforced. That is, while the <code>model{}</code> block contains these two lines which might suggest to you that the priors are normal,</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode stan code-with-copy"><code class="sourceCode stan"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>ec50  ~ normal(prior_ec50_mu,  prior_ec50_sig);</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>sigma ~ normal(prior_sigma_mu, prior_sigma_sig);</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>if you look at the <code>parameters{}</code> block you discover that rstanemax imposes the non-negativity constraint on both of these parameters:</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode stan code-with-copy"><code class="sourceCode stan"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="dt">vector</span>&lt;<span class="kw">lower</span> = <span class="dv">0</span>&gt;[n_covlev_ec50] ec50;</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="dt">real</span>&lt;<span class="kw">lower</span> = <span class="dv">0</span>&gt; sigma;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>This constraint is entirely appropriate: negative variances don’t make any sense (so <code>sigma</code> must be positive), and neither do negative exposures (so <code>ec50</code> must be positive). In practice, therefore, your priors for <code>ec50</code> and <code>sigma</code> are in fact <em>truncated</em> normal distributions.<a href="#fn18" class="footnote-ref" id="fnref18" role="doc-noteref"><sup>18</sup></a></p>
+<p>Noting this, I’ll cobble together a little R function that allows me to sample from a truncated normal distribution:<a href="#fn19" class="footnote-ref" id="fnref19" role="doc-noteref"><sup>19</sup></a></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>rtnorm <span class="ot">&lt;-</span> <span class="cf">function</span>(n, <span class="at">mean =</span> <span class="dv">0</span>, <span class="at">sd =</span> <span class="dv">1</span>, <span class="at">lower =</span> <span class="sc">-</span><span class="cn">Inf</span>, <span class="at">upper =</span> <span class="cn">Inf</span>) {</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>  min_q <span class="ot">&lt;-</span> <span class="fu">pnorm</span>(lower, mean, sd)</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>  max_q <span class="ot">&lt;-</span> <span class="fu">pnorm</span>(upper, mean, sd)</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>  u <span class="ot">&lt;-</span> <span class="fu">runif</span>(n, <span class="at">min =</span> min_q, <span class="at">max =</span> max_q)</span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">qnorm</span>(u, mean, sd)</span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Armed with this handy little function, and the <code>emax_fn()</code> function that I wrote earlier, it’s not too difficult to construct a data frame <code>prior_draws</code> that contains a bunch of parameter sets sampled from the “vague” priors I’m about to use when applying the <code>stan_emax()</code> function:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="co"># total number of draws</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>n_draws <span class="ot">&lt;-</span> <span class="dv">5000</span></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a><span class="co"># table of parameters</span></span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>prior_draws <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">id =</span> <span class="dv">1</span><span class="sc">:</span>n_draws,</span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">emax  =</span> <span class="fu">rnorm</span>(n_draws, <span class="at">mean =</span> <span class="dv">10</span>, <span class="at">sd =</span> <span class="dv">100</span>),</span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">ec50  =</span> <span class="fu">rtnorm</span>(n_draws, <span class="at">mean =</span> <span class="dv">2000</span>, <span class="at">sd =</span> <span class="dv">5000</span>, <span class="at">lower =</span> <span class="dv">0</span>),</span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">e0    =</span> <span class="fu">rnorm</span>(n_draws, <span class="at">mean =</span> <span class="dv">10</span>, <span class="at">sd =</span> <span class="dv">100</span>),</span>
+<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">sigma =</span> <span class="fu">rtnorm</span>(n_draws, <span class="at">mean  =</span> .<span class="dv">6</span>, <span class="at">sd =</span> <span class="dv">1</span>, <span class="at">lower =</span> <span class="dv">0</span>)</span>
+<span id="cb29-11"><a href="#cb29-11" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Here’s what the prior distribution of parameters looks like…</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>prior_draws <span class="sc">|&gt;</span> </span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">cols =</span> emax<span class="sc">:</span>sigma, </span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">names_to =</span> <span class="st">"parameter"</span>, </span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_to =</span> <span class="st">"value"</span></span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(parameter, value)) <span class="sc">+</span> </span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_violin</span>(<span class="at">draw_quantiles =</span> .<span class="dv">5</span>) <span class="sc">+</span></span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>parameter, <span class="at">scales =</span> <span class="st">"free"</span>, <span class="at">nrow =</span> <span class="dv">1</span>) <span class="sc">+</span> </span>
+<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-26-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The key thing to note here is that using a truncated normal prior for <code>ec50</code> and <code>sigma</code> leads to a prior that can be highly skewed. That’s not inherently a bad thing, in the sense that there is absolutely no reason at all to think that a prior over <code>ec50</code> (which lies on the same scale as the exposures) should be symmetric. However, it does mean that the prior mode, prior mean, and prior median will all be different from one another. In this case, for example, the mean/median/mode for my <em>untruncated</em> prior over <code>ec50</code> was set to 2000, and this is indeed the prior <em>mode</em>, but the prior median is actually closer to 5000. So one needs to be rather careful when setting priors here. If you don’t spend a bit of time thinking about what they actually entail, they might not mean what you think they mean.</p>
+<p>In my little explorations in this blog post, I’m happy to run with these priors, but in real life I think I’d want to pin this down a little better than I have done here. On the statistical side, if I was truly expecting an <code>ec50</code> value somewhere around 2000, I don’t think I’d like to use a prior like this one where the prior median sits closer to 5000. Similarly, if the clinical pharmacology folks were telling me that I should expect a positive exposure-response relationship, my prior should strongly prefer positive <code>emax</code> values rather than the “anything goes” prior I’ve set here.</p>
+</section>
+<section id="implied-prior-over-emax-functions" class="level3">
+<h3 class="anchored" data-anchor-id="implied-prior-over-emax-functions">Implied prior over Emax functions</h3>
+<p>In fact, I’m going to push this point a little further. An alternative (and sometimes better) way to think about the priors that you’ve supplied to a Bayesian model is to explore what the prior corresponds to in terms of possible <em>data</em> sets that the model expects to encounter. In this case, I’ll simplify this slightly and restrict myself to thinking about the possible <em>Emax functions</em> that are implied by my priors. To that end, I’ll construct an<code>emax_draws</code> data frame that maps each parameter set (well, the first 250 of them) to an Emax function so that we can draw all these functions in a single plot:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>emax_draws <span class="ot">&lt;-</span> prior_draws <span class="sc">|&gt;</span> </span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(id <span class="sc">&lt;=</span> <span class="dv">250</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pmap</span>(\(id, emax, ec50, e0, sigma) {</span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tibble</span>(</span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>      <span class="at">id =</span> id,</span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>      <span class="at">exposure =</span> <span class="dv">1000</span><span class="sc">:</span><span class="dv">10000</span>,</span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a>      <span class="at">response =</span> <span class="fu">emax_fn</span>(</span>
+<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a>        <span class="at">exposure =</span> exposure, </span>
+<span id="cb31-9"><a href="#cb31-9" aria-hidden="true" tabindex="-1"></a>        <span class="at">emax =</span> emax, </span>
+<span id="cb31-10"><a href="#cb31-10" aria-hidden="true" tabindex="-1"></a>        <span class="at">ec50 =</span> ec50, </span>
+<span id="cb31-11"><a href="#cb31-11" aria-hidden="true" tabindex="-1"></a>        <span class="at">e0 =</span> e0</span>
+<span id="cb31-12"><a href="#cb31-12" aria-hidden="true" tabindex="-1"></a>      )</span>
+<span id="cb31-13"><a href="#cb31-13" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb31-14"><a href="#cb31-14" aria-hidden="true" tabindex="-1"></a>  }) <span class="sc">|&gt;</span> </span>
+<span id="cb31-15"><a href="#cb31-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bind_rows</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Here’s what those 250 Emax functions look like, shown on a linear exposure scale (left) and logarithmic exposure scale (right):</p>
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>pic <span class="ot">&lt;-</span> emax_draws <span class="sc">|&gt;</span> </span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(exposure, response, <span class="at">group =</span> id)) <span class="sc">+</span></span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">alpha =</span> .<span class="dv">5</span>) <span class="sc">+</span> </span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>()</span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>pic </span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>pic <span class="sc">+</span> <span class="fu">scale_x_log10</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell quarto-layout-panel" data-layout-ncol="2">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-28-1.png" class="img-fluid" width="384"></p>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-28-2.png" class="img-fluid" width="384"></p>
+</div>
+</div>
+</div>
+<p>The take home message here, really, is that the priors I’ve specified here are very agnostic indeed. There are a <em>lot</em> of possible Emax functions that are encompassed by this vague prior, and while I’m willing to consider a prior like this in this blog post – after all, the whole point of the post is for me to play around with the model – in a serious modelling exercise you’d want to ask yourself ahead of time whether this is really the variety of possible Emax functions you’re expecting to see in your study data.</p>
+<p>But enough about priors. Let’s actually fit the models and see what happens next.</p>
+</section>
+</section>
+<section id="fitting-the-model" class="level2">
+<h2 class="anchored" data-anchor-id="fitting-the-model">Fitting the model</h2>
+<p>We finally arrive at the point in the post where I can start applying the model to simulated data. I’ll start by using the <em>full</em> data set I simulated at the beginning (i.e., including the placebo and the phase 1 conditions), and using the “default” emax parameters that I’ve chosen secure in the knowledge that they are well suited to the design. Here’s what the data set looks like in this case:</p>
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>par0 <span class="ot">&lt;-</span> <span class="fu">emax_parameters</span>()</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>dat0 <span class="ot">&lt;-</span> <span class="fu">generate_emax_data</span>(full_design<span class="sc">$</span>exposure)</span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_emax_data</span>(dat0, par0) </span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_emax_data</span>(dat0, par0) <span class="sc">+</span> <span class="fu">scale_x_log10</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell quarto-layout-panel" data-layout-ncol="2">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-29-1.png" class="img-fluid" width="384"></p>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-29-2.png" class="img-fluid" width="384"></p>
+</div>
+</div>
+</div>
+<p>Despite all the exhausting legwork I’ve done in setting the stage, the process of estimating the model parameters with <code>stan_emax()</code> is extremely straightforward. There are three arguments we need to specify:</p>
+<ul>
+<li>The <code>formula</code> argument provides the specification of the Emax model in standard regression notation, so in this case that would be <code>formula = response ~ exposure</code></li>
+<li>The <code>data</code> argument is used to pass the data set, so in this case we se <code>data = dat0</code></li>
+<li>The <code>priors</code> argument is used to specify the (truncated) normal prior for the Emax regression model. Having written the convenience function <code>emax_priors()</code>, all I have to do here is <code>priors = emax_priors(par0)</code></li>
+</ul>
+<p>Here we go:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>mod0 <span class="ot">&lt;-</span> <span class="fu">stan_emax</span>(</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">formula =</span> response <span class="sc">~</span> exposure, </span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> dat0,</span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">priors =</span> <span class="fu">emax_priors</span>(par0)</span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Normally, when you run this command you would see all the messaging that accompanies any other stan model fitting procedure. However, I’ve suppressed the messages here to keep the blog post clean(ish). If we print the <code>mod0</code> object that <code>stan_emax()</code> returns, we can see that it gives us a convenient little summary of the posterior distribution, some point estimates of parameters, and some helpful hints about what other functions we can call to extract more information from this model object:<a href="#fn20" class="footnote-ref" id="fnref20" role="doc-noteref"><sup>20</sup></a></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>mod0</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>---- Emax model fit with rstanemax ----
+
+         mean se_mean     sd    2.5%     25%     50%     75%   97.5%
+emax     9.95    0.00   0.20    9.56    9.82    9.94   10.08   10.33
+e0      10.08    0.00   0.12    9.83   10.00   10.08   10.16   10.33
+ec50  4116.54    5.94 251.66 3647.91 3944.70 4108.53 4279.38 4646.47
+gamma    1.00     NaN   0.00    1.00    1.00    1.00    1.00    1.00
+sigma    0.57    0.00   0.03    0.52    0.55    0.57    0.58    0.62
+        n_eff Rhat
+emax  2498.59    1
+e0    1743.98    1
+ec50  1797.71    1
+gamma     NaN  NaN
+sigma 3151.35    1
+
+* Use `extract_stanfit()` function to extract raw stanfit object
+* Use `extract_param()` function to extract posterior draws of key parameters
+* Use `plot()` function to visualize model fit
+* Use `posterior_predict()` or `posterior_predict_quantile()` function to get
+  raw predictions or make predictions on new data
+* Use `extract_obs_mod_frame()` function to extract raw data 
+  in a processed format (useful for plotting)</code></pre>
+</div>
+</div>
+<p>To get a sense of what we can do with some of these helper functions, I’ll just call the plot method and see what it creates:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(mod0)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-32-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Okay yes that’s a sensible default: the <code>plot()</code> method returns a ggplot2 object that can be styled however you like. The plot itself shows a scatterplot of the data, the estimated regression line, and a 90% credible interval around that line. The plot method contains additional arguments that you can use to customise the output. Of particular interest are these four:</p>
+<ul>
+<li><code>show.ci</code> is a logical value indicating whether a credible interval should be displayed (default is <code>TRUE</code>)</li>
+<li><code>show.pi</code> is a logical value indicating whether a prediction interval should be displayed (default is <code>FALSE</code>)</li>
+<li><code>ci</code> and <code>pi</code> refer to the range of the intervals (default is 0.9 in both cases)</li>
+</ul>
+<p>So, for instance, if I wanted to display a 95% prediction interval instead of a 90% credible interval, and wanted to use the black and white theme I’ve been using for other plots in this blog post, I could do this:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>pic <span class="ot">&lt;-</span> <span class="fu">plot</span>(mod0, <span class="at">show.ci =</span> <span class="cn">FALSE</span>, <span class="at">show.pi =</span> <span class="cn">TRUE</span>, <span class="at">pi =</span> <span class="fl">0.95</span>) <span class="sc">+</span> <span class="fu">theme_bw</span>()</span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>pic</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-33-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The fact that this is a ggplot object makes it easy to replot this on a log-exposure scale:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>pic <span class="sc">+</span> <span class="fu">scale_x_log10</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-34-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>As much as I like the plot that gets returned by the <code>plot()</code> method, it’s not quite what I want to look at in this post. I’m more curious about the posterior distribution itself, so instead I’ll use the <code>extract_param()</code> function to recover the parameter sets sampled by stan:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>smp0 <span class="ot">&lt;-</span> <span class="fu">extract_param</span>(mod0)</span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>smp0</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 4,000 × 6
+   mcmcid  emax    e0  ec50     gamma     sigma
+    &lt;int&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl[1d]&gt; &lt;dbl[1d]&gt;
+ 1      1 10.2  10.0  4141.         1     0.552
+ 2      2 10.1   9.99 4103.         1     0.550
+ 3      3  9.63  9.96 3652.         1     0.550
+ 4      4  9.97 10.0  4026.         1     0.555
+ 5      5 10.2   9.99 4248.         1     0.593
+ 6      6  9.92 10.2  4325.         1     0.580
+ 7      7 10.0   9.90 3793.         1     0.595
+ 8      8  9.73  9.92 3639.         1     0.560
+ 9      9  9.65  9.97 3759.         1     0.545
+10     10 10.1  10.2  4528.         1     0.544
+# ℹ 3,990 more rows</code></pre>
+</div>
+</div>
+<p>Then I’ll write a handy little helper function that returns a list of pairwise scatterplots so that I can better visualise the joint distribution over the parameters:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>plot_emax_pars <span class="ot">&lt;-</span> <span class="cf">function</span>(data, <span class="at">par =</span> <span class="fu">list</span>()) {</span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>  plot_pair <span class="ot">&lt;-</span> <span class="cf">function</span>(data, x, y, true_x, true_y) {</span>
+<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a>    est <span class="ot">&lt;-</span> data <span class="sc">|&gt;</span> </span>
+<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a>      <span class="fu">summarise</span>(</span>
+<span id="cb42-6"><a href="#cb42-6" aria-hidden="true" tabindex="-1"></a>        <span class="at">mx =</span> <span class="fu">mean</span>({{x}}),</span>
+<span id="cb42-7"><a href="#cb42-7" aria-hidden="true" tabindex="-1"></a>        <span class="at">my =</span> <span class="fu">mean</span>({{y}})</span>
+<span id="cb42-8"><a href="#cb42-8" aria-hidden="true" tabindex="-1"></a>      )</span>
+<span id="cb42-9"><a href="#cb42-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ggplot</span>(data, <span class="fu">aes</span>({{x}}, {{y}})) <span class="sc">+</span> </span>
+<span id="cb42-10"><a href="#cb42-10" aria-hidden="true" tabindex="-1"></a>      <span class="fu">geom_point</span>(<span class="at">size =</span> .<span class="dv">5</span>, <span class="at">color =</span> <span class="st">"lightblue"</span>) <span class="sc">+</span> </span>
+<span id="cb42-11"><a href="#cb42-11" aria-hidden="true" tabindex="-1"></a>      <span class="fu">annotate</span>(<span class="st">"point"</span>, <span class="at">x =</span> true_x, <span class="at">y =</span> true_y, <span class="at">color =</span> <span class="st">"red"</span>, <span class="at">size =</span> <span class="dv">4</span>) <span class="sc">+</span></span>
+<span id="cb42-12"><a href="#cb42-12" aria-hidden="true" tabindex="-1"></a>      <span class="fu">annotate</span>(<span class="st">"point"</span>, <span class="at">x =</span> est<span class="sc">$</span>mx, <span class="at">y =</span> est<span class="sc">$</span>my, <span class="at">color =</span> <span class="st">"darkblue"</span>, <span class="at">size =</span> <span class="dv">4</span>) <span class="sc">+</span></span>
+<span id="cb42-13"><a href="#cb42-13" aria-hidden="true" tabindex="-1"></a>      <span class="fu">theme_bw</span>()</span>
+<span id="cb42-14"><a href="#cb42-14" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb42-15"><a href="#cb42-15" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb42-16"><a href="#cb42-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(</span>
+<span id="cb42-17"><a href="#cb42-17" aria-hidden="true" tabindex="-1"></a>    <span class="fu">plot_pair</span>(data, emax, ec50, par<span class="sc">$</span>emax, par<span class="sc">$</span>ec50),</span>
+<span id="cb42-18"><a href="#cb42-18" aria-hidden="true" tabindex="-1"></a>    <span class="fu">plot_pair</span>(data, emax, e0, par<span class="sc">$</span>emax, par<span class="sc">$</span>e0),</span>
+<span id="cb42-19"><a href="#cb42-19" aria-hidden="true" tabindex="-1"></a>    <span class="fu">plot_pair</span>(data, ec50, e0, par<span class="sc">$</span>ec50, par<span class="sc">$</span>e0)</span>
+<span id="cb42-20"><a href="#cb42-20" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb42-21"><a href="#cb42-21" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Here’s what we get:</p>
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>smp0 <span class="sc">|&gt;</span> </span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">plot_emax_pars</span>(par0) <span class="sc">|&gt;</span> </span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">walk</span>(print)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell quarto-layout-panel" data-layout-ncol="3">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-37-1.png" class="img-fluid" width="288"></p>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-37-2.png" class="img-fluid" width="288"></p>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-37-3.png" class="img-fluid" width="288"></p>
+</div>
+</div>
+</div>
+<p>This looks good to me. The estimated parameter values (dark blue dots) are pretty close to the true parameter values (red dots), and the true values are well within the high-density region spanned by the posterior samples (light blue dots). The posterior looks pretty close to a multivariate normal, there aren’t strong correlations among parameters, and there’s not even a lot of uncertainty (i.e., the axis scales aren’t very wide) either. For the record, here’s the posterior correlations:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>smp0 <span class="sc">|&gt;</span> </span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(emax, e0, ec50, sigma) <span class="sc">|&gt;</span> </span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cor</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>               emax           e0         ec50         sigma
+emax   1.0000000000 -0.276390637  0.465365131  0.0001689484
+e0    -0.2763906372  1.000000000  0.679605961 -0.0064145249
+ec50   0.4653651313  0.679605961  1.000000000 -0.0027118046
+sigma  0.0001689484 -0.006414525 -0.002711805  1.0000000000</code></pre>
+</div>
+</div>
+<p>Yep, all good here. Mission accomplished, good job everyone, we can all go home now.</p>
+</section>
+<section id="identifiability-issues" class="level2">
+<h2 class="anchored" data-anchor-id="identifiability-issues">Identifiability issues</h2>
+<p>Well, perhaps not. Earlier in the post I heavily foreshadowed the fact that I would take a look at what happens when the <code>exposure</code> values don’t include the placebo group or the phase 1 dose escalation samples. When those are removed from the data set we start to encounter problems associated with a restriction of range, and this really matters for an Emax regression model. There’s three versions of this scenario to consider, depending on whether the exposure range is restricted but happens to have the true value of <code>ec50</code> nicely centred in the middle of the range (scenario 1), if <code>ec50</code> lies at the lower end of the observed exposures (scenario 2), or if <code>ec50</code> is at the upper end (scenario 3). In all three cases we end up with some identifiability issues, but they aren’t equally severe.</p>
+<section id="scenario-1" class="level3">
+<h3 class="anchored" data-anchor-id="scenario-1">Scenario 1</h3>
+<p>So let’s start with the first scenario. This happens to correspond to the <code>dat1</code> data set I constructed earlier, but as a little reminder, here’s the what we’re trying to fit:</p>
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_emax_data</span>(dat1, par1) </span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_emax_data</span>(dat1, par1) <span class="sc">+</span> <span class="fu">scale_x_log10</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell quarto-layout-panel" data-layout-ncol="2">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-39-1.png" class="img-fluid" width="384"></p>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-39-2.png" class="img-fluid" width="384"></p>
+</div>
+</div>
+</div>
+<p>You can see in the plot on the right (log-exposures) that we might have some difficulties, because the exposure-response curve looks rather linear here. But there are some hints of curvature at both ends, so perhaps it won’t be too bad?</p>
+<p>Let’s have a look. First, we fit the model:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>mod1 <span class="ot">&lt;-</span> <span class="fu">stan_emax</span>(</span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">formula =</span> response <span class="sc">~</span> exposure, </span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> dat1,</span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">priors =</span> <span class="fu">emax_priors</span>(par1)</span>
+<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Next, we’ll see what the model predictions look like by calling the <code>plot()</code> method:</p>
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>base <span class="ot">&lt;-</span> <span class="fu">plot</span>(mod1, <span class="at">show.ci =</span> <span class="cn">FALSE</span>, <span class="at">show.pi =</span> <span class="cn">TRUE</span>, <span class="at">pi =</span> <span class="fl">0.95</span>)</span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>base <span class="sc">+</span> <span class="fu">theme_bw</span>()</span>
+<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a>base <span class="sc">+</span> <span class="fu">theme_bw</span>() <span class="sc">+</span> <span class="fu">scale_x_log10</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell quarto-layout-panel" data-layout-ncol="2">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-41-1.png" class="img-fluid" width="384"></p>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-41-2.png" class="img-fluid" width="384"></p>
+</div>
+</div>
+</div>
+<p>Now let’s visualise the posterior samples:</p>
+<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>smp1 <span class="ot">&lt;-</span> <span class="fu">extract_param</span>(mod1)</span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>smp1 <span class="sc">|&gt;</span> </span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">plot_emax_pars</span>(par1) <span class="sc">|&gt;</span> </span>
+<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">walk</span>(print)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell quarto-layout-panel" data-layout-ncol="3">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-42-1.png" class="img-fluid" width="288"></p>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-42-2.png" class="img-fluid" width="288"></p>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-42-3.png" class="img-fluid" width="288"></p>
+</div>
+</div>
+</div>
+<p>So we have a glaringly strong posterior correlation between <code>e0</code> and <code>ec50</code>, which will cause us some difficulty, but apart from that obvious concern, this isn’t the worst outcome in the world. The posterior mean (dark blue dots) for the three parameters I’m most interested in sits pretty close to the true parameter values (red dots) that generated the data set, and the posterior distribution (light blue dots) is reeeeaaaassssonably close to being a multivariate normal distribution, and as such it’s not unreasonable to express the patterns by computing a variance-covariance matrix or a correlation matrix:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a>smp1 <span class="sc">|&gt;</span> </span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(emax, e0, ec50, sigma) <span class="sc">|&gt;</span> </span>
+<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cor</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>             emax          e0       ec50      sigma
+emax   1.00000000 -0.01960671 0.39357381 0.02890908
+e0    -0.01960671  1.00000000 0.89987537 0.03791181
+ec50   0.39357381  0.89987537 1.00000000 0.05428227
+sigma  0.02890908  0.03791181 0.05428227 1.00000000</code></pre>
+</div>
+</div>
+<p>Confirming the visual pattern observed in the rightmost plot, we have a bit of an identifiability problem: a posterior correlation of about <span class="math inline">\(r = 0.9\)</span> between <code>ec50</code> and <code>e0</code> isn’t great. Confirming the intuition earlier in the post, because we don’t have a placebo group to help us pin down the baseline response, the Emax regression ends up unable to distinguish these parameters. You could work with this, but a lot of care would be required in interpreting the results.</p>
+</section>
+<section id="scenario-2" class="level3">
+<h3 class="anchored" data-anchor-id="scenario-2">Scenario 2</h3>
+<p>In the first example it’s fairly clear that Emax regression can have model identifiability problems when we don’t have a wide enough range of exposures represented in the data. However, you might be inclined not to worry too much in the previous example because – high correlations notwithstanding – our point estimates for the parameters were actually pretty good. However, this turns out to be a cold comfort at best, as the next scenario illustrates.</p>
+<p>Last time around, we were a little fortunate: the true value of <code>ec50</code> was set to 4500, which is is pretty close to the median value in the <code>exposure</code> vector. An alternative case to think about is one where the true value of <code>ec50</code> is substantially below the median exposure in your data set. So let’s repeat the simulation exactly as before, but this time I’ll set <code>ec50 = 2000</code> when generating the data set, placing it somewhere around the 10th percentile for exposures. Here’s what we get:</p>
+<div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a>par2 <span class="ot">&lt;-</span> <span class="fu">emax_parameters</span>(<span class="at">ec50 =</span> <span class="dv">2000</span>) <span class="co"># around 10th percentile</span></span>
+<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a>dat2 <span class="ot">&lt;-</span> <span class="fu">generate_emax_data</span>(small_design<span class="sc">$</span>exposure, par2)</span>
+<span id="cb52-3"><a href="#cb52-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb52-4"><a href="#cb52-4" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_emax_data</span>(dat2, par2) </span>
+<span id="cb52-5"><a href="#cb52-5" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_emax_data</span>(dat2, par2) <span class="sc">+</span> <span class="fu">scale_x_log10</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell quarto-layout-panel" data-layout-ncol="2">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-44-1.png" class="img-fluid" width="384"></p>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-44-2.png" class="img-fluid" width="384"></p>
+</div>
+</div>
+</div>
+<p>With the benefit of <em>knowing</em> that this is a simulation, and thus having the ability to draw the red lines that show us exactly what region of the exposure range is poorly represented in our data set, we can already see this is going to end badly. Even on the linear scale (left plot) we can see the problem: we don’t have a placebo group here, and the lowest response values in the data are nowhere near the actual value of <code>e0</code> for the baseline response.</p>
+<p>On the log-exposure scale the problem is even more painfully obvious: according to the Emax model the response should be a logistic function (3 parameters) of the log-exposure, but over the range we have data for the function looks linear (2 parameters). There is no chance whatsoever that <em>any</em> statistical method will be able to use these data to identify all our parameters. The signal we need is simply not there in the data.</p>
+<p>Let’s watch the trainwreck unfold, shall we? First, let’s fit the model:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>mod2 <span class="ot">&lt;-</span> <span class="fu">stan_emax</span>(</span>
+<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">formula =</span> response <span class="sc">~</span> exposure, </span>
+<span id="cb53-3"><a href="#cb53-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> dat2,</span>
+<span id="cb53-4"><a href="#cb53-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">priors =</span> <span class="fu">emax_priors</span>(par2)</span>
+<span id="cb53-5"><a href="#cb53-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Next, let’s have a look at the posterior predictions. These actually look okay on the whole:</p>
+<div class="sourceCode cell-code" id="cb54"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a>base <span class="ot">&lt;-</span> <span class="fu">plot</span>(mod2, <span class="at">show.ci =</span> <span class="cn">FALSE</span>, <span class="at">show.pi =</span> <span class="cn">TRUE</span>, <span class="at">pi =</span> <span class="fl">0.95</span>)</span>
+<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a>base <span class="sc">+</span> <span class="fu">theme_bw</span>()</span>
+<span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a>base <span class="sc">+</span> <span class="fu">theme_bw</span>() <span class="sc">+</span> <span class="fu">scale_x_log10</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell quarto-layout-panel" data-layout-ncol="2">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-46-1.png" class="img-fluid" width="384"></p>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-46-2.png" class="img-fluid" width="384"></p>
+</div>
+</div>
+</div>
+<p>Ah, but what about the parameter estimates, I hear you ask? Well, that’s when everything goes pear-shaped:</p>
+<div class="sourceCode cell-code" id="cb55"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a>mod2 <span class="sc">|&gt;</span> </span>
+<span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">extract_param</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb55-3"><a href="#cb55-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">plot_emax_pars</span>(par2) <span class="sc">|&gt;</span> </span>
+<span id="cb55-4"><a href="#cb55-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">walk</span>(print)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell quarto-layout-panel" data-layout-ncol="3">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-47-1.png" class="img-fluid" width="288"></p>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-47-2.png" class="img-fluid" width="288"></p>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-47-3.png" class="img-fluid" width="288"></p>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb56"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a>mod2 <span class="sc">|&gt;</span> </span>
+<span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">extract_param</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb56-3"><a href="#cb56-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(emax, e0, ec50, sigma) <span class="sc">|&gt;</span> </span>
+<span id="cb56-4"><a href="#cb56-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cor</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>             emax          e0        ec50       sigma
+emax   1.00000000 -0.96880835 -0.82131556 -0.01762361
+e0    -0.96880835  1.00000000  0.92715674  0.03022421
+ec50  -0.82131556  0.92715674  1.00000000  0.06361717
+sigma -0.01762361  0.03022421  0.06361717  1.00000000</code></pre>
+</div>
+</div>
+<p>So yeah, it’s bad. Not only are all three parameters correlated in an unpleasant way, the posterior distribution is starting to look rather non-normal so it’s not even obvious we should trust the correlation matrix to be telling us anything <em>except</em> the fact that we have severe model identifiability problems here. Sure, your model fits are actually pretty good as the plot below illustrates, but you have almost no idea what the values of <code>emax</code>, <code>e0</code>, or <code>ec50</code> actually are. In the end, even though the true relationship is an Emax function, the impoverished nature of the data means that attempting to fit an Emax regression model to the data in this situation becomes a classic case of overfitting.</p>
+</section>
+<section id="scenario-3" class="level3">
+<h3 class="anchored" data-anchor-id="scenario-3">Scenario 3</h3>
+<p>In scenario 1, the data set had a limited range of exposures but as it happened the true value of <code>ec50</code> is right in the middle of that range. We ended up with some identifiability problems, but not horribly bad ones. In scenario 2, however, the true value of <code>ec50</code> was at the lower end of our observed exposures: that turned out to be a huge problem for us.</p>
+<p>So what happens when the true value of <code>ec50</code> is at the upper end of the measured exposure levels? To explore this, I’ll repeat the same exercise but this time set the true value of <code>ec50</code> to 6500 units, which puts it at about the 80th percentile of the exposures represented in our <code>exposure</code> vector. Here’s what the data look like in this situation:</p>
+<div class="sourceCode cell-code" id="cb58"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>par3 <span class="ot">&lt;-</span> <span class="fu">emax_parameters</span>(<span class="at">ec50 =</span> <span class="dv">6500</span>) <span class="co"># around 80th percentile</span></span>
+<span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a>dat3 <span class="ot">&lt;-</span> <span class="fu">generate_emax_data</span>(small_design<span class="sc">$</span>exposure, par3)</span>
+<span id="cb58-3"><a href="#cb58-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb58-4"><a href="#cb58-4" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_emax_data</span>(dat3, par3) </span>
+<span id="cb58-5"><a href="#cb58-5" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_emax_data</span>(dat3, par3) <span class="sc">+</span> <span class="fu">scale_x_log10</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell quarto-layout-panel" data-layout-ncol="2">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-49-1.png" class="img-fluid" width="384"></p>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-49-2.png" class="img-fluid" width="384"></p>
+</div>
+</div>
+</div>
+<p>This is essentially the inverse of what we saw in scenario 2. The data don’t look terrible at the lower end of the observed exposure range, but at the upper end we have very few samples to work with. We might have problems again. Let’s fit the model:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb59"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a>mod3 <span class="ot">&lt;-</span> <span class="fu">stan_emax</span>(</span>
+<span id="cb59-2"><a href="#cb59-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">formula =</span> response <span class="sc">~</span> exposure, </span>
+<span id="cb59-3"><a href="#cb59-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> dat3,</span>
+<span id="cb59-4"><a href="#cb59-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">priors =</span> <span class="fu">emax_priors</span>(par3)</span>
+<span id="cb59-5"><a href="#cb59-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>As before, the posterior predictions aren’t too bad. The model does actually fit the data and make reasonable predictions about where future data might fall:</p>
+<div class="sourceCode cell-code" id="cb60"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a>base <span class="ot">&lt;-</span> <span class="fu">plot</span>(mod3, <span class="at">show.ci =</span> <span class="cn">FALSE</span>, <span class="at">show.pi =</span> <span class="cn">TRUE</span>, <span class="at">pi =</span> <span class="fl">0.95</span>)</span>
+<span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a>base <span class="sc">+</span> <span class="fu">theme_bw</span>()</span>
+<span id="cb60-3"><a href="#cb60-3" aria-hidden="true" tabindex="-1"></a>base <span class="sc">+</span> <span class="fu">theme_bw</span>() <span class="sc">+</span> <span class="fu">scale_x_log10</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell quarto-layout-panel" data-layout-ncol="2">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-51-1.png" class="img-fluid" width="384"></p>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-51-2.png" class="img-fluid" width="384"></p>
+</div>
+</div>
+</div>
+<p>But once again, when we look at the posterior samples to get a sense of what we can plausibly estimate for the parameters, we can see that we again have problems:</p>
+<div class="sourceCode cell-code" id="cb61"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a>mod3 <span class="sc">|&gt;</span> </span>
+<span id="cb61-2"><a href="#cb61-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">extract_param</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb61-3"><a href="#cb61-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">plot_emax_pars</span>(par3) <span class="sc">|&gt;</span> </span>
+<span id="cb61-4"><a href="#cb61-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">walk</span>(print)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell quarto-layout-panel" data-layout-ncol="3">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-52-1.png" class="img-fluid" width="288"></p>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-52-2.png" class="img-fluid" width="288"></p>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-52-3.png" class="img-fluid" width="288"></p>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb62"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a>mod3 <span class="sc">|&gt;</span> </span>
+<span id="cb62-2"><a href="#cb62-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">extract_param</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb62-3"><a href="#cb62-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(emax, e0, ec50, sigma) <span class="sc">|&gt;</span> </span>
+<span id="cb62-4"><a href="#cb62-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cor</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>            emax         e0       ec50      sigma
+emax  1.00000000 0.40394014 0.76927912 0.05048414
+e0    0.40394014 1.00000000 0.87900916 0.02350481
+ec50  0.76927912 0.87900916 1.00000000 0.04869102
+sigma 0.05048414 0.02350481 0.04869102 1.00000000</code></pre>
+</div>
+</div>
+<p>On the whole this isn’t quite as bad as scenario 2, but it’s not great either. You could probably extract <em>something</em> fairly sensible from this, but it would need to be caveatted very heavily in any write-up.</p>
+</section>
+</section>
+<section id="a-final-word-of-warning" class="level2">
+<h2 class="anchored" data-anchor-id="a-final-word-of-warning">A final word of warning</h2>
+<p>Naturally, I have saved the worst for last.<a href="#fn21" class="footnote-ref" id="fnref21" role="doc-noteref"><sup>21</sup></a> The last scenario to consider is one where the true effect size is very close to zero, and everything goes to hell. You would hope never to see this in a real exposure-response modelling situation, but I’ll show it here because it illustrates the absurdity of trying to fit a model to data that contain no signal at all. To that end, here’s a data set that is “technically” generated using the Emax model, but the signal is so weak that we might as well admit it’s pure random noise:</p>
+<div class="sourceCode cell-code" id="cb64"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a>par4 <span class="ot">&lt;-</span> <span class="fu">emax_parameters</span>(<span class="at">emax =</span> .<span class="dv">1</span>) <span class="co"># very small effect</span></span>
+<span id="cb64-2"><a href="#cb64-2" aria-hidden="true" tabindex="-1"></a>dat4 <span class="ot">&lt;-</span> <span class="fu">generate_emax_data</span>(small_design<span class="sc">$</span>exposure, par4)</span>
+<span id="cb64-3"><a href="#cb64-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-4"><a href="#cb64-4" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_emax_data</span>(dat4, par4) </span>
+<span id="cb64-5"><a href="#cb64-5" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_emax_data</span>(dat4, par4) <span class="sc">+</span> <span class="fu">scale_x_log10</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell quarto-layout-panel" data-layout-ncol="2">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-54-1.png" class="img-fluid" width="384"></p>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-54-2.png" class="img-fluid" width="384"></p>
+</div>
+</div>
+</div>
+<p>In real life, what you should do here is immediately stop trying to do an exposure-response analysis at all. There’s nothing you can pull out of the data. But let’s imagine we were stupendously brave/unwise, and attempted to do so anyway:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb65"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a>mod4 <span class="ot">&lt;-</span> <span class="fu">stan_emax</span>(</span>
+<span id="cb65-2"><a href="#cb65-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">formula =</span> response <span class="sc">~</span> exposure, </span>
+<span id="cb65-3"><a href="#cb65-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> dat4,</span>
+<span id="cb65-4"><a href="#cb65-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">priors =</span> <span class="fu">emax_priors</span>(par4)</span>
+<span id="cb65-5"><a href="#cb65-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>When you look at the output in this blog post, you’d think everything went fine. But that’s <em>only</em> because I’ve silenced all the warnings that stan is throwing and oh my there are a lot of them. The Emax model is not well-specified for this kind of data, and stan does not like it when you try to draw from a posterior density that is utter garbage. Not surprisingly, when we attempt to plot model predictions for this data we don’t get anything very helpful:</p>
+<div class="sourceCode cell-code" id="cb66"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a>base <span class="ot">&lt;-</span> <span class="fu">plot</span>(mod4, <span class="at">show.ci =</span> <span class="cn">FALSE</span>, <span class="at">show.pi =</span> <span class="cn">TRUE</span>, <span class="at">pi =</span> <span class="fl">0.95</span>)</span>
+<span id="cb66-2"><a href="#cb66-2" aria-hidden="true" tabindex="-1"></a>base <span class="sc">+</span> <span class="fu">theme_bw</span>()</span>
+<span id="cb66-3"><a href="#cb66-3" aria-hidden="true" tabindex="-1"></a>base <span class="sc">+</span> <span class="fu">theme_bw</span>() <span class="sc">+</span> <span class="fu">scale_x_log10</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell quarto-layout-panel" data-layout-ncol="2">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-56-1.png" class="img-fluid" width="384"></p>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-56-2.png" class="img-fluid" width="384"></p>
+</div>
+</div>
+</div>
+<p>I mean, of course. There’s no signal of any kind in the data here, and the prediction intervals make it very obvious that there’s no signal. Duh.</p>
+<p>Now comes the “fun” part. All those stan warnings that I’ve silenced in the output here? Well, if you’re at all curious about <em>why</em> stan was screaming at us, let’s take a look at the distribution of “posterior samples” that it actually produced:<a href="#fn22" class="footnote-ref" id="fnref22" role="doc-noteref"><sup>22</sup></a></p>
+<div class="sourceCode cell-code" id="cb67"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a>mod4 <span class="sc">|&gt;</span> </span>
+<span id="cb67-2"><a href="#cb67-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">extract_param</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb67-3"><a href="#cb67-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">plot_emax_pars</span>(par4) <span class="sc">|&gt;</span> </span>
+<span id="cb67-4"><a href="#cb67-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">walk</span>(print)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell quarto-layout-panel" data-layout-ncol="3">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-57-1.png" class="img-fluid" width="288"></p>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-57-2.png" class="img-fluid" width="288"></p>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
+<p><img src="index_files/figure-html/unnamed-chunk-57-3.png" class="img-fluid" width="288"></p>
+</div>
+</div>
+</div>
+<p>This is… utterly pathological. The model is attempting to estimate three parameters, from a data set that contains absolutely no information about any of them.<a href="#fn23" class="footnote-ref" id="fnref23" role="doc-noteref"><sup>23</sup></a></p>
+
+
+</section>
+
+
+<div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p>I actually have a work-related project on my desk at the moment involving this package, so part of my motivation here was to familiarise myself with the package before diving into the real work.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>This is… something of an understatement. The election brought some of the most hateful people in the world out in public, and they were gloating about the fact that other people were going to suffer. It was not simply an abstraction for me: I had people threatening to kill me (and everyone who belongs to my demographic) on election day. In Sydney. To my face. At my local pub. It’s very hard to just pick up and go on with everyday life as if everything were fine and normal under those circumstances.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3"><p>You can run Emax models with binary outcomes, in which case the approach is to recast this within a logistic regression framework, but in the interest of simplicity I’m not going to cover that situation in this post.<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn4"><p>I have now been working in pharamacometrics long enough to be painfully aware that there are a <em>lot</em> of different measures used to formalise some notion of “drug exposure” that have different properties and different applicability to specific problems. This post is not for talking about such things: I will merely assume that some measure of exposure exists and has been chosen sensibly.<a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn5"><p>This function doesn’t really need the dots. I’m adding them here solely so that <code>emax_fn()</code> can silently ignore parameters that aren’t used in the model, which happens later in the document because the model also has a <code>sigma</code> parameter to describe residual variance. If I were a less lazy woman I’d write this in a tighter way but this is just a blog post, and the level of rigour I’m aiming for is not super high here.<a href="#fnref5" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn6"><p>When <span class="math inline">\(\gamma=1\)</span> this is the usual two-parameter logistic function, but more generally Emax uses the three-parameter logistic curve.<a href="#fnref6" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn7"><p>As you can see in the code I’ve actually used a truncated lognormal, chopping off the lower and upper 1% of the distribution. That subtlety does matter a bit, actually, because extreme values of the exposures end up being high-leverage points when you fit the regression model (I think: to be honest I haven’t bothered to look at this in detail), and I don’t want to deal with outliers in this post.<a href="#fnref7" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn8"><p>For the pop-PK modeling stage that typically precedes an exposure-response analysis, the placebo samples aren’t of much interest because the drug concentration is zero. But placebo samples can be very useful in exposure-response, since they help us determine baseline response levels, so I’ve included a placebo group here.<a href="#fnref8" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn9"><p>Yes, I know this isn’t a particularly realistic representation of a phase 1 dose finding study. I’m really adding it just as a way of creating at least one version of the data set that doesn’t suffer from issues that arise when you have a truncated range of exposures. Hey, I have to make <em>some</em> simplifications here otherwise I’ll never make it to the regression section of the post.<a href="#fnref9" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn10"><p>Sigh. Yes, I know: the dose I’ve passed to <code>generate_exposure()</code> in the placebo condition is weird: you wouldn’t actually expect a .01 mg dose in a placebo condition, this is purely a hack I introduced so that the data from the placebo condition doesn’t look super weird<a href="#fnref10" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn11"><p>Double sigh. I am not considering the role played by BLQ censoring either. Look, this is a blog post: I am not trying to write an academic paper here. I’ve had quite enough of that for one lifetime already tyvm.<a href="#fnref11" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn12"><p>A part of me wants to discuss kurtosis at this point but perhaps I should just bite my tongue instead? You don’t make friends with kurtosis.<a href="#fnref12" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn13"><p>I should mention as an aside I’m being a little imprecise in my use of the term “design”. From a scientific perspective we would usually think of the design in terms of the number of subjects, the dosing regimes and so on, and treat the exposures as part of the stochastic outcome when the design is realised in data. In a regression context though the exposures are treated as fixed, so in that sense the <span class="math inline">\(x_i\)</span> values are part of the design matrix even though they aren’t controlled by the researcher. In an earlier version of this post I actually did run a variation of all these simulations where I simulated <em>many</em> possible sets of exposures conditional on the experimental design, in order to see if the pattern of results I discuss here are representative of what happens in general. But then the post got even longer and I abandoned that effort. Such is life.<a href="#fnref13" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn14"><p>Well, simulated data. Whatever. It’s a moot point for this post.<a href="#fnref14" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn15"><p>And, to a lesser extent, the high-exposure samples from a phase 1 study.<a href="#fnref15" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn16"><p>I will resist the temptation to dive into a philosophical discussion of what a Bayesian prior actually means statistically. There are many opinions. None are relevant to this post.<a href="#fnref16" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn17"><p>This is of course a convenient fiction, but so is everything else in science and statistics. As always, the question we actually care about is whether it is a <em>useful</em> and <em>safe</em> fiction to rely upon in our data analysis.<a href="#fnref17" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn18"><p>That’s true for <code>gamma</code> too, actually, but I’m not talking about that parameter in this post.<a href="#fnref18" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn19"><p>Yes I know there are already tools for doing this, hush.<a href="#fnref19" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn20"><p>The object returned is an S3 classed object of class “rstanemax”.<a href="#fnref20" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn21"><p>I am the antithesis of Vanessa Redgrave<a href="#fnref21" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn22"><p>I use scare quotes here because when you have numerical issues as severe as the ones that you get with this data set, the samples that you end up with can’t realistically be considered to be actual samples from the posterior. They’re diagnostic in the sense they can tell you what the hell went wrong, but it would be an error to think this is exactly what the posterior density looks like in this situation.<a href="#fnref22" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn23"><p>You might be wondering why I even bothered to think about this case. The answer, for whatever its worth, is that I had a client question a while back that related (rather loosely) to the question of how you would do formal model selection procedures for an Emax regression model, which led me to thinking about what you would do in an orthodox setting to handle the awkward case when the null model (e.g., no exposure-reponse relationship at all) is true. As this little simulation illustrates, this can be tricky because when the null is true, you can’t actually fit the Emax model to the data in a way that yields meaningful undertainty estimates. At best you could compute an AIC statistic or the like, because you <em>can</em> find the negative log-likelihood here, but if someone were to insist on computing p-values I wouldn’t really know how: imagine trying to construct a Wald statistic to test any specific parameter of this model? The standard errors wouldn’t make any sense at all. It seems to me that this would be entirely meaningless. But that’s a bit of a digression and I didn’t really want to dive deep on that in this blog post.<a href="#fnref23" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section><section class="quarto-appendix-contents" id="quarto-reuse"><h2 class="anchored quarto-appendix-heading">Reuse</h2><div class="quarto-appendix-contents"><div><a rel="license" href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></div></div></section><section class="quarto-appendix-contents" id="quarto-citation"><h2 class="anchored quarto-appendix-heading">Citation</h2><div><div class="quarto-appendix-secondary-label">BibTeX citation:</div><pre class="sourceCode code-with-copy quarto-appendix-bibtex"><code class="sourceCode bibtex">@online{navarro2024,
+  author = {Navarro, Danielle},
+  title = {Bayesian Estimation for {Emax} Regression},
+  date = {2024-11-11},
+  url = {https://blog.djnavarro.net/posts/2024-11-11_emax-parameters/},
+  langid = {en}
+}
+</code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre><div class="quarto-appendix-secondary-label">For attribution, please cite this work as:</div><div id="ref-navarro2024" class="csl-entry quarto-appendix-citeas" role="listitem">
+Navarro, Danielle. 2024. <span>“Bayesian Estimation for Emax
+Regression.”</span> November 11, 2024. <a href="https://blog.djnavarro.net/posts/2024-11-11_emax-parameters/">https://blog.djnavarro.net/posts/2024-11-11_emax-parameters/</a>.
+</div></div></section></div></main> <!-- /main -->
+<!-- plausible -->
+<script async="" defer="" data-domain="blog.djnavarro.net" src="https://plausible.io/js/plausible.js"></script>
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp("https:\/\/blog\.djnavarro\.net");
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+    <a class="nav-link" href="https://blog.djnavarro.net">
+<p>blog.djnavarro.net</p>
+</a>
+  </li>  
+</ul>
+    </div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>
