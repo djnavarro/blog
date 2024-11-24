@@ -1,10 +1,10 @@
 ---
-title: " Bézier curves"
-description: "This is a subtitle"
+title: " Bézier curve"
+description: "What sins will she commit?"
 date: "2024-11-24"
-image: "./img/sketches_06_0681.png"
-image-alt: "The alt text"
-categories: ["R", "Art"]
+image: "./img/worm3.jpg"
+image-alt: "Worm on a string meme"
+categories: ["R", "Art", "Worms"]
 --- 
 
 <!--------------- my typical setup ----------------->
@@ -81,7 +81,7 @@ where $b_{v,n}(t)$ is referred to as the Bernstein basis polynomials of degree $
 
 None of this is very interesting.
 
-Suppose we have a collection of $n + 1$ control points $P_0, \ldots, P_n$ that lie in a coordinate space. In a Bézier curve, these control points are analogous the $\beta_v$ coefficients in a Bernstein polynomial, and (by definition) we restrict the domain of the function to the unit interval $t \in [0, 1]$
+But suppose we have a collection of $n + 1$ control points $P_0, \ldots, P_n$ that lie in a coordinate space. In a Bézier curve, these control points are analogous the $\beta_v$ coefficients in a Bernstein polynomial, and (by definition) we restrict the domain of the function to the unit interval $t \in [0, 1]$
 
 $$
 B_n(t) = \sum_{v = 0}^n P_v \frac{n!}{(n - v)!v!} \ t^v (1-t)^{n-v}
@@ -90,9 +90,15 @@ and we have the general form of the equation for a Bézier curve defined by thes
 
 This is still not very interesting.
 
+::: {.column-margin}
+
+![](./img/worm1.jpg)
+
+:::
+
 ## Implementation
 
-From a practical perspective there is no need to roll our own implementation of Bézier functions in R, because this has already been done many times before. Nevertheless -- since the whole point of this post is to unpack how Bézier functions work -- I'll do so here for illustrative purposes. To that end, I'll start by implementing my own `bernstein()` function:^[I have made absolutely no attempt to optimize this function for speed. That's not the point of this post.]
+From a practical perspective there is no need to roll our own implementation of Bézier functions in R, because this has already been done many times before. Nevertheless -- since the whole point of this post is to unpack how Bézier functions work -- I'll do so here for illustrative purposes. To that end, I'll start by implementing my own `bernstein()` function:
 
 ```{r}
 bernstein <- function(beta, t = seq(0, 1, .01)) {
@@ -137,7 +143,7 @@ Better yet, I can plot them:
 ```{r}
 ggplot() + 
   aes(x, y) +
-  geom_line(data = bezier) + 
+  geom_path(data = bezier) + 
   geom_point(data = control, color = "red") + 
   coord_equal(xlim = c(0, 10), ylim = c(0, 10)) + 
   theme_bw()
@@ -157,10 +163,253 @@ bezier <- tibble(
 )
 ggplot() + 
   aes(x, y) +
-  geom_line(data = bezier) + 
+  geom_path(data = bezier) + 
   geom_point(data = control, color = "red") + 
   coord_equal(xlim = c(0, 10), ylim = c(0, 10)) + 
   theme_bw()
 ```
+
+No, sorry, I lied. Still not interesting.
+
+::: {.column-margin}
+
+![](./img/worm2.jpg)
+
+:::
+
+
+## S7 bezier classes, why not
+
+In order to play around with this a little further, and given that I mentioned the [S7 post](/posts/2024-02-25_s7/) earlier, I'll practice my S7 skills a little by defining a new "bezier" class:
+
+```{r}
+library(S7)
+
+bezier <- new_class(
+  name = "bezier",
+  parent = S7_object,
+  properties = list(
+    x = class_numeric,
+    y = class_numeric,
+    n = new_property(class = class_numeric, default = 100L),
+    curve = new_property(
+      class = class_data.frame,
+      getter = function(self) {
+        t <- seq(0, 1, length.out = self@n)
+        data.frame(
+          x = bernstein(self@x, t),
+          y = bernstein(self@y, t)
+        )
+      }
+    )
+  ),
+  validator = function(self) {
+    if (length(self@x) != length(self@y)) return("x and y must have same length")
+    if (length(self@x) < 2) return("at least two control points are required")
+    if (length(self@n) != 1) return("n must be length 1")
+    if (self@n <= 0) return("n must be a non-negative number")
+  })
+```
+
+I call `bezier()` by passing the `x` and `y` coordinates of the control points, like so:   
+  
+```{r}
+b <- bezier(
+  x = c(1, 5, 6, 7, 8),
+  y = c(1, 1, 9, 8, 6)
+)
+```
+
+The result is a data structure that stores points defining the Bézier curve as an internal data frame `b@curve`, and also keeps the control points as `b@x` and `b@y`. This is probably not a great class design, but whatever. In any case, here's the object:
+
+```{r}
+b
+```
+
+This data structure is not very interesting. 
+
+We can make this a little less tedious by noting that every S7 class is also an S3 class, which allows me to define an S3 plot method:
+
+```{r}  
+plot.bezier <- function(x, show_control = TRUE, ...) {
+  p <- ggplot() + 
+    aes(x, y) +
+    geom_path(data = x@curve) + 
+    coord_equal() + 
+    theme_bw()
+  if (show_control) {
+    p <- p + geom_point(
+      data = data.frame(x = x@x, y = x@y), 
+      color = "red"
+    ) 
+  }
+  p
+}
+
+plot(b)
+```
+
+I guess that's nice? Sort of?
+
+Anyway, if we really wanted to we could push this a little further. For examples, we could define a "bezier_noise" class where objects are comprised of many Bézier curves, in which random noise is injected into some of the control points. I'll spare you the terrible, horrible, no good, very bad code that I used to define this class. Instead I'll just plot a whole bunch of Bézier curves atop one another:
+
+::: {.column-margin}
+
+![](./img/worm3.jpg)
+
+:::
+
+
+```{r}
+#| code-fold: true
+#| code-summary: "(The terrible, horrible, no good, very bad code)"
+bezier_noise <- new_class(
+  name = "bezier_noise",
+  parent = S7_object,
+  properties = list(
+    x = class_numeric,
+    y = class_numeric,
+    k = new_property(class = class_numeric, default = 100L),
+    n = new_property(class = class_numeric, default = 100L),
+    noise = new_property(class = class_numeric, default = 1),
+    seed = new_property(class = class_numeric, default = 1L),
+    bezier = new_property(
+      class = class_list, 
+      getter = function(self) {
+        l <- list()
+        np <- length(self@x)
+        s <- seq(0, 2, length.out = np)
+        s <- s * (2 - s) 
+        withr::with_seed(
+          self@seed, 
+          {
+            for(i in 1:self@k) {
+              l[[i]] <- bezier(
+                x = self@x + rnorm(np, sd = self@noise) * s^2,
+                y = self@y + rnorm(np, sd = self@noise) * s^2,
+                n = self@n
+              )
+            }
+          }
+        )
+        l
+      }
+    )
+  ),
+  validator = function(self) {
+    if (length(self@x) != length(self@y)) return("x and y must have same length")
+    if (length(self@x) < 2) return("at least two control points are required")
+    if (length(self@n) != 1) return("n must be length 1")
+    if (self@n <= 0) return("n must be a non-negative number")
+    if (length(self@k) != 1) return("k must be length 1")
+    if (self@k <= 1) return("k must be a positive number")
+    if (length(self@noise) != 1) return("noise must be length 1")
+    if (self@noise <= 0) return("noise must be a non-negative number")
+    if (length(self@seed) != 1) return("seed must be length 1")
+    if (self@seed <= 0) return("seed must be a non-negative number")
+  })
+
+plot.bezier_noise <- function(x, palette = "bilbao", dots = TRUE, ...) {
+  p <- ggplot() + aes(x, y) + coord_equal() + theme_void()
+  pal <- scico::scico(x@k, palette = palette)
+  pal <- sample(pal)
+  if(dots) for(l in 1:x@k) p <- p + 
+      geom_point(
+        data = data.frame(
+          x = x@bezier[[l]]@x,
+          y = x@bezier[[l]]@y
+        ),
+        color = "grey80",
+        size = 1,
+        shape = 19
+      )
+  for(l in 1:x@k) p <- p + 
+      geom_path(
+        data = x@bezier[[l]]@curve,
+        color = pal[l],
+        lineend = "round"
+      )
+  p
+}
+
+plot(
+  bezier_noise(
+    x = c(0, 10, 15, 20, 25, 30, 35),
+    y = c(0,  0,  5, 15,  5,  5,  5),
+    k = 200L, 
+    noise = 1.5 
+  ), 
+  palette = "lajolla",
+  dots = TRUE
+)
+```
+
+Okay? But why, Danielle? Why?
+
+## What sins indeed
+
+None of this may seem like a great life accomplishment yet, but this is only because you do not realise how close I am to writing an R package that generates worm on a string memes in ggplot2.
+
+
+```{r}
+#| fig-height: 4
+#| fig-width: 6
+#| fig-align: "center"
+#| code-fold: true
+#| code-summary: "(worm in a plot)"
+set.seed(1L)
+plot(
+  bezier_noise(
+    x = sort(rnorm(10L)),
+    y = rnorm(10L),
+    k = 200L, 
+    noise = .1 
+  ),
+  palette = "oslo",
+  dots = FALSE
+) + 
+  annotate(
+    "point", 
+    x = c(.8, .85), 
+    y = c(.7, .8), 
+    size = 6, 
+    shape = 19, 
+    color = "white"
+  ) +
+  annotate(
+    "point", 
+    x = c(.8, .85), 
+    y = c(.7, .8), 
+    size = 6, 
+    shape = 1, 
+    color = "black"
+  ) +
+  annotate(
+    "point", 
+    x = c(.81, .86), 
+    y = c(.7, .8), 
+    size = 2, 
+    shape = 19, 
+    color = "black"
+  ) +
+  annotate(
+    "label",
+    x = .5,
+    y = .3,
+    size = 8,
+    label = "🪱 i will subsett  closurs"
+  ) +
+  annotate(
+    "text",
+    x = .2,
+    y = .9,
+    angle = 70,
+    size = 10,
+    color = "pink",
+    label = "on purpse"
+  )
+```
+
+
 
 
