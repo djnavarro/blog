@@ -1,0 +1,166 @@
+---
+title: " Bézier curves"
+description: "This is a subtitle"
+date: "2024-11-24"
+image: "./img/sketches_06_0681.png"
+image-alt: "The alt text"
+categories: ["R", "Art"]
+--- 
+
+<!--------------- my typical setup ----------------->
+
+```{r}
+#| label: setup
+#| include: false
+very_wide <- 500
+wide <- 136
+narrow <- 76
+options(width = narrow)
+cache_images <- TRUE
+set.seed(1)
+```
+
+<!--------------- post begins here ----------------->
+
+It has annoyed me for many years that I have used [Bézier curves](https://en.wikipedia.org/wiki/B%C3%A9zier_curve) without really understanding them. Consider, for example, the [flametree](https://github.com/djnavarro/flametree) package I wrote when first learning how to make generative art. 
+
+```{r}
+#| fig-height: 5
+#| fig-width: 6
+#| fig-align: center
+tree <- flametree::flametree_grow(
+  seed = 100L,
+  time = 7L,
+  split = 3L,
+  trees = 1L
+)
+
+flametree::flametree_plot(
+  data = tree, 
+  background = "white", 
+  palette = "black",
+  style = "nativeflora" 
+)
+```
+
+Setting aside the details of the system, you can see that the branching shapes here are constructed from many curved lines connected to one another. Each segment is a distinct Bézier curve. If I'd not used Bézier curves and instead constructed the art using straight lines, these pieces would lose any sense of flowing growth.
+
+Or consider these images, all of which are outputs from something I hastily cobbled together this morning in a desperate effort to wake my brain from its weekend stupor:
+
+::: {layout-ncol=3}
+
+![](./img/sketches_06_0681.png)
+
+![](./img/sketches_06_0688.png)
+
+![](./img/sketches_06_0692.png)
+
+:::
+
+The influence of Bézier curves is more subtle in these pieces, because each image is comprised of many distinct "ribbon" shapes that are described by rules I talked about in the [S7 post](/posts/2024-02-25_s7/), and their individual character isn't at all related to Bézier curves. But notice how, in all three pieces, there's tendency for all the ribbons to "bend" in the same (or similar) direction? This happens because under the hood I've replaced the straight lines that were used in the original system with Bézier curves. 
+
+And let's not even get started on all the point-and-click GUI interfaces out there that let you create Bézier curves without writing a single line of code. Bézier curves are everywhere.
+
+Nevertheless, until today I'd never thought to look into the mathematics. For some reason -- possibly because my idiot brain sometimes confuses Bézier functions with [Bessel functions](https://en.wikipedia.org/wiki/Bessel_function) -- I had this weird idea in my head that Bézier curves were complicated. 
+
+They are not.
+
+## Definition
+
+Reduced to the bare essentials a Bézier curve is nothing special: it's just a polynomial function. More precisely, it's a special case of the [Bernstein polynomials](https://en.wikipedia.org/wiki/Bernstein_polynomial) 
+
+$$
+\begin{array}{rcl}
+B_n(t) 
+&=& \sum_{v = 0}^n \beta_v \ b_{v,n}(t) \\
+&=& \sum_{v = 0}^n \beta_v \ \frac{n!}{(n - v)!v!} \ t^v (1-t)^{n-v}
+\end{array}
+$$
+
+where $b_{v,n}(t)$ is referred to as the Bernstein basis polynomials of degree $n$, $\beta_v$ is the coefficient associated with each basis polynomial, and every data-minded person will immediately recognise that $\frac{n!}{(n - v)!v!}$ is the [binomial coefficient](https://en.wikipedia.org/wiki/Binomial_coefficient.
+
+None of this is very interesting.
+
+Suppose we have a collection of $n + 1$ control points $P_0, \ldots, P_n$ that lie in a coordinate space. In a Bézier curve, these control points are analogous the $\beta_v$ coefficients in a Bernstein polynomial, and (by definition) we restrict the domain of the function to the unit interval $t \in [0, 1]$
+
+$$
+B_n(t) = \sum_{v = 0}^n P_v \frac{n!}{(n - v)!v!} \ t^v (1-t)^{n-v}
+$$
+and we have the general form of the equation for a Bézier curve defined by these control points. A Bézier curve *is* a Bernstein polynomial.
+
+This is still not very interesting.
+
+## Implementation
+
+From a practical perspective there is no need to roll our own implementation of Bézier functions in R, because this has already been done many times before. Nevertheless -- since the whole point of this post is to unpack how Bézier functions work -- I'll do so here for illustrative purposes. To that end, I'll start by implementing my own `bernstein()` function:^[I have made absolutely no attempt to optimize this function for speed. That's not the point of this post.]
+
+```{r}
+bernstein <- function(beta, t = seq(0, 1, .01)) {
+  n <- length(beta) - 1
+  w <- choose(n, 0:n)
+  b <- rep(0, length(t))
+  for(v in 0:n) {
+    b = b + beta[v + 1] * w[v + 1] * t^v * (1 - t)^(n-v)
+  }
+  b
+}
+```
+
+Armed with a function that computes Bernstein polynomials, it's very straightforward to construct Bézier curves and add them to plots. First, let's load some packages:
+
+```{r}
+library(ggplot2)
+library(tibble)
+```
+
+Next, I'll define a set of `control` points as a tibble that stores the `x` and `y` coordinates of the control points as separate columns:
+
+```{r}
+control <- tibble(
+  x = c(1, 5, 8),
+  y = c(1, 1, 6)
+)
+```
+
+I can now define a `bezier` curve by computing two `bernstein()` polynomials, one associated with the x-coordinates and the other associated with the y-coordinates:
+
+```{r}
+bezier <- tibble(
+  t = seq(0, 1, .01),
+  x = bernstein(control$x, t),
+  y = bernstein(control$y, t)
+)
+```
+
+Better yet, I can plot them:
+
+```{r}
+ggplot() + 
+  aes(x, y) +
+  geom_line(data = bezier) + 
+  geom_point(data = control, color = "red") + 
+  coord_equal(xlim = c(0, 10), ylim = c(0, 10)) + 
+  theme_bw()
+```
+
+In this example there are only three control points, and if I'm honest I'll admit that when I use Bézier curves in art I've only ever used curves with three control points, but there's no principled reason for that restriction. Indeed, adding more control points can change the shape of the curve in interesting ways:
+
+```{r}
+control <- tibble(
+  x = c(1, 5, 6, 7, 8),
+  y = c(1, 1, 9, 8, 6)
+)
+bezier <- tibble(
+  t = seq(0, 1, .01),
+  x = bernstein(control$x, t),
+  y = bernstein(control$y, t)
+)
+ggplot() + 
+  aes(x, y) +
+  geom_line(data = bezier) + 
+  geom_point(data = control, color = "red") + 
+  coord_equal(xlim = c(0, 10), ylim = c(0, 10)) + 
+  theme_bw()
+```
+
+
