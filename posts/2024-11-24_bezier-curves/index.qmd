@@ -77,7 +77,7 @@ B_n(t)
 \end{array}
 $$
 
-where $b_{v,n}(t)$ is referred to as the Bernstein basis polynomials of degree $n$, $\beta_v$ is the coefficient associated with each basis polynomial, and every data-minded person will immediately recognise that $\frac{n!}{(n - v)!v!}$ is the [binomial coefficient](https://en.wikipedia.org/wiki/Binomial_coefficient.
+where $b_{v,n}(t)$ is referred to as the Bernstein basis polynomials of degree $n$, $\beta_v$ is the coefficient associated with each basis polynomial, and every data-minded person will immediately recognise that $\frac{n!}{(n - v)!v!}$ is the [binomial coefficient](https://en.wikipedia.org/wiki/Binomial_coefficient).
 
 None of this is very interesting.
 
