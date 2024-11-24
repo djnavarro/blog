@@ -308,23 +308,27 @@ window.Quarto = {
 <h2 class="anchored" data-anchor-id="definition">Definition</h2>
 <p>Reduced to the bare essentials a Bézier curve is nothing special: it’s just a polynomial function. More precisely, it’s a special case of the <a href="https://en.wikipedia.org/wiki/Bernstein_polynomial">Bernstein polynomials</a></p>
 <p><span class="math display">\[
-\begin{array}{rcl}
-B_n(t)
-&amp;=&amp; \sum_{v = 0}^n \beta_v \ b_{v,n}(t) \\
-&amp;=&amp; \sum_{v = 0}^n \beta_v \ \frac{n!}{(n - v)!v!} \ t^v (1-t)^{n-v}
-\end{array}
+B_n(t) \sum_{v = 0}^n \beta_v \ b_{v,n}(t)
 \]</span></p>
-<p>where <span class="math inline">\(b_{v,n}(t)\)</span> is referred to as the Bernstein basis polynomials of degree <span class="math inline">\(n\)</span>, <span class="math inline">\(\beta_v\)</span> is the coefficient associated with each basis polynomial, and every data-minded person will immediately recognise that <span class="math inline">\(\frac{n!}{(n - v)!v!}\)</span> is the <a href="https://en.wikipedia.org/wiki/Binomial_coefficient">binomial coefficient</a>.</p>
+<p>where <span class="math inline">\(\beta_v\)</span> describes the weight assigned to, <span class="math inline">\(b_{v,n}(t)\)</span>, which denotes a Bernstein basis polynomial:</p>
+<p><span class="math display">\[
+b_{v,n}(t) = \frac{n!}{(n - v)!v!} \ t^v (1-t)^{n-v}
+\]</span> Looking at this expression, every data-minded person will immediately recognise that <span class="math inline">\(n!/((n - v)!v!)\)</span> is the <a href="https://en.wikipedia.org/wiki/Binomial_coefficient">binomial coefficient</a>, and indeed that for <span class="math inline">\(t \in [0, 1]\)</span>, a Bernstein basis polynomial is no different mathematically to the expression for the binomial probability of observing <span class="math inline">\(v\)</span> events out of <span class="math inline">\(n\)</span> trials when the probability of a single event is <span class="math inline">\(t\)</span>.</p>
 <p>None of this is very interesting.</p>
 <p>But suppose we have a collection of <span class="math inline">\(n + 1\)</span> control points <span class="math inline">\(P_0, \ldots, P_n\)</span> that lie in a coordinate space. In a Bézier curve, these control points are analogous the <span class="math inline">\(\beta_v\)</span> coefficients in a Bernstein polynomial, and (by definition) we restrict the domain of the function to the unit interval <span class="math inline">\(t \in [0, 1]\)</span></p>
 <p><span class="math display">\[
 B_n(t) = \sum_{v = 0}^n P_v \frac{n!}{(n - v)!v!} \ t^v (1-t)^{n-v}
-\]</span> and we have the general form of the equation for a Bézier curve defined by these control points. A Bézier curve <em>is</em> a Bernstein polynomial.</p>
+\]</span> and we have the general form of the equation for a Bézier curve defined by these control points. A Bézier curve <em>is</em> a Bernstein polynomial, and as such you can think of a Bézier curve as being a particular kind of weighted average of the control points, where the weight assigned to the <span class="math inline">\(v\)</span>-th of the <span class="math inline">\(n\)</span> control points is identical to the binomial probability of <span class="math inline">\(v\)</span> successes from <span class="math inline">\(n\)</span> trials, if the probability of a single success is <span class="math inline">\(t\)</span>, where <span class="math inline">\(t\)</span> refers to the proportion distance along the curve that you have travelled. Admittedly, this “explanation” doesn’t help very much in itself, but it motivate me to construct a little gif that shows how the “weights” assigned to each of the control points change as you sweep through the values of <span class="math inline">\(t\)</span>:</p>
+<p><img src="./img/weights-1.gif" class="img-fluid"></p>
+<p>In this plot, each red dot is a control point, the label specifies the numbering of the control points (i.e., it equals the value of <span class="math inline">\(v + 1\)</span>), the area of each red dot is proportional to the weight <span class="math inline">\(b_{n,v}(t)\)</span> assigned to the the control point, and the black dot is positioned at the weighted average <span class="math inline">\(B_n(t)\)</span>.</p>
 <p>This is still not very interesting.</p>
+<p>Even so, making this connection also helped me realise (at long last) that the <em>order</em> of the control points matters a lot to the shape of the curve. The curve will always pass through the first and last of the control points, but it won’t necessarily go through any of the intermediate points. Not only that, if you change the order in which the intermediate control points are specified, you change the curve, even if the locations of those control points don’t change. Here’s what happens to the previous example if I switch the order of two intermediate control points:</p>
+<p><img src="./img/weights-2.gif" class="img-fluid"></p>
 
 <div class="no-row-height column-margin column-container"><div class="">
 <p><img src="./img/worm1.jpg" class="img-fluid"></p>
-</div></div></section>
+</div></div><p>Sigh.</p>
+</section>
 <section id="implementation" class="level2 page-columns page-full">
 <h2 class="anchored" data-anchor-id="implementation">Implementation</h2>
 <p>From a practical perspective there is no need to roll our own implementation of Bézier functions in R, because this has already been done many times before. Nevertheless – since the whole point of this post is to unpack how Bézier functions work – I’ll do so here for illustrative purposes. To that end, I’ll start by implementing my own <code>bernstein()</code> function:</p>
