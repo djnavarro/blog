@@ -318,11 +318,20 @@ b_{v,n}(t) = \frac{n!}{(n - v)!v!} \ t^v (1-t)^{n-v}
 <p>But suppose we have a collection of <span class="math inline">\(n + 1\)</span> control points <span class="math inline">\(P_0, \ldots, P_n\)</span> that lie in a coordinate space. In a Bézier curve, these control points are analogous the <span class="math inline">\(\beta_v\)</span> coefficients in a Bernstein polynomial, and (by definition) we restrict the domain of the function to the unit interval <span class="math inline">\(t \in [0, 1]\)</span></p>
 <p><span class="math display">\[
 B_n(t) = \sum_{v = 0}^n P_v \frac{n!}{(n - v)!v!} \ t^v (1-t)^{n-v}
-\]</span> and we have the general form of the equation for a Bézier curve defined by these control points. A Bézier curve <em>is</em> a Bernstein polynomial, and as such you can think of a Bézier curve as being a particular kind of weighted average of the control points, where the weight assigned to the <span class="math inline">\(v\)</span>-th of the <span class="math inline">\(n\)</span> control points is identical to the binomial probability of <span class="math inline">\(v\)</span> successes from <span class="math inline">\(n\)</span> trials, if the probability of a single success is <span class="math inline">\(t\)</span>, where <span class="math inline">\(t\)</span> refers to the proportion distance along the curve that you have travelled. Admittedly, this “explanation” doesn’t help very much in itself, but it motivate me to construct a little gif that shows how the “weights” assigned to each of the control points change as you sweep through the values of <span class="math inline">\(t\)</span>:</p>
+\]</span> and we have the general form of the equation for a Bézier curve defined by these control points. A Bézier curve <em>is</em> a Bernstein polynomial, and as such you can think of a Bézier curve as being a particular kind of weighted average of the control points, where the weight assigned to the <span class="math inline">\(v\)</span>-th of the <span class="math inline">\(n\)</span> control points is identical to the binomial probability of <span class="math inline">\(v\)</span> successes from <span class="math inline">\(n\)</span> trials, if the probability of a single success is <span class="math inline">\(t\)</span>, where <span class="math inline">\(t\)</span> refers to the proportion distance along the curve that you have travelled. Admittedly, this “explanation” doesn’t help very much in itself, but it did motivate me to construct a little gif that shows how the “weights” assigned to each of the control points change as you sweep through the values of <span class="math inline">\(t\)</span>:</p>
 <p><img src="./img/weights-1.gif" class="img-fluid"></p>
-<p>In this plot, each red dot is a control point, the label specifies the numbering of the control points (i.e., it equals the value of <span class="math inline">\(v + 1\)</span>), the area of each red dot is proportional to the weight <span class="math inline">\(b_{n,v}(t)\)</span> assigned to the the control point, and the black dot is positioned at the weighted average <span class="math inline">\(B_n(t)\)</span>.</p>
+<p>In this plot:</p>
+<ul>
+<li>The line is the Bézier curve</li>
+<li>The coloured dots are the control points</li>
+<li>The black dot is the value of the Bézier curve <span class="math inline">\(B_n(t)\)</span> at the current value of <span class="math inline">\(t\)</span></li>
+<li>The colour of the Bézier curve at each point represents the value of <span class="math inline">\(t\)</span></li>
+<li>The colour of the control points is proportional to its numerical index (i.e., the colour of the first control point, where <span class="math inline">\(v = 0\)</span>, is mapped to the same colour as <span class="math inline">\(t = 0\)</span>; and similarly, the colour of the final control point where <span class="math inline">\(v = n\)</span> is the same as the colour of the Bézier curve when <span class="math inline">\(t = 1\)</span>)</li>
+<li>The label denotes the actual index of the control points (i.e., <span class="math inline">\(v + 1\)</span>)</li>
+<li>The area of the control point dots is proportional to the weight <span class="math inline">\(b_{n,v}(t)\)</span> assigned to the that control point: i.e., it represents the “pull” that this control point has when determining the location of the black dot</li>
+</ul>
 <p>This is still not very interesting.</p>
-<p>Even so, making this connection also helped me realise (at long last) that the <em>order</em> of the control points matters a lot to the shape of the curve. The curve will always pass through the first and last of the control points, but it won’t necessarily go through any of the intermediate points. Not only that, if you change the order in which the intermediate control points are specified, you change the curve, even if the locations of those control points don’t change. Here’s what happens to the previous example if I switch the order of two intermediate control points:</p>
+<p>Even so, making this connection also helped me realise (at long last) that the <em>order</em> of the control points matters a lot to the shape of the curve. The curve will always pass through the first and last of the control points, but it won’t necessarily go through any of the intermediate points. Not only that, if you change the order in which the intermediate control points are specified, you change the curve, even if the locations of those control points don’t change. Here’s what happens to the previous example if I switch the order of two intermediate control points (i.e., notice the colours of those two points have swapped):</p>
 <p><img src="./img/weights-2.gif" class="img-fluid"></p>
 
 <div class="no-row-height column-margin column-container"><div class="">
@@ -587,7 +596,7 @@ B_n(t) = \sum_{v = 0}^n P_v \frac{n!}{(n - v)!v!} \ t^v (1-t)^{n-v}
 </section>
 <section id="what-sins-indeed" class="level2">
 <h2 class="anchored" data-anchor-id="what-sins-indeed">What sins indeed</h2>
-<p>None of this may seem like a great life accomplishment yet, but this is only because you do not realise how close I am to writing an R package that generates worm on a string memes in ggplot2.</p>
+<p>None of this may seem like a great life accomplishment. But this is only because you do not realise how close I am to writing an R package that generates worm on a string memes in ggplot2.</p>
 <div class="cell" data-layout-align="center">
 <details class="code-fold">
 <summary>(worm in a plot)</summary>
