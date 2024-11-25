@@ -87,15 +87,23 @@ But suppose we have a collection of $n + 1$ control points $P_0, \ldots, P_n$ th
 $$
 B_n(t) = \sum_{v = 0}^n P_v \frac{n!}{(n - v)!v!} \ t^v (1-t)^{n-v}
 $$
-and we have the general form of the equation for a Bézier curve defined by these control points. A Bézier curve *is* a Bernstein polynomial, and as such you can think of a Bézier curve as being a particular kind of weighted average of the control points, where the weight assigned to the $v$-th of the $n$ control points is identical to the binomial probability of $v$ successes from $n$ trials, if the probability of a single success is $t$, where $t$ refers to the proportion distance along the curve that you have travelled. Admittedly, this "explanation" doesn't help very much in itself, but it motivate me to construct a little gif that shows how the "weights" assigned to each of the control points change as you sweep through the values of $t$:
+and we have the general form of the equation for a Bézier curve defined by these control points. A Bézier curve *is* a Bernstein polynomial, and as such you can think of a Bézier curve as being a particular kind of weighted average of the control points, where the weight assigned to the $v$-th of the $n$ control points is identical to the binomial probability of $v$ successes from $n$ trials, if the probability of a single success is $t$, where $t$ refers to the proportion distance along the curve that you have travelled. Admittedly, this "explanation" doesn't help very much in itself, but it did motivate me to construct a little gif that shows how the "weights" assigned to each of the control points change as you sweep through the values of $t$:
 
 ![](./img/weights-1.gif)
 
-In this plot, each red dot is a control point, the label specifies the numbering of the control points (i.e., it equals the value of $v + 1$), the area of each red dot is proportional to the weight $b_{n,v}(t)$ assigned to the the control point, and the black dot is positioned at the weighted average $B_n(t)$.
+In this plot:
 
-This is still not very interesting.
+- The line is the Bézier curve
+- The coloured dots are the control points 
+- The black dot is the value of the Bézier curve $B_n(t)$ at the current value of $t$ 
+- The colour of the Bézier curve at each point represents the value of $t$
+- The colour of the control points is proportional to its numerical index (i.e., the colour of the first control point, where $v = 0$, is mapped to the same colour as $t = 0$; and similarly, the colour of the final control point where $v = n$ is the same as the colour of the Bézier curve when $t = 1$)
+- The label denotes the actual index of the control points (i.e., $v + 1$)
+- The area of the control point dots is proportional to the weight $b_{n,v}(t)$ assigned to the that control point: i.e., it represents the "pull" that this control point has when determining the location of the black dot 
 
-Even so, making this connection also helped me realise (at long last) that the *order* of the control points matters a lot to the shape of the curve. The curve will always pass through the first and last of the control points, but it won't necessarily go through any of the intermediate points. Not only that, if you change the order in which the intermediate control points are specified, you change the curve, even if the locations of those control points don't change. Here's what happens to the previous example if I switch the order of two intermediate control points: 
+This is still not very interesting. 
+
+Even so, making this connection also helped me realise (at long last) that the *order* of the control points matters a lot to the shape of the curve. The curve will always pass through the first and last of the control points, but it won't necessarily go through any of the intermediate points. Not only that, if you change the order in which the intermediate control points are specified, you change the curve, even if the locations of those control points don't change. Here's what happens to the previous example if I switch the order of two intermediate control points (i.e., notice the colours of those two points have swapped): 
 
 ![](./img/weights-2.gif)
 
@@ -359,7 +367,7 @@ Okay? But why, Danielle? Why?
 
 ## What sins indeed
 
-None of this may seem like a great life accomplishment yet, but this is only because you do not realise how close I am to writing an R package that generates worm on a string memes in ggplot2.
+None of this may seem like a great life accomplishment. But this is only because you do not realise how close I am to writing an R package that generates worm on a string memes in ggplot2.
 
 
 ```{r}

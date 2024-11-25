@@ -41,7 +41,11 @@ for(gif in 1:2) {
 
   base <- ggplot() +
     aes(x, y) +
-    geom_path(data = bezier) +
+    geom_path(
+      mapping = aes(color = t),
+      data = bezier,
+      show.legend = FALSE
+    ) +
     coord_equal(xlim = c(0, 10), ylim = c(0, 10)) +
     theme_bw(base_size = 18)
 
@@ -55,7 +59,8 @@ for(gif in 1:2) {
         weighted_control <- control |>
           dplyr::mutate(
             w = dbinom(0:(n-1), n-1, prob = t),
-            i = 1:n
+            i = 1:n,
+            t = (0:(n-1))/(n-1)
           )
         p <- base +
           geom_point(
@@ -66,9 +71,8 @@ for(gif in 1:2) {
             size = 4
           ) +
           geom_point(
-            mapping = aes(size = w),
+            mapping = aes(size = w, color = t),
             data = weighted_control,
-            color = "red",
             show.legend = FALSE
           ) +
           geom_label(
@@ -87,7 +91,8 @@ for(gif in 1:2) {
             size = 6,
             color = "grey50"
           ) +
-          scale_size_area(max_size = 12)
+          scale_size_area(max_size = 12) +
+          scico::scale_color_scico(palette = "berlin")
         plot(p)
       }
     },
