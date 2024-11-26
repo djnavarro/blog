@@ -70,7 +70,7 @@ They are not.
 Reduced to the bare essentials a Bézier curve is nothing special: it's just a polynomial function. More precisely, it's a special case of the [Bernstein polynomials](https://en.wikipedia.org/wiki/Bernstein_polynomial) 
 
 $$
-B_n(t) \sum_{v = 0}^n \beta_v \ b_{v,n}(t)
+B_n(t) = \sum_{v = 0}^n \beta_v \ b_{v,n}(t)
 $$
 
 where $\beta_v$ describes the weight assigned to, $b_{v,n}(t)$, which denotes a Bernstein basis polynomial:
