@@ -1,0 +1,100 @@
+---
+title: "regex-backreferences"
+description: "This is a subtitle"
+date: "2024-11-26"
+--- 
+
+<!--------------- my typical setup ----------------->
+
+```{r}
+#| label: setup
+#| include: false
+very_wide <- 500
+wide <- 136
+narrow <- 76
+options(width = narrow)
+cache_images <- TRUE
+set.seed(1)
+```
+
+<!--------------- post begins here ----------------->
+
+Regular expressions are the bane of my existence. They are everything I hate about programming. They are the very apotheosis of "taking a concept that makes sense and making it utterly incomprehensible to save a few keystrokes". They are the *worst*.
+
+No, I do not want to hear your argument for why they're actually great.
+
+## The regex
+
+```{r}
+library(stringr)
+```
+
+```{r}
+convo <- c(
+  "5551 5678, call me maybe?",
+  "oh wait i forgot the area code it's (02) 5551 5678",
+  "cool im 03 7010 1111 babe", 
+  "interstate? do you have a mobile?",
+  "yup, its 411 111 1111",
+  "liaaaaar"
+)
+```
+
+Match a specific sequence of characters
+
+```{r}
+str_extract(convo, "555")
+```
+
+Three consecutive numbers
+
+```{r}
+str_extract(convo, "[0-9]{3}")
+```
+
+Hm. Wait, that's not really what I meant. I don't want two numbers in a row, I want two copies of the *same* number in a row. For that I need to use capture groups and backreferences, and every time this happens my brain melts, I google it and end up on [this page](https://www.regular-expressions.info/refcapture.html) or something similar. This works:
+
+```{r}
+str_extract(convo, "([0-9])\\1{2}")
+```
+
+## Extract
+
+How to mimic `str_extract()` in base?
+
+This isn't quite what we want:
+
+```{r}
+grep("([0-9])\\1{2}", convo, value = TRUE)
+```
+
+Closer, but not quite:
+
+```{r}
+regmatches(convo, regexpr("([0-9])\\1{2}", convo))
+```
+
+To return a match or `NA`:
+
+```{r}
+base_extract <- function(string, pattern) {
+  m <- regexpr(pattern, string)
+  v <- regmatches(string, m)
+  out <- rep(NA_character_, length(string))
+  out[which(m > 0)] <- v
+  out
+}
+base_extract(convo, "([0-9])\\1{2}")
+```
+
+## Replace
+
+```{r}
+str_replace(convo, "([0-9])\\1{2}", "***")
+```
+
+```{r}
+gsub("([0-9])\\1{2}", "***", convo)
+```
+
+
