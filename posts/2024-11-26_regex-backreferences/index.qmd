@@ -17,11 +17,41 @@ cache_images <- TRUE
 set.seed(1)
 ```
 
+```{r}
+highlight <- function(x) {
+  stringr::str_replace_all(
+    string = x,
+    pattern = "\\<([^<>]+)\\>", 
+    #replacement = "\\1", 
+    #replacement = "\n\n:::{style='color:blue'} \\1 \n:::" 
+    replacement = "<span style='color:#008080'>&lt;\\1&gt;</span>"
+  )
+}
+
+knitr::knit_hooks$set(
+  output = function(x, options) {
+    if (options$highlight == TRUE) {
+      return(c("<pre>", highlight(x), "</pre>"))
+    } 
+    c("<pre>", x, "</pre>")
+  }
+)
+
+knitr::opts_chunk$set(highlight = TRUE)
+
+#base_hook <- knitr::knit_hooks$get("output")
+```
+
 <!--------------- post begins here ----------------->
 
 Regular expressions are the bane of my existence. They are everything I hate about programming. They are the very apotheosis of "taking a concept that makes sense and making it utterly incomprehensible to save a few keystrokes". They are the *worst*.
 
 No, I do not want to hear your argument for why they're actually great.
+
+```{r}
+feather <- brio::read_lines("feather.txt")
+cat(feather[1:10], sep = "\n")
+```
 
 ## The regex
 
@@ -29,33 +59,43 @@ No, I do not want to hear your argument for why they're actually great.
 library(stringr)
 ```
 
-```{r}
-convo <- c(
-  "5551 5678, call me maybe?",
-  "oh wait i forgot the area code it's (02) 5551 5678",
-  "cool im 03 7010 1111 babe", 
-  "interstate? do you have a mobile?",
-  "yup, its 411 111 1111",
-  "liaaaaar"
-)
-```
-
 Match a specific sequence of characters
 
 ```{r}
-str_extract(convo, "555")
+str_view(feather, "do")
 ```
 
-Three consecutive numbers
+Oh right, actually we would like to match "Do" or "do":
 
 ```{r}
-str_extract(convo, "[0-9]{3}")
+str_view(feather, "[Dd]o")
 ```
 
-Hm. Wait, that's not really what I meant. I don't want two numbers in a row, I want two copies of the *same* number in a row. For that I need to use capture groups and backreferences, and every time this happens my brain melts, I google it and end up on [this page](https://www.regular-expressions.info/refcapture.html) or something similar. This works:
+Ah well, we really only want to match "do-do" but not "do" or "done"
 
 ```{r}
-str_extract(convo, "([0-9])\\1{2}")
+str_view(feather, "[Dd]o-[Dd]o")
+```
+
+But wait, now we catch "do-do" but not "do-do-do"
+
+```{r}
+str_view(feather, "([Dd]o)(-\\1)+")
+```
+
+Ah, so maybe it needs to be this then:
+
+```{r}
+str_view(feather, "([Dd]o)(-[Dd]o)+")
+```
+
+## Replace
+
+```{r}
+feather |> 
+  str_replace_all("([Dd]o)(-[Dd]o)+", "🎶") |> 
+  head(n = 20) |> 
+  cat(sep = "\n")
 ```
 
 ## Extract
@@ -65,13 +105,13 @@ How to mimic `str_extract()` in base?
 This isn't quite what we want:
 
 ```{r}
-grep("([0-9])\\1{2}", convo, value = TRUE)
+#grep("([0-9])\\1{2}", convo, value = TRUE)
 ```
 
 Closer, but not quite:
 
 ```{r}
-regmatches(convo, regexpr("([0-9])\\1{2}", convo))
+#regmatches(convo, regexpr("([0-9])\\1{2}", convo))
 ```
 
 To return a match or `NA`:
@@ -84,17 +124,17 @@ base_extract <- function(string, pattern) {
   out[which(m > 0)] <- v
   out
 }
-base_extract(convo, "([0-9])\\1{2}")
+#base_extract(convo, "([0-9])\\1{2}")
 ```
 
 ## Replace
 
 ```{r}
-str_replace(convo, "([0-9])\\1{2}", "***")
+#str_replace(convo, "([0-9])\\1{2}", "***")
 ```
 
 ```{r}
-gsub("([0-9])\\1{2}", "***", convo)
+#gsub("([0-9])\\1{2}", "***", convo)
 ```
 
 
