@@ -19,22 +19,39 @@ set.seed(1)
 ```
 
 ```{r}
-#| eval: false
-#| echo: false
+#| include: false
 
-# I originally intended to use this, but didn't
-highlight <- function(x) {
+highlight_bracket <- function(x, shade = "#008080") {
   stringr::str_replace_all(
     string = x,
     pattern = "\\<([^<>]+)\\>", 
-    replacement = "<span style='color:#008080'>&lt;\\1&gt;</span>"
+    replacement = paste0(
+      "<span style='color:",
+      shade, 
+      "'>&lt;\\1&gt;</span>"
+    )
   )
 }
+
+span_colour <- function(colour) {
+  paste0("<span style='color:", colour, "'>\\1</span>", collapse = "")
+}
+
+highlight_logical <- function(x, true = "#006400", false = "#8B0000") {
+  x |> 
+    stringr::str_replace_all("(TRUE)", span_colour(true)) |> 
+    stringr::str_replace_all("(FALSE)", span_colour(false)) 
+}
+
+highlight_logicals <- function(x) {}
 
 knitr::knit_hooks$set(
   output = function(x, options) {
     if (options$highlight == TRUE) {
-      return(c("<pre>", highlight(x), "</pre>"))
+      y <- x |> 
+        highlight_bracket() |> 
+        highlight_logical()
+      return(c("<pre>", y, "</pre>"))
     } 
     c("<pre>", x, "</pre>")
   }
@@ -79,6 +96,96 @@ Um. Anyway. What was I talking about? Oh, right. Regular expressions.
 
 :::
 
+```{r}
+#| message: false
+library(stringr)
+library(tibble)
+library(brio)
+```
+
+## A regularomenon
+
+```{r}
+femininomenon <- read_lines("femininomenon.txt")
+cat(femininomenon[60:66], sep = "\n")
+```
+
+Not intending this to be a tutorial on regular expressions, but it's probably not a bad idea to very briefly talk about the descent into madness. The simplest form of regular expression is finding strings that match a specific, fixed subset of text. For instance, here's every line in "Femininomenon" in which Chappell Roan says `"femininomenon"`:
+
+```{r}
+str_view(femininomenon, "femininomenon")
+```
+
+### Groups
+
+Suppose we want something a little fancier. Let's say, I want to find every line in which she sings either `"fem"` or `"femininomenon"`. To do this, we wrap each of these strings in parentheses to define **groups**,^[Specifically, these are "capturing" groups because this syntax supports "backreferencing", which will come up later. This can be distinguished from "non-capturing" groups that can be written using slightly different syntax, but in all honesty I almost always use capturing groups because I'm lazy.] and use the `"|"` to indicate that the string can match against either of these groups. So our regular expression becomes `"(femininomenon)|(fem)"`:
+
+```{r}
+str_view(femininomenon, "(femininomenon)|(fem)")
+```
+
+Importantly, the `"|"` operator looks for matches by testing the left-hand side before the right-hand side. To see this, look at what happens when I reverse the order of the two groups:
+
+```{r}
+str_view(femininomenon, "(fem)|(femininomenon)")
+```
+
+Notice that this *never* detects a match against the `"femininomenon"` (the second group) because `"fem"` (the first group) matches every string that `"feminomenon"` could possibly have matched against.
+
+### Quantifiers
+
+An alternative way of approaching this, and possibly a better one, is to use **quantifiers**. There are several quantifiers supported by most regular expression flavours. Quantifiers always refer to the previous item, and specify the number of repetitions of the previous item that can be matched: 
+
+- `?` matches zero or one time
+- `*` matches zero or more times
+- `+` matches one or more times
+- `{n}` matches exactly n times
+- `{n,}` matches n or more times
+- `{n,m}` matches at least n times but not more than m times
+
+Here's a little demonstration:
+
+```{r}
+#| code-fold: true
+tibble(
+  string    = c("a", "ab", "abb", "abbb", "abbbb", "abbbbb"),
+  `ab?`     = str_view(string, pattern = "ab?", match = NA),
+  `ab*`     = str_view(string, pattern = "ab*", match = NA),
+  `ab+`     = str_view(string, pattern = "ab+", match = NA),
+  `ab{2}`   = str_view(string, pattern = "ab{2}", match = NA),
+  `ab{2,}`  = str_view(string, pattern = "ab{2,}", match = NA),
+  `ab{2,4}` = str_view(string, pattern = "ab{2,4}", match = NA)
+)
+```
+
+Notice that these are all "greedy", and the maximum number of repetitions is used whenever possible.
+
+So, to return to the femininomenon example, we could use `"fem(ininomenon)?"` as the regular expression and it will do the same job: 
+
+```{r}
+str_view(femininomenon, "fem(ininomenon)?")
+```
+
+### Categories
+
+Substrings (of at least three characters) comprised only from the letters f, e, m, i, n, and o:
+
+```{r}
+str_view(femininomenon, "[femino]{3,}")
+```
+
+### Backreferences
+
+```{r}
+str_view(femininomenon, "f?([aeiou][rpnm])\\1+")
+```
+
+Compare to this:
+
+```{r}
+str_view(femininomenon, "f?([aeiou][rpnm]){2,}")
+```
+
 
 ## Oh no not another take
 
@@ -116,7 +223,7 @@ base_extract_all(punct, "[[:punct:]]", perl = TRUE)
 Okay yeah that is not even close to being the same thing. But what about the ICU engine? If you're working in tidyverse, internally you're probably relying on this engine and, well...
 
 ```{r}
-stringr::str_extract_all(punct, "[[:punct:]]")
+str_extract_all(punct, "[[:punct:]]")
 ```
 
 Le sigh. Of course. 
@@ -125,9 +232,9 @@ Le sigh. Of course.
 
 
 ```{r}
-feather <- brio::read_lines("feather.txt")
+feather <- read_lines("feather.txt")
 
-rules <- tibble::tribble(
+rules <- tribble(
               ~pattern, ~replacement,
     "([Dd]o)(-[Dd]o)+",         "🎶", # do-do, do-do-do -> musical note
              "feather",         "🪶", # feather -> emoji feather
@@ -140,7 +247,7 @@ str_rewrite <- function(string, rules) {
   purrr::reduce2(
     .x = rules$pattern, 
     .y = rules$replacement, 
-    .f = stringr::str_replace_all, 
+    .f = str_replace_all, 
     .init = string
   )
 }
