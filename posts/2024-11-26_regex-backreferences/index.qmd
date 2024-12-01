@@ -158,7 +158,22 @@ tibble(
 )
 ```
 
-Notice that these are all "greedy", and the maximum number of repetitions is used whenever possible.
+Notice that these are all "greedy", and the maximum number of repetitions is used whenever possible. You can make them lazy by appending `"?"` immediately after the quantifier. Here's what that looks like if we do this for all the regular expressions in the table above:
+
+```{r}
+#| code-fold: true
+tibble(
+  string    = c("a", "ab", "abb", "abbb", "abbbb", "abbbbb"),
+  `ab??`     = str_view(string, pattern = "ab??", match = NA),
+  `ab*?`     = str_view(string, pattern = "ab*?", match = NA),
+  `ab+?`     = str_view(string, pattern = "ab+?", match = NA),
+  `ab{2}?`   = str_view(string, pattern = "ab{2}?", match = NA),
+  `ab{2,}?`  = str_view(string, pattern = "ab{2,}?", match = NA),
+  `ab{2,4}?` = str_view(string, pattern = "ab{2,4}?", match = NA)
+)
+```
+
+Obviously, some of those are silly. There's really no point in specifying a regular expression like `"ab{2,4}?"` because it's the same as `"ab{2}"`
 
 So, to return to the femininomenon example, we could use `"fem(ininomenon)?"` as the regular expression and it will do the same job: 
 
@@ -227,6 +242,8 @@ str_extract_all(punct, "[[:punct:]]")
 ```
 
 Le sigh. Of course. 
+
+
 
 ## I'm so sorry for my loss
 
