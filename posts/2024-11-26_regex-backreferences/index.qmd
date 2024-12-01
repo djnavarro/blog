@@ -67,14 +67,13 @@ At least once a week I have this moment when a yawning pit of black despair open
 
 I try to resist. I'm a good girl, I tell the Dark Lord. I would never. Not on a first date anyway. Well, buy a girl a drink first maybe? And... oh it's so cold outside and honestly Sauron is kinda hot. Have you not watched Rings of Power? Sometimes a girl has needs.
 
-Um. Anyway. What was I talking about?
+Um. Anyway. What was I talking about? Oh, right. Regular expressions.
 
 <br>
 
-
 ::: {layout-ncol=2}
 
-![When I try to write a regular expression](feather1.jpg)
+![Writing a regular expression](feather1.jpg)
 
 ![When the regular expression encounters a string](feather2.jpg)
 
@@ -126,7 +125,7 @@ Le sigh. Of course.
 
 
 ```{r}
-feather <- tibble::tibble(original = brio::read_lines("feather.txt"))
+feather <- brio::read_lines("feather.txt")
 
 rules <- tibble::tribble(
               ~pattern, ~replacement,
@@ -146,28 +145,9 @@ str_rewrite <- function(string, rules) {
   )
 }
 
-feather$updated <- str_rewrite(feather$original, rules)
-feather
-```
-
-
-```{r}
-cat(feather$updated, sep = "\n")
-```
-
-
-## Whatever you're a waste of time
-
-```{r}
-any_pattern <- \(p) paste0("(", p, ")", collapse = "|")
-
 feather |> 
-  dplyr::mutate(
-    line = dplyr::row_number(),
-    match = stringr::str_extract_all(original, any_pattern(rules$pattern))
-  ) |> 
-  tidyr::unnest_longer("match") |> 
-  dplyr::count(line, match)
+  str_rewrite(rules) |> 
+  cat(sep = "\n")
 ```
 
 
