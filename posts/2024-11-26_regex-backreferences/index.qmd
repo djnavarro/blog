@@ -71,6 +71,16 @@ Um. Anyway. What was I talking about?
 
 <br>
 
+
+::: {layout-ncol=2}
+
+![When I try to write a regular expression](feather1.jpg)
+
+![When the regular expression encounters a string](feather2.jpg)
+
+:::
+
+
 ## Oh no not another take
 
 A persistent headache I have when writing regular expressions, besides the fact that they suck, is that there are so many slight variations on the same idea. At [regular-expressions.info](https://regular-expressions.info), for instance, you can find quick lookup tables for a wide variety of different regular expression engines. It lists [regular expressions in R](https://www.regular-expressions.info/rlanguage.html) as one of those systems, but it's important to remember that this refers to the syntax used by base R tools like `grep()`, `gsub()`, `gregexpr()` and so on. Or, more precisely, it refers to the default POSIX standard for extended regular expressions. Base R actually supports two different engines, so if you set `perl = TRUE` when calling base R functions then you would need to look at the [rules for PCRE](https://www.regular-expressions.info/pcre.html). In tidyverse, regular expressions are usually handled with the [stringr](https://stringr.tidyverse.org/) package that is built on top of [stringi](https://stringi.gagolewski.com/), which in turn uses the [ICU](https://icu.unicode.org/) engine that conforms to Unicode standards and as such provides comprehensive Unicode support. The [stringi regular expressions](https://stringi.gagolewski.com/weave/regular_expressions.html) page has a nice discussion. 
@@ -112,6 +122,7 @@ stringr::str_extract_all(punct, "[[:punct:]]")
 
 Le sigh. Of course. 
 
+## I'm so sorry for my loss
 
 
 ```{r}
@@ -138,19 +149,6 @@ str_rewrite <- function(string, rules) {
 feather$updated <- str_rewrite(feather$original, rules)
 feather
 ```
-
-<br> 
-
-::: {layout-ncol=2}
-
-![When I try to write a regular expression](feather1.jpg)
-
-![When the regular expression encounters a string](feather2.jpg)
-
-:::
-
-
-## I'm so sorry for my loss
 
 
 ```{r}
