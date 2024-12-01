@@ -63,17 +63,56 @@ knitr::opts_chunk$set(highlight = TRUE)
 
 At least once a week I have this moment when a yawning pit of black despair opens at my feet, and the barbed tentacles of despair wrap around my legs, poison injects chill into my veins, the icy claws of anxiety rip through my viscera, and a withered voice of pure evil slithers into my brain and speaks to me in the disturbingly-seductive language of Mordor:
 
-<p class="tangerine-bold" align="center" style="font-size: 28pt">why not write a regular expression for this?</p>
+<p class="tangerine-bold" align="center" style="font-size: 28pt">why not write a regular expression?</p>
 
-I try to resist. I'm a good girl, I tell the Dark Lord. I write *readable* code. I write *maintainable* code. I kinda prefer it when my own code does not reduce me to a broken shivering wreck. Besides, I would never. Not on a first date anyway. Well, buy a girl a drink first maybe? And... oh it's so cold outside and honestly Sauron is kinda hot. Have you not watched Rings of Power? Sometimes a girl has needs.
+I try to resist. I'm a good girl, I tell the Dark Lord. I would never. Not on a first date anyway. Well, buy a girl a drink first maybe? And... oh it's so cold outside and honestly Sauron is kinda hot. Have you not watched Rings of Power? Sometimes a girl has needs.
 
 Um. Anyway. What was I talking about?
 
 <br>
 
-## Oh, not another take
+## Oh no not another take
 
-So let's be very clear on what this post is not. It is not a tutorial on regular expressions. The world doesn't need another one of those. It is not an opinion piece on regular expressions. The world *definitely* doesn't need another one of those. It's something far more important than either. It is a thinly-veiled excuse for me to post Sabrina Carpenter lyrics.
+A persistent headache I have when writing regular expressions, besides the fact that they suck, is that there are so many slight variations on the same idea. At [regular-expressions.info](https://regular-expressions.info), for instance, you can find quick lookup tables for a wide variety of different regular expression engines. It lists [regular expressions in R](https://www.regular-expressions.info/rlanguage.html) as one of those systems, but it's important to remember that this refers to the syntax used by base R tools like `grep()`, `gsub()`, `gregexpr()` and so on. Or, more precisely, it refers to the default POSIX standard for extended regular expressions. Base R actually supports two different engines, so if you set `perl = TRUE` when calling base R functions then you would need to look at the [rules for PCRE](https://www.regular-expressions.info/pcre.html). In tidyverse, regular expressions are usually handled with the [stringr](https://stringr.tidyverse.org/) package that is built on top of [stringi](https://stringi.gagolewski.com/), which in turn uses the [ICU](https://icu.unicode.org/) engine that conforms to Unicode standards and as such provides comprehensive Unicode support. The [stringi regular expressions](https://stringi.gagolewski.com/weave/regular_expressions.html) page has a nice discussion. 
+
+Like an idiot, I forget this on a semi-regular basis, and I try to debug something by looking up the wrong regex syntax and yes, this sometimes matters. For instance, in the help documentation for regex in base R, you can find some discussion of various predefined POSIX classes (e.g., `"[[:alpha:]]"` matches alphabetic characters, `[[:digit:]]` matches numeric digits, and `"[[:punct:]]"` matches punctuation characters). However, different engines interpret these classes differently, which means you'll sometimes get different results depending on which engine you use.^[It also depends on the system locale. Not surprising, of course, but that does add to the sheer chaos of it all.]
+
+To illustrate this I'll use an example that I have shamelessly stolen directly from the [stringi documentation](https://stringi.gagolewski.com/weave/regular_expressions.html#avoiding-posix-classes), in order to show how very differently `"[[:punct:]]"` is interpreted across the three most commonly used regex engines in R. But first, because I cannot even with the base R regular expression syntax,^[I mean, wtf. I am genuinely sympathetic to R core, and deeply appreciate their willingness to maintain backward compatibility even for the bits of R that are just bizarre. But oh my god.] I'll define a `base_extract_all()` function that is roughly analogous to `stringr::str_extract_all()`, but uses the base R functions to do the work:
+
+```{r}
+base_extract_all <- function(string, pattern, perl = FALSE) {
+  matches <- gregexpr(pattern = pattern, text = string, perl = perl)
+  regmatches(x = string, m = matches)
+}
+```
+
+Next, I'll define a string `punct` containing a lot of punctuation characters:
+
+```{r}
+punct <- ",./|\\<>?;:'\"[]{}-=_+()*&^%$€#@!`~×‒„”"
+```
+
+So, what happens when we match `punct` to `"[[:punct:]]"`? Well, it depends heavily on which engine you're using. If you're using ERE (i.e., base R with `perl = FALSE`), you get this as the result:
+
+```{r}
+base_extract_all(punct, "[[:punct:]]")
+```
+
+What about PCRE? Let's set `perl = TRUE` and have a look:
+
+```{r}
+base_extract_all(punct, "[[:punct:]]", perl = TRUE)
+```
+
+Okay yeah that is not even close to being the same thing. But what about the ICU engine? If you're working in tidyverse, internally you're probably relying on this engine and, well...
+
+```{r}
+stringr::str_extract_all(punct, "[[:punct:]]")
+```
+
+Le sigh. Of course. 
+
+
 
 ```{r}
 feather <- tibble::tibble(original = brio::read_lines("feather.txt"))
