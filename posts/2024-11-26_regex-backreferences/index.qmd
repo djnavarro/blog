@@ -82,9 +82,9 @@ At least once a week I have this moment when a yawning pit of black despair open
 
 <p class="tangerine-bold" align="center" style="font-size: 28pt">why not write a regular expression?</p>
 
-I try to resist. I'm a good girl, I tell the Dark Lord. I would never. Not on a first date anyway. Well, buy a girl a drink first maybe? And... oh it's so cold outside and honestly Sauron is kinda hot. Have you not watched Rings of Power? Sometimes a girl has needs.
+I try to resist. I'm a good girl, I tell the Dark Lord. I would never. Not on a first date anyway. Well, buy a girl a drink first maybe? And... oh it's so cold outside and, I mean, Sauron is kinda hot. Have you not watched Rings of Power? Sometimes a girl has needs.
 
-Um. Anyway. What was I talking about? Oh, right. Regular expressions.
+Um. Anyway. What was I talking about? Oh, right. [Regular expressions](https://www.regular-expressions.info/).
 
 <br>
 
@@ -199,6 +199,27 @@ Compare to this:
 
 ```{r}
 str_view(femininomenon, "f?([aeiou][rpnm]){2,}")
+```
+
+
+### Anchors
+
+You can use `"^"` to match the start of a string and `"$"` to match the end. So `"^L"` would match the upper-case letter L, but only if it is the first character in the string:
+
+```{r}
+str_view(femininomenon, "^L")
+```
+
+We can extend this to capture the first word in a string, so long as it starts with an upper-case L:
+
+```{r}
+str_view(femininomenon, "^L[a-zA-z]*")
+```
+
+Or we could do the same trick, but for the end of a string. The regular expression `"f[a-zA-z]*$"` will match to all lines in the text that end in a word beginning with a lower-case f. 
+
+```{r}
+str_view(femininomenon, "f[a-zA-z]*$")
 ```
 
 
