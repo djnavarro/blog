@@ -1,5 +1,5 @@
 ---
-title: "Baby got back references"
+title: "Baby got backreferences"
 description: "Now I have \\\\2 problems"
 date: "2024-11-26"
 image: "feather2.jpg"
@@ -101,22 +101,102 @@ Um. Anyway. What was I talking about? Oh, right. [Regular expressions](https://w
 library(stringr)
 library(tibble)
 library(brio)
-```
 
-## A regularomenon
-
-```{r}
+feather <- read_lines("feather.txt")
 femininomenon <- read_lines("femininomenon.txt")
-cat(femininomenon[60:66], sep = "\n")
 ```
 
-Not intending this to be a tutorial on regular expressions, but it's probably not a bad idea to very briefly talk about the descent into madness. The simplest form of regular expression is finding strings that match a specific, fixed subset of text. For instance, here's every line in "Femininomenon" in which Chappell Roan says "femininomenon":
+## Warning
+
+Let's start this descent into madness with a disclaimer: I have *never* wanted to write a primer on working with regular expressions in R. I loathe regular expressions, and I am not good at them. So why am I, a grotesquely unqualified woman, writing one anyway? Honestly, the answer is because __this post is the tutorial that I need__. I'm writing this as an act of kindness for future Danielle, who will find inevitably herself crying at her keyboard trying to make a basic regex work, and will need to remind herself of the basics. With that in mind, and knowing exactly who will be revisiting this post in six months time in tears... you got this girl. I believe in you. 
+
+## Simple matches
+
+It begins with the very, very basics. The simplest way to write a regular expression is to detect strings that match a specific, fixed subset of text. For instance, let's say I want to find every line in [Femininomenon](https://www.youtube.com/watch?v=xdaKBAuO8zg) in which Chappell Roan sings the word `"femininomenon"`. I'll use the `str_view()` function from the stringr package to do this. It's not the best tool for using in a script, but it's ideal as a way of looking at the results of a regular expression match:
 
 ```{r}
-str_view(femininomenon, "femininomenon")
+str_view(
+  string = femininomenon,   # the song lyrics
+  pattern = "femininomenon" # the regular expression
+)
 ```
 
-### Groups
+In this output, the teal-highlighted text^[At the R console, this highlighting appears automatically. Normally you wouldn't see this highlighting in a quarto document like this one, because quarto strips out the ANSI control characters that the console uses to add colour to the output. However, for the purposes of this post I cheated a little, by writing a [knitr hook](/posts/2023-12-30_knitr-hooks/) that crudely mimics the same behaviour in this document.] enclosed in angle brackets displays the sections of the text that match the regular expression. In this case our regular expression is very simple. It's just a literal string `"femininomenon"`, so the output highlights every instance of that word. 
+
+Notice also that not every line in the song is shown by `str_view()`. Only those lines that match the regular expression are included (you can see that in the numbers to the left of each match). However, we can change this behaviour using the `match` argument to `str_view()`. For example, if wanted to see only those lines that don't include the letter `e`, we could do this:
+
+```{r}
+str_view(
+  string = femininomenon,
+  pattern = "e", 
+  match = FALSE
+)
+```
+
+Alternatively, we could set `match = NA`. If we do this, `str_view()` will return every line in the song, whether it matches or not. Here's an example. Let's search for every instance of the word `"you"`, and set `match = NA`:
+
+```{r}
+str_view(
+  string = femininomenon,
+  pattern = "you",
+  match = NA
+)
+```
+
+This output illustrates two things. First, you can see that there's a match on lines 3, 4, 7, 18, and probably others too (the remaining 72 lines of the song aren't shown in the output but they are actually included in the `str_view()` output). Second, it shows that our regular expression isn't quite doing the job we want it to: the match on line 4 matches the first three letters of the word "your", and it doesn't match to line 6 because that line contains the word "You" with an upper case "Y". If we want a regular expression to match "you" and "You" but not match against "your", it needs to be something a little more nuanced than setting `pattern = "you"` like I did above. 
+
+## Quantifiers
+
+For the moment, let's set aside the thorny question of how to handle capitalisation, and focus instead on the "you" vs "your" issue. Moreover, let's move the goalposts, and pretend that our new goal is actually to detect *both* `"you"` and `"your"`. We can do that with the help of **quantifiers**. In regular expression syntax, certain character (sometimes called "metacharacters") have special meanings. For example, the `?` character is used to indicate that the preceding character is optional. When we write `"your?"` as our regular expression, the `r?` part indicates that the `r` character is optional. It will match against both `"you"` and `"your"`:
+
+```{r}
+str_view(femininomenon, "your?")
+```
+
+Here you can see that it matches the `"you"` on line 3 and the `"your"` on line 4. However, on line 35 where it encounters the word `"you're"` it detects a match, but *only* to the `"you"` part of the word.  
+
+There are several quantifiers supported by most regular expression flavours.^[There are a ghastly number of different regular expression flavours out there. They are very similar to each other, but have subtle differences. Somewhat frustratingly, there are *three* different regular expression flavours that are widely used in R (two in base R and one in tidyverse), and every now and then I find myself running into cases where they don't produce identical results. More on this later in the post.] Quantifiers always refer to the previous item, and specify the number of repetitions of the previous item that can be matched: 
+
+- `?` matches the previous item zero or one time
+- `*` matches the previous item zero or more times
+- `+` matches the previous item one or more times
+- `{n}` matches the previous item exactly n times
+- `{n,}` matches the previous item n or more times
+- `{n,m}` matches the previous item at least n times but not more than m times
+
+This behaviour is (of course!) described in numerous places in the R documentation, but I find it helps a lot to have a concrete example that shows the differences between each of these. In the table below, the rows correspond to the strings `"a"`, `"ab"`, `"abb"`, and so on. Each column corresponds to a a regular expression that is always `"ab"` with a quantifier applied to the letter `"b"`. In each cell of the table, I've used `str_view()` to show how each string matches (or doesn't match) against each of the regexes:
+
+```{r}
+#| code-fold: true
+tibble(
+  string    = c("a", "ab", "abb", "abbb", "abbbb", "abbbbb"),
+  `ab?`     = str_view(string, pattern = "ab?", match = NA),
+  `ab*`     = str_view(string, pattern = "ab*", match = NA),
+  `ab+`     = str_view(string, pattern = "ab+", match = NA),
+  `ab{2}`   = str_view(string, pattern = "ab{2}", match = NA),
+  `ab{2,}`  = str_view(string, pattern = "ab{2,}", match = NA),
+  `ab{2,4}` = str_view(string, pattern = "ab{2,4}", match = NA)
+)
+```
+
+Notice that these are all **eager** (sometimes called **greedy**), in the sense that they will always match to as many repetitions as they possibly can while satisfying the rules. However, you can reverse this behaviour and make a quantifier **lazy** by appending  `?` immediately after the quantifier. A lazy quantifier will match against the fewest number of repetitions as it can possibly can while satisfying the rule. Here's what that looks like:
+
+```{r}
+#| code-fold: true
+tibble(
+  string    = c("a", "ab", "abb", "abbb", "abbbb", "abbbbb"),
+  `ab??`     = str_view(string, pattern = "ab??", match = NA),
+  `ab*?`     = str_view(string, pattern = "ab*?", match = NA),
+  `ab+?`     = str_view(string, pattern = "ab+?", match = NA),
+  `ab{2}?`   = str_view(string, pattern = "ab{2}?", match = NA),
+  `ab{2,}?`  = str_view(string, pattern = "ab{2,}?", match = NA),
+  `ab{2,4}?` = str_view(string, pattern = "ab{2,4}?", match = NA)
+)
+```
+
+Obviously, some of those are silly. There's no point whatsoever in writing a regular expression like `ab{2,4}?`, because it produces exactly the same behaviour as `ab{2}`.
+
+## Groups
 
 Suppose we want something a little fancier. Let's say, I want to find every line in which she sings either "fem" or "femininomenon". To do this, we wrap each of these strings in parentheses to define **groups**,^[Specifically, these are "capturing" groups because this syntax supports "backreferencing", which will come up later. This can be distinguished from "non-capturing" groups that can be written using slightly different syntax, but in all honesty I almost always use capturing groups because I'm lazy.] and use the `|` to indicate that the string can match against either of these groups. So our regular expression becomes `"(femininomenon)|(fem)"`:
 
@@ -132,56 +212,14 @@ str_view(femininomenon, "(fem)|(femininomenon)")
 
 Notice that this *never* detects a match against the `"femininomenon"` (the second group) because `"fem"` (the first group) matches every string that `"feminomenon"` could possibly have matched against.
 
-### Quantifiers
-
-An alternative way of approaching this, and possibly a better one, is to use **quantifiers**. There are several quantifiers supported by most regular expression flavours. Quantifiers always refer to the previous item, and specify the number of repetitions of the previous item that can be matched: 
-
-- `?` matches zero or one time
-- `*` matches zero or more times
-- `+` matches one or more times
-- `{n}` matches exactly n times
-- `{n,}` matches n or more times
-- `{n,m}` matches at least n times but not more than m times
-
-Here's a little demonstration:
-
-```{r}
-#| code-fold: true
-tibble(
-  string    = c("a", "ab", "abb", "abbb", "abbbb", "abbbbb"),
-  `ab?`     = str_view(string, pattern = "ab?", match = NA),
-  `ab*`     = str_view(string, pattern = "ab*", match = NA),
-  `ab+`     = str_view(string, pattern = "ab+", match = NA),
-  `ab{2}`   = str_view(string, pattern = "ab{2}", match = NA),
-  `ab{2,}`  = str_view(string, pattern = "ab{2,}", match = NA),
-  `ab{2,4}` = str_view(string, pattern = "ab{2,4}", match = NA)
-)
-```
-
-Notice that these are all "greedy", and the maximum number of repetitions is used whenever possible. You can make them lazy by appending `?` immediately after the quantifier. Here's what that looks like if we do this for all the regular expressions in the table above:
-
-```{r}
-#| code-fold: true
-tibble(
-  string    = c("a", "ab", "abb", "abbb", "abbbb", "abbbbb"),
-  `ab??`     = str_view(string, pattern = "ab??", match = NA),
-  `ab*?`     = str_view(string, pattern = "ab*?", match = NA),
-  `ab+?`     = str_view(string, pattern = "ab+?", match = NA),
-  `ab{2}?`   = str_view(string, pattern = "ab{2}?", match = NA),
-  `ab{2,}?`  = str_view(string, pattern = "ab{2,}?", match = NA),
-  `ab{2,4}?` = str_view(string, pattern = "ab{2,4}?", match = NA)
-)
-```
-
-Obviously, some of those are silly. There's really no point in specifying a regular expression like `ab{2,4}?` because it's the same as `ab{2}`
-
-So, to return to the femininomenon example, we could use `"fem(ininomenon)?"` as the regular expression and it will do the same job: 
+An alternative way of approaching this -- and possibly a better one -- is to use quantifiers. In the previous section I only applied quantifiers like `?`, `*`, and `+` to a single character, but you can also apply them to a group. Because of that, the regular expression `"fem(ininomenon)?"` will work as expected here:
 
 ```{r}
 str_view(femininomenon, "fem(ininomenon)?")
 ```
 
-### Categories
+
+## Categories
 
 Substrings (of at least three characters) comprised only from the letters f, e, m, i, n, and o:
 
@@ -189,7 +227,7 @@ Substrings (of at least three characters) comprised only from the letters f, e, 
 str_view(femininomenon, "[femino]{3,}")
 ```
 
-### Backreferences
+## Backreferences
 
 ```{r}
 str_view(femininomenon, "f?([aeiou][rpnm])\\1+")
@@ -202,7 +240,7 @@ str_view(femininomenon, "f?([aeiou][rpnm]){2,}")
 ```
 
 
-### Anchors
+## Anchors
 
 You can use `^` to match the start of a string and `$` to match the end. So `^L` would match the upper-case letter L, but only if it is the first character in the string:
 
@@ -228,7 +266,7 @@ About 99% of my use of anchors is either `$` or `^` but there are other anchors.
 str_view(femininomenon, "\\AL[a-zA-z]*")
 ```
 
-### The backslash headache
+## Backslash escape
 
 Notice that in the last section I used `\A` in the text to refer to the anchor, but used `"\\A"` in the R string used to specify it. This is because R uses `\` as the "escape" character, and so if you want to insert a literal `\` into an R string then you need to escape it:
 
@@ -258,10 +296,6 @@ Here's what I mean:
 ```{r}
 str_view(slashes, "\\\\", match = NA)
 ```
-
-## Get me away I'm dying
-
-### Using backslash to escape
 
 Characters that have special syntactic meaning need to be escaped if you want to treat them as literals. Quantifiers, for example:
 
@@ -298,6 +332,54 @@ However, if I want to match the literal text `(Get it hot)` I have to escape bot
 ```{r}
 str_view(femininomenon, "\\(Get it hot\\)")
 ```
+
+
+## Categories revisited
+
+Earlier I talked about categories, which are defined using square brackets. So a regular expression like `"[femino]"` will match to a single instance of `f`, `e`,`m`, `i`, `n` or `o`, and by using quantifiers I can write something like `"[femino]{3,}"` will match to substrings of length 3 or more that are comprised only of these six characters:
+
+```{r}
+str_view(femininomenon, "[femino]{3,}")
+```
+
+Suppose though I wanted to invert the match, and find strings of length 3 or more that do not contain any of these characters:
+
+```{r}
+str_view(femininomenon, "[^femino]{3,}")
+```
+
+When used at the beginning of the category `^` is interpreted as negation. So notice the difference: the regex `[^a]` matches a single character that is not an `a` whereas `[a^]` matches a single character that is either `a` or `^`. The difference is illustrated here:
+
+```{r}
+str_view("aaa bbb ^^^ ccc", "[^a]+")
+str_view("aaa bbb ^^^ ccc", "[a^]+")
+```
+
+We now have four rules for `^`:
+
+- If `^` appears outside a category it is the anchor
+- If `^` appears at the start of a category it inverts the category
+- If `^` appears elsewhere in a category it is a literal
+- If `^` appears outside a category but after `\` it is a literal
+
+So let's suppose I want to capture "everything from the start of a string, up to (and including) the first `^` character appears". The regular expression I need is `^[^^]+\^`, and of course I need the extra slash in the R string so I write `"^[^^]+\\^"`:
+
+```{r}
+str_view("hi there^^ hi^^ hi", "^[^^]+\\^")
+```
+
+There are four:
+
+- `^` is used for negation (e.g., `[^a]` maches all characters except `a`)
+- `]` is used to close the category (e.g. you need to do `[\][]` to match open or close brackets)
+- `-` is used to specify character ranges (e.g., `[a-d]` matches `a`, `b`, `c` or `d`)
+
+In other words, characters like `*`, `.`, and `?` which are metacharacters *outside* a category, are treated as literals inside a category
+
+```{r}
+str_view(femininomenon, "[*.?+]")
+```
+
 
 ## It gets messy
 
@@ -368,8 +450,6 @@ Le sigh. Of course.
 
 
 ```{r}
-feather <- read_lines("feather.txt")
-
 rules <- tribble(
               ~pattern, ~replacement,
     "([Dd]o)(-[Dd]o)+",         "🎶", # do-do, do-do-do -> musical note
