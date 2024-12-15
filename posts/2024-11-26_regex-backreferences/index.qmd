@@ -457,25 +457,25 @@ Now that we've talked about a lot more regular expresasion concepts, and in doin
 Outside of a character set, the characters `+`, `.`, `?`, `*`, and must all be escaped because otherwise they will be interpreted as quantifiers:
 
 - write `"\\+"` in R to mean `\+` in the regex, and match a literal `+`
-- write `"\\."` in R to mean `\.` in the regex, and match a literal `.`
 - write `"\\?"` in R to mean `\?` in the regex, and match a literal `?`
 - write `"\\*"` in R to mean `\*` in the regex, and match a literal `*`
 
-It obviously follows that since `\` is used as the escape character it too must be escaped if you want to treat it as a literal. Moreover, since we've used `|` to represent the "or" operator, you will not be at all surprised to learn that this is another character that must be escaped:
+It obviously follows that since `\` is used as the escape character it too must be escaped if you want to treat it as a literal. Moreover, since we've used `|` to represent the "or" operator and `.` to represent the "any" character, you will not be at all surprised to learn that these also must be escaped if you want to represent them as literal characters:
 
 - write `"\\\\"` in R to mean `\\` in the regex, and match a literal `\`
 - write `"\\|"` in R to mean `\|` in the regex, and match a literal `|`
+- write `"\\."` in R to mean `\.` in the regex, and match a literal `.`
 
 To help make this concrete, here's a minimal example:
 
 ```{r}
 #| results: hold
 str_view(string = "+ . ? * \\ |", pattern = "\\+")
-str_view(string = "+ . ? * \\ |", pattern = "\\.")
 str_view(string = "+ . ? * \\ |", pattern = "\\*")
 str_view(string = "+ . ? * \\ |", pattern = "\\?")
 str_view(string = "+ . ? * \\ |", pattern = "\\\\")
 str_view(string = "+ . ? * \\ |", pattern = "\\|")
+str_view(string = "+ . ? * \\ |", pattern = "\\.")
 ```
 
 The same logic applies to special characters like `\n` (line feed) and `\t` (tab), as well as regular expressions like `\b` (boundary), `\w` (word character), and `\s` (whitespace). This also applies to `\u`, if we wish to specify a unicode character in the regex. For these characters we need to escape the `\` in R, in order to match the corresponding literal in the regex: 
