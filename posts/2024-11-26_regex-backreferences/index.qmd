@@ -266,67 +266,96 @@ Some character sets are used so often that there is a shorthand notation for the
 - `\w` denotes word characters. At a minimum it supports alphanumeric characters, but it will also match against unicode characters used in words. 
 - `\s` denotes whitespace characters, and will match a space `" "`, a tab `"\t"`, a carriage return `"\r"`, a line feed `"\n"`, or a form feed `"\f"`; as well as unicode separator characters if the regex flavour supports unicode
 
+There are a variety of other shorthand classes too. If you look in the base R documentation, for instance, you'll find reference to various "POSIX classes" like `:digit:` and `:punct:` that do something similar. Over time I've become wary about these because they aren't implemented consistently across regex flavours (see later), 
+
+To illustrate how to use these prespecified character sets, I'll do a little bit of regular expression matching on the opening lines to [One](https://genius.com/Harry-nilsson-one-lyrics) by Harry Nilsson, where I've used digits to represent the numbers rather than spelling out the words:
+
 ```{r}
-#| code-fold: true
-tibble(
-  string    = c("1 11", "a aa", "A AA"),
-  `\\d+`     = str_view(string, pattern = "\\d+", match = NA),
-  `\\w+`     = str_view(string, pattern = "\\w+", match = NA),
-  `\\s+`     = str_view(string, pattern = "\\s+", match = NA)
+one <- c(
+  "1 is the loneliest number that you'll ever do",
+  "2 can be as bad as 1",
+  "It's the loneliest number since the number 1"
 )
 ```
 
-
-### Arithmetic
-
-Subtraction
+To detect the digits in this text, the regular expression we need is just the character set `\d` itself. The only nuance here is that we have to specify the regex as an R string, so we have to type `"\\d"` in R in order to get what we want:
 
 ```{r}
-str_view(femininomenon, "[[a-z]-[femino]]{5,}")
+str_view(one, "\\d")
 ```
 
-Negation:
+Alternatively, suppose I want to detect all words in the text. One approach (which doesn't quite work -- we'll come back to this later) would be to look for consecutive sequences of word characters, which we could specify using `\w+` as the regular expression and, to belabour the point, writing `"\\w+"` as the R string that specifies that regular expression:
 
-Suppose though I wanted to invert the match, and find strings of length 5 or more that do not contain any of these characters:
+```{r}
+str_view(one, "\\w+")
+```
+
+You can see why this doesn't quite do what we want: the apostrophe is not a word character, and it doesn't get detected. There's a better approach to this using word boundaries, but I'll come to that later when talking about anchors. 
+
+
+### Logical operations with character sets
+
+To some extent you can perform logical operations on character sets: set negation, set union, set intersection, add set subtraction. These operations are all supported by regular expressions, but this is another thing where the implementation varies a little across regular expression flavours. So let's talk about these in turn.
+
+Of the various operations, set union is the easiest one to describe. We've already talked about it. If you want to take the union of two character sets, all you have to do is concatenate them in the description. The lower case letters are represented by the range `[a-z]`, and the upper case letters are represented by `[A-Z]`. The union of these classes is simply `[a-zA-Z]`. These are set operations, so it doesn't matter if you include the same element multiple times: `[aab]` is the same character set as `[ab]`. 
+
+The second easiest one to talk about is negation. If you want to represent "any character except the ones listed", use `[^` to begin the set rather than `[`. For example, the set `[^femino]` is comprised of all characters except those six letters. If I wanted to detect all instances where the Chappell Roan lyrics contain five or more consecutive characters that don't include these letters, I'd do this:
 
 ```{r}
 str_view(femininomenon, "[^femino]{5,}")
 ```
 
-### idk where 
+Yeah, fair enough.
 
-When used at the beginning of the category `^` is interpreted as negation. So notice the difference: the regex `[^a]` matches a single character that is not an `a` whereas `[a^]` matches a single character that is either `a` or `^`. The difference is illustrated here:
+Before moving on to other kinds of set logic, it's worth being explicit about what the `[^` notation implies about including `^` in a character set. The short answer is that `^` only has the special meaning of "negation operator" if it follows immediately after the `[`. In other words, the sets `[ab^]` and `[a^b]` are identical and will match against any literal `a`, `b`, or `^` that appears in the text. However, `[^ab]` is a different set entirely, because in this context `^` is interpreted as the negation operator and this will match against anything that is not an `a` or a `b`. 
 
-```{r}
-str_view("aaa bbb ^^^ ccc", "[^a]+")
-str_view("aaa bbb ^^^ ccc", "[a^]+")
-```
-
-We now have four rules for `^`:
-
-- If `^` appears outside a category it is the anchor
-- If `^` appears at the start of a category it inverts the category
-- If `^` appears elsewhere in a category it is a literal
-- If `^` appears outside a category but after `\` it is a literal
-
-So let's suppose I want to capture "everything from the start of a string, up to (and including) the first `^` character appears". The regular expression I need is `^[^^]+\^`, and of course I need the extra slash in the R string so I write `"^[^^]+\\^"`:
+Finally, I want to briefly talk about subtraction and intersection. This is where things get tricky in R because these *do* work in tidyverse regular expressions but do not work in base R regexes, due to the differences in the regular expression engines underneath. In some regex flavours (including the one used in tidyverse), you can use a minus sign `-` to denote set difference, so it would be entirely valid to use `[[a-z]-[aeiou]]` to represent lower case consonants. Similarly, you can use `&&` to represent intersection, so `[[a-z]]&&[Papa]` would be equivalent to `[pa]`. This notation works in tidyverse (more detail on this later), as illustrated below:
 
 ```{r}
-str_view("hi there^^ hi^^ hi", "^[^^]+\\^")
+str_view(femininomenon, "[[a-z]-[femino]]{5,}")
+str_view(femininomenon, "[[a-z]&&[Papa]]{3,}")
 ```
 
-There are four:
+Be warned, however: it does not work in base R. 
 
-- `^` is used for negation (e.g., `[^a]` maches all characters except `a`)
-- `]` is used to close the category (e.g. you need to do `[\][]` to match open or close brackets)
-- `-` is used to specify character ranges (e.g., `[a-d]` matches `a`, `b`, `c` or `d`)
+## Anchors and boundaries
 
-In other words, characters like `*`, `.`, and `?` which are metacharacters *outside* a category, are treated as literals inside a category
+Next on Danielle's list of "tedious regular expression concepts" are **anchors**. There are two special characters that are used to represent "start of string" and "end of string":
+
+- When used outside of a character set, `^` denotes "start of string"
+- When used outside of a character set, `$` denotes "end of string"
+
+In my little notes-to-self I always phrase it like this because when you use these characters inside square brackets they are *not* interpreted as anchors, and sometimes I forget this nuance.
+
+As an example of how to use these anchors, let's say I want to detect the first word in every line in "Femininomenon", but only if that word starts with the capital letter `L`. The regular expression `^L` will match against any `L` that appears as the first character in the string, so a first-pass attempt at solving this problem might be to try something like `^L\w*` (i.e., match a starting `L` followed by zero or more word characters). It's not the most robust way to solve the problem, but it works just fine in this case:
 
 ```{r}
-str_view(femininomenon, "[*.?+]")
+str_view(femininomenon, "^L\\w*")
 ```
 
+The same logic works for end of string. In the example below we have a regular expression that detects the final word in the line, but only if it starts with a lower-case `f`:
+
+```{r}
+str_view(femininomenon, "f\\w*$")
+```
+
+About 99% of my use of anchors is either `$` or `^` but there are other anchors. It varies across regex flavours, but generally you can use `\A` the same way you use `^` to represent start of string, and `\Z` to represent end of string. Personally I don't like these alternatives, because I keep incorrectly thinking that they have some meaningful relationship to alphabetic characters. The `^` and `$` notation is pretty arbitrary, but at least it's not actively misleading in the way that `\A` and `\Z` are. 
+
+A closely related concept to anchors is the idea of a **boundary**. Anchors and boundaries are both examples of "zero-length matches", in the sense that they don't match against a specific character, they match against a position in the text. A word boundary `\b` (the only kind of boundary I am aware of, though there might be others) matches against a position that is followed by a word character (i.e., anything that is matched by `\w`), but is preceded by a non-word character *or vice versa*. Informally stated, `\b` matches a start-of-word boundary and an end-of-word boundary.
+
+As a simple example, suppose we want to match only those instances in "Femininomenon" where `"fem"` is used as a word. If we don't consider word boundaries, this doesn't quite work because it matches the first three characters in `"femininomenon"`:
+
+```{r}
+str_view(femininomenon, "fem")
+```
+
+We can tighten our regex by specifying that `"fem"` must have word boundaries on either side. The regular expression now becomes `\bfem\b`, so the command we type in R looks like this:
+
+```{r}
+str_view(femininomenon, "\\bfem\\b")
+```
+
+Much better! Notice also that "end of string" and "start of string" do count as a word boundaries. On lines 15, 44, and 92, the line ends in the word `"fem"` and our regular expression captures these cases. 
 
 ## Groups
 
@@ -364,32 +393,6 @@ str_view(femininomenon, "f?([aeiou][rpnm]){2,}")
 
 
 
-
-## Anchors
-
-You can use `^` to match the start of a string and `$` to match the end. So `^L` would match the upper-case letter L, but only if it is the first character in the string:
-
-```{r}
-str_view(femininomenon, "^L")
-```
-
-We can extend this to capture the first word in a string, so long as it starts with an upper-case L:
-
-```{r}
-str_view(femininomenon, "^L[a-zA-z]*")
-```
-
-Or we could do the same trick, but for the end of a string. The regular expression `"f[a-zA-z]*$"` will match to all lines in the text that end in a word beginning with a lower-case f. 
-
-```{r}
-str_view(femininomenon, "f[a-zA-z]*$")
-```
-
-About 99% of my use of anchors is either `$` or `^` but there are other anchors. It varies across engines, but from an R perspective you can use `\A` to match the start of a match group (i.e., it works simularly to `^`) and `\Z` to match the end, similar to `$`. So this is another way of detecting the first word in a line, as long as it starts with `L`:
-
-```{r}
-str_view(femininomenon, "\\AL[a-zA-z]*")
-```
 
 ## more on escapes
 
