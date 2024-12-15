@@ -350,9 +350,7 @@ We can tighten our regex by specifying that `"fem"` must have word boundaries on
 str_view(femininomenon, "\\bfem\\b")
 ```
 
-Much better! Notice also that "end of string" and "start of string" do count as a word boundaries. On lines 15, 44, and 92, the line ends in the word `"fem"` and our regular expression captures these cases. 
-
-Let's move on.
+Much better! Notice also that "end of string" and "start of string" do count as a word boundaries. On lines 15, 44, and 92, the line ends in the word `"fem"` and our regular expression captures these cases.
 
 ## Groups
 
@@ -405,6 +403,22 @@ As this illustrates, if a match is detected on the left hand side of the `|` the
 
 It may surprise the reader (it surprised the author) that I've managed to get this far into the post without ever talking about the `.` metacharacter. This is partly accidental, partly deliberate. The `.` is a powerful and easily-misused tool: it matches *any* character except line breaks. There's a whole article on [the dot](https://www.regular-expressions.info/dot.html) that cautious novice regex users to be careful when using it... so I am trying to teach myself to be careful and not use it so often!
 
+## Intermission: Very important applied regex
+
+This post is getting long. We need a little break. Well, I need a little break. Anyway, here's the entirety of the "Midnight Pals" dialog with all words hissed by JK Rowling detected by regex:
+
+```{r}
+#| column: page
+midnight |> 
+  str_view(
+    pattern = "\\b((\\w|')*s{3,}(\\w|')*)|(yess)\\b", 
+    match = NA
+  ) |> 
+  print(n = Inf)
+```
+
+For a variety of different reasons this makes me smile. But let's move on, shall we?
+
 
 ## Backreferences
 
@@ -446,11 +460,57 @@ str_view(babygotback, "(?<=\\()[^)]+(?=\\))")
 
 Awesome. 
 
-Oh... by the way? This trick won't work in base R unless you set `perl = TRUE`.^[That's another one of those fun things where there are in fact three separate flavours of regex in widespread usage in R. ICU (used by stringi and stringr) and PCRE (base R with `perl = TRUE`) both support lookahead and lookbehind assertions, as well as negative lookahead `(?!blah)` and negative lookbehind `(?<!blah)`, but the ERE engine (base R with `perl = FALSE`) does not.]
+Oh... by the way? This trick won't work in base R unless you set `perl = TRUE`.^[That's another one of those fun things where there are in fact three separate flavours of regex in widespread usage in R. ICU (used by stringi and stringr) and PCRE (base R with `perl = TRUE`) both support lookahead and lookbehind assertions, as well as negative lookahead `(?!blah)` and negative lookbehind `(?<!blah)`, but the ERE engine (base R with `perl = FALSE`) does not.] Which seems like a good time to discuss...
+
+
+## Three regex flavours
+
+A persistent headache I have when writing regular expressions, besides the fact that they suck, is that there are so many slight variations on the same idea. At [regular-expressions.info](https://regular-expressions.info), for instance, you can find quick lookup tables for a wide variety of different regular expression engines. It lists [regular expressions in R](https://www.regular-expressions.info/rlanguage.html) as one of those systems, but it's important to remember that this refers to the syntax used by base R tools like `grep()`, `gsub()`, `gregexpr()` and so on. Or, more precisely, it refers to the default POSIX standard for extended regular expressions (ERE). Base R actually supports two different engines, so if you set `perl = TRUE` when calling base R functions then you would need to look at the [rules for PCRE](https://www.regular-expressions.info/pcre.html) (perl compatible regular expressions). In tidyverse, regular expressions are usually handled with the [stringr](https://stringr.tidyverse.org/) package that is built on top of [stringi](https://stringi.gagolewski.com/), which in turn uses the [ICU](https://icu.unicode.org/) engine that conforms to Unicode standards and as such provides comprehensive Unicode support. The [stringi regular expressions](https://stringi.gagolewski.com/weave/regular_expressions.html) page has a nice discussion. 
+
+Like an idiot, I forget this on a semi-regular basis, and I try to debug something by looking up the wrong regex syntax and yes, this sometimes matters. For example, when I discussed pre-specified character classes like digits (`\d`) and word characters (`\w`), or character ranges like `[0-9]` and `[a-z]`, I made a deliberate decision not to discuss the predefined POSIX classes. These include things like `[[:alpha:]]` that matches alphabetic characters, and `[[:digit:]]` matches numeric digits. The digit and alphabetic character classes are fairly unproblematic, but there's also a `[[:punct:]]` class that is intended to match punctuation characters. I find myself very tempted to use this class because, honestly, who wants to be bothered listing all the punctuation characters by hand? However, it's a *very* bad idea to do this because not only do the results depend on system locale (which is to be expected for anything that involves text), there is absolutely no consistency at all in how this class is implemented in different regex engines. 
+
+To illustrate this I'll use an example that I have shamelessly stolen directly from the [stringi documentation](https://stringi.gagolewski.com/weave/regular_expressions.html#avoiding-posix-classes). But first, because I cannot even with the base R regular expression syntax,^[I mean, wtf. I am genuinely sympathetic to R core, and deeply appreciate their willingness to maintain backward compatibility even for the bits of R that are just bizarre. But oh my god.] I'll define a `base_extract_all()` function that is roughly analogous to `stringr::str_extract_all()`, but uses the base R functions to do the work:
+
+```{r}
+base_extract_all <- function(string, pattern, perl = FALSE) {
+  matches <- gregexpr(pattern = pattern, text = string, perl = perl)
+  regmatches(x = string, m = matches)
+}
+```
+
+Next I'll define a string `punct`, which contains an assortment of different characters that one might be inclined to call "punctuation":
+
+```{r}
+punct <- ",./|\\<>?;:'\"[]{}-=_+()*&^%$€#@!`~×‒„”"
+```
+
+So, what happens when we match `punct` to `"[[:punct:]]"`? Well, it depends heavily on which engine you're using. If you're using ERE (i.e., base R with `perl = FALSE`), you get this as the result:
+
+```{r}
+base_extract_all(punct, "[[:punct:]]") |> unlist() |> cat()
+```
+
+What about PCRE? Let's set `perl = TRUE` and have a look:
+
+```{r}
+base_extract_all(punct, "[[:punct:]]", perl = TRUE) |> unlist() |> cat()
+```
+
+Okay yeah that is not even close to being the same thing. But what about the ICU engine? If you're working in tidyverse, internally you're probably relying on this engine and, well...
+
+```{r}
+str_extract_all(punct, "[[:punct:]]") |> unlist() |> cat()
+```
+
+Le sigh. Of course. Totally different again. 
+
+Little discrepancies like this are the reason why at various different points in the text, I've had to pause and mention things that work differently across the three regex engines used in R. While the differences between the engines are not large, it only takes one tiny difference to mess up an otherwise perfectly crafted regex. Something that looks like it works when you use `stringr::str_detect()` will suddenly break when you use the same regex in `grep()`. 
+
+It is annoying.
 
 ## Backslashes (part II)
 
-Now that we've talked about a lot more regular expresasion concepts, and in doing so introduced a lot more special characters, it's worth revisiting that list of reminders about how to use backslashes. To save you (i.e., me in six months time) the effort of flicking back and forth between the two sections, I'll start by reiterating the previous list. Additionally, because -- as I've hinted -- the rules *inside* a character set are different to the rules that apply *outside* a character set, I'll handle those two cases separately.
+We are getting very close to the end of the post (I promise!), but before I wrap up I want to return to the vexed topic of using the backslash to escape special characters. I talked about this at the beginning of the post, yes, but at that stage we hadn't dived very deep into regular expressions. Since then we've covered a lot more territory, and in the process we've encountered more special characters and more syntax. With that in mind, I'll revisit that subject now and provide a more comprehensive discussion. Additionally, because -- as I've hinted -- the rules *inside* a character set are different to the rules that apply *outside* a character set, I'll handle those two cases separately.
 
 ### Special characters outside a character set
 
@@ -554,69 +614,89 @@ So this actually works for detecting right brackets, carets, and hyphens:
 str_view(chars, "[]^-]")
 ```
 
-In all these examples I'm using `str_view()`, so we're using the "tidyverse style" regular expressions here. In base R, if you set `perl = TRUE` you'd get the same results here. If you don't, however, it's a bit different. If you're using the default base R regex flavour, the only character that you can escape within a character set is the backslash itself, so if you want to match `]`, `^`, or `-` then you have to rely on the positional tricks shown above. 
-
-Here's how you'd do it in base R
+In all these examples I'm using `str_view()`, so we're using the "tidyverse style" regular expressions here based on the ICU engine. If we switch over to base R and set `perl = TRUE` (and hence use the PCRE engine), the results would be the same. However, the rules for the POSIX ERE engine are slightly different. If you're using base R with the default `perl = FALSE` setting, the only character that you can escape within a character set is the backslash itself, so if you want to match `]`, `^`, or `-` then you have to rely on the positional tricks shown above. Here's how you'd do it using the ERE engine:
 
 ```{r}
 cat(grep("[]^\\\\-]", chars, value = TRUE))
 ```
 
+God this is exhausting.
 
-## Oh no not another take
+## Substitution
 
-A persistent headache I have when writing regular expressions, besides the fact that they suck, is that there are so many slight variations on the same idea. At [regular-expressions.info](https://regular-expressions.info), for instance, you can find quick lookup tables for a wide variety of different regular expression engines. It lists [regular expressions in R](https://www.regular-expressions.info/rlanguage.html) as one of those systems, but it's important to remember that this refers to the syntax used by base R tools like `grep()`, `gsub()`, `gregexpr()` and so on. Or, more precisely, it refers to the default POSIX standard for extended regular expressions. Base R actually supports two different engines, so if you set `perl = TRUE` when calling base R functions then you would need to look at the [rules for PCRE](https://www.regular-expressions.info/pcre.html). In tidyverse, regular expressions are usually handled with the [stringr](https://stringr.tidyverse.org/) package that is built on top of [stringi](https://stringi.gagolewski.com/), which in turn uses the [ICU](https://icu.unicode.org/) engine that conforms to Unicode standards and as such provides comprehensive Unicode support. The [stringi regular expressions](https://stringi.gagolewski.com/weave/regular_expressions.html) page has a nice discussion. 
+There's one last topic to talk about: substitution. Throughout the post I've focused almost entirely on detecting patterns in text. In base R you might use `grep()` to accomplish this task, whereas in stringr you'd probably use `str_detect()`.^[I know I know. I've mostly used `str_view()` rather than `str_detect()` because it's convenient for visually illustrating the regex match. But you wouldn't work with this in a script] The other main thing I use regular expressions for is making **substitutions**, in which the matched text is replaced by something new. In base R you'd pobably use `gsub()` for this, whereas in stringr you'd most likely use `str_replace()` or `str_replace_all()`. 
 
-Like an idiot, I forget this on a semi-regular basis, and I try to debug something by looking up the wrong regex syntax and yes, this sometimes matters. For instance, in the help documentation for regex in base R, you can find some discussion of various predefined POSIX classes (e.g., `"[[:alpha:]]"` matches alphabetic characters, `[[:digit:]]` matches numeric digits, and `"[[:punct:]]"` matches punctuation characters). However, different engines interpret these classes differently, which means you'll sometimes get different results depending on which engine you use.^[It also depends on the system locale. Not surprising, of course, but that does add to the sheer chaos of it all.]
-
-To illustrate this I'll use an example that I have shamelessly stolen directly from the [stringi documentation](https://stringi.gagolewski.com/weave/regular_expressions.html#avoiding-posix-classes), in order to show how very differently `"[[:punct:]]"` is interpreted across the three most commonly used regex engines in R. But first, because I cannot even with the base R regular expression syntax,^[I mean, wtf. I am genuinely sympathetic to R core, and deeply appreciate their willingness to maintain backward compatibility even for the bits of R that are just bizarre. But oh my god.] I'll define a `base_extract_all()` function that is roughly analogous to `stringr::str_extract_all()`, but uses the base R functions to do the work:
-
-```{r}
-base_extract_all <- function(string, pattern, perl = FALSE) {
-  matches <- gregexpr(pattern = pattern, text = string, perl = perl)
-  regmatches(x = string, m = matches)
-}
-```
-
-Next, I'll define a string `punct` containing a lot of punctuation characters:
+In most cases where I've had to use it substitution doesn't introduce any new concepts: the "replacement" text is usually a fixed string that is inserted wherever a match is found. For example, if I want to replace the word `"cat"` with the emoji `"🐈"`, I would do something like this:
 
 ```{r}
-punct <- ",./|\\<>?;:'\"[]{}-=_+()*&^%$€#@!`~×‒„”"
+cat(str_replace_all(
+  string = "if you concatenate two cats you get a catcat",
+  pattern = "\\bcats?\\b",
+  replacement = "🐈"
+))
 ```
 
-So, what happens when we match `punct` to `"[[:punct:]]"`? Well, it depends heavily on which engine you're using. If you're using ERE (i.e., base R with `perl = FALSE`), you get this as the result:
+Okay yes, in this example I had to do a little bit of work in the `pattern` argument to come up with the regex that I wanted to use to define matches, but the `replacement` argument is very simple. Nothing new here really. 
+ 
+However, there are some fancy things that you can do with replacement text. In particular, all three regular expression engines used in R support backreferences within the replacement text. Here it is in tidyverse:
 
 ```{r}
-base_extract_all(punct, "[[:punct:]]")
-```
+#| results: hold
+# tidyverse + ICU
+cat(str_replace_all(
+  string = "dogs are better than cats",
+  pattern = "(dogs)(.*)(cats)",
+  replacement = "\\3\\2\\1"
+), sep = "\n")
 
-What about PCRE? Let's set `perl = TRUE` and have a look:
+# base ERE
+cat(gsub(
+  pattern = "(dogs)(.*)(cats)",
+  replacement = "\\3\\2\\1",
+  x = "dogs are better than cats"
+), sep = "\n")
+
+# base PCRE
+cat(gsub(
+  pattern = "(dogs)(.*)(cats)",
+  replacement = "\\3\\2\\1",
+  x = "dogs are better than cats",
+  perl = TRUE
+), sep = "\n")
+```
+ 
+As an aside, this last example is very closely related to the problem I was trying to solve when I finally broke down and decided to write the post. The thing I actually wanted to do was manipulate text inside parentheses using backreferences in the replacement string, without matching the parentheses themselves. To solve that you need to use backreferences, but you also need to use lookahead and lookbehind functionality:
 
 ```{r}
-base_extract_all(punct, "[[:punct:]]", perl = TRUE)
+#| results: hold
+# tidyverse + ICU
+cat(str_replace_all(
+  string = "ab(cd)efg[hi]j",
+  pattern = "(?<=[\\[(])(\\w+)(?=[)\\]])",
+  replacement = "\\1,\\1"
+), sep = "\n")
+
+# base PCRE
+cat(gsub(
+  pattern = "(?<=[\\[(])(\\w+)(?=[)\\]])",
+  replacement = "\\1,\\1",
+  x = "ab(cd)efg[hi]j",
+  perl = TRUE
+), sep = "\n")
 ```
 
-Okay yeah that is not even close to being the same thing. But what about the ICU engine? If you're working in tidyverse, internally you're probably relying on this engine and, well...
-
-```{r}
-str_extract_all(punct, "[[:punct:]]")
-```
-
-Le sigh. Of course. 
-
-
+It would be trickier to do this with the ERE engine because it doesn't support lookahead/lookbehind behaviour, but somehow I was convinced it could be done. I ended up reading far too much and... well, this is where we ended up.
 
 ## I'm so sorry for my loss
 
-
 ```{r}
 rules <- tribble(
-              ~pattern, ~replacement,
-    "([Dd]o)(-[Dd]o)+",         "🎶", # do-do, do-do-do -> musical note
-             "feather",         "🪶", # feather -> emoji feather
-                "wine",         "🍷", # wine -> emoji wine
-         "\\([Aa]h\\)",      "...😌", # (ah) -> ...emoji relief
-  "\\[([^\\[\\]]+)\\]",          "~"  # replace square bracketed text
+                 ~pattern, ~replacement,
+       "([Dd]o)(-[Dd]o)+",         "🎶", # do-do, do-do-do -> musical note
+                "feather",         "🪶", # feather -> emoji feather
+                   "wine",         "🍷", # wine -> emoji wine
+   "(?<=\\()[Aa]h(?=\\))",         "😌", # (ah) -> emoji relief
+     "\\[([^\\[\\]]+)\\]",         "🎙️"  # replace square bracketed text
 )
 
 str_rewrite <- function(string, rules) {
@@ -634,3 +714,15 @@ feather |>
 ```
 
 
+<!--
+
+```{r}
+midnight |> 
+  str_replace_all("(JK )?Rowling", "🧛‍♀️") |> 
+  str_replace_all("(Jesse )?Singal", "🪱️") |> 
+  str_replace_all("(Helen )?Joyce", "🧟‍♀️") |> 
+  str_wrap() |> 
+  cat(sep = "\n")
+```
+
+-->
