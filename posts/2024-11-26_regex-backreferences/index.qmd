@@ -105,11 +105,14 @@ library(brio)
 feather <- read_lines("feather.txt")
 femininomenon <- read_lines("femininomenon.txt")
 midnight <- read_lines("midnight.txt")
+babygotback <- read_lines("babygotback.txt")
 ```
 
 ## Warning
 
-Let's start this descent into madness with a disclaimer: I have *never* wanted to write a primer on working with regular expressions in R. I loathe regular expressions, and I am not good at them. So why am I, a grotesquely unqualified woman, writing one anyway? Honestly, the answer is because __this post is the tutorial that I need__. I'm writing this as an act of kindness for future Danielle, who will find inevitably herself crying at her keyboard trying to make a basic regex work, and will need to remind herself of the basics. With that in mind, and knowing exactly who will be revisiting this post in six months time in tears... you got this girl. I believe in you. 
+Let's start this descent into madness with a disclaimer: I have *never* wanted to write a primer on working with regular expressions in R. I loathe regular expressions, and I am not good at them. About 99% of my knowledge of regular expressions comes from weeping in abject despair with a dozen R documentation tabs open and desperately clicking on random links at [www.regular-expressions.info](https://www.regular-expressions.info) to work out why my regex doesn't work. I am, very clearly, not an expert. 
+
+So why am I, a grotesquely unqualified woman, writing this post anyway? Honestly, the answer is because __this post is the tutorial that I need__. I'm writing this as an act of kindness for future Danielle, who will find inevitably herself crying at her keyboard trying to make a basic regex work, and will need to remind herself of the basics. With that in mind, and knowing exactly who will be revisiting this post in six months time in tears... you got this girl. I believe in you. 
 
 ## Simple matches
 
@@ -205,14 +208,13 @@ str_view(midnight, "s{3,}")
 
 Ideally, we'd like a regular expression that captures the entire hissssssed word, but to do that we'll need to get a little fancier, and dive a little deeper into regular expression syntax.
 
-## Backslash escape
+## Backslashes (part I)
 
 The discussion of quantifiers leads to the natural question: what if I don't want to use `?` as a quantifier, and instead want to match a literal `?` in the string. To do that we can **escape** the special character by prefixing it with a backslash. That is, within a regular expression we would write `\?` to match a literal `?`. 
 
 It gets complicated, though, because the way we represent the regular expression is via an R string,^[I'm not talking about raw strings in this post. Sorry.] and `\` has a special meaning in R strings, because it's used as an escape character in R too. So if we want to "pass" a literal `\` into the regular expression, the thing we need to type in R is `"\\"`. This is... confusing. I find this helps:
 
 - write `"\\+"` in R to mean `\+` in the regex, and match a literal `+`
-- write `"\\."` in R to mean `\.` in the regex, and match a literal `.`
 - write `"\\?"` in R to mean `\?` in the regex, and match a literal `?`
 - write `"\\*"` in R to mean `\*` in the regex, and match a literal `*`
 - write `"\\{"` in R to mean `\{` in the regex, and match a literal `{`
@@ -231,14 +233,8 @@ The same logic applies to special characters like line feed `\n` and tabs `\t`.
 
 - write `"\\n"` in R to mean `\n` in the regex, and match a line feed
 - write `"\\t"` in R to mean `\t` in the regex, and match a tab
-- write `"\\u"` in R to mean `\u` in the regex, and use it to specify a unicode character
 
-An example with unicode. Let's say you have text with mathematical symbols. For example, `\u2192` is the unicode specification for a rightward arrow:
-
-```{r}
-str_view("n → ∞", "\\u2192")
-```
-
+I'll return to  this in a later section, because there are other characters that need to be escaped. But these are the ones we need for now. 
 
 ## Character sets
 
@@ -291,7 +287,6 @@ str_view(one, "\\w+")
 ```
 
 You can see why this doesn't quite do what we want: the apostrophe is not a word character, and it doesn't get detected. There's a better approach to this using word boundaries, but I'll come to that later when talking about anchors. 
-
 
 ### Logical operations with character sets
 
@@ -357,92 +352,178 @@ str_view(femininomenon, "\\bfem\\b")
 
 Much better! Notice also that "end of string" and "start of string" do count as a word boundaries. On lines 15, 44, and 92, the line ends in the word `"fem"` and our regular expression captures these cases. 
 
+Let's move on.
+
 ## Groups
 
-Suppose we want something a little fancier. Let's say, I want to find every line in which she sings either "fem" or "femininomenon". To do this, we wrap each of these strings in parentheses to define **groups**,^[Specifically, these are "capturing" groups because this syntax supports "backreferencing", which will come up later. This can be distinguished from "non-capturing" groups that can be written using slightly different syntax, but in all honesty I almost always use capturing groups because I'm lazy.] and use the `|` to indicate that the string can match against either of these groups. So our regular expression becomes `"(femininomenon)|(fem)"`:
-
-```{r}
-str_view(femininomenon, "(femininomenon)|(fem)")
-```
-
-Importantly, the `|` operator looks for matches by testing the left-hand side before the right-hand side. To see this, look at what happens when I reverse the order of the two groups:
-
-```{r}
-str_view(femininomenon, "(fem)|(femininomenon)")
-```
-
-Notice that this *never* detects a match against the `"femininomenon"` (the second group) because `"fem"` (the first group) matches every string that `"feminomenon"` could possibly have matched against.
-
-An alternative way of approaching this -- and possibly a better one -- is to use quantifiers. In the previous section I only applied quantifiers like `?`, `*`, and `+` to a single character, but you can also apply them to a group. Because of that, the regular expression `"fem(ininomenon)?"` will work as expected here:
+The next regular expression concept to talk about are **groups**. At it's most basic, a group is a sequence of characters that is treated as if it were a single character for the purposes of quantification etc.^[Yes I know it's more nuanced than that, hush, I'll get to that momentarily.] We can do this by enclosing the characters in parentheses, e.g., `(fem)` is a group that corresponds to the specific sequence `fem`. 
+For example, let's suppose I want to match against `"fem"` or `"femininomenon"`. There are lots of ways I could do this, but one of my favourite approaches to this would be to define `(ininomenon)` as a group, and then declare that this group is optional using the `?` quantifier:
 
 ```{r}
 str_view(femininomenon, "fem(ininomenon)?")
 ```
 
+This can be handy if a particular sequence that you want to match might be repeated as a whole. Let's say I want to match `"in"`, `"inin"`, and `"ininin"` but not match `"inn"`. We could do this cleanly with a regular expression like `(in)+`, though if we want to prevent it from matching the `"in"` in `"inn"` we should also specify that the pattern should be preceded and followed by word boundaries. That is, this *almost* works:
+
+```{r}
+str_view("i in inin ininin inn out", "(in)+")
+```
+
+This actually works:
+
+```{r}
+str_view("i in inin ininin inn out", "\\b(in)+\\b")
+```
+
+## Pipes as "or" operators
+
+One of the more basic features in regular expressions is that when `|` is used outside of a category, it is interpreted as an "or" operator that is evaluated left to right. It's so basic that I feel weird about delaying discussion of `|` until this late in the post, but in practice I find that I use it most often in conjunction with groups and character sets, so I wanted to wait until I'd talked about those concepts first.
+
+This time I'll use the lyrics to [Feather](https://www.youtube.com/watch?v=kLbn61Z4LDI) by Sabrina Carpenter as the source text, and I'll look for all instances where she sings the word "feather" or the phrase "no duh". No, I don't know why I chose those two, but let's run with it. A regular expression that does this, taking potential capitalisation into account, would be `([Ff]eather)|([Nn]o duh)`:
+
+```{r}
+str_view(feather, "([Ff]eather)|([Nn]o duh)")
+```
+
+In this example, there's no possible way in which a string can match against both the left hand side and the right hand side, so in this case the order of the two groups doesn't matter. But that's not always the case. Let's suppose I want to match against the exact word "feather", *or* match against a substring inside a word that starts with the letter `f` and ends in the letter `t` (we can do this with `(f\w*t)` as the regex). Should we match the entire word `"feather"` or only match the `"feat"` part of the word? It depends on the order in which the two groups are specified. 
+
+To see the difference compare this:
+
+```{r}
+str_view(feather, "(feather)|(f\\w*t)")
+```
+
+to this:
+
+```{r}
+str_view(feather, "(f\\w*t)|(feather)")
+```
+
+As this illustrates, if a match is detected on the left hand side of the `|` the regular expression engine uses that match. It won't use the right hand side if there's already a match on the left. Admittedly, I've been a bit lazy in this by not taking word boundaries or capitalisation into account. You'd probably want something a little more elaborate in real life, but it's such a silly example that I've erred on the side of simplicity here so that you can see the difference that order makes.
+
+## Dots as "any" character
+
+It may surprise the reader (it surprised the author) that I've managed to get this far into the post without ever talking about the `.` metacharacter. This is partly accidental, partly deliberate. The `.` is a powerful and easily-misused tool: it matches *any* character except line breaks. There's a whole article on [the dot](https://www.regular-expressions.info/dot.html) that cautious novice regex users to be careful when using it... so I am trying to teach myself to be careful and not use it so often!
+
+
 ## Backreferences
 
-```{r}
-str_view(femininomenon, "f?([aeiou][rpnm])\\1+")
-```
+At this point we're starting to get into the weeds. I've talked about most of the core features of regular expressions, and to be honest I'd guess that 95% of my regex usage can be accounted for using only the tools described so far. But there are many more fancy tricks you can do with regexes, and the one I use most often is **backreferencing**. 
 
-Compare to this:
+Here's an example. Suppose we are listening to [classical music](https://www.youtube.com/watch?v=wlfE_IplWAU), and we decide we want to detect every instance of a word in [Baby Got Back](https://www.youtube.com/watch?v=X53ZSxkQ3Ho) that begins and ends with the letter `a`. We can do this using the tools we already know. The regular expression `a\w+a` will match against strings of characters start and end with `a`, so we can extend that to require a *word* starts and end with `a` by placing a word boundary on either side, giving us `\ba\w+a\b` as the regular expression:
 
 ```{r}
-str_view(femininomenon, "f?([aeiou][rpnm]){2,}")
+str_view(babygotback, "\\ba\\w+a\\b")
+```
+
+But now suppose that we want to relax this slightly and find all words that start and end with the same (case-matched) letter, regardless of what that letter actually is. Here's the point at which we need to use a backreference:
+
+```{r}
+str_view(babygotback, "\\b(\\w)\\w+\\1\\b")
 ```
 
 
+## Lookahead/lookbehind
+
+Keeping with the theme, it's time to talk about **lookahead** and **lookbehind**. Suppose I want to find words that begin and end with the letter `"a"`, but I don't actually want to include the letter `a` at the end. In other words, I need to "look ahead" to check if the `d` in `anaconda` is followed by an `a\b` (i.e., `a` at the end of the word), but not include the `a\b` in the match. We can do this by creating a special "lookahead group" that encloses the `a\b`. However, instead of writing `(a\b)` like we would for a capturing group, we use `(?=` at the start to indicate that it's a lookahead group. In other words, a lookahead group that detects (but does not match) the `a` at the end of `anaconda` is `(?=a\b)`, and the full regex is `\ba\w+(?=a\b)`. Here's what that looks like when we put it into practice:
+
+```{r}
+str_view(babygotback, "\\ba\\w+(?=a\\b)")
+```
+
+By analogy to lookahead groups, regular expressions also support lookbehind groups. They're exactly the same concept as a lookahead group, but this time we're looking at the text *preceding* the match rather than the text *following* it. The syntax for a lookbehind group is very similar, but we open the group with `(?<=` to specify that it's lookbehind not lookahead. So, for instance, if we want to detect but not match the first `a` in `anaconda`, we use `(?=a\b)` to do so. The full regex to exclude both terminal `a` characters is therefore `(?<=\ba)\w+(?=a\b)` and we end up with this:
 
 
-## more on escapes
+```{r}
+str_view(babygotback, "(?<=\\ba)\\w+(?=a\\b)")
+```
 
-A little more subtle is the fact that *opening* (left) braces, brackets, and parentheses need to be escaped...
+A slightly more realistic example would be to detect all the text inside a parenthetical, but not including the parentheses themselves. We can do this with a completely unintelligible regex like `(?<=\()[^)]+(?=\))`. It's a crime against humanity, but it works:
+
+```{r}
+str_view(babygotback, "(?<=\\()[^)]+(?=\\))")
+```
+
+Awesome. 
+
+Oh... by the way? This trick won't work in base R unless you set `perl = TRUE`.^[That's another one of those fun things where there are in fact three separate flavours of regex in widespread usage in R. ICU (used by stringi and stringr) and PCRE (base R with `perl = TRUE`) both support lookahead and lookbehind assertions, as well as negative lookahead `(?!blah)` and negative lookbehind `(?<!blah)`, but the ERE engine (base R with `perl = FALSE`) does not.]
+
+## Backslashes (part II)
+
+Now that we've talked about a lot more regular expresasion concepts, and in doing so introduced a lot more special characters, it's worth revisiting that list of reminders about how to use backslashes. To save you (i.e., me in six months time) the effort of flicking back and forth between the two sections, I'll start by reiterating the previous list. Additionally, because -- as I've hinted -- the rules *inside* a character set are different to the rules that apply *outside* a character set, I'll handle those two cases separately.
+
+### Special characters outside a character set
+
+Outside of a character set, the characters `+`, `.`, `?`, `*`, and must all be escaped because otherwise they will be interpreted as quantifiers:
+
+- write `"\\+"` in R to mean `\+` in the regex, and match a literal `+`
+- write `"\\."` in R to mean `\.` in the regex, and match a literal `.`
+- write `"\\?"` in R to mean `\?` in the regex, and match a literal `?`
+- write `"\\*"` in R to mean `\*` in the regex, and match a literal `*`
+
+It obviously follows that since `\` is used as the escape character it too must be escaped if you want to treat it as a literal. Moreover, since we've used `|` to represent the "or" operator, you will not be at all surprised to learn that this is another character that must be escaped:
+
+- write `"\\\\"` in R to mean `\\` in the regex, and match a literal `\`
+- write `"\\|"` in R to mean `\|` in the regex, and match a literal `|`
+
+To help make this concrete, here's a minimal example:
+
+```{r}
+#| results: hold
+str_view(string = "+ . ? * \\ |", pattern = "\\+")
+str_view(string = "+ . ? * \\ |", pattern = "\\.")
+str_view(string = "+ . ? * \\ |", pattern = "\\*")
+str_view(string = "+ . ? * \\ |", pattern = "\\?")
+str_view(string = "+ . ? * \\ |", pattern = "\\\\")
+str_view(string = "+ . ? * \\ |", pattern = "\\|")
+```
+
+The same logic applies to special characters like `\n` (line feed) and `\t` (tab), as well as regular expressions like `\b` (boundary), `\w` (word character), and `\s` (whitespace). This also applies to `\u`, if we wish to specify a unicode character in the regex. For these characters we need to escape the `\` in R, in order to match the corresponding literal in the regex: 
+
+- write `"\\n"` in R to mean `\n` in the regex, and match a line feed
+- write `"\\t"` in R to mean `\t` in the regex, and match a tab
+- write `"\\u2300"` in R to mean `\u2300` in the regex,  and match a literal `⌀`
+- write `"\\b"` in R to mean `\b` in the regex, and match a word boundary
+- write `"\\w"` in R to mean `\w` in the regex, and match a word character
+- write `"\\s"` in R to mean `\s` in the regex, and match a whitespace character
+
+It also applies for the anchor characters `^` and `$`:
+
+- write `"\\^"` in R to mean `\^` in the regex, and match a literal `^`
+- write `"\\$"` in R to mean `\$` in the regex, and match a literal `$`
+
+On top of this, we have several other characters that need to be escaped within the regex, because brackets, braces, and parentheses have syntactic meaning. However, the rules here are subtle. For the *opening* brace/bracket/parenthesis, you always have to escape:
 
 - write `"\\["` in R to mean `\[` in the regex and match a literal `]`
 - write `"\\("` in R to mean `\(` in the regex and match a literal `]`
 - write `"\\{"` in R to mean `\{` in the regex and match a literal `]`
 
-But... while the same logic applies to a closing *parenthesis* `)`, it is *not* true for closing brackets `]` or braces `}`. Those two are treated as literals and should not be escaped:
+But for *closing*, the story is different. Specifically, you don't have to escape the closing bracket `]`:
 
 - write `"]"` in R to mean `]` in the regex and match a literal `]`
 - write `"\\)"` in R to mean `\)` in the regex and match a literal `)`
-- write `"}"` in R to mean `}` in the regex and match a literal `}`
+- write `"\\}"` in R to mean `\}` in the regex and match a literal `}`
 
-This is subtle enough that it's worth a couple of examples. Let's say I want to detect all instances of the bracketed literal text `[Chorus]` in the "Feminomenon" lyrics. I need to escape the opening bracket, so my regular expression begins with `"\\["`, but I don't need to escape the closing bracket, so the regex ends with `"]"`:
-
-```{r}
-str_view(femininomenon, "\\[Chorus]")
-```
-
-However, if I want to match the literal text `(Get it hot)` I have to escape both of the parentheses, like this:
+To make this a little clearer, this is how you do it for the opening bracket/parenthesis/brace:
 
 ```{r}
-str_view(femininomenon, "\\(Get it hot\\)")
+#| results: hold
+str_view(string = "[blah] (blah) {blah}", pattern = "\\[")
+str_view(string = "[blah] (blah) {blah}", pattern = "\\(")
+str_view(string = "[blah] (blah) {blah}", pattern = "\\{")
 ```
 
-
-
-## It gets messy
-
-This gets messy quite quickly. Suppose I want to match every instance where text is enclosed in brackets or parentheses:
+This is how you do it for the closing ones:
 
 ```{r}
-str_view(femininomenon, "(\\[[^\\]]*])|(\\([^)]*\\))")
+#| results: hold
+str_view(string = "[blah] (blah) {blah}", pattern = "]")
+str_view(string = "[blah] (blah) {blah}", pattern = "\\)")
+str_view(string = "[blah] (blah) {blah}", pattern = "\\}")
 ```
 
-To unpack a little:
 
-```{r}
-tests <- c(
-  "[this should match] the bracketed part",
-  "(this should match) the parenthetical part",
-  "(this should [] match) the outer parenthetical",
-  "[this should () match] the outer brackets",
-  "[this should not match at all",
-  "[this should not match) at all"
-)
-str_view(tests, "(\\[[^\\]]*])|(\\([^)]*\\))")
-```
+
 
 ## Oh no not another take
 
