@@ -403,6 +403,22 @@ As this illustrates, if a match is detected on the left hand side of the `|` the
 
 It may surprise the reader (it surprised the author) that I've managed to get this far into the post without ever talking about the `.` metacharacter. This is partly accidental, partly deliberate. The `.` is a powerful and easily-misused tool: it matches *any* character except line breaks. There's a whole article on [the dot](https://www.regular-expressions.info/dot.html) that cautious novice regex users to be careful when using it... so I am trying to teach myself to be careful and not use it so often!
 
+An example of why it's sometimes counterintuitive. Suppose I want to match the text in each line of "Feather" up to the point that `"ignore"` appears, and then terminate the match. It's very tempting to use `.*ignore` as the regular expression, but that doesn't quite do what we expect:
+
+```{r}
+str_view(feather, ".*ignore")
+```
+
+Because the `*` operator is greedy, it "consumes" every instance of `"ignore"` except the last one, which is then matched by the explicitly stated `"ignore"` in the regex. As a consequence, the regex I've written here matches all the text up to and including the last `"ignore"` that appears in the line, so it matches incorrectly on line 38. 
+
+We can fix this by tightening the quantification. Instead of using a greedy operator `*` that matches as much text as possible, we can use the lazy version `*?` that matches as little as possible:
+
+```{r}
+str_view(feather, ".*?ignore")
+```
+
+Now we get the right answer.
+
 ## Intermission: Very important applied regex
 
 This post is getting long. We need a little break. Well, I need a little break. Anyway, here's the entirety of the "Midnight Pals" dialog with all words hissed by JK Rowling detected by regex:
