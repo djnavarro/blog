@@ -523,6 +523,44 @@ str_view(string = "[blah] (blah) {blah}", pattern = "\\}")
 ```
 
 
+### Special characters inside a character set
+
+Inside a character set (i.e., within a square bracketed expression), the rules are different and inconsistent across regex flavours. For tidyverse and base R (with `perl = TRUE`), there are only four special characters you need to worry about: `]`, `^`, `\`, and `-`. Everything else can be added to a character set without needing any form of escaping. Here's an example where the character set is comprised of various characters that would normally need to be escaped, but don't need to be escaped inside a character set:
+
+```{r}
+chars <- c(
+  "+", ".", "?", "*", "\\", "|", 
+  "(", ")", "[", "]", "{", "}",
+  "^", "$", "-"
+)
+str_view(chars, "[a+.?*$|(){}]")
+```
+
+Here's an example where each of the other four special characters *are* escaped. For the sake of my sanity I'll include spaces in the character set. This allows me to write it like this, `[ \] \^ \\ \- ]`, and when specified as an R string it looks like this:
+
+```{r}
+str_view(chars, "[ \\] \\\\ \\^ \\- ]")
+```
+
+In addition to this, there are a few other handy tricks you can use to make the character set simpler:
+
+- if an unescaped `]` appears as the first element of the character set, it is a literal
+- if an unescaped `^` appears in anything other than the first element, it is also a literal
+- if an unescaped `-` appears as the first or last element, it is a literal:
+
+So this actually works for detecting right brackets, carets, and hyphens:
+
+```{r}
+str_view(chars, "[]^-]")
+```
+
+In all these examples I'm using `str_view()`, so we're using the "tidyverse style" regular expressions here. In base R, if you set `perl = TRUE` you'd get the same results here. If you don't, however, it's a bit different. If you're using the default base R regex flavour, the only character that you can escape within a character set is the backslash itself, so if you want to match `]`, `^`, or `-` then you have to rely on the positional tricks shown above. 
+
+Here's how you'd do it in base R
+
+```{r}
+cat(grep("[]^\\\\-]", chars, value = TRUE))
+```
 
 
 ## Oh no not another take
