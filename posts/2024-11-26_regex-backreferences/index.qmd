@@ -421,20 +421,14 @@ Now we get the right answer.
 
 ## Intermission: Very important applied regex
 
-This post is getting long. We need a little break. Well, I need a little break. Anyway, here's the entirety of the "Midnight Pals" dialog with all words hissed by JK Rowling detected by regex:
+This post is getting long. We need a little break. Well, I need a little break. Anyway, here's the regex to detect words all words in the "Midnight Pals" dialog hissed by the JK Rowling character:
 
 ```{r}
 #| column: page
-midnight |> 
-  str_view(
-    pattern = "\\b((\\w|')*s{3,}(\\w|')*)|(yess)\\b", 
-    match = NA
-  ) |> 
-  print(n = Inf)
+str_view(midnight, "\\b((\\w|')*s{3,}(\\w|')*)|(yess)\\b") 
 ```
 
-For a variety of different reasons this makes me smile. But let's move on, shall we?
-
+For a variety of reasons this makes me smile. But let's move on, shall we?
 
 ## Backreferences
 
