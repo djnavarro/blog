@@ -491,25 +491,34 @@ base_extract_all <- function(string, pattern, perl = FALSE) {
 Next I'll define a string `punct`, which contains an assortment of different characters that one might be inclined to call "punctuation":
 
 ```{r}
-punct <- ",./|\\<>?;:'\"[]{}-=_+()*&^%$€#@!`~×‒„”"
+punct <- ",./|\\><?;:'\"[]{}-=_+()*&^%$€#@!`~×‒„”"
 ```
 
 So, what happens when we match `punct` to `"[[:punct:]]"`? Well, it depends heavily on which engine you're using. If you're using ERE (i.e., base R with `perl = FALSE`), you get this as the result:
 
 ```{r}
-base_extract_all(punct, "[[:punct:]]") |> unlist() |> cat()
+punct |> 
+  base_extract_all("[[:punct:]]") |> 
+  unlist() |> 
+  cat()
 ```
 
 What about PCRE? Let's set `perl = TRUE` and have a look:
 
 ```{r}
-base_extract_all(punct, "[[:punct:]]", perl = TRUE) |> unlist() |> cat()
+punct |> 
+  base_extract_all("[[:punct:]]", perl = TRUE) |> 
+  unlist() |> 
+  cat()
 ```
 
 Okay yeah that is not even close to being the same thing. But what about the ICU engine? If you're working in tidyverse, internally you're probably relying on this engine and, well...
 
 ```{r}
-str_extract_all(punct, "[[:punct:]]") |> unlist() |> cat()
+punct |> 
+  str_extract_all("[[:punct:]]") |> 
+  unlist() |> 
+  cat()
 ```
 
 Le sigh. Of course. Totally different again. 
