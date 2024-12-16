@@ -2,7 +2,7 @@
 title: "Baby got backreferences"
 description: "Now I have \\\\2 problems"
 date: "2024-11-26"
-image: "feather2.jpg"
+image: "babygotback1.jpg"
 --- 
 
 <!--------------- my typical setup ----------------->
@@ -86,15 +86,17 @@ I try to resist. I'm a good girl, I tell the Dark Lord. I would never. Not on a 
 
 Um. Anyway. What was I talking about? Oh, right. [Regular expressions](https://www.regular-expressions.info/).
 
+
+![You don't have the look of someone to whom regular expressions happen by accident](sauron.jpg)
+
 <br>
 
-::: {layout-ncol=2}
+## Warning
 
-![Writing a regular expression](feather1.jpg)
+Let's start this love affair with darkness with a disclaimer: I have *never* wanted to write a primer on working with regular expressions in R. I loathe regular expressions, and I am not good at them. About 99% of my knowledge of regular expressions comes from weeping in abject despair with a dozen R documentation tabs open and desperately clicking on random links at [www.regular-expressions.info](https://www.regular-expressions.info) to work out why my regex doesn't work. I am, very clearly, not an expert. 
 
-![When the regular expression encounters a string](feather2.jpg)
+So why am I, a grotesquely unqualified woman, writing this post anyway? Honestly, the answer is because __this post is the tutorial that I need__. I'm writing this as an act of kindness for future Danielle, who will find inevitably herself crying at her keyboard trying to make a basic regex work, and will need to remind herself of the basics. With that in mind, and knowing exactly who will be revisiting this post in six months time in tears... you got this girl. I believe in you. 
 
-:::
 
 ```{r}
 #| message: false
@@ -108,11 +110,6 @@ midnight <- read_lines("midnight.txt")
 babygotback <- read_lines("babygotback.txt")
 ```
 
-## Warning
-
-Let's start this descent into madness with a disclaimer: I have *never* wanted to write a primer on working with regular expressions in R. I loathe regular expressions, and I am not good at them. About 99% of my knowledge of regular expressions comes from weeping in abject despair with a dozen R documentation tabs open and desperately clicking on random links at [www.regular-expressions.info](https://www.regular-expressions.info) to work out why my regex doesn't work. I am, very clearly, not an expert. 
-
-So why am I, a grotesquely unqualified woman, writing this post anyway? Honestly, the answer is because __this post is the tutorial that I need__. I'm writing this as an act of kindness for future Danielle, who will find inevitably herself crying at her keyboard trying to make a basic regex work, and will need to remind herself of the basics. With that in mind, and knowing exactly who will be revisiting this post in six months time in tears... you got this girl. I believe in you. 
 
 ## Simple matches
 
@@ -148,6 +145,9 @@ str_view(
 ```
 
 This output illustrates two things. First, you can see that there's a match on lines 3, 4, 7, 18, and probably others too (the remaining 72 lines of the song aren't shown in the output but they are actually included in the `str_view()` output). Second, it shows that our regular expression isn't quite doing the job we want it to: the match on line 4 matches the first three letters of the word "your", and it doesn't match to line 6 because that line contains the word "You" with an upper case "Y". If we want a regular expression to match "you" and "You" but not match against "your", it needs to be something a little more nuanced than setting `pattern = "you"` like I did above. 
+
+![I sent him pictures and playlists and regex](femininomenon.jpg)
+
 
 ## Quantifiers
 
@@ -207,6 +207,12 @@ str_view(midnight, "s{3,}")
 ```
 
 Ideally, we'd like a regular expression that captures the entire hissssssed word, but to do that we'll need to get a little fancier, and dive a little deeper into regular expression syntax.
+
+::: {.column-margin}
+
+![[Midnight pals](https://www.midnightpals.com/)](midnight1.png)
+
+:::
 
 ## Backslashes (part I)
 
@@ -288,6 +294,8 @@ str_view(one, "\\w+")
 
 You can see why this doesn't quite do what we want: the apostrophe is not a word character, and it doesn't get detected. There's a better approach to this using word boundaries, but I'll come to that later when talking about anchors. 
 
+![I prefer the Aimee Mann cover](one1.jpg)
+
 ### Logical operations with character sets
 
 To some extent you can perform logical operations on character sets: set negation, set union, set intersection, add set subtraction. These operations are all supported by regular expressions, but this is another thing where the implementation varies a little across regular expression flavours. So let's talk about these in turn.
@@ -351,6 +359,13 @@ str_view(femininomenon, "\\bfem\\b")
 ```
 
 Much better! Notice also that "end of string" and "start of string" do count as a word boundaries. On lines 15, 44, and 92, the line ends in the word `"fem"` and our regular expression captures these cases.
+
+::: {.column-margin}
+
+![Pretend I made a boring regex pun about the femmes being "so strung out" here](femmes.jpg)
+
+:::
+
 
 ## Groups
 
@@ -419,6 +434,15 @@ str_view(feather, ".*?ignore")
 
 Now we get the right answer.
 
+::: {layout-ncol=2}
+
+![When I use the dot in my regex](feather1.jpg)
+
+![When I check what the dot matches](feather2.jpg)
+
+:::
+
+
 ## Intermission: Very important applied regex
 
 This post is getting long. We need a little break. Well, I need a little break. Anyway, here's the regex to detect words all words in the "Midnight Pals" dialog hissed by the JK Rowling character:
@@ -445,6 +469,8 @@ But now suppose that we want to relax this slightly and find all words that star
 ```{r}
 str_view(babygotback, "\\b(\\w)\\w+\\1\\b")
 ```
+
+![When the backreference actually works](babygotback1.jpg)
 
 
 ## Lookahead/lookbehind
@@ -526,6 +552,8 @@ Le sigh. Of course. Totally different again.
 Little discrepancies like this are the reason why at various different points in the text, I've had to pause and mention things that work differently across the three regex engines used in R. While the differences between the engines are not large, it only takes one tiny difference to mess up an otherwise perfectly crafted regex. Something that looks like it works when you use `stringr::str_detect()` will suddenly break when you use the same regex in `grep()`. 
 
 It is annoying.
+
+![Three rings for the regex kings, under th.. okay yeah that's a bit of a reach](threerings.jpg)
 
 ## Backslashes (part II)
 
@@ -640,6 +668,13 @@ cat(grep("[]^\\\\-]", chars, value = TRUE))
 ```
 
 God this is exhausting.
+
+
+::: {.column-margin}
+
+![Very much like the show in question, this post is running a little longer than anyone could reasonably have expected](cats.jpg)
+
+:::
 
 ## Substitution
 
