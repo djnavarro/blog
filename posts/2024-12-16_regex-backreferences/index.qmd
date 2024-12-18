@@ -1,7 +1,7 @@
 ---
 title: "Baby got backreferences"
 description: "Now I have \\\\2 problems"
-date: "2024-11-26"
+date: "2024-12-16"
 image: "babygotback1.jpg"
 --- 
 
@@ -78,7 +78,7 @@ knitr::opts_chunk$set(highlight = TRUE)
 
 <!--------------- post begins here ----------------->
 
-At least once a week I have this moment when a yawning pit of black despair opens at my feet, and the barbed tentacles of despair wrap around my legs, poison injects chill into my veins, the icy claws of anxiety rip through my viscera, and a withered voice of pure evil slithers into my brain and speaks to me in the disturbingly-seductive language of Mordor:
+At least once a week I experience a particular kind of despair that is all to familiar to programmers. I am sitting alone with my laptop and my code, minding my own business, working quietly. Out of nothing a yawning pit of black despair opens at my feet, barbed tentacles wrap around my legs, poison injects chill into my veins, the icy claws of anxiety rip through my viscera, and a withered voice of pure evil slithers into my brain. The voice speaks to me in the disturbingly-seductive language of Mordor, and a terrible incantation consumes my thoughts:
 
 <p class="tangerine-bold" align="center" style="font-size: 28pt">why not write a regular expression?</p>
 
@@ -93,27 +93,46 @@ Um. Anyway. What was I talking about? Oh, right. [Regular expressions](https://w
 
 ## Warning
 
-Let's start this love affair with darkness with a disclaimer: I have *never* wanted to write a primer on working with regular expressions in R. I loathe regular expressions, and I am not good at them. About 99% of my knowledge of regular expressions comes from weeping in abject despair with a dozen R documentation tabs open and desperately clicking on random links at [www.regular-expressions.info](https://www.regular-expressions.info) to work out why my regex doesn't work. I am, very clearly, not an expert. 
+Let's start this love affair with darkness with a disclaimer: I have *never* wanted to write a primer on working with regular expressions in R. I loathe regular expressions, and I am not good at them. About 99% of my knowledge of regular expressions comes from weeping in abject despair with a dozen R documentation tabs open and desperately clicking on random links at [www.regular-expressions.info](https://www.regular-expressions.info) to work out why my regex doesn't work. 
 
-So why am I, a grotesquely unqualified woman, writing this post anyway? Honestly, the answer is because __this post is the tutorial that I need__. I'm writing this as an act of kindness for future Danielle, who will find inevitably herself crying at her keyboard trying to make a basic regex work, and will need to remind herself of the basics. With that in mind, and knowing exactly who will be revisiting this post in six months time in tears... you got this girl. I believe in you. 
+I am, very clearly, not an expert. 
 
+So why am I, a grotesquely unqualified woman, writing this post anyway? Honestly, the answer is because __this post is the tutorial that I need__. I'm writing this as an act of solidarity with future Danielle, who will find inevitably herself crying at her keyboard trying to make a basic regex work, and will need a little kindness and support. With that in mind, and knowing exactly who will be revisiting this post in six months time in tears... you got this girl. I believe in you. 
+
+Let's get started. In this post I'll be working mostly with the stringr package, so I'll load that at the beginning:
 
 ```{r}
 #| message: false
 library(stringr)
-library(tibble)
-library(brio)
-
-feather <- read_lines("feather.txt")
-femininomenon <- read_lines("femininomenon.txt")
-midnight <- read_lines("midnight.txt")
-babygotback <- read_lines("babygotback.txt")
 ```
 
+I'll use a variety of sources for the text, mostly song lyrics. Each of those is stored in a text file so I'll read the text now:
+
+```{r}
+#| message: false
+feather <- brio::read_lines("feather.txt")
+femininomenon <- brio::read_lines("femininomenon.txt")
+midnight <- brio::read_lines("midnight.txt")
+babygotback <- brio::read_lines("babygotback.txt")
+```
+
+Each of these is a vector of strings. To give you a sense of what they look like, here's the first few lines in the opening to `babygotback`:
+
+```{r}
+head(babygotback)
+```
+
+We shall return to this classic text later, but the first few examples will all use `femininomenon`:
+
+```{r}
+head(femininomenon)
+```
+
+Hopefully you get the idea. Each of these is a vector, each element is a string, and we'll do some pattern matching on those strings, most often using `str_view()` from the stringr package to show which parts of the text each regex matches against. It's not the best tool for using in a script, but it's ideal as a way of visually inspecting the results of a regular expression matching exercise.
 
 ## Simple matches
 
-It begins with the very, very basics. The simplest way to write a regular expression is to detect strings that match a specific, fixed subset of text. For instance, let's say I want to find every line in [Femininomenon](https://www.youtube.com/watch?v=xdaKBAuO8zg) in which Chappell Roan sings the word `"femininomenon"`. I'll use the `str_view()` function from the stringr package to do this. It's not the best tool for using in a script, but it's ideal as a way of looking at the results of a regular expression match:
+It begins with the very, very basics. Regular expressions are a tool for matching (and sometimes modifying) patterns in text strings. The simplest way to write a regular expression is to detect strings that match a specific, fixed subset of text. For instance, let's say I want to find every line in [Femininomenon](https://www.youtube.com/watch?v=xdaKBAuO8zg) in which Chappell Roan sings the word `"femininomenon"`. Using `str_view()` this is what we get:
 
 ```{r}
 str_view(
@@ -124,7 +143,7 @@ str_view(
 
 In this output, the teal-highlighted text^[At the R console, this highlighting appears automatically. Normally you wouldn't see this highlighting in a quarto document like this one, because quarto strips out the ANSI control characters that the console uses to add colour to the output. However, for the purposes of this post I cheated a little, by writing a [knitr hook](/posts/2023-12-30_knitr-hooks/) that crudely mimics the same behaviour in this document.] enclosed in angle brackets displays the sections of the text that match the regular expression. In this case our regular expression is very simple. It's just a literal string `"femininomenon"`, so the output highlights every instance of that word. 
 
-Notice also that not every line in the song is shown by `str_view()`. Only those lines that match the regular expression are included (you can see that in the numbers to the left of each match). However, we can change this behaviour using the `match` argument to `str_view()`. For example, if wanted to see only those lines that don't include the letter `e`, we could do this:
+Notice also that not every line in the song is shown by `str_view()`. Only those lines that match the regular expression are included (you can see that in the numbers to the left of each match). However, we can change this behaviour using the `match` argument to `str_view()`. For example, if wanted to see only those lines that *don't* include the letter `e`, we could do this:
 
 ```{r}
 str_view(
@@ -151,7 +170,9 @@ This output illustrates two things. First, you can see that there's a match on l
 
 ## Quantifiers
 
-For the moment, let's set aside the thorny question of how to handle capitalisation, and focus instead on the "you" vs "your" issue. Moreover, let's move the goalposts, and pretend that our new goal is actually to detect *both* `"you"` and `"your"`. We can do that with the help of **quantifiers**. In regular expression syntax, certain character (sometimes called "metacharacters") have special meanings. For example, the `?` character is used to indicate that the preceding character is optional. When we write `"your?"` as our regular expression, the `r?` part indicates that the `r` character is optional. It will match against both `"you"` and `"your"`:
+For the moment, let's set aside the thorny question of how to handle capitalisation, and focus instead on the "you" vs "your" issue. Moreover, let's move the goalposts, and pretend that our new goal is actually to detect *both* `"you"` and `"your"`. This post is [not a place of honour](https://en.wikipedia.org/wiki/Long-term_nuclear_waste_warning_messages), and I'm not above cheating when it comes to these matters.
+
+We can solve our new problem with the help of **quantifiers**. In regular expression syntax, certain character (sometimes called "metacharacters") have special meanings. For example, the `?` character is used to indicate that the preceding character is optional. When we write `"your?"` as our regular expression, the `r?` part indicates that the `r` character is optional. It will match against both `"you"` and `"your"`:
 
 ```{r}
 str_view(femininomenon, "your?")
@@ -172,7 +193,7 @@ This behaviour is (of course!) described in numerous places in the R documentati
 
 ```{r}
 #| code-fold: true
-tibble(
+tibble::tibble(
   string    = c("a", "ab", "abb", "abbb", "abbbb", "abbbbb"),
   `ab?`     = str_view(string, pattern = "ab?", match = NA),
   `ab*`     = str_view(string, pattern = "ab*", match = NA),
@@ -183,11 +204,11 @@ tibble(
 )
 ```
 
-Notice that these are all **eager** (sometimes called **greedy**), in the sense that they will always match to as many repetitions as they possibly can while satisfying the rules. However, you can reverse this behaviour and make a quantifier **lazy** by appending  `?` immediately after the quantifier. A lazy quantifier will match against the fewest number of repetitions as it can possibly can while satisfying the rule. Here's what that looks like:
+Notice that these are all **eager** (sometimes called **greedy**), in the sense that they will always match to as many repetitions as they possibly can while satisfying the rules. However, you can reverse this behaviour and make a quantifier **lazy** by appending  `?` immediately after the quantifier. A lazy quantifier will match against the fewest number of repetitions as possible while still satisfying the rule. Here's what that looks like:
 
 ```{r}
 #| code-fold: true
-tibble(
+tibble::tibble(
   string    = c("a", "ab", "abb", "abbb", "abbbb", "abbbbb"),
   `ab??`     = str_view(string, pattern = "ab??", match = NA),
   `ab*?`     = str_view(string, pattern = "ab*?", match = NA),
@@ -198,15 +219,21 @@ tibble(
 )
 ```
 
-Obviously, some of those are silly. There's no point whatsoever in writing a regular expression like `ab{2,4}?`, because it produces exactly the same behaviour as `ab{2}`.
+Obviously, some of those are silly. There's no point whatsoever in writing a regular expression like `ab{2,4}?`, because it produces exactly the same behaviour as `ab{2}`. Nevertheless, there are some instances where lazy quantifiers turn out to be useful, so I'm mentioning them here just in case I come back in tears next year trying to figure out how the accursed things work.
 
-To give an example where these fancier quantifiers come in handy, I'll use a recent [Midnight Pals thread](https://bsky.app/profile/midnightpals.bsky.social/post/3ld7vr34nok2n). If you're not a regular reader of Midnight Pals, it's essentially a literary satire that makes oblique references to current events. Edgar Allen Poe, Stephen King, Clive Barker, and Mary Shelley are recurring characters, for instance. So too is JK Rowling, though she doesn't associate with the other characters and instead tends to live in her own "mysterious circle of robed figures". One of the conceits of the JKR character is that she hisses many of her lines and so the text often contains words like `"bluesssky"` or `"transssses"`. The actual number of repetitions varies of course, so we might want to use a regular expression like `s{3,}` to find instances of three or more successive `s` characters:
+In everyday life I find that 95% of the time the only quantifiers I ever need are `?`, `*`, and `+`, but every now and then I find a need to use the more flexible `{}` notation. To give one example of this, I'll use a recent [Midnight Pals thread](https://bsky.app/profile/midnightpals.bsky.social/post/3ld7vr34nok2n), which I loaded earlier as the `midnight` vector. If you're not a regular reader of Midnight Pals, it's essentially a literary satire that makes oblique references to current events. Edgar Allen Poe, Stephen King, Clive Barker, and Mary Shelley are recurring characters, for instance. So too is JK Rowling, though she doesn't associate with the other characters and instead tends to live in her own "mysterious circle of robed figures". To give you a sense of what the dialog typically looks like, here's the first few lines:
+
+```{r}
+head(midnight)
+```
+
+As illustrated in this extract, one of the conceits of the JKR character is that she hisses many of her lines^[I usually imagine the character has a [yuan-ti](https://forgottenrealms.fandom.com/wiki/Yuan-ti) thing going on] and so the text often contains words like `"bluesssky"` or `"transssses"`. So let's see if we can write a regular expression to detect the hissed words. The actual number of `s`-repetitions in the JKR dialog varies of course, so we might want to use a regular expression like `s{3,}` to find instances of three or more successive `s` characters:
 
 ```{r}
 str_view(midnight, "s{3,}")
 ```
 
-Ideally, we'd like a regular expression that captures the entire hissssssed word, but to do that we'll need to get a little fancier, and dive a little deeper into regular expression syntax.
+It doesn't work perfectly (e.g., it misses the `"yess"` on line 22), but it's not too bad given how simple the regex is. That said, it's also a bit limited insofar as it only detects the hissing (i.e., the `s`-repetition). Ideally, we'd like a regular expression that captures the entire hissssssed word, but to do that we'll need to get a little fancier, and dive a little deeper into regular expression syntax. We'll return to that later.
 
 ::: {.column-margin}
 
@@ -225,17 +252,21 @@ It gets complicated, though, because the way we represent the regular expression
 - write `"\\*"` in R to mean `\*` in the regex, and match a literal `*`
 - write `"\\{"` in R to mean `\{` in the regex, and match a literal `{`
 
-It obviously follows that since `\` is used as the escape character it too must be escaped if you want to treat it as a literal:
+Notice the notation I've used here: when I enclose a string in quotation marks I'm referring to the string as it has to be specified in R, but when the quote marks are missing I am referring to the raw contents of the string/regex.
+
+In any case, since we are using `\` as the escape character, it follows that it too is considered a special character in regular expression syntax. As such, you have to escape the backslash if you want to treat it as a literal:
 
 - write `"\\\\"` in R to mean `\\` in the regex, and match a literal `\`
 
-Here's an example:
+Not particularly pleasant, and as you can imagine it is very easy to write regular expressions that use the wrong number of backslashes and end up in tears. 
+
+In any case, here's an example. If I want to find all the question marks in the `femininomenon` lyrics, this is what I would have to do:
 
 ```{r}
 str_view(femininomenon, "\\?")
 ```
 
-The same logic applies to special characters like line feed `\n` and tabs `\t`. 
+It should also be noted that a similar thing happens with regards to special characters like `\n` (line feed) that contain a backslash in their notation. The line feed character has no special meaning in a regular expression, but because you need to pass the textual representation from the R string down to the regular expression, you have to escape the backslash. That is:
 
 - write `"\\n"` in R to mean `\n` in the regex, and match a line feed
 - write `"\\t"` in R to mean `\t` in the regex, and match a tab
@@ -268,7 +299,7 @@ Some character sets are used so often that there is a shorthand notation for the
 - `\w` denotes word characters. At a minimum it supports alphanumeric characters, but it will also match against unicode characters used in words. 
 - `\s` denotes whitespace characters, and will match a space `" "`, a tab `"\t"`, a carriage return `"\r"`, a line feed `"\n"`, or a form feed `"\f"`; as well as unicode separator characters if the regex flavour supports unicode
 
-There are a variety of other shorthand classes too. If you look in the base R documentation, for instance, you'll find reference to various "POSIX classes" like `:digit:` and `:punct:` that do something similar. Over time I've become wary about these because they aren't implemented consistently across regex flavours (see later), 
+There are a variety of other shorthand classes too. If you look in the base R documentation, for instance, you'll find reference to various "POSIX classes" like `:digit:` and `:punct:` that do something similar. Over time I've become wary about these because they aren't implemented consistently across regex flavours (see later), so I try to avoid them.
 
 To illustrate how to use these prespecified character sets, I'll do a little bit of regular expression matching on the opening lines to [One](https://genius.com/Harry-nilsson-one-lyrics) by Harry Nilsson, where I've used digits to represent the numbers rather than spelling out the words:
 
@@ -302,15 +333,21 @@ To some extent you can perform logical operations on character sets: set negatio
 
 Of the various operations, set union is the easiest one to describe. We've already talked about it. If you want to take the union of two character sets, all you have to do is concatenate them in the description. The lower case letters are represented by the range `[a-z]`, and the upper case letters are represented by `[A-Z]`. The union of these classes is simply `[a-zA-Z]`. These are set operations, so it doesn't matter if you include the same element multiple times: `[aab]` is the same character set as `[ab]`. 
 
-The second easiest one to talk about is negation. If you want to represent "any character except the ones listed", use `[^` to begin the set rather than `[`. For example, the set `[^femino]` is comprised of all characters except those six letters. If I wanted to detect all instances where the Chappell Roan lyrics contain five or more consecutive characters that don't include these letters, I'd do this:
+The second easiest one to talk about is negation. If you want to represent "any character except the ones listed", use `[^` to begin the set rather than `[`. For example, the set `[^femino ]` is comprised of all characters except those seven (six letters plus the space). If I wanted to detect all instances where the Chappell Roan lyrics contain five or more consecutive characters that don't include these letters, I'd do this:
 
 ```{r}
-str_view(femininomenon, "[^femino]{5,}")
+str_view(femininomenon, "[^femino ]{5,}")
 ```
 
 Yeah, fair enough.
 
-Before moving on to other kinds of set logic, it's worth being explicit about what the `[^` notation implies about including `^` in a character set. The short answer is that `^` only has the special meaning of "negation operator" if it follows immediately after the `[`. In other words, the sets `[ab^]` and `[a^b]` are identical and will match against any literal `a`, `b`, or `^` that appears in the text. However, `[^ab]` is a different set entirely, because in this context `^` is interpreted as the negation operator and this will match against anything that is not an `a` or a `b`. 
+Before moving on to other kinds of set logic, it's worth being explicit about what the `[^` notation implies about including `^` in a character set. The short answer is that `^` only has the special meaning of "negation operator" if it follows immediately after the `[`. In other words, the sets `[ab^]` and `[a^b]` are identical and will match against any literal `a`, `b`, or `^` that appears in the text. However, `[^ab]` is a different set entirely, because in this context `^` is interpreted as the negation operator and this will match against anything that is not an `a` or a `b`. As an illustration, let's match against five or more repetitions of `[femino ^]`, and compare it to what we got last time:
+
+```{r}
+str_view(femininomenon, "[femino ^]{5,}")
+```
+
+Not surprisinlgy, this is a very different result.
 
 Finally, I want to briefly talk about subtraction and intersection. This is where things get tricky in R because these *do* work in tidyverse regular expressions but do not work in base R regexes, due to the differences in the regular expression engines underneath. In some regex flavours (including the one used in tidyverse), you can use a minus sign `-` to denote set difference, so it would be entirely valid to use `[[a-z]-[aeiou]]` to represent lower case consonants. Similarly, you can use `&&` to represent intersection, so `[[a-z]]&&[Papa]` would be equivalent to `[pa]`. This notation works in tidyverse (more detail on this later), as illustrated below:
 
@@ -744,7 +781,7 @@ It would be trickier to do this with the ERE engine because it doesn't support l
 ## I'm so sorry for my loss
 
 ```{r}
-rules <- tribble(
+rules <- tibble::tribble(
                  ~pattern, ~replacement,
        "([Dd]o)(-[Dd]o)+",         "🎶", # do-do, do-do-do -> musical note
                 "feather",         "🪶", # feather -> emoji feather
