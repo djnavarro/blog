@@ -1134,9 +1134,9 @@ why not write a regular expression?
 </ul>
 <p>On top of this, we have several other characters that need to be escaped within the regex, because brackets, braces, and parentheses have syntactic meaning. However, the rules here are subtle. For the <em>opening</em> brace/bracket/parenthesis, you always have to escape:</p>
 <ul>
-<li>write <code>"\\["</code> in R to mean <code>\[</code> in the regex and match a literal <code>]</code></li>
-<li>write <code>"\\("</code> in R to mean <code>\(</code> in the regex and match a literal <code>]</code></li>
-<li>write <code>"\\{"</code> in R to mean <code>\{</code> in the regex and match a literal <code>]</code></li>
+<li>write <code>"\\["</code> in R to mean <code>\[</code> in the regex and match a literal <code>[</code></li>
+<li>write <code>"\\("</code> in R to mean <code>\(</code> in the regex and match a literal <code>(</code></li>
+<li>write <code>"\\{"</code> in R to mean <code>\{</code> in the regex and match a literal <code>{</code></li>
 </ul>
 <p>But for <em>closing</em>, the story is different. Specifically, you don’t have to escape the closing bracket <code>]</code>:</p>
 <ul>
