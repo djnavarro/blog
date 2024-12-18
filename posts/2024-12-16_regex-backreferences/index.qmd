@@ -672,9 +672,9 @@ It also applies for the anchor characters `^` and `$`:
 
 On top of this, we have several other characters that need to be escaped within the regex, because brackets, braces, and parentheses have syntactic meaning. However, the rules here are subtle. For the *opening* brace/bracket/parenthesis, you always have to escape:
 
-- write `"\\["` in R to mean `\[` in the regex and match a literal `]`
-- write `"\\("` in R to mean `\(` in the regex and match a literal `]`
-- write `"\\{"` in R to mean `\{` in the regex and match a literal `]`
+- write `"\\["` in R to mean `\[` in the regex and match a literal `[`
+- write `"\\("` in R to mean `\(` in the regex and match a literal `(`
+- write `"\\{"` in R to mean `\{` in the regex and match a literal `{`
 
 But for *closing*, the story is different. Specifically, you don't have to escape the closing bracket `]`:
 
