@@ -80,7 +80,7 @@ knitr::opts_chunk$set(highlight = TRUE)
 
 <!--------------- post begins here ----------------->
 
-At least once a week I experience a particular kind of despair that is all to familiar to programmers. I am sitting alone with my laptop and my code, minding my own business, working quietly. Out of nothing a yawning pit of black despair opens at my feet, barbed tentacles wrap around my legs, poison injects chill into my veins, the icy claws of anxiety rip through my viscera, and a withered voice of pure evil slithers into my brain. The voice speaks to me in the disturbingly-seductive language of Mordor, and a terrible incantation consumes my thoughts:
+At least once a week I experience a particular kind of despair that is all too familiar to programmers. I am sitting alone with my laptop and my code, minding my own business, working quietly. Out of nothing a yawning pit of black despair opens at my feet, barbed tentacles wrap around my legs, poison injects chill into my veins, the icy claws of anxiety rip through my viscera, and a withered voice of pure evil slithers into my brain. The voice speaks to me in the disturbingly-seductive language of Mordor, and a terrible incantation consumes my thoughts:
 
 <p class="tangerine-bold" align="center" style="font-size: 28pt">why not write a regular expression?</p>
 
@@ -283,7 +283,7 @@ Earlier in the post we encountered the irritating problem of capital letters. If
 str_view(femininomenon, "[Yy]our?")
 ```
 
-You can apply quantifiers to character sets, but you need to be a little careful about this. Let's say I have the character set `[femino]`, and I want to apply the quantifier `{4,}` to detect four or more repetitions of the character set. The regular expression `[femino]{4,}` will match against literal repetitions like `"oooo"` or `"mmmmm"`, but it will also match to words like `"omen"` and `"feminine"` because evey letter in those words belongs to the character set:
+You can apply quantifiers to character sets, but you need to be a little careful about this. Let's say I have the character set `[femino]`, and I want to apply the quantifier `{4,}` to detect four or more repetitions of the character set. The regular expression `[femino]{4,}` will match against literal repetitions like `"oooo"` or `"mmmmm"`, but it will also match to words like `"omen"` and `"feminine"` because every letter in those words belongs to the character set:
 
 ```{r}
 str_view(femininomenon, "[femino]{4,}")
@@ -303,7 +303,7 @@ Some character sets are used so often that there is a shorthand notation for the
 
 There are a variety of other shorthand classes too. If you look in the base R documentation, for instance, you'll find reference to various "POSIX classes" like `:digit:` and `:punct:` that do something similar. Over time I've become wary about these because they aren't implemented consistently across regex flavours (see later), so I try to avoid them.
 
-To illustrate how to use these prespecified character sets, I'll do a little bit of regular expression matching on the opening lines to [One](https://genius.com/Harry-nilsson-one-lyrics) by Harry Nilsson, where I've used digits to represent the numbers rather than spelling out the words:
+To illustrate how to use these pre-specified character sets, I'll do a little bit of regular expression matching on the opening lines to [One](https://genius.com/Harry-nilsson-one-lyrics) by Harry Nilsson, where I've used digits to represent the numbers rather than spelling out the words:
 
 ```{r}
 one <- c(
