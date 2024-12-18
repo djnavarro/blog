@@ -45,7 +45,7 @@
 </style>
 </div>
 <!--------------- post begins here ----------------->
-<p>At least once a week I experience a particular kind of despair that is all to familiar to programmers. I am sitting alone with my laptop and my code, minding my own business, working quietly. Out of nothing a yawning pit of black despair opens at my feet, barbed tentacles wrap around my legs, poison injects chill into my veins, the icy claws of anxiety rip through my viscera, and a withered voice of pure evil slithers into my brain. The voice speaks to me in the disturbingly-seductive language of Mordor, and a terrible incantation consumes my thoughts:</p>
+<p>At least once a week I experience a particular kind of despair that is all too familiar to programmers. I am sitting alone with my laptop and my code, minding my own business, working quietly. Out of nothing a yawning pit of black despair opens at my feet, barbed tentacles wrap around my legs, poison injects chill into my veins, the icy claws of anxiety rip through my viscera, and a withered voice of pure evil slithers into my brain. The voice speaks to me in the disturbingly-seductive language of Mordor, and a terrible incantation consumes my thoughts:</p>
 <p class="tangerine-bold" align="center" style="font-size: 28pt">
 why not write a regular expression?
 </p>
@@ -700,7 +700,7 @@ font-style: inherit;">"[Yy]our?"</span>)</span></code></pre></div>
 [76] │ Did <span style="color:#008080">&lt;you&gt;</span> hear me? Play the fucking beat
 </pre>
 </div>
-<p>You can apply quantifiers to character sets, but you need to be a little careful about this. Let’s say I have the character set <code>[femino]</code>, and I want to apply the quantifier <code>{4,}</code> to detect four or more repetitions of the character set. The regular expression <code>[femino]{4,}</code> will match against literal repetitions like <code>"oooo"</code> or <code>"mmmmm"</code>, but it will also match to words like <code>"omen"</code> and <code>"feminine"</code> because evey letter in those words belongs to the character set:</p>
+<p>You can apply quantifiers to character sets, but you need to be a little careful about this. Let’s say I have the character set <code>[femino]</code>, and I want to apply the quantifier <code>{4,}</code> to detect four or more repetitions of the character set. The regular expression <code>[femino]{4,}</code> will match against literal repetitions like <code>"oooo"</code> or <code>"mmmmm"</code>, but it will also match to words like <code>"omen"</code> and <code>"feminine"</code> because every letter in those words belongs to the character set:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb15" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><span class="fu" style="color: #4758AB;
 background-color: null;
@@ -731,7 +731,7 @@ font-style: inherit;">"[femino]{4,}"</span>)</span></code></pre></div>
 <li><code>\s</code> denotes whitespace characters, and will match a space <code>" "</code>, a tab <code>"\t"</code>, a carriage return <code>"\r"</code>, a line feed <code>"\n"</code>, or a form feed <code>"\f"</code>; as well as unicode separator characters if the regex flavour supports unicode</li>
 </ul>
 <p>There are a variety of other shorthand classes too. If you look in the base R documentation, for instance, you’ll find reference to various “POSIX classes” like <code>:digit:</code> and <code>:punct:</code> that do something similar. Over time I’ve become wary about these because they aren’t implemented consistently across regex flavours (see later), so I try to avoid them.</p>
-<p>To illustrate how to use these prespecified character sets, I’ll do a little bit of regular expression matching on the opening lines to <a href="https://genius.com/Harry-nilsson-one-lyrics">One</a> by Harry Nilsson, where I’ve used digits to represent the numbers rather than spelling out the words:</p>
+<p>To illustrate how to use these pre-specified character sets, I’ll do a little bit of regular expression matching on the opening lines to <a href="https://genius.com/Harry-nilsson-one-lyrics">One</a> by Harry Nilsson, where I’ve used digits to represent the numbers rather than spelling out the words:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb16" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1">one <span class="ot" style="color: #003B4F;
 background-color: null;
