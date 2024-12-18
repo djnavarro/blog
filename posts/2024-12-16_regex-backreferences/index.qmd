@@ -347,7 +347,7 @@ Before moving on to other kinds of set logic, it's worth being explicit about wh
 str_view(femininomenon, "[femino ^]{5,}")
 ```
 
-Not surprisinlgy, this is a very different result.
+Not surprisingly, this is a very different result.
 
 Finally, I want to briefly talk about subtraction and intersection. This is where things get tricky in R because these *do* work in tidyverse regular expressions but do not work in base R regexes, due to the differences in the regular expression engines underneath. In some regex flavours (including the one used in tidyverse), you can use a minus sign `-` to denote set difference, so it would be entirely valid to use `[[a-z]-[aeiou]]` to represent lower case consonants. Similarly, you can use `&&` to represent intersection, so `[[a-z]]&&[Papa]` would be equivalent to `[pa]`. This notation works in tidyverse (more detail on this later), as illustrated below:
 
@@ -473,23 +473,27 @@ Now we get the right answer.
 
 ::: {layout-ncol=2}
 
-![When I use the dot in my regex](feather1.jpg)
+![When I use `.*` in my regex](feather1.jpg)
 
-![When I check what the dot matches](feather2.jpg)
+![When I check what `.*` matches](feather2.jpg)
 
 :::
 
 
 ## Intermission: Very important applied regex
 
-This post is getting long. We need a little break. Well, I need a little break. Anyway, here's the regex to detect words all words in the "Midnight Pals" dialog hissed by the JK Rowling character:
+This post is getting long. We need a little break. Well, I need a little break. As it happens, we've now introduced enough regular expression concepts that we can detect all the hissed words in the "Midnight Pals" dialog hissed by the JK Rowling character. Here they are:
+
+<br>
 
 ```{r}
 #| column: page
 str_view(midnight, "\\b((\\w|')*s{3,}(\\w|')*)|(yess)\\b") 
 ```
 
-For a variety of reasons this makes me smile. But let's move on, shall we?
+<br>
+
+For a variety of reasons this makes me happy. But let's move on, shall we?
 
 ## Backreferences
 
