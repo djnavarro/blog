@@ -2,7 +2,9 @@
 title: "Baby got backreferences"
 description: "Now I have \\\\2 problems"
 date: "2024-12-16"
+categories: ["R", "Regular Expressions"]
 image: "babygotback1.jpg"
+image-alt: "Four women dancing"
 --- 
 
 <!--------------- my typical setup ----------------->
