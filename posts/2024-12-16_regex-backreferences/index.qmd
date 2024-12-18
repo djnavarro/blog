@@ -505,11 +505,39 @@ Here's an example. Suppose we are listening to [classical music](https://www.you
 str_view(babygotback, "\\ba\\w+a\\b")
 ```
 
-But now suppose that we want to relax this slightly and find all words that start and end with the same (case-matched) letter, regardless of what that letter actually is. Here's the point at which we need to use a backreference:
+But now suppose that we want to relax this slightly and find all words that start and end with the same (case-matched) letter, regardless of what that letter actually is. For that to work, we need to have the ability to *capture* one part of the regular expression, and then *refer* back to the captured contents elsewhere in the regular expression. The capturing part is straightforward, actually. Earlier when I introduced the `()` notation for groups, I was a little imprecise in my language. By default, anything enclosed in parentheses is treated as a **capture group**, and you can refer back to them numerically: `\1` is a backreference to the first capture group, `\2` refers to the second one, and so one.^[There's also a mechanism for naming groups and name-based referencing, but I never use it.] 
+
+To give a simple example, imagine a markup language in which footnotes are specified using markers like `%a%`, `%b%` and so on, and the marker would need to appear on either side of the footnote text itself. Some example strings that you might see:
+
+```{r}
+comments <- c(
+  "some text %a%footnote%a% some text",
+  "%a% none of this %b% is a footnote",
+  "some more text %b%another footnote%b%"
+)
+```
+
+Now consider the regular expression `%[a-z]%`. This will match against `%a%`, `%b%` and so on. Let's have a look at what it detects:
+
+```{r}
+str_view(comments, "%[a-z]%")
+```
+
+Next we need to specify this as a capture group, which we do by wrapping it in parentheses. That gives us `(%[a-z]%)` as our regular expression. Because the content of this group is captured, I can insert a `\1` to refer to the specific text matched by that group. So we could build a regular expression like `(%[a-z]%).*+\1`, which looks for a footnote marker like `%a%` or `%b%`, followed by some arbitrary text, and then followed by a *matching* footnote marker:
+
+```{r}
+str_view(comments, "(%[a-z]%).*\\1")
+```
+
+It's a little bit risky to use the `.*` (as I discussed earlier), but it works for this particular problem, and hopefully you get the basic idea.
+
+Armed with this newfound knowledge, we can return to the *Baby Got Back* problem. Earlier on I used the expression `\ba\w+a\b` to detect words that start and end with the letter `a`. To generalise this to "words that start and end with the same letter", I can replace the first `a` in this expression with a capture group that will match against any word character (i.e., `(\w)`), and then replace the second `a` with a backreference `\1` to that captured group. In other words, we started out with `\ba\w+a\b`, and we modify it to `\b(\w)\w+\1\b`. When specified as an R string, we need to add the extra backslashes as usual, and that gives us this:
 
 ```{r}
 str_view(babygotback, "\\b(\\w)\\w+\\1\\b")
 ```
+
+Victory! Those nasty thoughts have indeed been kicked. 
 
 ![When the backreference actually works](babygotback1.jpg)
 
