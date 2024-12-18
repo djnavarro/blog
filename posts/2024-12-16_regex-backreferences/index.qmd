@@ -531,7 +531,7 @@ str_view(comments, "(%[a-z]%).*\\1")
 
 It's a little bit risky to use the `.*` (as I discussed earlier), but it works for this particular problem, and hopefully you get the basic idea.
 
-Armed with this newfound knowledge, we can return to the *Baby Got Back* problem. Earlier on I used the expression `\ba\w+a\b` to detect words that start and end with the letter `a`. To generalise this to "words that start and end with the same letter", I can replace the first `a` in this expression with a capture group that will match against any word character (i.e., `(\w)`), and then replace the second `a` with a backreference `\1` to that captured group. In other words, we started out with `\ba\w+a\b`, and we modify it to `\b(\w)\w+\1\b`. When specified as an R string, we need to add the extra backslashes as usual, and that gives us this:
+Armed with this newfound knowledge, we can return to the *Baby Got Backreferences* problem. Earlier on I used the expression `\ba\w+a\b` to detect words that start and end with the letter `a`. To generalise this to "words that start and end with the same letter", I can replace the first `a` in this expression with a capture group that will match against any word character (i.e., `(\w)`), and then replace the second `a` with a backreference `\1` to that captured group. In other words, we started out with `\ba\w+a\b`, and we modify it to `\b(\w)\w+\1\b`. When specified as an R string, we need to add the extra backslashes as usual, and that gives us this:
 
 ```{r}
 str_view(babygotback, "\\b(\\w)\\w+\\1\\b")
@@ -544,7 +544,7 @@ Victory! Those nasty thoughts have indeed been kicked.
 
 ## Lookahead/lookbehind
 
-Keeping with the theme, it's time to talk about **lookahead** and **lookbehind**. Suppose I want to find words that begin and end with the letter `"a"`, but I don't actually want to include the letter `a` at the end. In other words, I need to "look ahead" to check if the `d` in `anaconda` is followed by an `a\b` (i.e., `a` at the end of the word), but not include the `a\b` in the match. We can do this by creating a special "lookahead group" that encloses the `a\b`. However, instead of writing `(a\b)` like we would for a capturing group, we use `(?=` at the start to indicate that it's a lookahead group. In other words, a lookahead group that detects (but does not match) the `a` at the end of `anaconda` is `(?=a\b)`, and the full regex is `\ba\w+(?=a\b)`. Here's what that looks like when we put it into practice:
+Continuing with the all-important task of matching patterns in the immortal words of Sir Mix-a-Lot, it's time to talk about **lookahead** and **lookbehind**. Suppose I want to find words that begin and end with the letter `"a"`, but I don't actually want to include the letter `a` at the end. In other words, I need to "look ahead" to check if the `d` in `anaconda` is followed by an `a\b` (i.e., `a` at the end of the word), but not include the `a\b` in the match. We can do this by creating a special "lookahead group" that encloses the `a\b`. However, instead of writing `(a\b)` like we would for a capturing group, we use `(?=` at the start to indicate that it's a lookahead group. In other words, a lookahead group that detects (but does not match) the `a` at the end of `anaconda` is `(?=a\b)`, and the full regex is `\ba\w+(?=a\b)`. Here's what that looks like when we put it into practice:
 
 ```{r}
 str_view(babygotback, "\\ba\\w+(?=a\\b)")
@@ -565,7 +565,7 @@ str_view(babygotback, "(?<=\\()[^)]+(?=\\))")
 
 Awesome. 
 
-Oh... by the way? This trick won't work in base R unless you set `perl = TRUE`.^[That's another one of those fun things where there are in fact three separate flavours of regex in widespread usage in R. ICU (used by stringi and stringr) and PCRE (base R with `perl = TRUE`) both support lookahead and lookbehind assertions, as well as negative lookahead `(?!blah)` and negative lookbehind `(?<!blah)`, but the ERE engine (base R with `perl = FALSE`) does not.] Which seems like a good time to discuss...
+Oh... by the way? This trick works in tidyverse, but it won't work in base R unless you set `perl = TRUE`, because the default regular expression engine in base R doesn't support lookahead and lookbehind groups.^[That's another one of those fun things where there are in fact three separate flavours of regex in widespread usage in R. ICU (used by stringi and stringr) and PCRE (base R with `perl = TRUE`) both support lookahead and lookbehind assertions, as well as negative lookahead `(?!blah)` and negative lookbehind `(?<!blah)`, but the ERE engine (base R with `perl = FALSE`) does not.] Which seems like a good time to discuss...
 
 
 ## Three regex flavours
@@ -701,7 +701,7 @@ str_view(string = "[blah] (blah) {blah}", pattern = "\\}")
 
 ### Special characters inside a character set
 
-Inside a character set (i.e., within a square bracketed expression), the rules are different and inconsistent across regex flavours. For tidyverse and base R (with `perl = TRUE`), there are only four special characters you need to worry about: `]`, `^`, `\`, and `-`. Everything else can be added to a character set without needing any form of escaping. Here's an example where the character set is comprised of various characters that would normally need to be escaped, but don't need to be escaped inside a character set:
+Inside a character set (i.e., within a square bracketed expression), the rules are different and inconsistent across regex flavours. For tidyverse (ICU engine) and base R with `perl = TRUE` (PCRE engine), there are four special characters you need to worry about: `]`, `^`, `\`, and `-`. Everything else can be added to a character set without needing any form of escaping. Here's an example where the character set is comprised of various characters that would normally need to be escaped, but don't need to be escaped inside a character set:
 
 ```{r}
 chars <- c(
@@ -747,7 +747,7 @@ God this is exhausting.
 
 ## Substitution
 
-There's one last topic to talk about: substitution. Throughout the post I've focused almost entirely on detecting patterns in text. In base R you might use `grep()` to accomplish this task, whereas in stringr you'd probably use `str_detect()`.^[I know I know. I've mostly used `str_view()` rather than `str_detect()` because it's convenient for visually illustrating the regex match. But you wouldn't work with this in a script] The other main thing I use regular expressions for is making **substitutions**, in which the matched text is replaced by something new. In base R you'd pobably use `gsub()` for this, whereas in stringr you'd most likely use `str_replace()` or `str_replace_all()`. 
+There's one last topic to talk about: substitution. Throughout the post I've focused almost entirely on detecting patterns in text. In base R you might use `grep()` to accomplish this task, whereas in stringr you'd probably use `str_detect()`.^[I know I know. I've mostly used `str_view()` rather than `str_detect()` because it's convenient for visually illustrating the regex match. But you wouldn't work with this in a script] The other main thing I use regular expressions for is making **substitutions**, in which the matched text is replaced by something new. In base R you'd probably use `gsub()` for this, whereas in stringr you'd most likely use `str_replace()` or `str_replace_all()`. 
 
 In most cases where I've had to use it substitution doesn't introduce any new concepts: the "replacement" text is usually a fixed string that is inserted wherever a match is found. For example, if I want to replace the word `"cat"` with the emoji `"🐈"`, I would do something like this:
 
@@ -761,29 +761,31 @@ cat(str_replace_all(
 
 Okay yes, in this example I had to do a little bit of work in the `pattern` argument to come up with the regex that I wanted to use to define matches, but the `replacement` argument is very simple. Nothing new here really. 
  
-However, there are some fancy things that you can do with replacement text. In particular, all three regular expression engines used in R support backreferences within the replacement text. Here it is in tidyverse:
+However, there are some fancy things that you can do with replacement text. In particular, all three regular expression engines used in R support backreferences within the replacement text. Here it is in all three engines:
 
 ```{r}
 #| results: hold
+a_vile_lie <- "dogs are better than cats"
+
 # tidyverse + ICU
 cat(str_replace_all(
-  string = "dogs are better than cats",
+  string = a_vile_lie,
   pattern = "(dogs)(.*)(cats)",
   replacement = "\\3\\2\\1"
 ), sep = "\n")
 
-# base ERE
+# base R + ERE
 cat(gsub(
   pattern = "(dogs)(.*)(cats)",
   replacement = "\\3\\2\\1",
-  x = "dogs are better than cats"
+  x = a_vile_lie
 ), sep = "\n")
 
-# base PCRE
+# base R + PCRE
 cat(gsub(
   pattern = "(dogs)(.*)(cats)",
   replacement = "\\3\\2\\1",
-  x = "dogs are better than cats",
+  x = a_vile_lie,
   perl = TRUE
 ), sep = "\n")
 ```
@@ -799,7 +801,7 @@ cat(str_replace_all(
   replacement = "\\1,\\1"
 ), sep = "\n")
 
-# base PCRE
+# base R + PCRE
 cat(gsub(
   pattern = "(?<=[\\[(])(\\w+)(?=[)\\]])",
   replacement = "\\1,\\1",
