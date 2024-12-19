@@ -68,7 +68,7 @@ options(op)
 
 You can render the output conveniently with the help of `flametree_plot()`:
 
-```{r flametree-plot-origin, dev.args=list(bg="#222222")}
+```{r flametree-plot-origin, dev.args=list(bg="#ffffff")}
 tree |> 
   flametree_plot(
     background = "#222222", 
@@ -135,7 +135,7 @@ trunk <- geom_bezier(
 
 Having done all the work in this piecewise manner, the code to draw the tree is as simple as adding the `trunk` and `leaves` to the `base` image:
 
-```{r flametree-plot, dev.args=list(bg="#222222")}
+```{r flametree-plot, dev.args=list(bg="#ffffff")}
 #| fig-width: 4
 #| fig-height: 6
 #| fig-dpi: 300
@@ -159,7 +159,7 @@ A script containing this code is included as the `flametree-example.R` script.
 
 ...but it could be prettier, don't you think? Maybe we could add a glow around the leaves, to give it a twinkling look. This feels like the kind of job for a pixel filter, and ggfx should be able to do this for us. Conceptually, what we want to do is apply a "glow" filter to the `leaves` of our tree, but not to the `trunk`. We can do that in ggfx by using the `with_outer_glow()` filtering function: we pass the `leaves` layer to the filter, along with some other arguments (e.g., `colour`) that specify the properties of the glow. The examples below show this in action: the left plot is the original tree, the middle one adds a small white glow to the leaves, and the right one adds a much bigger glow:
 
-```{r outer-glow, dev.args=list(bg="#222222")}
+```{r outer-glow, dev.args=list(bg="#ffffff")}
 #| fig-width: 4
 #| fig-height: 6
 #| fig-dpi: 300
@@ -244,7 +244,7 @@ base <- ggplot(
 The details to this don't matter very much for this session. All that matters is that when we add `geom_segment()` to `base`, it produces radial art like the image shown below on the left. Then, on the right, we can see the effect of the `with_dither()` function. I've reduced the image to five distinct colours in order to exaggerate the dithering effect as much as possible. Any lower than this and the image degrades too much.
 
 
-```{r dither, dev.args=list(bg="#222222")}
+```{r dither, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -257,7 +257,7 @@ base + with_dither(geom_segment(), max_colours = 5)
 
 Floyd-Steinberg dithering gives the image a slightly grainy feel. It can be very handy when you don't want the art to look too clean. Rendering the image in halftone gives it a more patterend feel, as the images below illustrate:
 
-```{r halftone-dither, dev.args=list(bg="#222222")}
+```{r halftone-dither, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -323,7 +323,7 @@ base <- ggplot() +
 
 Okay, so now let's take a look the two layers individually:
 
-```{r mask-components, dev.args=list(bg="#222222")}
+```{r mask-components, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -336,7 +336,7 @@ base + mask
 
 Gosh, I wonder what we could possibly do with a texture and a hexagon shape...
 
-```{r plain-hex, dev.args=list(bg="#222222")}
+```{r plain-hex, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -372,7 +372,7 @@ text <- geom_text(
 
 When I construct my mask, what I really want to do is apply it to all three layers: `texture`, `border`, and `text` should all be masked by the `mask` layer. To do that I pass `texture`, `border`, and `text` to `as_group()` to define the group; then I pass `mask` to `as_reference()` to register it as a filter; and *then* I apply `with_mask()`. Here's how that works:
 
-```{r mask, dev.args=list(bg="#222222")}
+```{r mask, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -417,7 +417,7 @@ poly4 <- polygon_layer(x = c(0, 0, .7), y = c(.3, 1, 1))
 
 Next, I'll define a `base` plot and then show you what these polygons look like when drawn together:
 
-```{r polygons-only, dev.args=list(bg="#222222")}
+```{r polygons-only, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -451,7 +451,7 @@ So here's our process:
 
 Here's the code, and the results:
 
-```{r displace, dev.args=list(bg="#222222")}
+```{r displace, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -530,7 +530,7 @@ triangle <- polygon_layer(
 
 Because these images are binary valued the exclusive-or `"xor"` filter is easy to visualise in this case. If a pixel is white in exactly *one* of the two inputs (the tree or the triangle), that pixel will also be white in the output. Otherwise that pixel will be transparent. That gives us this:
 
-```{r blend, dev.args=list(bg="#222222")}
+```{r blend, dev.args=list(bg="#ffffff")}
 #| fig-width: 10
 #| fig-height: 10
 #| fig-dpi: 300
@@ -555,5 +555,64 @@ base +
 A script containing this code is included as the `ggfx-blend.R` file
 
 :::
+
+
+
+## Materials
+
+Code for each of the source files referred to in this section of the workshop is included here. Click on the callout box below to see the code for the file you want to look at. 
+
+```{r}
+#| echo: false
+#| results: asis
+#| code-fold: true
+
+# files <- here::here("posts", "2024-12-18_art-from-code-1", "materials") |>
+#   fs::dir_ls() |>
+#   fs::path_file()
+
+files <- sort(c(
+  "flametree-example.R",
+  "ggfx-glow.R",
+  "ggfx-dither.R",
+  "ggfx-mask.R",
+  "ggfx-displace.R",
+  "ggfx-blend.R"
+))
+
+write_file <- function(filename) {
+  dir <- here::here("posts", "2024-12-18_art-from-code-1", "materials")
+  txt <- c(
+      paste0(
+        "::: {.callout-note collapse=\"true\" title=\"", 
+        filename,
+        "\" icon=false appearance=\"minimal\"}"
+      ),
+      "",
+      "```{r}",
+      "#| eval: false",
+      "#| echo: true",
+      "#| code-fold: true",
+      #paste("#| filename: ", filename),
+      brio::read_lines(fs::path(dir, filename)),
+      "```",
+      "",
+      ":::",
+      ""
+      
+    )
+  cat(knitr::knit_child(
+    text = txt,
+    options = list(echo = TRUE, code.fold = TRUE),
+    quiet = TRUE
+  ))
+}
+
+purrr::walk(
+  files,
+  write_file
+)
+```
+
 
 

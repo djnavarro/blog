@@ -177,7 +177,7 @@ fern_dat
 
 It looks nicer as a plot though :)
 
-```{r show-barnsley-fern, dev.args=list(bg="#222222")}
+```{r show-barnsley-fern, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -190,7 +190,7 @@ ggplot(fern_dat, aes(x, y)) +
 
 The reason I went to the extra trouble of storing the `transform` column was so I could map it to the colour aesthetic in my plot. When I do this, I get this as the result: there's a transformation function that defines the left leaf shape, another that defines the right leaf shape, and a third one that defines the stem shape. Finally, there's a function that copies, shifts-up, and rotates its input in a way that produces the vertical symmetry in the output. 
 
-```{r transform-shaded-barnsley-fern, dev.args=list(bg="#222222")}
+```{r transform-shaded-barnsley-fern, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -216,7 +216,7 @@ As we'll see a little later, it can be very useful to plot your outputs this way
 For no particular reason, here's our fern with the colour aesthetic mapped to the `iteration` number:
 
 
-```{r randomly-shaded-barnsley-fern, dev.args=list(bg="#222222")}
+```{r randomly-shaded-barnsley-fern, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -368,7 +368,7 @@ sample_canva2 <- function(seed = NULL, n = 4) {
 Having done all that work, the rendering function in not very fancy: it's just some ggplot2 code to create a scatter plot from the points and colour them using a canva palette:
 
 
-```{r make-unboxing-art, dev.args=list(bg="#222222")}
+```{r make-unboxing-art, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -401,7 +401,7 @@ unbox_art <- function(data, seed = NULL, size = 1) {
 
 The results can be very pretty, especially when you generate a large number of points (say, 3 million) and plot them with a very small marker size (say, .1). 
 
-```{r an-unboxing, dev.args=list(bg="#222222")}
+```{r an-unboxing, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -428,7 +428,7 @@ Code for this system is included in the `unbox-base.R` script.
 The outputs from this system have a fairly consistent look and feel: a pair of nested boxes, with something "bursting" from the top right corner. The fine grained details vary a lot from output to output, and there are some systematic differences as a function of the number of layers. Here's an example showing what happens when I ratchet up the number of layers from 2 to 9:
 
 
-```{r first-unboxing-art, dev.args=list(bg="#222222")}
+```{r first-unboxing-art, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -498,7 +498,7 @@ In contrast, on the right you can see the effect of the affine transformations. 
 Waiting 30 seconds for something pretty is kind of annoying, especially when you're still developing the system and you just want to tinker with the settings to see what it does. It would be nice if we could speed this up, right? The easiest way to speed things up is to run fewer iterations and use larger plot sizes. I mean, this works perfectly fine...
 
 
-```{r coarse-unboxing-art, dev.args=list(bg="#222222")}
+```{r coarse-unboxing-art, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -621,7 +621,7 @@ The C++ code for this system is included in the `unbox-fast.cpp` script, and the
 
 Transforming the data into plots, on the other hand, is a little slower. At this point the rendering code is the part that is causing slowness:
 
-```{r first-rcpp-art, dev.args=list(bg="#222222")}
+```{r first-rcpp-art, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -740,7 +740,7 @@ NumericMatrix unboxer_grid(int iterations,
 
 From a data generation perspective, there's really not much difference between this version and the last one. They're both fast. The C++ code to generate the image in a bitmap format isn't faster or slower than the C++ code we wrote last time:
 
-```{r generating-fast-2, dev.args=list(bg="#222222")}
+```{r generating-fast-2, dev.args=list(bg="#ffffff")}
 tic()
 set.seed(123); mat1 <- unboxer_grid(10 * mil, 2, 1000, 4) 
 set.seed(101); mat2 <- unboxer_grid(10 * mil, 5, 1000, 4) 
@@ -859,4 +859,60 @@ The C++ code to generate the data for this system is included in the `unbox-grid
 :::
 
 
+
+## Materials
+
+Code for each of the source files referred to in this section of the workshop is included here. Click on the callout box below to see the code for the file you want to look at. 
+
+```{r}
+#| echo: false
+#| results: asis
+#| code-fold: true
+
+# files <- here::here("posts", "2024-12-18_art-from-code-1", "materials") |>
+#   fs::dir_ls() |>
+#   fs::path_file()
+
+files <- sort(c(
+  "barnsley-fern.R",
+  "unbox-base.R",
+  "unbox-fast.cpp",
+  "unbox-fast-test.R",
+  "unbox-grid.cpp",
+  "pretty-boxes.R"
+))
+
+write_file <- function(filename) {
+  dir <- here::here("posts", "2024-12-18_art-from-code-1", "materials")
+  txt <- c(
+      paste0(
+        "::: {.callout-note collapse=\"true\" title=\"", 
+        filename,
+        "\" icon=false appearance=\"minimal\"}"
+      ),
+      "",
+      "```{r}",
+      "#| eval: false",
+      "#| echo: true",
+      "#| code-fold: true",
+      #paste("#| filename: ", filename),
+      brio::read_lines(fs::path(dir, filename)),
+      "```",
+      "",
+      ":::",
+      ""
+      
+    )
+  cat(knitr::knit_child(
+    text = txt,
+    options = list(echo = TRUE, code.fold = TRUE),
+    quiet = TRUE
+  ))
+}
+
+purrr::walk(
+  files,
+  write_file
+)
+```
 

@@ -56,7 +56,7 @@ This representation defines a closed path: the fifth and final point is the same
 
 Next let's write a simple plotting function to display a polygon:
 
-```{r square, dev.args=list(bg="#222222")}
+```{r square, dev.args=list(bg="#ffffff")}
 #| fig-width: 4
 #| fig-height: 4
 #| fig-dpi: 300
@@ -154,7 +154,7 @@ insert_edge <- function(polygon, noise) {
 
 Here's the function in action:
 
-```{r polygon-insertion, dev.args=list(bg="#222222")}
+```{r polygon-insertion, dev.args=list(bg="#ffffff")}
 #| fig-width: 4
 #| fig-height: 4
 #| fig-dpi: 300
@@ -181,7 +181,7 @@ grow_polygon <- function(polygon, iterations, noise, seed = NULL) {
 
 The images below show what our recursively deformed polygon looks like after 30, 100, and 1000 iterations:
 
-```{r polygon-generation, dev.args=list(bg="#222222")}
+```{r polygon-generation, dev.args=list(bg="#ffffff")}
 #| fig-width: 4
 #| fig-height: 4
 #| fig-dpi: 300
@@ -222,7 +222,7 @@ show_multipolygon <- function(polygon, fill, alpha = .02, ...) {
 
 So now here's what we do. We take the original `square` and deform it a moderate amount. Running `grow_polygon()` for about 100 iterations seems to do the trick. This then becomes the `base_shape` to be passed to `grow_multipolygon()`, which we then use to create many polygons (say, `n = 50`) that are all derived from this base shape. Finally, we use `show_multipolygon()` to plot all 50 polygons. Each individual polygon is plotted with very low opacity, so the overall effect is to create a graded look:
 
-```{r polygon-layering, dev.args=list(bg="#222222")}
+```{r polygon-layering, dev.args=list(bg="#ffffff")}
 #| fig-width: 4
 #| fig-height: 4
 #| fig-dpi: 300
@@ -330,7 +330,7 @@ toc()
 
 That's a pretty substantial improvement in performance relative to the original version, with only very minor rewriting of the code. And yes, it does produce the same result:
 
-```{r fast-polygon-layering, dev.args=list(bg="#222222")}
+```{r fast-polygon-layering, dev.args=list(bg="#ffffff")}
 #| fig-width: 4
 #| fig-height: 4
 #| fig-dpi: 300
@@ -372,7 +372,7 @@ toc()
 
 Because `splotch()` is fast and a little crude, it can be a handy way to explore colour choices:
 
-```{r splotch, dev.args=list(bg="#222222")}
+```{r splotch, dev.args=list(bg="#ffffff")}
 #| fig-width: 4
 #| fig-height: 4
 #| fig-dpi: 300
@@ -448,7 +448,7 @@ smudged_hexagon <- function(seed, noise1 = 0, noise2 = 2, noise3 = 0.5) {
 
 Here it is in action:
 
-```{r deeply-nested-polygon-layering, dev.args=list(bg="#222222"), warning=FALSE}
+```{r deeply-nested-polygon-layering, dev.args=list(bg="#ffffff"), warning=FALSE}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -462,7 +462,7 @@ dat |> show_multipolygon(fill = "#d4379005")
 ```
 
 
-```{r smudged-hexagon-examples, dev.args=list(bg="#222222"), warning=FALSE}
+```{r smudged-hexagon-examples, dev.args=list(bg="#ffffff"), warning=FALSE}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -476,7 +476,7 @@ smudged_hexagon(seed = 88) |> show_multipolygon(fill = "#d4379005")
 ```
 
 
-```{r layered-smudged-hexagon, dev.args=list(bg="#222222")}
+```{r layered-smudged-hexagon, dev.args=list(bg="#ffffff")}
 #| fig-width: 14
 #| fig-height: 8
 #| fig-dpi: 300
@@ -541,7 +541,7 @@ heart_y <- function(angle) {
 
 Here's what it looks like when I draw a heart using these formulas:
 
-```{r heart-polygon, dev.args=list(bg="#222222")}
+```{r heart-polygon, dev.args=list(bg="#ffffff")}
 #| fig-width: 4
 #| fig-height: 4
 #| fig-dpi: 300
@@ -572,7 +572,7 @@ What we'd like to do is gently and smoothly deform the outline of the original s
 
 Let's start with a slightly simpler version of the problem: instead of deforming a heart shape we'll deform a circle using Perlin noise. Our base shape is a circle that looks like this:
 
-```{r basic-circle, dev.args=list(bg="#222222")}
+```{r basic-circle, dev.args=list(bg="#ffffff")}
 #| fig-width: 4
 #| fig-height: 4
 #| fig-dpi: 300
@@ -621,7 +621,7 @@ perlin_blob <- function(n = 100,
 
 Here are three outputs from our `perlin_blob()` function:
 
-```{r show-perlin-blobs, dev.args=list(bg="#222222"), warning=FALSE}
+```{r show-perlin-blobs, dev.args=list(bg="#ffffff"), warning=FALSE}
 #| fig-width: 4
 #| fig-height: 4
 #| fig-dpi: 300
@@ -636,7 +636,7 @@ set.seed(3); perlin_blob() |> show_polygon(FALSE)
 
 To give you a feel for how this function behaves, here's a few images showing the effect of changing the `freq_init` parameter. This argument is used to set the overall noise level when generating fractal noise patterns:
 
-```{r show-perlin-blob-frequency, dev.args=list(bg="#222222"), warning=FALSE}
+```{r show-perlin-blob-frequency, dev.args=list(bg="#ffffff"), warning=FALSE}
 #| fig-width: 4
 #| fig-height: 4
 #| fig-dpi: 300
@@ -651,7 +651,7 @@ set.seed(1); perlin_blob(freq_init = .8) |> show_polygon(FALSE)
 
 The effect of the radius parameters is slightly different to the effect of the noise parameter. Shifting the `r_min` and `r_max` arguments has the effect of "globally flattening" the pattern of variation because the overall shape can only vary within a narrow bound. But it's quite possible to set a high value for `freq_init` (causing noticeable distortions to the radius to emerge even at small scales) while constraining the global shape to be almost perfectly circular. The result is a rough-edged but otherwise perfect circle:
 
-```{r show-perlin-blob-radius, dev.args=list(bg="#222222"), warning=FALSE}
+```{r show-perlin-blob-radius, dev.args=list(bg="#ffffff"), warning=FALSE}
 #| fig-width: 4
 #| fig-height: 4
 #| fig-dpi: 300
@@ -682,8 +682,6 @@ Code for this system is included in the `perlin-blob.R` script. You can also fin
 2. Explore the effect of modifying the arguments. It should be possible to produce some very wild looking shapes!
 
 :::
-
-
 
 ## Perlin hearts
 
@@ -722,7 +720,7 @@ perlin_heart <- function(n = 100,
 
 Here are three outputs from our `perlin_heart()` function:
 
-```{r show-perlin-hearts, dev.args=list(bg="#222222"), warning=FALSE}
+```{r show-perlin-hearts, dev.args=list(bg="#ffffff"), warning=FALSE}
 #| fig-width: 4
 #| fig-height: 4
 #| fig-dpi: 300
@@ -745,7 +743,7 @@ sample_canva <- function(seed = NULL) {
 
 Now that we have a palette generator we can use the functional programming toolkit from `purrr` to do the work for us. In this case I'm using `pmap_dfr()` to call the `perlin_heart()` at a variety of different settings. I've included the `x_shift`, `y_shift` and `id` values among the settings to make it a little easier to plot the data:
 
-```{r perlin-hearts, dev.args=list(bg="#222222"), warning=FALSE}
+```{r perlin-hearts, dev.args=list(bg="#ffffff"), warning=FALSE}
 #| fig-width: 14
 #| fig-height: 8
 #| fig-dpi: 300
@@ -842,7 +840,7 @@ perlin_heart2 <- function(n = 100,
 
 Here are three outputs from our `perlin_heart2()` function, showing the effect of varying the `rot` parameter. Because the width of outline varies, `rot` causes the whole pattern of variable thickness to rotate around the heart. As you might imagine, this is going to turn out to be very handy in a moment when we start animating these things!
 
-```{r show-perlin-hearts-2, dev.args=list(bg="#222222"), warning=FALSE}
+```{r show-perlin-hearts-2, dev.args=list(bg="#ffffff"), warning=FALSE}
 #| fig-width: 4
 #| fig-height: 4
 #| fig-dpi: 300
@@ -865,7 +863,7 @@ perlin_heart2(n = 1000, rot = pi, seed = 2) |> show_width()
 
 Here's an example where I plot several hearts at once courtesy of the magic of `pmap_dfr()`:
 
-```{r perlin-heart-2, dev.args=list(bg="#222222"), warning=FALSE}
+```{r perlin-heart-2, dev.args=list(bg="#ffffff"), warning=FALSE}
 #| fig-width: 14
 #| fig-height: 7
 #| fig-dpi: 300
@@ -922,7 +920,7 @@ Code for this system is included as the `perlin-heart-grid-2.R` script. Can you 
 
 The final example for this session uses the `gifsky` package to create an animated version of the variable-width hearts from the last section, by "rotating" or "sliding" the variable-with curves along the contours of the Perlin hearts. The design of the functions in this system is very similar in spirit to that adopted in the static systems. The main difference is that the output is created by calling the `save_gif()` function. We pass it an expression that, in the normal course of events, would create many plots -- that's what the `generate_all_frames()` function does -- and it captures these plots and turns them into a single animated gif:
 
-```{r animated-perlin-hearts, dev.args=list(bg="#222222"), warning=FALSE}
+```{r animated-perlin-hearts, dev.args=list(bg="#ffffff"), warning=FALSE}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -1013,7 +1011,7 @@ knitr::include_graphics("animated-perlin-heart-100.gif")
 ```
 
 
-```{r animated-perlin-hearts-2, dev.args=list(bg="#222222"), warning=FALSE}
+```{r animated-perlin-hearts-2, dev.args=list(bg="#ffffff"), warning=FALSE}
 #| fig-width: 10
 #| fig-height: 6
 #| fig-dpi: 300
@@ -1071,7 +1069,7 @@ smooth_path <- function(n = 1000, smoothing = .4, seed = NULL) {
 
 Here's an example of the paths it produces:
 
-```{r smooth-path, dev.args=list(bg="#222222")}
+```{r smooth-path, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -1142,7 +1140,7 @@ stroke <- function(dat, geom = geom_path, colour = "white", ...) {
 
 The plots below show a couple of examples of how you can apply this idea to our original curve:
 
-```{r smooth-path-textured, dev.args=list(bg="#222222")}
+```{r smooth-path-textured, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -1162,7 +1160,7 @@ path |>
 
 This doesn't in any sense exhaust the possibilities, but I hope it's a useful hint about how to get started if you ever find yourself trying to figure out how to draw naturalistic looking pen strokes. Also, the fact that I've included the code means I get to apply the idea to the Perlin hearts system:
 
-```{r perlin-heart-texture, dev.args=list(bg="#222222")}
+```{r perlin-heart-texture, dev.args=list(bg="#ffffff")}
 #| fig-width: 4
 #| fig-height: 4
 #| fig-dpi: 300
@@ -1182,4 +1180,65 @@ perlin_heart(n = 500, seed = 123) |>
 Code for this system is included in the `textured-lines.R` script. Try to use this a jumping-off point for designing your own system for generating textured lines. There's no real reason why you should do it my way. How would you do this yourself?
 
 :::
+
+
+## Materials
+
+Code for each of the source files referred to in this section of the workshop is included here. Click on the callout box below to see the code for the file you want to look at. 
+
+```{r}
+#| echo: false
+#| results: asis
+#| code-fold: true
+
+# files <- here::here("posts", "2024-12-18_art-from-code-1", "materials") |>
+#   fs::dir_ls() |>
+#   fs::path_file()
+
+files <- sort(c(
+  "grow-polygon.R",
+  "grow-multipolygon.R",
+  "splotch.R", 
+  "smudged-hexagon.R",
+  "perlin-blob.R",
+  "perlin-heart.R",
+  "perlin-heart-grid.R",
+  "perlin-heart-grid-2.R",
+  "perlin-heart-animated.R",
+  "textured-lines.R"
+))
+
+write_file <- function(filename) {
+  dir <- here::here("posts", "2024-12-18_art-from-code-1", "materials")
+  txt <- c(
+      paste0(
+        "::: {.callout-note collapse=\"true\" title=\"", 
+        filename,
+        "\" icon=false appearance=\"minimal\"}"
+      ),
+      "",
+      "```{r}",
+      "#| eval: false",
+      "#| echo: true",
+      "#| code-fold: true",
+      #paste("#| filename: ", filename),
+      brio::read_lines(fs::path(dir, filename)),
+      "```",
+      "",
+      ":::",
+      ""
+      
+    )
+  cat(knitr::knit_child(
+    text = txt,
+    options = list(echo = TRUE, code.fold = TRUE),
+    quiet = TRUE
+  ))
+}
+
+purrr::walk(
+  files,
+  write_file
+)
+```
 

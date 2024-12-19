@@ -85,7 +85,7 @@ additive_circles <- function(n = 5, pixels = 1000, seed = NULL) {
 
 Here's what happens when we generate output from the system and then use `geom_raster()` to plot it:
 
-```{r circle-addition, dev.args=list(bg="#222222")}
+```{r circle-addition, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -109,7 +109,7 @@ circle_array[1:10, 1:10]
 
 The ability to flip back and forth between a tibble-like representation and a matrix-like representation is very handy! Anyway, the important point is that `circle_array` is now a matrix. I can plot this matrix directly using `image()`:
 
-```{r show-circle-array, dev.args=list(bg="#222222")}
+```{r show-circle-array, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -124,7 +124,7 @@ Let's imagine for a moment that this image is actually a terrain map, and the va
 
 Here's what that looks like:
 
-```{r circle-shadow-map, dev.args=list(bg="#222222")}
+```{r circle-shadow-map, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -143,7 +143,7 @@ plot_map(circle_shadow, rotate = 270)
 
 The results lack colour because this is only a map of the intensity of the shadow at each point. It's not a map of the terrain. If we want to construct that map we need something like a hill shading algorithm supplied by `sphere_shade()`, but that requires us to supply a texture. That's probably overkill for our initial application. Alternatively, if all we want is a height-to-colour mapping, we can use `height_shade()` to create the texture, and then use `add_shadow()` to add the shadow: 
 
-```{r circle-render, dev.args=list(bg="#222222")}
+```{r circle-render, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -225,7 +225,7 @@ ridge_art <- function(seed = NULL, pixels = 2000) {
 
 All the work in generating images is being done by the `gen_simplex()` generator, the `ridged()` fractal function, and the `fracture()` function that provides ambients API for fractal noise. To give you a sense of what kind of output this system produces natively, here's an `image()`:
 
-```{r ridged-art-example, dev.args=list(bg="#222222")}
+```{r ridged-art-example, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -242,7 +242,7 @@ ridge_art(1234) |>
 
 That's quite pretty in its own right, but we can give it a real feeling of depth by using rayshader. The idea is essentially identical to what we did when shading our circles art: compute a height map, a shadow map, and add them together before calling `plot_map()`. Here's the code for a `shaded_ridge_art()` function that does this:
 
-```{r def-rayshader-art, dev.args=list(bg="#222222")}
+```{r def-rayshader-art, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -271,7 +271,7 @@ shaded_ridge_art <- function(seed = NULL) {
 
 Here's our ridged art piece rendered as a shaded version:
 
-```{r rayshader-art, dev.args=list(bg="#222222")}
+```{r rayshader-art, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -284,7 +284,7 @@ toc()
 
 Just because they're pretty and it's not that hard to generate new pieces -- one of the joys of generative art is that the moment you make one piece you like you can immediately make many more in the same style -- here are a few more outputs from the system:
 
-```{r more-rayshade-art, dev.args=list(bg="#222222")}
+```{r more-rayshade-art, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -387,7 +387,7 @@ ice_floe <- function(seed) {
 
 To give you a sense of what images from the original system look like when coloured using one of the canva palettes, I'll again use `image()` to plot the output of the base system:
 
-```{r basic-ice-floe, dev.args=list(bg="#222222")}
+```{r basic-ice-floe, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -404,7 +404,7 @@ ice_floe(170) |>
 
 Creating the shaded version of the system proceeds the same way it did when we created the `shaded_ridge_art()` function. We call `ice_floe()` to create a matrix of elevations, construct an appropriately shaded elevation map using `height_shade()`, and then call `add_shadow()` to add a shadow map generated using `ray_shade()`. Then we call `plot_map()` to create the output:
 
-```{r ice-floe, dev.args=list(bg="#222222")}
+```{r ice-floe, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -436,7 +436,7 @@ shaded_ice_floe(170)
 
 Turns out it's quite pretty. Here are a few more outputs:
 
-```{r abstract-ice-floes, dev.args=list(bg="#222222")}
+```{r abstract-ice-floes, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -450,7 +450,7 @@ shaded_ice_floe(102)
 ```
 
 
-```{r even-more-abstract-ice-floes, dev.args=list(bg="#222222")}
+```{r even-more-abstract-ice-floes, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -489,7 +489,7 @@ Having done so, everything worked pretty smoothly for me.
 
 Okay, so what can we do with 3d rendering? To start with, let's keep things simple and use the "circles" example. I've already computed a height map (`circle_array`) and a shading map (`circle_scape`) that incorporates the shadows, so I can pass both of the to `plot_3d()`. It's a little fiddly, so I had to tinker with the angles and other settings to get a result that worked:
 
-```{r circle-3d-render, dev.args=list(bg="#222222")}
+```{r circle-3d-render, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -522,7 +522,7 @@ knitr::include_graphics("circles_3d.png")
 It kind of looks like a tower. It's kind of neat in its own right, but the output gets much more fun when you start feeding richer input to `plot_3d()`. Here's what happens when I adapt the "ice floes" system to produce truly three dimensional images:
 
 
-```{r ice-floe-3d, dev.args=list(bg="#222222")}
+```{r ice-floe-3d, dev.args=list(bg="#ffffff")}
 #| fig-width: 12.5
 #| fig-height: 7.5
 #| fig-dpi: 300
@@ -582,5 +582,60 @@ Even I have to admit I was impressed with myself this time. That worked way bett
 Code for this system is included in the `icescape-3d.R` script.
 
 :::
+
+
+## Materials
+
+Code for each of the source files referred to in this section of the workshop is included here. Click on the callout box below to see the code for the file you want to look at. 
+
+```{r}
+#| echo: false
+#| results: asis
+#| code-fold: true
+
+# files <- here::here("posts", "2024-12-18_art-from-code-1", "materials") |>
+#   fs::dir_ls() |>
+#   fs::path_file()
+
+files <- sort(c(
+  "circle-scape.R",
+  "shaded-icescape.R",
+  "shaded-ridge-art.R",
+  "icescape-3d.R"
+))
+
+write_file <- function(filename) {
+  dir <- here::here("posts", "2024-12-18_art-from-code-1", "materials")
+  txt <- c(
+      paste0(
+        "::: {.callout-note collapse=\"true\" title=\"", 
+        filename,
+        "\" icon=false appearance=\"minimal\"}"
+      ),
+      "",
+      "```{r}",
+      "#| eval: false",
+      "#| echo: true",
+      "#| code-fold: true",
+      #paste("#| filename: ", filename),
+      brio::read_lines(fs::path(dir, filename)),
+      "```",
+      "",
+      ":::",
+      ""
+      
+    )
+  cat(knitr::knit_child(
+    text = txt,
+    options = list(echo = TRUE, code.fold = TRUE),
+    quiet = TRUE
+  ))
+}
+
+purrr::walk(
+  files,
+  write_file
+)
+```
 
 

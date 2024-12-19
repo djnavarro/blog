@@ -39,7 +39,7 @@ When I make art, my daughter Fiona is frequent collaborator and art critic. She 
 Anyway, this is "Lily Pad":
 
 
-```{r lily-pad, dev.args=list(bg="#222222")}
+```{r lily-pad, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300

@@ -74,7 +74,7 @@ sample_cross_matrix()
 
 Again, this isn't the most complicated example, but it's an illustration of the idea that we can write functions to sample random spatial patterns:
 
-```{r random-crosses, dev.args=list(bg="#222222")}
+```{r random-crosses, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -178,7 +178,7 @@ Not bad. A little blurry looking, but it's a nice place to start!
 ::: {.callout-important icon=false #exercise-first-ambient}
 ## Exercise
 
-Try it yourself! In the materials folder there is a file called `first-ambient-art.R` that reproduces the code above. Try playing around with it to see what kind of output you can create by changing the values fed to `gen_perlin()`, or by trying other generator functions!
+Try it yourself! In the [materials](#materials) there is a file called `first-ambient-art.R` that reproduces the code above. Try playing around with it to see what kind of output you can create by changing the values fed to `gen_perlin()`, or by trying other generator functions!
 
 :::
 
@@ -308,7 +308,7 @@ make_noise_art(generator = gen_waves)
 ::: {.callout-important icon=false #exercise-first-ambient}
 ## Exercises
 
-1. In the materials folder there is a file called `make-noise-art.R` that includes the `make_noise_art()` function. Unlike the code I've shown here, the version in the script writes the output to a file (located at `output/noise-art.png`). Try playing around with the inputs to `make_noise_art()` to see what outputs you can create.
+1. In the [materials](#materials) there is a file called `make-noise-art.R` that includes the `make_noise_art()` function. Unlike the code I've shown here, the version in the script writes the output to a file (located at `output/noise-art.png`). Try playing around with the inputs to `make_noise_art()` to see what outputs you can create.
 
 2. At the moment, the script is set up so that the output is always written to the same file, `output/noise-art.png`. When you create your own generative art systems you will want to ensure that each unique output is written to a file with a unique filename, and that this filename should (ideally!) allow you to work out what inputs were used to create the piece. How would you write code to do this?
 
@@ -426,7 +426,7 @@ blank_canvas |>
 ::: {.callout-important icon=false #exercise-dplyr-ambient}
 ## Exercise
 
-Try it yourself! In the materials folder there is a script called `dplyr-ambient.R` that defines `blank_canvas` and `plot_painted_canvas()` for you. At the bottom of the file there is space for you to add to the blank canvas. Try using dplyr and ambient together to create a spatial noise pattern of your own.
+Try it yourself! In the [materials](#materials) there is a script called `dplyr-ambient.R` that defines `blank_canvas` and `plot_painted_canvas()` for you. At the bottom of the file there is space for you to add to the blank canvas. Try using dplyr and ambient together to create a spatial noise pattern of your own.
 
 :::
 
@@ -758,7 +758,7 @@ fractal_art(billow, gen_gate, palette = pal, seed = 9, octaves = 20)
 ::: {.callout-important icon=false #exercise-fractal-art}
 ## Exercises
 
-The `fractal_art.R` script in the materials folder contains all the setup you need to play around with the `fractal_art()` function. Try using it to explore the possibilities! There are a lot of possibilities in fractals. Here are a few ideas to get you started:
+The `fractal_art.R` script in the [materials](#materials) contains all the setup you need to play around with the `fractal_art()` function. Try using it to explore the possibilities! There are a lot of possibilities in fractals. Here are a few ideas to get you started:
 
 1. The easiest way to play around with fractals is to modify the basic arguments. Try changing the `generator`, `fractal`, `freq_init` (i.e., frequency value for the first octave), `octaves`, `seed`, and `palette` to make a piece you really like. 
 
@@ -783,7 +783,7 @@ Exciting stuff. But what does it *mean*? Well, let's suppose I have a vector fie
 
 Okay, let's take a step back. Suppose I have a very small grid of points:
 
-```{r smol-grid, dev.args=list(bg="#222222")}
+```{r smol-grid, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -797,7 +797,7 @@ ggplot(smol_grid) +
 
 Now let's compute the value of the simplex noise pattern at each of these points using `gen_simplex()`, and represent that as the size of the plot marker (because I can't resist the urge to make something pretty), or more conventionally as a contour plot illustrating the "height" of the pattern at each point:
 
-```{r smol-simplex, dev.args=list(bg="#222222")}
+```{r smol-simplex, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -822,7 +822,7 @@ smol_simplex |>
 
 Now imagine placing a ball at a point on this surface. Unless it's at a completely flat spot, it will start rolling in a particular direction and at a particular speed. We can work out where it will start rolling by computing the slope of surface at each point. To do this, we'll use a finite differencing approximation to calculate the partial derivatives. Or, to put it in less fancy terms, we'll add a small diffrenece `eps` to the x-coordinate and compute the value of the simplex noise at the modified values. That gives us the slope in the x-direction. We do the same thing for the y-direction. Putting these two vectors together gives us the local slope. 
 
-```{r smol-diff, dev.args=list(bg="#222222")}
+```{r smol-diff, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -842,7 +842,7 @@ smol_curl <- smol_grid |> mutate(
 
 If I wanted to plot how fast the simplex noise field was changing at each point on this grid, I'd just plot the `x_slope` and `y_slope` values. That would give me something like this:
 
-```{r smol-slope, dev.args=list(bg="#222222")}
+```{r smol-slope, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -872,7 +872,7 @@ Anyway.
 
 Now we have the curl of our simplex noise and we know vaguely what it means. More importantly, we can draw a pretty picture of the curl field:
 
-```{r smol-curl, dev.args=list(bg="#222222")}
+```{r smol-curl, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -894,7 +894,7 @@ ggplot(smol_curl) +
 
 As it turns out I actually didn't need to bother with computing this manually, because `ambient` supplies a `curl_noise()` function that does the exact same computations for us. I pass it the `x` and `y` coordinates from my `smol_grid`, specify that the `generator` function is `gen_simplex()`, and pass the parameters of the noise function (e.g., its `seed` and `frequency`) as additional arguments:
 
-```{r smol-curl2-make, dev.args=list(bg="#222222")}
+```{r smol-curl2-make, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -912,7 +912,7 @@ as_tibble(curl)
 
 This `curl` data frame contains `x` and `y` columns that specify the curl values at each point in the input. So now I can plot these curl values in the same "map of arrows" style, and unsurprisingly I obtain the same result as last time: 
 
-```{r smol-curl2, dev.args=list(bg="#222222")}
+```{r smol-curl2, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -962,7 +962,7 @@ time_1
 
 Now we can use our `update_curl()` function to compute a new set of `x` and `y` values. We can do this multiple times if we like:
 
-```{r evolve-curl, dev.args=list(bg="#222222")}
+```{r evolve-curl, dev.args=list(bg="#ffffff")}
 time_2 <- time_1 |>
   update_curl(
     generator = gen_simplex,
@@ -988,7 +988,7 @@ From a physics perspective I've done something quite peculiar in this code. I've
 
 Which is fine. From an artistic point of view we care mostly about the fact that we can use this tool to make pretty things. So let's visualise these "curl updates":
 
-```{r simple-curl-noise, dev.args=list(bg="#222222")}
+```{r simple-curl-noise, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -1058,7 +1058,7 @@ curl_art <- function(...) {
 
 A grid of small fractal walks:
 
-```{r curl-art-examples, dev.args=list(bg="#222222")}
+```{r curl-art-examples, dev.args=list(bg="#ffffff")}
 #| fig-width: 10
 #| fig-height: 10
 #| fig-dpi: 300
@@ -1073,7 +1073,7 @@ smol_grid |>
 
 An example where the initial points all lie on a circle:
 
-```{r curl-art-octaves, dev.args=list(bg="#222222")}
+```{r curl-art-octaves, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -1112,7 +1112,7 @@ curl_circle(octaves = 8)
 A related example using polygons, heavily influenced by Thomas Lin Pedersen's "genesis" system:
 
 
-```{r curl-art-examples-2, dev.args=list(bg="#222222")}
+```{r curl-art-examples-2, dev.args=list(bg="#ffffff")}
 #| fig-width: 10
 #| fig-height: 10
 #| fig-dpi: 300
@@ -1161,4 +1161,61 @@ The `curl-art-1.R` and `curl-art-2.R` scripts contain code to generate the "smal
 3. Explore what you can do with the "genesis style". It's a powerful technique that can do a lot more than I've done in this code. By now you should have a good sense of what dials you can turn: the fractal, the generator, the parameters, the palette, etc. You can use dplyr to modify the data if you want to. Try to make something you really like!
 
 :::
+
+
+## Materials
+
+Code for each of the source files referred to in this section of the workshop is included here. Click on the callout box below to see the code for the file you want to look at. 
+
+```{r}
+#| echo: false
+#| results: asis
+#| code-fold: true
+
+# files <- here::here("posts", "2024-12-18_art-from-code-1", "materials") |>
+#   fs::dir_ls() |>
+#   fs::path_file()
+
+files <- sort(c(
+  "first-ambient-art.R",
+  "make-noise-art.R",
+  "fractal-art.R",
+  "dplyr-ambient.R",
+  "curl-art-1.R",
+  "curl-art-2.R"
+))
+
+write_file <- function(filename) {
+  dir <- here::here("posts", "2024-12-18_art-from-code-1", "materials")
+  txt <- c(
+      paste0(
+        "::: {.callout-note collapse=\"true\" title=\"", 
+        filename,
+        "\" icon=false appearance=\"minimal\"}"
+      ),
+      "",
+      "```{r}",
+      "#| eval: false",
+      "#| echo: true",
+      "#| code-fold: true",
+      #paste("#| filename: ", filename),
+      brio::read_lines(fs::path(dir, filename)),
+      "```",
+      "",
+      ":::",
+      ""
+      
+    )
+  cat(knitr::knit_child(
+    text = txt,
+    options = list(echo = TRUE, code.fold = TRUE),
+    quiet = TRUE
+  ))
+}
+
+purrr::walk(
+  files,
+  write_file
+)
+```
 

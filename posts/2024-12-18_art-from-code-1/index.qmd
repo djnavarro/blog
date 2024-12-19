@@ -21,7 +21,9 @@ set.seed(1)
 
 <!--------------- post begins here ----------------->
 
-(Adapted from my [Art From Code](https://art-from-code.netlify.app/day-1/session-1/) workshop)
+A couple of years ago I gave an invited workshop called [art from code](https://art-from-code.netlify.app) at the 2022 rstudio::conf (now posit::conf) conference. As part of the workshop I wrote a lengthy series of notes on how to make generative art using R, all of which were released under a CC-BY licence. For a while now I'd been thinking I should do something with these notes. I considered writing a book, but in all honesty I don't have the spare capacity for a side-project of that scale these days. I can barely keep up with the workload at my day job as it is. So instead, I've decided that I'd port them over to this site as a series of blog posts, updating a few bits and pieces as I go. This is the first post in that series.
+
+## Introduction
 
 Once upon a time I was a professor. 
 
@@ -39,7 +41,7 @@ We are writing code that makes unpredictable paintings.
 
 ## Art is theft
 
-Okay that's quite enough preamble. Let's stop talking and start making some art! Following Picasso's dictum that "art is theft" I want to begin with an act of wholesale thievery. I am going to co-opt tools that were created for serious data science purposes and repurpose them for art. If you're in this room with me then you already know these tools by name: ggplot2 is an R package designed for data visualisation; dplyr is designed for data manipulation; tibble is designed for data representation. None of these packages were created for artists. They're practical tools designed for statisticians, data scientists, analysts, and other knowledge workers. 
+Okay that's quite enough preamble. Let's stop talking and start making some art! Following the oft-repeated dictum that "art is theft" I want to begin with an act of wholesale thievery. I am going to co-opt tools that were created for serious data science purposes and repurpose them for art. If you're in this room with me then you already know these tools by name: ggplot2 is an R package designed for data visualisation; dplyr is designed for data manipulation; tibble is designed for data representation. None of these packages were created for artists. They're practical tools designed for statisticians, data scientists, analysts, and other knowledge workers. 
 
 Fuck it. Let's steal them. Sorry Hadley.
 
@@ -58,7 +60,7 @@ We need not concern ourselves with why `displ` refers to engine displacement nor
 
 Here's what I mean. As a data scientist, I might draw a plot like this:
 
-```{r familiar-ggplot, dev.args=list(bg="#222222")}
+```{r familiar-ggplot, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -73,7 +75,7 @@ On the x-axis I've plotted one column in the table, on the y-axis I've plotted a
 As an artist, I cannot be bothered with such dull practicalities. Let's get rid of all of them, and -- violating all sorts of data visualisation best practices -- I'm going to vary the size of the dots in a way that doesn't help anyone make sense of the data: 
 
 
-```{r tweak-ggplot, dev.args=list(bg="#222222")}
+```{r tweak-ggplot, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -82,14 +84,14 @@ mpg |>
   ggplot(aes(displ, hwy, colour = drv, size = cyl)) + 
   geom_point(show.legend = FALSE) + 
   theme_void() + 
-  scale_color_brewer()
+  scale_color_brewer(palette = "PuOr")
 ```
 
 Once we strip away the practical purpose of the data visualisation, we're left with something that isn't quite so easy to interpret, but is... well, it's kind of pretty, right? There's an overall structure to the scatterplot. The colours, shapes, and positions of the data don't necessarily tell an easily-understood story about the real world anymore but they're quite pleasing to look at. 
 
 Viewing ggplot2 through this lens opens up a new world of possibilities. Inspired by Leland Wilkinson's book on the subject, Hadley Wickham wrote the package to provide a *grammar* of graphics: it supplies a collection of transformation and composition rules that we can use to construct mappings between data (that represent a thing in the world) and images (that our visual systems can quickly interpret). Those rules are not arbitrary: they're created to make our lives as data analysts easier. But we can repurpose them. The grammatical rules of human language did not evolve to serve the needs of poets, but the poets use them anyway. So too we as visual artists can (and will) reuse the grammar of graphics for artistic purposes. A few minor tweaks gives us this:
 
-```{r tweak-ggplot-more, dev.args=list(bg="#222222")}
+```{r tweak-ggplot-more, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -100,7 +102,7 @@ mpg |>
   geom_point(show.legend = FALSE, size = 1, colour = "#222222") + 
   coord_polar() + 
   theme_void() + 
-  scale_color_brewer()
+  scale_color_brewer(palette = "PuOr")
 ```
 
 And let's be honest. At this point the image has very little to do with cars. Sure, I'm using the `mpg` data to drive the process, but as far as I'm concerned it's really just a source of raw numbers. As a generative artist these numbers are my raw materials, but I'm not too fussed about exactly how I came into possession of these numbers.
@@ -122,7 +124,7 @@ dat <- tibble(
   x1 = x0 + runif(n, min = -.2, max = .2),
   y1 = y0 + runif(n, min = -.2, max = .2),
   shade = runif(n), 
-  size = runif(n)
+  width = runif(n)
 )
 dat
 ```
@@ -132,7 +134,7 @@ Yup. Those look like a bunch of numbers. They do not mean anything to me. They'r
 The key point is this: the input is garbage. Garbage in...
 
 
-```{r coord-polar, dev.args=list(bg="#222222")}
+```{r coord-polar, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -145,14 +147,14 @@ dat |>
     xend = x1,
     yend = y1,
     colour = shade,
-    size = size
+    linewidth = width
   )) +
   geom_segment(show.legend = FALSE) +
   coord_polar() +
   scale_y_continuous(expand = c(0, 0)) +
   scale_x_continuous(expand = c(0, 0)) + 
   scale_color_viridis_c() + 
-  scale_size(range = c(0, 10)) + 
+  scale_linewidth(range = c(0, 10)) + 
   theme_void()
 ```
 
@@ -172,7 +174,7 @@ Let's start with a core principle: code reuse. The entire point of generative ar
 
 So what counts as an artistically-reusable concept? Well, at a minimum, the definition of an artistic *system* is a reusable concept. Suppose I want to create many art pieces that are "in the same style" as the piece I created above. To do that, I could wrap my code in a function that I'll call `polar_art()`:
 
-```{r define-art-functions, dev.args=list(bg="#222222")}
+```{r define-art-functions, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -192,7 +194,7 @@ polar_art <- function(seed, n, palette) {
     x1 = x0 + runif(n, min = -.2, max = .2),
     y1 = y0 + runif(n, min = -.2, max = .2),
     shade = runif(n), 
-    size = runif(n)
+    width = runif(n)
   )
   
   # plot segments in various colours, using 
@@ -204,21 +206,21 @@ polar_art <- function(seed, n, palette) {
       xend = x1,
       yend = y1,
       colour = shade,
-      size = size
+      linewidth = width
     )) +
     geom_segment(show.legend = FALSE) +
     coord_polar() +
     scale_y_continuous(expand = c(0, 0)) +
     scale_x_continuous(expand = c(0, 0)) + 
     scale_colour_gradientn(colours = palette) + 
-    scale_size(range = c(0, 10)) + 
+    scale_linewidth(range = c(0, 10)) + 
     theme_void()
 }
 ```
 
 Because I've written this thing down as a function, I'm now free to reuse it to create multiple pieces. Varying the `seed` argument creates new pieces that don't differ in any systematic way from one another, whereas varying `n` and `palette` changes the number of segments plotted and the colour scheme used.
 
-```{r art-functions, dev.args=list(bg="#222222")}
+```{r art-functions, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -234,7 +236,7 @@ polar_art(seed = 2, n = 50, palette = c("red", "black", "white"))
 ::: {.callout-important icon=false #exercise-polar-art}
 ## Exercises
 
-1. In the materials folder there is a file called `polar_art.R` that contains a copy of the `polar_art()` function. Open it and use the `polar_art()` function to generate your own pieces. Try changing the `seed`, `n`, and the `palette` to create a variety of different pieces.
+1. In the [materials](#materials) there is a file called `polar_art.R` that contains a copy of the `polar_art()` function. Open it and use the `polar_art()` function to generate your own pieces. Try changing the `seed`, `n`, and the `palette` to create a variety of different pieces.
 
 2. Create a new file called `polar_art_02.R` that contains the `polar_art()` function. In the new file, try modifying the `polar_art()` function itself to see if you can create your own new system.
 
@@ -257,7 +259,7 @@ pal <- c("#cdb4db", "#ffc8dd", "#ffafcc", "#bde0fe", "#a2d2ff")
 
 The `show_col()` function from the scales package is a nice way to quickly preview the colours:
 
-```{r show-col, dev.args=list(bg="#222222")}
+```{r show-col, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -267,7 +269,7 @@ show_col(pal)
 
 Though there are only five colours in this palette, the `polar_art()` function uses `scales_colour_gradientn()` to construct a continuous colour scale from them by linearly interpolating between them. You can do the same thing manually using `colorRampPalette()`. In the code below I've created a new function `palette_fn()` that will generate a vector of colours that linearly interpolates between the five input colours in `pal`:
 
-```{r define-palette-function, dev.args=list(bg="#222222")}
+```{r define-palette-function, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 4
 #| fig-dpi: 300
@@ -283,7 +285,7 @@ palette_fn(100)
 
 Here's what those colours look like as a smooth palette:
 
-```{r palette-function, dev.args=list(bg="#222222")}
+```{r palette-function, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 4
 #| fig-dpi: 300
@@ -298,7 +300,7 @@ image(
 
 In this example, I took one set of colours from the web to define a palette, but there are many built-in palettes you can select from randomly as part of your generative process. For example, the ggthemes package contains a list called `canva_palettes`, which contains 150 palettes taken from [canva.com](https://www.canva.com/colors/color-palettes/). For example, here's one of those palettes
 
-```{r show-canva-palette, dev.args=list(bg="#222222")}
+```{r show-canva-palette, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 4
 #| fig-dpi: 300
@@ -309,7 +311,7 @@ show_col(canva_palettes[[101]])
 
 The fact that we have a list containing 150 different palettes, it's a simple matter to write a `sample_canva()` function that samples one of these palettes at random:
 
-```{r canva-palettes-fn, dev.args=list(bg="#222222")}
+```{r canva-palettes-fn, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -322,7 +324,7 @@ sample_canva <- function(seed = NULL) {
 
 Here's an example of me using it:
 
-```{r canva-palettes, dev.args=list(bg="#222222")}
+```{r canva-palettes, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -337,7 +339,7 @@ polar_art(seed = 2, n = 100, palette = sample_canva(seed = 4))
 
 Notice that I've set it up in a way that allows me some degree of control over which elements of the image are allowed to vary. In all three images I used the same seed when calling `polar_art()`, so the random configuration of shapes is identical in all three cases. In contrast, I gave different seeds to the `sample_canva()` function, so the images have different palettes. The reverse is also possible, producing different configurations with the same colour scheme:
 
-```{r canva-palettes-2, dev.args=list(bg="#222222")}
+```{r canva-palettes-2, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -356,7 +358,7 @@ The ability to pick and choose when the randomness gets turned on and off is qui
 ::: {.callout-important icon=false #exercise-palettes}
 ## Exercises
 
-1. In the materials folder there is a file called `palette-generators.R` that contains a copy of the `sample_canva()` function. Take a look and try calling the function a few times to see what kind of output it produces. You may find it handy to use `show_col()` to visualise the results.
+1. In the [materials](#materials) there is a file called `palette-generators.R` that contains a copy of the `sample_canva()` function. Take a look and try calling the function a few times to see what kind of output it produces. You may find it handy to use `show_col()` to visualise the results.
 
 2. Try writing your own random palette generator. A simple (and occasionally useful) approach is to construct a palette consisting of distinct but otherwise randomly selected named colours in R. There is a set of 502 colour names generated by calling `colours()` with `distinct = TRUE)`. Write a function called `sample_named_colours()` that takes `n` as an input argument, and then returns a sample of `n` of these colour. Try using it with the `polar_art()` function.
 
@@ -371,7 +373,7 @@ The `polar_art()` function I wrote earlier is nice, but it's not very flexible. 
 
 Let's start out by writing a "random tibble generator" function, `sample_data()`. This function will generate tibbles full of random numbers, but that's all:
 
-```{r compositional-art, dev.args=list(bg="#222222")}
+```{r compositional-art, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -392,7 +394,7 @@ sample_data <- function(seed = NULL, n = 100){
 
 Next, let's create a `styled_plot()` function that takes a palette and (optionally) a data set as inputs, and sets up the mappings and the stylistic aspects to the plot. This function does a lot of the work in defining what kind of artwork is possible using this system, even though it doesn't actually draw anything. For example, it specifies `coord_polar()` as the coordinate system, so any points or lines that get created will be shown in polar coordinates. It uses `guide_none()` to suppress legends, and `theme_void()` to suppress axes, axis titles and so on. 
 
-```{r, dev.args=list(bg="#222222")}
+```{r, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -433,7 +435,7 @@ polar_styled_plot <- function(data = NULL, palette) {
 
 This structure gives a clean delineation of responsibility among the different functions. The `sample_canva()` function does the work of generating random palettes, `sample_data()` does the job of creating random data to drive the plot, `polar_styled_plot()` takes care of all the ggplot set up, and then you can pick and choose which geom you want to add. So we can write code like this that differs only in the choice of geom:
 
-```{r simple-composition, dev.args=list(bg="#222222")}
+```{r simple-composition, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -452,7 +454,7 @@ polar_styled_plot(data = dat, palette = pal) + geom_point()
 
 Because the output of `polar_styled_plot()` is a ggplot that we can add layers to, and because each layer in a ggplot can supply its own data, we now have the ability to reuse these components in different ways. For that it's helpful to load dplyr. Here's an example where we generate two random data sets and feed those into four separate geoms:
 
-```{r compositionality, dev.args=list(bg="#222222"), message=FALSE}
+```{r compositionality, dev.args=list(bg="#ffffff"), message=FALSE}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -486,7 +488,7 @@ polar_styled_plot(palette = sample_canva(seed = 7)) +
 
 Another example that three copies of the same random data set to produce a variation that has additional symmetries:
 
-```{r compositionality-2, dev.args=list(bg="#222222")}
+```{r compositionality-2, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -503,7 +505,7 @@ polar_styled_plot(palette = sample_canva(seed = 456)) +
 
 Finally, here's a version that uses the `linetype` argument to `geom_segment()` to create a "choppier" version of these pieces:
 
-```{r compositionality-3, dev.args=list(bg="#222222")}
+```{r compositionality-3, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -520,10 +522,65 @@ polar_styled_plot(palette = sample_canva(seed = 2)) +
 ::: {.callout-important icon=false #exercise-grammars}
 ## Exercises
 
-1. In the materials folder there is a file called `polar-styled-plots.R` that contains a copy of the `sample_canva()`, `sample_data()` and `polar_styled_plot()` functions. Without modifying any of these three functions, explore how much flexibility you have to make different pieces in which (1) data are generated with `sample_data()`, (2) the plot is initialised by calling `polar_styled_plot()`, and (3) the piece is created by adding ggplot2 geoms. Data manipulation with dplyr is allowed! 
+1. In the [materials](#materials) there is a file called `polar-styled-plots.R` that contains a copy of the `sample_canva()`, `sample_data()` and `polar_styled_plot()` functions. Without modifying any of these three functions, explore how much flexibility you have to make different pieces in which (1) data are generated with `sample_data()`, (2) the plot is initialised by calling `polar_styled_plot()`, and (3) the piece is created by adding ggplot2 geoms. Data manipulation with dplyr is allowed! 
 
 2. In the examples above and the previous exercise you saw that the `polar_styled_plot()` function plays the role of defining an overarching "style" for possible art pieces, but it doesn't completely constrain artistic freedom. Your task in this exercise is to try to write a `my_styled_plot()` that does something similar... but creates a different style that you can explore
 
 :::
 
+
+
+
+## Materials
+
+Code for each of the source files referred to in this section of the workshop is included here. Click on the callout box below to see the code for the file you want to look at. 
+
+```{r}
+#| echo: false
+#| results: asis
+#| code-fold: true
+
+# files <- here::here("posts", "2024-12-18_art-from-code-1", "materials") |>
+#   fs::dir_ls() |>
+#   fs::path_file()
+
+files <- sort(c(
+  "polar-art.R",
+  "palette-generators.R",
+  "polar-styled-plots.R"
+))
+
+write_file <- function(filename) {
+  dir <- here::here("posts", "2024-12-18_art-from-code-1", "materials")
+  txt <- c(
+      paste0(
+        "::: {.callout-note collapse=\"true\" title=\"", 
+        filename,
+        "\" icon=false appearance=\"minimal\"}"
+      ),
+      "",
+      "```{r}",
+      "#| eval: false",
+      "#| echo: true",
+      "#| code-fold: true",
+      #paste("#| filename: ", filename),
+      brio::read_lines(fs::path(dir, filename)),
+      "```",
+      "",
+      ":::",
+      ""
+      
+    )
+  cat(knitr::knit_child(
+    text = txt,
+    options = list(echo = TRUE, code.fold = TRUE),
+    quiet = TRUE
+  ))
+}
+
+purrr::walk(
+  files,
+  write_file
+)
+```
 

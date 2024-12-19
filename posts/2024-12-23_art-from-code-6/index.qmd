@@ -202,7 +202,7 @@ As you can see, in this version of the system I've arranged it so that the `valu
 
 Finally we get to the part where we make art! The `develop()` function below uses `geom_rect()` to draw the rectangles, mapping the `value` to the fill aesthetic:
 
-```{r rectangle-subdivision, dev.args=list(bg="#222222")}
+```{r rectangle-subdivision, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -242,7 +242,7 @@ The uneven spacing here is not accidental. Because the rectangles are plotted wi
 
 Here are a few more outputs from the system:
 
-```{r subdivision-extras, dev.args=list(bg="#222222")}
+```{r subdivision-extras, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -317,7 +317,7 @@ draw_mosaic <- function(dat, palette) {
 
 When combined with the original `subdivision()` function I can now write a generative art system called `mosaica()` that uses `subdivision()` to partition a grid into rectangular units, then applies `fill_rectangle()` to separate each of these rectangles into unit squares and fill each of these squares with a colour based on a spatial noise pattern generated using ambient. Then it draws a picture:
 
-```{r mosaica, dev.args=list(bg="#222222")}
+```{r mosaica, dev.args=list(bg="#ffffff")}
 #| fig-width: 20
 #| fig-height: 10
 #| fig-dpi: 300
@@ -341,7 +341,7 @@ mosaica(ncol = 200, nrow = 100, nsplits = 200, seed = 1302)
 
 It makes me happy :)
 
-```{r mosaica-extras, dev.args=list(bg="#222222")}
+```{r mosaica-extras, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -355,7 +355,7 @@ mosaica(seed = 1969)
 ```
 
 
-```{r even-more-mosaica, dev.args=list(bg="#222222")}
+```{r even-more-mosaica, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 10
 #| fig-dpi: 300
@@ -387,7 +387,7 @@ Extremely conveniently for our purposes, the ggforce package provides two handy 
 
 In the beginning there were points...
 
-```{r voronoi-points, dev.args=list(bg="#222222")}
+```{r voronoi-points, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -409,7 +409,7 @@ pic + geom_point(colour = "white", size = 3)
 
 The points themselves are not very artistically impressive, but we can make something more interesting if we add the Voronoi tesselation. The minimal way to do this is with `geom_voronoi_segment()`
 
-```{r voronoi-segments, dev.args=list(bg="#222222")}
+```{r voronoi-segments, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -421,7 +421,7 @@ pic +
 
 We can already see the beginnings of something pleasing. I mean, if I'm being honest this is already quite pretty in a minimalist way but -- as I keep saying -- I have an urge to tinker and see what elaborations we can add. First, let's switch from `geom_voronoi_segment()` to `geom_voronoi_tile()`:  
 
-```{r voronoi-tiles, dev.args=list(bg="#222222")}
+```{r voronoi-tiles, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -433,7 +433,7 @@ pic +
 
 Setting the `max.radius` argument prevents any tile extending beyond a fixed distance from the point generating the tile, giving the image as a whole a "bubbly" look:
 
-```{r voronoi-tiles-max-size, dev.args=list(bg="#222222")}
+```{r voronoi-tiles-max-size, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -445,7 +445,7 @@ pic +
 
 Hm. Those sharp corners between tiles aren't the prettiest thing I've ever seen. Let's round those corners a little bit, shall we? The `radius` argument lets us do that:
 
-```{r voronoi-tiles-round-corners, dev.args=list(bg="#222222")}
+```{r voronoi-tiles-round-corners, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -461,7 +461,7 @@ pic +
 
 Next, let's shrink all the tiles a tiny bit to create small gaps between adjacent tiles:
 
-```{r voronoi-tiles-shrink, dev.args=list(bg="#222222")}
+```{r voronoi-tiles-shrink, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -478,7 +478,7 @@ pic +
 
 Let's remove the points themselves, leaving only the rounded tiles:
 
-```{r voronoi-tiles-only, dev.args=list(bg="#222222")}
+```{r voronoi-tiles-only, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -494,7 +494,7 @@ pic +
 
 Finally, we'll create another tiling and use it as a background texture:
 
-```{r voronoi-tiles-double, dev.args=list(bg="#222222")}
+```{r voronoi-tiles-double, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -574,7 +574,7 @@ unboxy <- function(iterations, layers) {
 
 I'm not going to explain the inner workings of this function here (because they're already discussed elsewhere), but in case you need a refresher or haven't read the relevant page, here's a look at the kinds of data this function produces, and a scatterplot showing the very non-random spatial patterns it generates:
 
-```{r scatterplot-boxy, dev.args=list(bg="#222222")}
+```{r scatterplot-boxy, dev.args=list(bg="#ffffff")}
 #| fig-width: 4
 #| fig-height: 4
 #| fig-dpi: 300
@@ -592,7 +592,7 @@ ggplot(dat, aes(x, y)) +
 
 Now let's plot the Voronoi tesselation corresponding to these points, once again relying on our old friend `sample_canva2()` to generate the palette:
 
-```{r voronoi-boxy, dev.args=list(bg="#222222")}
+```{r voronoi-boxy, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -615,7 +615,7 @@ pic +
 
 Rounding the corners and expanding the tiles gives the piece a different feel...
 
-```{r voronoi-boxy-2, dev.args=list(bg="#222222")}
+```{r voronoi-boxy-2, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -633,7 +633,7 @@ pic +
 
 So does this...
 
-```{r voronoi-boxy-3, dev.args=list(bg="#222222")}
+```{r voronoi-boxy-3, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -676,7 +676,7 @@ The voronoise package only does one thing: it supplies `geom_voronoise()`, a geo
 
 Here's a simple example where the `perturb` argument is used to shift all the tiles to the right by a random offset:
 
-```{r geom-voronoise, dev.args=list(bg="#222222")}
+```{r geom-voronoise, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -720,7 +720,7 @@ sift <- function(data) {
 ```
 
 
-```{r voronoi-baroque, dev.args=list(bg="#222222")}
+```{r voronoi-baroque, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -759,7 +759,7 @@ voronoi_baroque <- function(
 ```
 
 
-```{r voronoi-baroque-sift, dev.args=list(bg="#222222")}
+```{r voronoi-baroque-sift, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -785,7 +785,7 @@ shake <- function(data) {
 }
 ```
 
-```{r voronoi-baroque-shake, dev.args=list(bg="#222222")}
+```{r voronoi-baroque-shake, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -833,7 +833,7 @@ mosaic
 
 If you're not familiar, the key things to note are that the `geometry` column stores the pattern as a polygon (or collection of polygons), and that `geom_sf()` understands this geometry column. So you can use code like this to plot your truchet tiling:
 
-```{r first-truchet, dev.args=list(bg="#222222")}
+```{r first-truchet, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
 #| fig-height: 6
 #| fig-dpi: 300
@@ -850,7 +850,7 @@ In this example you'll notice that I don't actually specify a mapping for `geome
 
 That's about all I wanted to mention about the truchet package. It makes pretty things and you can check out the package website for more information :)
 
-```{r second-truchet, dev.args=list(bg="#222222")}
+```{r second-truchet, dev.args=list(bg="#ffffff")}
 #| fig-width: 9
 #| fig-height: 6
 #| fig-dpi: 300
@@ -880,3 +880,63 @@ st_truchet_ss(
 Example code for truchet tiles is included in the `truchet-example.R` script.
 
 :::
+
+
+
+
+## Materials
+
+Code for each of the source files referred to in this section of the workshop is included here. Click on the callout box below to see the code for the file you want to look at. 
+
+```{r}
+#| echo: false
+#| results: asis
+#| code-fold: true
+
+# files <- here::here("posts", "2024-12-18_art-from-code-1", "materials") |>
+#   fs::dir_ls() |>
+#   fs::path_file()
+
+files <- sort(c(
+  "subdivision.R",
+  "mosaica.R",
+  "voronoi-tiles.R",
+  "voronoi-unbox.R",
+  "voronoi-baroque.R",
+  "truchet-example.R"
+))
+
+write_file <- function(filename) {
+  dir <- here::here("posts", "2024-12-18_art-from-code-1", "materials")
+  txt <- c(
+      paste0(
+        "::: {.callout-note collapse=\"true\" title=\"", 
+        filename,
+        "\" icon=false appearance=\"minimal\"}"
+      ),
+      "",
+      "```{r}",
+      "#| eval: false",
+      "#| echo: true",
+      "#| code-fold: true",
+      #paste("#| filename: ", filename),
+      brio::read_lines(fs::path(dir, filename)),
+      "```",
+      "",
+      ":::",
+      ""
+      
+    )
+  cat(knitr::knit_child(
+    text = txt,
+    options = list(echo = TRUE, code.fold = TRUE),
+    quiet = TRUE
+  ))
+}
+
+purrr::walk(
+  files,
+  write_file
+)
+```
+
