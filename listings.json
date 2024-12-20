@@ -2,6 +2,13 @@
   {
     "listing": "/index.html",
     "items": [
+      "/posts/2024-12-24_art-from-code-7/index.html",
+      "/posts/2024-12-23_art-from-code-6/index.html",
+      "/posts/2024-12-22_art-from-code-5/index.html",
+      "/posts/2024-12-21_art-from-code-4/index.html",
+      "/posts/2024-12-20_art-from-code-3/index.html",
+      "/posts/2024-12-19_art-from-code-2/index.html",
+      "/posts/2024-12-18_art-from-code-1/index.html",
       "/posts/2024-12-16_regex-backreferences/index.html",
       "/posts/2024-11-24_bezier-curves/index.html",
       "/posts/2024-11-11_emax-parameters/index.html",
