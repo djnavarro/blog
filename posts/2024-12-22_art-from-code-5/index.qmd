@@ -21,7 +21,16 @@ set.seed(1)
 
 <!--------------- post begins here ----------------->
 
-(Adapted from my [Art From Code](https://art-from-code.netlify.app/day-2/session-1/) workshop)
+*A couple of years ago I gave an invited workshop called [art from code](https://art-from-code.netlify.app) at the 2022 rstudio::conf (now posit::conf) conference. As part of the workshop I wrote a lengthy series of notes on how to make generative art using R, all of which were released under a CC-BY licence. For a while now I'd been thinking I should do something with these notes. I considered writing a book, but in all honesty I don't have the spare capacity for a side-project of that scale these days. I can barely keep up with the workload at my day job as it is. So instead, I've decided that I'd port them over to this site as a series of blog posts. In doing so I've made a deliberate decision not to modify the original content too much (nobody loves it when an artist tries to "improve" the original, after all). All I've done is update the code to accommodate package changes since 2022, and some minor edits so that the images are legible when embedded in this blog (which is light-themed, and the original was dark-theme). Other than that, I've left it alone. This is the fifth post in that series.*
+
+- [Prelude](/posts/2024-12-18_art-from-code-1/)
+- [Spatial tricks with ambient](/posts/2024-12-19_art-from-code-2/)
+- [Polygon tricks](/posts/2024-12-20_art-from-code-3/)
+- [Shading tricks](/posts/2024-12-21_art-from-code-4/)
+- [Iterated function systems](/posts/2024-12-22_art-from-code-5/)
+- [Tiles and tessellations](/posts/2024-12-23_art-from-code-6/)
+- [Pixel filters](/posts/2024-12-24_art-from-code-7/)
+- [Epilogue](/posts/2024-12-25_art-from-code-8/)
 
 
 ```{r, message=FALSE}
@@ -66,7 +75,7 @@ I am entirely certain that you do not care.
 
 As impressive as I find all this notation, I don't find it helps me understand what an iterated function system actually *does*. What I do find helpful, however, is to play the [chaos game](https://en.wikipedia.org/wiki/Chaos_game), because that's a concrete method we can use to simulate the behaviour of an IFS, and in practice that's what our code will actually do!
 
-## Chaos game for the Barnsley fern
+## Barnsley fern chaos game
 
 When written as pseudocode, the chaos game is remarkably simple:
 
@@ -183,7 +192,7 @@ It looks nicer as a plot though :)
 #| fig-dpi: 300
 #| fig-align: center
 ggplot(fern_dat, aes(x, y)) +
-  geom_point(colour = "white", size = 1, stroke = 0) +
+  geom_point(size = 1, stroke = 0) +
   coord_equal() +
   theme_void()
 ```
@@ -199,17 +208,13 @@ ggplot(fern_dat, aes(x, y, colour = factor(transform))) +
   geom_point(size = 1, stroke = 0) +
   coord_equal() +
   theme_void() + 
-  theme(
-    legend.text = element_text(colour = "white"),
-    legend.title = element_text(colour = "white")
-  ) +
   guides(colour = guide_legend(
     title = "transformation", 
     override.aes = list(size = 5))
   )
 ```
 
-It's painfully obvious now what each of the transformation functions does! 
+It's rather more obvious now what each of the transformation functions does! 
 
 As we'll see a little later, it can be very useful to plot your outputs this way sometimes: even if you're planning to do something fancier with colour later, the ability to visualise which parts of your output are associated with a particular function is useful for diagnosing what your system is doing. My experience has been that iterated function systems are difficult to reason about just by looking at the code: the relationship between the code and the output is pretty opaque, so you have to rely on diagnostics like this when tweaking the output of your system.
 
@@ -230,7 +235,7 @@ ggplot(fern_dat, aes(x, y, colour = iteration)) +
 ::: {.callout-important icon=false #exercise-barsnley-fern}
 ## Exercise
 
-Code for this system is included in the `barnsley-fern.R` script.
+Code for this system is included in the `barnsley-fern.R` script in the [materials](#materials).
 
 :::
 
@@ -336,7 +341,6 @@ unboxer_base <- function(iterations, layers, seed = NULL) {
   points <- accumulate2(layer_ind, trans_ind, update, .init = point0)
   
   # tidy up, add columns, and return
-  points <- matrix(unlist(points), ncol = 3, byrow = TRUE)
   points <- cbind(
     points,
     c(0, layer_ind),
@@ -358,7 +362,6 @@ If we want to turn these numbers into art and attach colours to the points, we a
 
 ```{r sample-canva-2}
 sample_canva2 <- function(seed = NULL, n = 4) {
-  
   if(!is.null(seed)) set.seed(seed)
   sample(ggthemes::canva_palettes, 1)[[1]] |>
     (\(x) colorRampPalette(x)(n))()  
@@ -399,7 +402,7 @@ unbox_art <- function(data, seed = NULL, size = 1) {
 }
 ```
 
-The results can be very pretty, especially when you generate a large number of points (say, 3 million) and plot them with a very small marker size (say, .1). 
+The results can be very pretty, especially when you generate a large number of points and plot them with a very small marker size. 
 
 ```{r an-unboxing, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
@@ -407,15 +410,13 @@ The results can be very pretty, especially when you generate a large number of p
 #| fig-dpi: 300
 #| fig-align: center
 #| cache: true
-mil <- 1000000
 tic()
-unboxer_base(3 * mil, layers = 3, seed = 66) |> 
+unboxer_base(1000000, layers = 3, seed = 66) |> 
   unbox_art(seed = 66, size = .1)
 toc()
 ```
 
-The system is slow, but I'm usually willing to wait 30 seconds for something pretty. (Though in a moment I'll talk about how we can speed this up drastically) 
-
+The system is slow, but I'm usually willing to wait a bit for something pretty. (I'll talk about how we can speed this up later) 
 
 ::: {.callout-important icon=false #exercise-unboxing-base}
 ## Exercise
@@ -424,9 +425,7 @@ Code for this system is included in the `unbox-base.R` script.
 
 :::
 
-
 The outputs from this system have a fairly consistent look and feel: a pair of nested boxes, with something "bursting" from the top right corner. The fine grained details vary a lot from output to output, and there are some systematic differences as a function of the number of layers. Here's an example showing what happens when I ratchet up the number of layers from 2 to 9:
-
 
 ```{r first-unboxing-art, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
@@ -436,14 +435,32 @@ The outputs from this system have a fairly consistent look and feel: a pair of n
 #| layout-ncol: 3
 #| cache: true
 tic()
-unboxer_base(mil, layers = 2, seed = 999) |> unbox_art(seed = 2, size = .2)
-unboxer_base(mil, layers = 5, seed = 333) |> unbox_art(seed = 2, size = .2) 
-unboxer_base(mil, layers = 9, seed = 420) |> unbox_art(seed = 2, size = .2)
+unboxer_base(100000, layers = 2, seed = 999) |> unbox_art(seed = 2, size = .2)
+unboxer_base(100000, layers = 5, seed = 333) |> unbox_art(seed = 2, size = .2) 
+unboxer_base(100000, layers = 9, seed = 420) |> unbox_art(seed = 2, size = .2)
 toc() 
 ```
 
+To understand what's going on in this system, I'll go through the same exercise I did with the Barnsley fern. I'll generate the data for a piece of art by calling `unboxer_base()`, and then plot it three ways. First I'll show it as a pure black and white image to show the overall configuration of points, then I'll break it down based on the components. Because each transformation function is defined in terms the affine component and the variant component, I'll show two different versions of this. First, here's the data:
 
-To understand what's going on in this system, I'll go through the same exercise I did with the Barnsley fern. I'll generate the data for a piece of art by calling `unboxer_base()`, and then plot it three ways. First I'll show it as a pure black and white image to show the overall configuration of points, then I'll break it down based on the components. Because each transformation function is defined in terms the affine component and the variant component, I'll show two different versions of this. 
+```{r show-unboxing-components-data}
+dat <- unboxer_base(100000, layers = 2, seed = 999) |> 
+  as.data.frame() |> 
+  as_tibble()
+
+names(dat) <- c("x", "y", "c", "affine_layer", "variant_function")
+
+dat <- dat |> 
+  slice_tail(n = -1) |> # remove initialisation point
+  mutate(
+    affine_layer = factor(affine_layer),
+    variant_function = factor(variant_function)
+  ) 
+
+dat
+```
+
+Now the plots:
 
 ```{r show-unboxing-components}
 #| fig-width: 6
@@ -451,52 +468,44 @@ To understand what's going on in this system, I'll go through the same exercise 
 #| fig-dpi: 300
 #| column: screen-inset
 #| layout-ncol: 3
-#| cache: true
-
-dat <- unboxer_base(mil, layers = 2, seed = 99) |> 
-  as.data.frame() |> 
-  as_tibble()
-
-names(dat) <- c("x", "y", "c", "affine_layer", "variant_function")
-
-dat <- dat |> 
-  slice_tail(n = -1) |> 
-  mutate(
-    affine_layer = factor(affine_layer),
-    variant_function = factor(variant_function)
-  ) 
-
 ggplot(dat, aes(x, y)) +
-  geom_point(size = .4, stroke = 0, show.legend = FALSE) + 
+  geom_point(size = 1, stroke = 0, show.legend = FALSE) + 
   theme_void() + 
-  coord_equal(xlim = c(-4, 4), ylim = c(-4, 4))
+  coord_equal(xlim = c(-4, 4), ylim = c(-4, 4)) + 
+  theme(panel.background = element_rect(fill = "grey90"))
 
 ggplot(dat, aes(x, y, colour = variant_function)) +
-  geom_point(size = .4, stroke = 0) + 
+  geom_point(size = 1, stroke = 0) + 
   coord_equal(xlim = c(-4, 4), ylim = c(-4, 4)) +
   scale_colour_brewer(palette = "Set2") +
   guides(colour = guide_legend(nrow = 1, override.aes = list(size = 5))) +
   theme_void() + 
-  theme(legend.position = c(0.2, 0.1))
+  theme(
+    panel.background = element_rect(fill = "grey90"),
+    legend.position = "inside",
+    legend.position.inside = c(0.2, 0.1)
+  )
 
 ggplot(dat, aes(x, y, colour = affine_layer)) +
-  geom_point(size = .4, stroke = 0) + 
+  geom_point(size = 1, stroke = 0) + 
   coord_equal(xlim = c(-4, 4), ylim = c(-4, 4)) +
   scale_colour_brewer(palette = "Set1") +
   guides(colour = guide_legend(nrow = 1, override.aes = list(size = 5))) +
   theme_void() + 
-  theme(legend.position = c(0.2, 0.1))
+  theme(
+    panel.background = element_rect(fill = "grey90"),
+    legend.position = "inside",
+    legend.position.inside = c(0.2, 0.1)
+  )
 ```
 
 This gives you a sense of what's going on here: in the middle panel you can see that the two "sinusoidal" components have the effect of creating the boxes, because `sin(x)` is constrained to lie between -1 and 1. The snaky, wavy patterns that you see in some the outputs are also related to these components, but I haven't plotted the data in a way that makes this obvious. 
 
 In contrast, on the right you can see the effect of the affine transformations. Notice that the blue pattern kind of looks like a "squashed and rotated" version of the red pattern? That's exactly what the affine transforms do. They create these distortions. 
 
-
 ## Faster chaos with Rcpp
 
-Waiting 30 seconds for something pretty is kind of annoying, especially when you're still developing the system and you just want to tinker with the settings to see what it does. It would be nice if we could speed this up, right? The easiest way to speed things up is to run fewer iterations and use larger plot sizes. I mean, this works perfectly fine...
-
+Waiting 30 seconds (or whatever) for something pretty is kind of annoying, especially when you're still developing the system and you just want to tinker with the settings to see what it does. It would be nice if we could speed this up, right? The easiest way to speed things up is to run fewer iterations and use larger plot sizes. I mean, this works perfectly fine...
 
 ```{r coarse-unboxing-art, dev.args=list(bg="#ffffff")}
 #| fig-width: 6
@@ -506,13 +515,13 @@ Waiting 30 seconds for something pretty is kind of annoying, especially when you
 #| layout-ncol: 3
 #| cache: true
 tic()
-unboxer_base(50000, layers = 2, seed = 999) |> unbox_art(seed = 2, size = 1)
-unboxer_base(50000, layers = 5, seed = 333) |> unbox_art(seed = 2, size = 1) 
-unboxer_base(50000, layers = 9, seed = 420) |> unbox_art(seed = 2, size = 1)
+unboxer_base(10000, layers = 2, seed = 999) |> unbox_art(seed = 2, size = 1)
+unboxer_base(10000, layers = 5, seed = 333) |> unbox_art(seed = 2, size = 1) 
+unboxer_base(10000, layers = 9, seed = 420) |> unbox_art(seed = 2, size = 1)
 toc() 
 ```
 
-If you're okay with a coarser grained output (or flat out don't want to mess around with C++ code), your problems are solved! Read no further!
+If you're okay with a coarser grained output (which honestly does have a certain aesthetic appeal), or simply don't want to mess around with C++ code, your problems are solved! Read no further!
 
 If speed is a consideration -- especially if the rendering times are interfering with the creative process -- one possibility would be to write the slow parts of your code in C++, and then call it from R using the Rcpp package. To be honest, I'm not the best C++ coder myself and am only moderately comfortable with Rcpp, so I'm not going to attempt a tutorial here. Instead, what I'll do is mention that [rcpp.org](https://www.rcpp.org/) has some excellent resources, and *Advanced R* also has a good chapter on [Rewriting R code in C++](https://adv-r.hadley.nz/rcpp.html) that you may find helpful. I'll also show you what I did for this system, because sometimes it's helpful to see C++ code that implements the same functions as the original R code. Let's imagine I have a file called `unbox-fast.cpp` that includes the following:
 
@@ -589,12 +598,12 @@ Rcpp::sourceCpp(file = "unbox-fast.cpp")
 
 If you've used Rcpp, this should seem familiar. 
 
-If you haven't used Rcpp and are trying to make up your mind if it is worth the effort to learn, well, I'll offer this comparison. Here's the difference in speed for generating a million data points in the original system `unbox_base()`, compared to the C++ implementation `unbox_rcpp()`:
+If you haven't used Rcpp and are trying to make up your mind if it is worth the effort to learn, well, I'll offer this comparison. Here's the difference in speed for generating a hundred thousand data points in the original system `unbox_base()`, compared to the C++ implementation `unbox_rcpp()`:
 
 ```{r r-vs-rcpp, results='hold'}
 #| cache: true
-tic(); set.seed(999); dat <- unboxer_base(mil, layers = 2); toc()
-tic(); set.seed(999); dat <- unboxer_rcpp(mil, layers = 2); toc() 
+tic(); set.seed(999); dat <- unboxer_base(100000, layers = 2); toc()
+tic(); set.seed(999); dat <- unboxer_rcpp(100000, layers = 2); toc() 
 ```
 
 Not too bad, really :)
@@ -603,13 +612,11 @@ When written in C++ we can generate 10 million data points extremely quickly. So
 
 ```{r generating-fast}
 tic()
-set.seed(123); dat1 <- unboxer_rcpp(10 * mil, layers = 2) 
-set.seed(101); dat2 <- unboxer_rcpp(10 * mil, layers = 5) 
-set.seed(420); dat3 <- unboxer_rcpp(10 * mil, layers = 9) 
+set.seed(123); dat1 <- unboxer_rcpp(10000000, layers = 2) 
+set.seed(101); dat2 <- unboxer_rcpp(10000000, layers = 5) 
+set.seed(420); dat3 <- unboxer_rcpp(10000000, layers = 9) 
 toc()
 ```
-
-
 
 ::: {.callout-important icon=false #exercise-unboxing-rcpp}
 ## Exercise
@@ -617,7 +624,6 @@ toc()
 The C++ code for this system is included in the `unbox-fast.cpp` script, and the code calling it from R to test the timing is included as the `unbox-fast-test.R` script.
 
 :::
-
 
 Transforming the data into plots, on the other hand, is a little slower. At this point the rendering code is the part that is causing slowness:
 
@@ -635,14 +641,13 @@ dat3 |> unbox_art(seed = 420, size = .2)
 toc()
 ```
 
-Hm. About 1.5 seconds to generate the data, about 100 seconds to produce the plots. That's a little unfortunate. Perhaps we can speed that up too? After all, ggplot2 has a lot of bells and whistles that we aren't using in this plot. Maybe we can sidestep the issue...
-
+Okay, so the data generation is fast now but producing the plots is still painfully slow. That's a little unfortunate. Perhaps we can speed that up too? After all, ggplot2 has a lot of bells and whistles that we aren't using in this plot. Maybe we can sidestep the issue...
 
 ## Even faster chaos with raster representation
 
-Back in the era when I held an academic appointment, one of my research topics used to be human mental representation. When people have to make judgments, choices, or reason about something unfamiliar, we rely on our knowledge of the world to guide us. We have rich, structured knowledge from our past experience that we can bring to bear on new situations, which is super useful because in addition to being fabulous and insanely complicated things, neurons are slow and squishy things relative to machines. Honestly it's a bit of a surprise that we can compute anything with these things, and borderline miraculous that we manage to think clever thoughts using them. 
+Back in the era when I held an academic appointment, one of my research topics used to be human mental representation. When people have to make judgments, choices, or reason about something unfamiliar, we rely on our knowledge of the world to guide us. We have rich, structured knowledge from our past experience that we can bring to bear on new situations, which is super useful because in addition to being fabulous and insanely complicated things, neurons are slow and squishy things relative to machines. Honestly it's a bit of a surprise that we can compute anything with these things, and borderline miraculous that we manage to think clever thoughts using them.
 
-All of this is in service of a really basic comment: if your computing machine doesn't store data in a sensible format, you're going to find it really hard to do anything useful. But the converse is also true... if you represent information in the right way, you'll be able to accomplish a lot. Over and over again, across a lot of different problems I used to study, I'd see a consistent pattern: people make sensible choices when we're given information structured in the "right" way. But if you present the same information a different and counterintuitive way, people don't know what to do with it and they make insane choices. As a psychological researcher, it's really easy to design studies that make people look stupid, and equally easy to design studies that make people look smart. It's almost criminal easy to "rig" the results of a study this way. 
+All of this is in service of a really basic comment: if your computing machine doesn't store data in a sensible format, you're going to find it really hard to do anything useful. But the converse is also true... if you represent information in the right way, you'll be able to accomplish a lot. Over and over again, across a lot of different problems I used to study, I'd see a consistent pattern: people make sensible choices when we're given information structured in the "right" way. But if you present the same information a different and counterintuitive way, people don't know what to do with it and they make extremely poor choices. As a psychological researcher, it's really easy to design studies that make people look stupid, and equally easy to design studies that make people look smart. Looking back, it strikes me that it's almost criminally easy to "rig" the results of a study this way. 
 
 Anyway.
 
@@ -742,9 +747,9 @@ From a data generation perspective, there's really not much difference between t
 
 ```{r generating-fast-2, dev.args=list(bg="#ffffff")}
 tic()
-set.seed(123); mat1 <- unboxer_grid(10 * mil, 2, 1000, 4) 
-set.seed(101); mat2 <- unboxer_grid(10 * mil, 5, 1000, 4) 
-set.seed(420); mat3 <- unboxer_grid(10 * mil, 9, 1000, 4)
+set.seed(123); mat1 <- unboxer_grid(10000000, 2, 1000, 4) 
+set.seed(101); mat2 <- unboxer_grid(10000000, 5, 1000, 4) 
+set.seed(420); mat3 <- unboxer_grid(10000000, 9, 1000, 4)
 toc()
 ```
 
@@ -849,16 +854,12 @@ pretty_boxes(890)
 toc() 
 ```
 
-
-
 ::: {.callout-important icon=false #exercise-pretty-boxes}
 ## Exercise
 
 The C++ code to generate the data for this system is included in the `unbox-grid.cpp` script, and plotting code is in the `pretty-boxes.R` script.
 
 :::
-
-
 
 ## Materials
 
@@ -915,4 +916,3 @@ purrr::walk(
   write_file
 )
 ```
-

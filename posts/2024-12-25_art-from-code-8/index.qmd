@@ -21,8 +21,16 @@ set.seed(1)
 
 <!--------------- post begins here ----------------->
 
-(Adapted from my [Art From Code](https://art-from-code.netlify.app/day-2/session-4/) workshop)
+*A couple of years ago I gave an invited workshop called [art from code](https://art-from-code.netlify.app) at the 2022 rstudio::conf (now posit::conf) conference. As part of the workshop I wrote a lengthy series of notes on how to make generative art using R, all of which were released under a CC-BY licence. For a while now I'd been thinking I should do something with these notes. I considered writing a book, but in all honesty I don't have the spare capacity for a side-project of that scale these days. I can barely keep up with the workload at my day job as it is. So instead, I've decided that I'd port them over to this site as a series of blog posts. In doing so I've made a deliberate decision not to modify the original content too much (nobody loves it when an artist tries to "improve" the original, after all). All I've done is update the code to accommodate package changes since 2022, and some minor edits so that the images are legible when embedded in this blog (which is light-themed, and the original was dark-theme). Other than that, I've left it alone. This is the eighth and last post in that series.*
 
+- [Prelude](/posts/2024-12-18_art-from-code-1/)
+- [Spatial tricks with ambient](/posts/2024-12-19_art-from-code-2/)
+- [Polygon tricks](/posts/2024-12-20_art-from-code-3/)
+- [Shading tricks](/posts/2024-12-21_art-from-code-4/)
+- [Iterated function systems](/posts/2024-12-22_art-from-code-5/)
+- [Tiles and tessellations](/posts/2024-12-23_art-from-code-6/)
+- [Pixel filters](/posts/2024-12-24_art-from-code-7/)
+- [Epilogue](/posts/2024-12-25_art-from-code-8/)
 
 And so we come to the end. I've never loved writing endings. Beginnings feel natural to me: every human life begins in approximately the same state -- human embryos just aren't that different from one another in the big scheme of things -- but everyone follows a different trajectory. Lives end in a myriad of different ways, and there's not usually a coherent story to tell about them. Endings to books, articles, workshops, courses, etc ... either I'm unskilled at writing them, or technical writing just doesn't have a narrative structure that lends itself to tidy endings. 
 

@@ -21,7 +21,17 @@ set.seed(1)
 
 <!--------------- post begins here ----------------->
 
-(Adapted from my [Art From Code](https://art-from-code.netlify.app/day-1/session-2/) workshop)
+*A couple of years ago I gave an invited workshop called [art from code](https://art-from-code.netlify.app) at the 2022 rstudio::conf (now posit::conf) conference. As part of the workshop I wrote a lengthy series of notes on how to make generative art using R, all of which were released under a CC-BY licence. For a while now I'd been thinking I should do something with these notes. I considered writing a book, but in all honesty I don't have the spare capacity for a side-project of that scale these days. I can barely keep up with the workload at my day job as it is. So instead, I've decided that I'd port them over to this site as a series of blog posts. In doing so I've made a deliberate decision not to modify the original content too much (nobody loves it when an artist tries to "improve" the original, after all). All I've done is update the code to accommodate package changes since 2022, and some minor edits so that the images are legible when embedded in this blog (which is light-themed, and the original was dark-theme). Other than that, I've left it alone. This is the second post in that series.*
+
+- [Prelude](/posts/2024-12-18_art-from-code-1/)
+- [Spatial tricks with ambient](/posts/2024-12-19_art-from-code-2/)
+- [Polygon tricks](/posts/2024-12-20_art-from-code-3/)
+- [Shading tricks](/posts/2024-12-21_art-from-code-4/)
+- [Iterated function systems](/posts/2024-12-22_art-from-code-5/)
+- [Tiles and tessellations](/posts/2024-12-23_art-from-code-6/)
+- [Pixel filters](/posts/2024-12-24_art-from-code-7/)
+- [Epilogue](/posts/2024-12-25_art-from-code-8/)
+
 
 ```{r package-load}
 #| message: false
@@ -88,7 +98,7 @@ image(sample_cross_matrix(n = 50), axes = FALSE, useRaster = TRUE)
 
 I'll concede that a generative art system that draws a cross at a random location in the image isn't the most exciting or innovative thing I've ever written, but the core idea is clear I hope. And you would probably be unsurprised to learn that there are a number of more sophisticated tools you can use to generate random spatial patterns. 
 
-In this session I'll introduce the [ambient package](https://ambient.data-imaginist.com/), developed by [Thomas Lin Pedersen](https://www.data-imaginist.com/), which supplies R bindings to a C++ library called FastNoise.
+In this post I'll introduce the [ambient package](https://ambient.data-imaginist.com/), developed by [Thomas Lin Pedersen](https://www.data-imaginist.com/), which supplies R bindings to a C++ library called FastNoise.
 
 ## Our first ambient artwork
 
@@ -139,6 +149,7 @@ Now that we have a sense for what the `gen_perlin()` function does let's use it 
 #| cache: true
 canvas <- canvas |> 
   mutate(paint = gen_perlin(x, y, frequency = 10, seed = 1234))
+
 canvas
 ```
 
@@ -160,9 +171,11 @@ To see what our Perlin art looks like, I'll build the plot in three different wa
 #| layout-nrow: 1
 #| cache: true
 art
+
 art + 
   theme_void() +
   coord_equal()
+
 art + 
   theme_void() +
   coord_equal() +
@@ -173,16 +186,12 @@ art +
 
 Not bad. A little blurry looking, but it's a nice place to start!
 
-
-
 ::: {.callout-important icon=false #exercise-first-ambient}
 ## Exercise
 
 Try it yourself! In the [materials](#materials) there is a file called `first-ambient-art.R` that reproduces the code above. Try playing around with it to see what kind of output you can create by changing the values fed to `gen_perlin()`, or by trying other generator functions!
 
 :::
-
-
 
 ## Our first system
 
@@ -638,7 +647,6 @@ Worley noise is an interesting case. The behaviour of `gen_worley()` is to carve
 #| fig-height: 6
 #| fig-dpi: 300
 #| fig-align: center
-#| column: screen-inset
 #| layout-nrow: 1
 #| cache: true
 blank_canvas |>
@@ -667,7 +675,6 @@ However, `gen_worley()` allows also allows you to colour the pixels in different
 #| fig-height: 6
 #| fig-dpi: 300
 #| fig-align: center
-#| column: screen-inset
 #| layout-nrow: 1
 #| cache: true
 blank_canvas |>
@@ -696,7 +703,6 @@ There's nothing stopping you from writing your own generator function either. At
 #| fig-height: 6
 #| fig-dpi: 300
 #| fig-align: center
-#| column: screen-inset
 #| layout-nrow: 1
 #| cache: true
 gen_scope <- function(x, y, ...) {
@@ -790,7 +796,7 @@ Okay, let's take a step back. Suppose I have a very small grid of points:
 #| fig-align: center
 smol_grid <- long_grid(x = 1:20, y = 1:20)
 ggplot(smol_grid) +
-  geom_point(aes(x, y), colour = "white") + 
+  geom_point(aes(x, y)) + 
   theme_void() + 
   coord_equal()
 ```
@@ -804,15 +810,15 @@ Now let's compute the value of the simplex noise pattern at each of these points
 #| fig-align: center
 #| column: screen-inset
 #| layout-nrow: 1
-
 smol_simplex <- smol_grid |>
   mutate(z = gen_simplex(x, y, seed = 1, frequency = .1)) 
 
 smol_simplex |>
   ggplot(aes(x, y, size = z)) +
-  geom_point(colour = "white", show.legend = FALSE) + 
+  geom_point(show.legend = FALSE) + 
   theme_void() + 
   coord_equal()
+
 smol_simplex |>
   ggplot(aes(x, y, z = z)) +
   geom_contour_filled(show.legend = FALSE, bins = 10) + 
@@ -855,7 +861,6 @@ ggplot(smol_curl) +
       xend = x + x_slope * 2, 
       yend = y + y_slope * 2
     ), 
-    colour = "white", 
     arrow = arrow(length = unit(0.1, "cm"))
   ) + 
   theme_void() + 
@@ -885,7 +890,6 @@ ggplot(smol_curl) +
       xend = x + x_curl * 2, 
       yend = y + y_curl * 2
     ), 
-    colour = "white", 
     arrow = arrow(length = unit(0.1, "cm"))
   ) + 
   theme_void() + 
@@ -925,7 +929,6 @@ smol_grid |>
   ggplot() + 
   geom_segment(
     mapping = aes(x, y, xend = x2, yend = y2),
-    colour = "white", 
     arrow = arrow(length = unit(0.1, "cm"))
   ) + 
   theme_void() + 
@@ -1000,15 +1003,15 @@ dat123 <- bind_rows(time_1, time_2, time_3)
 
 dat12 |>
   ggplot(aes(x, y, group = id)) + 
-  geom_path(colour = "white") +
-  theme_void() + 
-  coord_equal() 
-dat123 |>
-  ggplot(aes(x, y, group = id)) + 
-  geom_path(colour = "white") +
+  geom_path() +
   theme_void() + 
   coord_equal() 
 
+dat123 |>
+  ggplot(aes(x, y, group = id)) + 
+  geom_path() +
+  theme_void() + 
+  coord_equal() 
 ```
 
 This seems promising, right?
@@ -1050,7 +1053,7 @@ curl_data <- function(
 curl_art <- function(...) {
   curl_data(...) |> 
     ggplot(aes(x, y, group = id)) + 
-    geom_path(colour = "white") +
+    geom_path() +
     theme_void() + 
     coord_equal() 
 }
@@ -1142,8 +1145,8 @@ dat2 <- circle(5000) |>
   custom_curl_data()
 
 ggplot(mapping = aes(x, y, group = time)) +
-  geom_polygon(data = dat1, fill = "#22222210") +
-  geom_polygon(data = dat2, fill = "#ffffff05") +
+  geom_polygon(data = dat1, fill = "white", alpha = .02) +
+  geom_polygon(data = dat2, fill = "black", alpha = .02) +
   theme_void() + 
   coord_equal()
 ```

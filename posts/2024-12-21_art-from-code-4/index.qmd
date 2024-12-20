@@ -21,10 +21,18 @@ set.seed(1)
 
 <!--------------- post begins here ----------------->
 
-(Adapted from my [Art From Code](https://art-from-code.netlify.app/day-1/session-4/) workshop)
+*A couple of years ago I gave an invited workshop called [art from code](https://art-from-code.netlify.app) at the 2022 rstudio::conf (now posit::conf) conference. As part of the workshop I wrote a lengthy series of notes on how to make generative art using R, all of which were released under a CC-BY licence. For a while now I'd been thinking I should do something with these notes. I considered writing a book, but in all honesty I don't have the spare capacity for a side-project of that scale these days. I can barely keep up with the workload at my day job as it is. So instead, I've decided that I'd port them over to this site as a series of blog posts. In doing so I've made a deliberate decision not to modify the original content too much (nobody loves it when an artist tries to "improve" the original, after all). All I've done is update the code to accommodate package changes since 2022, and some minor edits so that the images are legible when embedded in this blog (which is light-themed, and the original was dark-theme). Other than that, I've left it alone. This is the fourth post in that series.*
 
+- [Prelude](/posts/2024-12-18_art-from-code-1/)
+- [Spatial tricks with ambient](/posts/2024-12-19_art-from-code-2/)
+- [Polygon tricks](/posts/2024-12-20_art-from-code-3/)
+- [Shading tricks](/posts/2024-12-21_art-from-code-4/)
+- [Iterated function systems](/posts/2024-12-22_art-from-code-5/)
+- [Tiles and tessellations](/posts/2024-12-23_art-from-code-6/)
+- [Pixel filters](/posts/2024-12-24_art-from-code-7/)
+- [Epilogue](/posts/2024-12-25_art-from-code-8/)
 
-```{r package-load, message=FALSE}
+```{r package-load, message=FALSE, warning=FALSE}
 library(rayshader)
 library(tibble)
 library(ambient)
@@ -167,7 +175,7 @@ In the final line I called `plot_map()` to draw the final image, using the `rota
 
 At this point in the workshop, I hope that you're starting to get a sense for *how* to go about tweaking a generative system and how to create new things using it. So from this point the "exercises" are going to be a bit less structured. What I'll do is point you to the scripts that implement each system, and in each case the exercise is going to be the same: play with the system, see what it can do, modify it as you see fit, and see where your own intuitions take you!
 
-Code for this system is included in the `circle-scape.R` script. Enjoy! Explore!
+Code for this system is included in the `circle-scape.R` script in the [materials](#materials). Enjoy! Explore!
 
 :::
 
@@ -300,14 +308,14 @@ shaded_ridge_art(102)
 ::: {.callout-important icon=false #exercise-shaded-ridge}
 ## Exercise
 
-Code for this system is included in the `shaded-ridge-art.R` script.
+Code for this system is included in the `shaded-ridge-art.R` script in the [materials](#materials).
 
 :::
 
 
 ## Fractured terrain
 
-Back in the early days of the pandemic I made a series of generative art pieces called [Quarantine Moods](https://art.djnavarro.net/gallery/quarantine/) that was, well, pretty incoherent. Not very surprising: I was trapped indoors and stressed, so there's no theme or structure to the whole thing. Later on though I found the code for one of the pieces that I really liked and reworked it to create a new system that I called [Ice Floes](https://art.djnavarro.net/gallery/ice-floes/). Pieces from this system have a jagged, fractured geometric look to them. One of the first thoughts I had when exploring the rayshader package was that these images would generate some really interesting shadows, and it would be fun to see what happens when I applied rayshader methods to those outputs. So... that's what I did!
+Back in the early days of the pandemic I made a series of generative art pieces called *Quarantine Moods* that was, well, pretty incoherent. Not very surprising: I was trapped indoors and stressed, so there's no theme or structure to the whole thing. Later on though I found the code for one of the pieces that I really liked and reworked it to create a new system that I called [Ice Floes](https://art.djnavarro.net/gallery/ice-floes/). Pieces from this system have a jagged, fractured geometric look to them. One of the first thoughts I had when exploring the rayshader package was that these images would generate some really interesting shadows, and it would be fun to see what happens when I applied rayshader methods to those outputs. So... that's what I did!
 
 The first step in the process is to recreate the ice floes system, or at least something very similar to it. The trick behind this system is to generate spatial noise defined over a *different* space to the one I intend to plot at the end. I generate new coordinates by constructing a map from the original coordinates to the corresponding curl space. Or, to put it in less pretentious terms, I use `curl_noise()` to produce a new set of coordinates that I'm going to feed into other noise processes. Here's the function I'll use to that:
 
@@ -466,7 +474,7 @@ shaded_ice_floe(108)
 ::: {.callout-important icon=false #exercise-icescape}
 ## Exercise
 
-Code for this system is included in the `shaded-icescape.R` script.
+Code for this system is included in the `shaded-icescape.R` script in the [materials](#materials).
 
 :::
 
@@ -495,7 +503,7 @@ Okay, so what can we do with 3d rendering? To start with, let's keep things simp
 #| fig-dpi: 300
 #| fig-align: center
 #| cache: true
-
+#| eval: false
 plot_3d(
   hillshade = circle_scape,
   heightmap = circle_array,
@@ -504,9 +512,9 @@ plot_3d(
   zoom = .8,
   zscale = .001,
   baseshape = "circle",
-  background = "#222222",
+  background = "#ffffff",
   shadow = FALSE,
-  soliddepth = .3,
+  soliddepth = 0,
   solidcolor = "#111111",
   windowsize = 1200
 )
@@ -515,7 +523,9 @@ render_snapshot(
   filename = "circles_3d.png", 
   clear = TRUE
 )
+```
 
+```{r circle-3d-show}
 knitr::include_graphics("circles_3d.png")
 ```
 
@@ -527,7 +537,6 @@ It kind of looks like a tower. It's kind of neat in its own right, but the outpu
 #| fig-height: 7.5
 #| fig-dpi: 300
 #| fig-align: center
-#| column: screen-inset
 #| cache: true
 #| eval: false
 seed <- 170
@@ -557,7 +566,7 @@ plot_3d(
   phi = 30,
   zoom = .75,
   zscale = .001,
-  background = "#222222",
+  background = "#ffffff",
   shadow = FALSE,
   soliddepth = .5,
   solidcolor = "#222222",
@@ -568,13 +577,13 @@ render_snapshot(
   filename = "ice_3d.png", 
   clear = TRUE
 )
+```
 
+```{r ice-floe-3d-show}
 knitr::include_graphics("ice_3d.png")
 ```
 
 Even I have to admit I was impressed with myself this time. That worked way better than I was expecting it to, and I suspect it would look even nicer if I'd taken the time to learn more about hill shading algorithms and used `sphere_shade()` to create a proper terrain map rather rather than relying on `height_shade()`. Something to play around with in the future :)
-
-
 
 ::: {.callout-important icon=false #exercise-icescape-3d}
 ## Exercise
@@ -582,7 +591,6 @@ Even I have to admit I was impressed with myself this time. That worked way bett
 Code for this system is included in the `icescape-3d.R` script.
 
 :::
-
 
 ## Materials
 

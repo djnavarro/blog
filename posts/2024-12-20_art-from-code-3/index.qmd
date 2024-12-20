@@ -21,7 +21,16 @@ set.seed(1)
 
 <!--------------- post begins here ----------------->
 
-(Adapted from my [Art From Code](https://art-from-code.netlify.app/day-1/session-3/) workshop)
+*A couple of years ago I gave an invited workshop called [art from code](https://art-from-code.netlify.app) at the 2022 rstudio::conf (now posit::conf) conference. As part of the workshop I wrote a lengthy series of notes on how to make generative art using R, all of which were released under a CC-BY licence. For a while now I'd been thinking I should do something with these notes. I considered writing a book, but in all honesty I don't have the spare capacity for a side-project of that scale these days. I can barely keep up with the workload at my day job as it is. So instead, I've decided that I'd port them over to this site as a series of blog posts. In doing so I've made a deliberate decision not to modify the original content too much (nobody loves it when an artist tries to "improve" the original, after all). All I've done is update the code to accommodate package changes since 2022, and some minor edits so that the images are legible when embedded in this blog (which is light-themed, and the original was dark-theme). Other than that, I've left it alone. This is the third post in that series.*
+
+- [Prelude](/posts/2024-12-18_art-from-code-1/)
+- [Spatial tricks with ambient](/posts/2024-12-19_art-from-code-2/)
+- [Polygon tricks](/posts/2024-12-20_art-from-code-3/)
+- [Shading tricks](/posts/2024-12-21_art-from-code-4/)
+- [Iterated function systems](/posts/2024-12-22_art-from-code-5/)
+- [Tiles and tessellations](/posts/2024-12-23_art-from-code-6/)
+- [Pixel filters](/posts/2024-12-24_art-from-code-7/)
+- [Epilogue](/posts/2024-12-25_art-from-code-8/)
 
 
 ```{r, message=FALSE}
@@ -65,12 +74,12 @@ Next let's write a simple plotting function to display a polygon:
 show_polygon <- function(polygon, show_vertices = TRUE, ...) {
   
   pic <- ggplot(polygon, aes(x, y)) +
-    geom_polygon(colour = "white", fill = NA, show.legend = FALSE, ...) + 
+    geom_polygon(color = "black", fill = NA, show.legend = FALSE, ...) + 
     coord_equal() + 
     theme_void()
   
   if(show_vertices == TRUE) {
-    pic <- pic + geom_point(colour = "white", size = 2)
+    pic <- pic + geom_point(size = 2)
   }
   return(pic)
 }
@@ -191,9 +200,11 @@ The images below show what our recursively deformed polygon looks like after 30,
 square |> 
   grow_polygon(iterations = 30, noise = .5, seed = 2) |> 
   show_polygon(show_vertices = FALSE)
+
 square |> 
   grow_polygon(iterations = 100, noise = .5, seed = 2) |> 
   show_polygon(show_vertices = FALSE)
+
 square |> 
   grow_polygon(iterations = 1000, noise = .5, seed = 2) |> 
   show_polygon(show_vertices = FALSE)
@@ -243,7 +254,7 @@ It's a little slow to produce results, but at least the results are pretty!
 ::: {.callout-important icon=false #exercise-grow-multipolygon}
 ## Exercise
 
-1. Let's look at single polygons first. All the code you need to work with those is included in the `grow-polygon.R` function. Try modifying the `iterations`, `noise`, and `seed` arguments to see what kind of output is created at different parameter values.
+1. Let's look at single polygons first. All the code you need to work with those is included in the `grow-polygon.R` script in the [materials](#materials). Try modifying the `iterations`, `noise`, and `seed` arguments to see what kind of output is created at different parameter values.
 
 2. The `grow-multipolygons.R` file contains the extra machinery to create these textured plots. Try playing around with the code for this. I've tweaked the parameter settings so that it runs faster than the code shown here, but doesn't produce output that looks quite as nice.
 
@@ -308,7 +319,7 @@ grow_multipolygon_l <- function(base_shape, n, seed = NULL, ...) {
     polygons[[i]] <- grow_polygon_l(base_shape, ...) |>
       transpose() |>
       as_tibble() |>
-      mutate(across(.fn = unlist))
+      mutate(across(everything(), unlist))
   }
   polygons <- bind_rows(polygons, .id = "id")
   polygons
@@ -338,7 +349,6 @@ That's a pretty substantial improvement in performance relative to the original 
 #| cache: true
 show_multipolygon(dat, fill = "#d43790")
 ```
-
 
 ## Using the method: splotches
 
@@ -510,7 +520,7 @@ This one makes me happy :-)
 ::: {.callout-important icon=false #exercise-splotch-hexagon}
 ## Exercise
 
-Code for these two systems is included in the `splotch.R` and `smudged-hexagon.R` scripts.
+Code for these two systems is included in the `splotch.R` and `smudged-hexagon.R` scripts in the [materials](#materials).
 
 1. Explore the effect of the `layers` argument in the `splotch()` system, and how it interacts with the `alpha` argument to `show_multipolygon()`
 
@@ -656,7 +666,6 @@ The effect of the radius parameters is slightly different to the effect of the n
 #| fig-height: 4
 #| fig-dpi: 300
 #| fig-align: center
-#| column: screen-inset
 #| layout-nrow: 1
 #| cache: true
 set.seed(1); 
@@ -675,7 +684,7 @@ At these parameter settings the output of `perlin_blob()` reminds me more of a c
 ::: {.callout-important icon=false #exercise-perlin-blob}
 ## Exercise
 
-Code for this system is included in the `perlin-blob.R` script. You can also find analogous code for the Perlin heart system describe in in the next section in the `perlin-heart.R` script.
+Code for this system is included in the `perlin-blob.R` script in the [materials](#materials). You can also find analogous code for the Perlin heart system describe in in the next section in the `perlin-heart.R` script.
 
 1. Try playing around with these two systems. See if you can reproduce the same "qualitative variations" with `perlin_heart()` that I showed above with `perlin_blob()`
 
@@ -779,7 +788,7 @@ perlin_heart_grid(seed = 451)
 ::: {.callout-important icon=false #exercise-perlin-heard-grid}
 ## Exercise
 
-Code for this system is included as the `perlin-heart-grid.R` script. To check that you understand it, try modifying it in the following ways:
+Code for this system is included as the `perlin-heart-grid.R` script in the [materials](#materials). To check that you understand it, try modifying it in the following ways:
 
 1. Only show 50% of the hearts
 
@@ -850,7 +859,7 @@ Here are three outputs from our `perlin_heart2()` function, showing the effect o
 
 show_width <- function(polygon) {
   ggplot(polygon, aes(x, y, size = width)) +
-    geom_path(colour = "white", fill = NA, show.legend = FALSE) + 
+    geom_path(fill = NA, show.legend = FALSE) + 
     coord_equal() + 
     scale_size_identity() +
     theme_void()
@@ -891,7 +900,7 @@ perlin_heart_grid2 <- function(nx = 4, ny = 2, seed = NULL) {
       id = row_number()
     ) 
   
-  heart_data <-  pmap_dfr(heart_settings, perlin_heart2)
+  heart_data <- pmap_dfr(heart_settings, perlin_heart2)
   
   heart_data |>
     ggplot(aes(x, y, group = id, colour = sample(id), size = width)) +
@@ -911,7 +920,7 @@ perlin_heart_grid2(seed = 666)
 ::: {.callout-important icon=false #exercise-perlin-heard-grid-2}
 ## Exercise
 
-Code for this system is included as the `perlin-heart-grid-2.R` script. Can you modify it so that each heart is plotted in a single colour rather than in the banded pattern? With different hearts having different colours?
+Code for this system is included as the `perlin-heart-grid-2.R` script in the [materials](#materials). Can you modify it so that each heart is plotted in a single colour rather than in the banded pattern? With different hearts having different colours?
 
 :::
 
@@ -926,7 +935,6 @@ The final example for this session uses the `gifsky` package to create an animat
 #| fig-dpi: 300
 #| fig-align: center
 #| cache: true
-
 perlin_heart_data <- function(nhearts = 10, scatter = .05, seed = NULL) {
   
   if(!is.null(seed)) set.seed(seed)
@@ -998,7 +1006,7 @@ animated_perlin_heart <- function(seed, ...) {
     width = 1000,
     delay = .1,
     progress = TRUE,
-    bg = "#222222"
+    bg = "#ffffff"
   )
   invisible(NULL)
 }
@@ -1019,7 +1027,6 @@ knitr::include_graphics("animated-perlin-heart-100.gif")
 #| column: screen-inset
 #| layout-ncol: 3
 #| cache: true
-
 animated_perlin_heart(seed = 123)
 animated_perlin_heart(seed = 456)
 animated_perlin_heart(seed = 789)
@@ -1034,11 +1041,9 @@ knitr::include_graphics("animated-perlin-heart-789.gif")
 ::: {.callout-important icon=false #exercise-perlin-animated}
 ## Exercise
 
-Code for this system is included in the `perlin-heart-animated.R` script. Personally I just find this one fun to play with, so instead of setting an exercise I'll let you take a look! 
+Code for this system is included in the `perlin-heart-animated.R` script in the [materials](#materials). Personally I just find this one fun to play with, so instead of setting an exercise I'll let you take a look! 
 
 :::
-
-
 
 ## Textured lines
 
@@ -1046,7 +1051,7 @@ Code for this system is included in the `perlin-heart-animated.R` script. Person
 library(e1071)
 ```
 
-There's one other topic I want to mention in this session, and it's completely unrelated to rayshader or 3D graphics. It's also -- broadly speaking -- to do with texture and shading, but it applies at a much lower level. To motivate the topic, I'll start by writing a function that uses statistical tools to generate random smooth curves in two dimensions:
+There's one other topic I want to mention in this post. To motivate the topic, I'll start by writing a function that uses statistical tools to generate random smooth curves in two dimensions:
 
 
 ```{r def-smooth-path}
@@ -1079,7 +1084,7 @@ path <- smooth_path(seed = 123)
 
 path |> 
   ggplot(aes(x, y)) +
-  geom_path(colour = "white", size = 2) + 
+  geom_path(size = 2) + 
   coord_equal() +
   theme_void() 
 ```
@@ -1113,7 +1118,7 @@ brush <- function(path, bristles = 100, seed = 1, ...) {
   return(bind_rows(dat, .id = "id"))
 }
 
-stroke <- function(dat, geom = geom_path, colour = "white", ...) {
+stroke <- function(dat, geom = geom_path, colour = "black", ...) {
   dat |>  
     ggplot(aes(
       x = x, 
@@ -1130,11 +1135,7 @@ stroke <- function(dat, geom = geom_path, colour = "white", ...) {
     coord_equal() +
     scale_alpha_identity() +
     scale_size_identity() +
-    theme_void() + 
-    theme(plot.background = element_rect(
-      fill = "#222222", 
-      colour = "#222222"
-    ))
+    theme_void()
 }
 ```
 
@@ -1145,7 +1146,6 @@ The plots below show a couple of examples of how you can apply this idea to our 
 #| fig-height: 6
 #| fig-dpi: 300
 #| fig-align: center
-#| column: screen-inset
 #| layout-ncol: 2
 #| cache: true
 path |>
@@ -1156,6 +1156,7 @@ path |>
   brush(bristles = 200, span = .08) |>
   mutate(size = size * 3) |>
   stroke(geom = geom_point, stroke = 0)
+
 ```
 
 This doesn't in any sense exhaust the possibilities, but I hope it's a useful hint about how to get started if you ever find yourself trying to figure out how to draw naturalistic looking pen strokes. Also, the fact that I've included the code means I get to apply the idea to the Perlin hearts system:
@@ -1165,12 +1166,11 @@ This doesn't in any sense exhaust the possibilities, but I hope it's a useful hi
 #| fig-height: 4
 #| fig-dpi: 300
 #| fig-align: center
-#| column: page
 #| cache: true
 perlin_heart(n = 500, seed = 123) |>
   mutate(stroke = 1) |>
   brush(bristles = 100, noise = .02) |>
-  stroke() 
+  stroke()
 ```
 
 
