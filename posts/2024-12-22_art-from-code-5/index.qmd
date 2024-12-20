@@ -1,9 +1,10 @@
 ---
 title: "Art from code V: Iterated function systems"
-description: "This is a subtitle"
+description: "A deep dive into the fractal flame algorithm, an egregious coding error, and a lot more C++ than I would prefer to be writing"
 date: "2024-12-22"
 categories: ["R", "Art"]
 image: "pretty-boxes.png"
+image-alt: "Textured generative art with grainy box shapes in yellow and blue against a dark background"
 --- 
 
 <!--------------- my typical setup ----------------->
@@ -863,7 +864,7 @@ The C++ code to generate the data for this system is included in the `unbox-grid
 
 ## Materials
 
-Code for each of the source files referred to in this section of the workshop is included here. Click on the callout box below to see the code for the file you want to look at. 
+Code for each of the source files referred to in this section of the workshop is included here. Click on the callout box below to see the code for the file you want to look at. Please keep in mind that (unlike the code in the main text) I haven't modified these scripts since the original workshop, so you might need to play around with them to get them to work!
 
 ```{r}
 #| echo: false

@@ -4,6 +4,7 @@ description: "This is a subtitle"
 date: "2024-12-25"
 categories: ["R", "Art"]
 image: "lily-pad.png"
+image-alt: "A heart shape with wavy strokes in pink, blue, and green"
 --- 
 
 <!--------------- my typical setup ----------------->
@@ -42,10 +43,9 @@ Still, I have to write something on this page, and maybe it isn't a bad idea to 
 
 A little while back I had the good fortune to come across Mine Çetinkaya-Rundels wonderful slide deck on best practices when teaching data science, ["Let them eat cake (first)!"](https://speakerdeck.com/minecr/let-them-eat-cake-first-0a3bbf75-f6f1-42d5-8d2f-ac2ff741611f). In it, she talks about the importance of engaging learner interest in the topic early on. Very few people have ever been motivated to learn R by reading about operator precedence, functions as first class objects, or lazy evaluation. Whatever its other merits, I have never heard anyone argue the case that S4 is "sexy", or that the R internals manual really really made them love the language. That's not how this works. People want to be *delighted* by their tools. We like to *play*. Code that allows people to experience joy and do things love doing... it provides opportunities for growth, learning, and personal development.
 
-When I make art, my daughter Fiona is frequent collaborator and art critic. She was 6 when I started making generative art: she's now 9. She's interested in what I do artistically because she likes to draw, and is fascinated by the fact that I draw with code. In fact, she's become curious about it enough that she has her own private repo on my GitHub account where -- with a little help from me -- she makes her own generative art. With her permission I'll share one of her pieces here. She doesn't use ggplot2 or ambient (yet!), but instead relies on the [jasmines package](https://jasmines.djnavarro.net/) I wrote to bundle up some of my art functions. Personally I don't use jasmines anymore because that package really doesn't do anything except provide a few canned tricks using ambient. But it *is* a handy package for people who aren't quite ready to dive into those packages.
+When I make art, my daughter Fiona is frequent collaborator and art critic. She was 6 when I started making generative art: she's now 9 *(Editor's note: well that's a lie... she's now 11)*. She's interested in what I do artistically because she likes to draw, and is fascinated by the fact that I draw with code. In fact, she's become curious about it enough that she has her own private repo on my GitHub account where -- with a little help from me -- she makes her own generative art. With her permission I'll share one of her pieces here. She doesn't use ggplot2 or ambient (yet!), but instead relies on the [jasmines package](https://jasmines.djnavarro.net/) I wrote to bundle up some of my art functions. Personally I don't use jasmines anymore because that package really doesn't do anything except provide a few canned tricks using ambient. But it *is* a handy package for people who aren't quite ready to dive into those packages.
 
 Anyway, this is "Lily Pad":
-
 
 ```{r lily-pad, dev.args=list(bg="#ffffff")}
 #| fig-width: 6

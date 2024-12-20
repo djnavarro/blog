@@ -1,9 +1,10 @@
 ---
 title: "Art from code IV: Shading tricks"
-description: "This is a subtitle"
+description: "Let's be honest, this entire post is a thinly-veiled excuse to play around and do terrible things with the rayshader package"
 date: "2024-12-21"
 categories: ["R", "Art"]
 image: "ice-floe.png"
+image-alt: "Unreal looking landscape in bright colours"
 --- 
 
 <!--------------- my typical setup ----------------->
@@ -594,7 +595,7 @@ Code for this system is included in the `icescape-3d.R` script.
 
 ## Materials
 
-Code for each of the source files referred to in this section of the workshop is included here. Click on the callout box below to see the code for the file you want to look at. 
+Code for each of the source files referred to in this section of the workshop is included here. Click on the callout box below to see the code for the file you want to look at. Please keep in mind that (unlike the code in the main text) I haven't modified these scripts since the original workshop, so you might need to play around with them to get them to work!
 
 ```{r}
 #| echo: false

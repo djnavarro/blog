@@ -1,9 +1,10 @@
 ---
 title: "Art from code III: Polygon tricks"
-description: "This is a subtitle"
+description: "It's almost offensive how much you can do with 500 nearly-transparent polygons"
 date: "2024-12-20"
 categories: ["R", "Art"]
 image: "hexagon.png"
+image-alt: "Smudged hexagons in red, yellow, and blue against a dark background"
 --- 
 
 <!--------------- my typical setup ----------------->
@@ -1184,7 +1185,7 @@ Code for this system is included in the `textured-lines.R` script. Try to use th
 
 ## Materials
 
-Code for each of the source files referred to in this section of the workshop is included here. Click on the callout box below to see the code for the file you want to look at. 
+Code for each of the source files referred to in this section of the workshop is included here. Click on the callout box below to see the code for the file you want to look at. Please keep in mind that (unlike the code in the main text) I haven't modified these scripts since the original workshop, so you might need to play around with them to get them to work!
 
 ```{r}
 #| echo: false

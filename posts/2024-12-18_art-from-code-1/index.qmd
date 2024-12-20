@@ -1,9 +1,10 @@
 ---
 title: "Art from code I: Generative art with R"
-description: "This is a subtitle"
+description: "An act of wholesale, unapologetic theft. In which the author discusses the core logic of generative art, and (ab)uses the ggplot2 package for her own ungodly purposes"
 date: "2024-12-18"
 categories: ["R", "Art"]
 image: "compositionality.png"
+image-alt: "Segmented brown, white, and black arcs arranged in a circular pattern against a dark background"
 --- 
 
 <!--------------- my typical setup ----------------->
@@ -537,12 +538,9 @@ polar_styled_plot(palette = sample_canva(seed = 2)) +
 
 :::
 
-
-
-
 ## Materials
 
-Code for each of the source files referred to in this section of the workshop is included here. Click on the callout box below to see the code for the file you want to look at. 
+Code for each of the source files referred to in this section of the workshop is included here. Click on the callout box below to see the code for the file you want to look at. Please keep in mind that (unlike the code in the main text) I haven't modified these scripts since the original workshop, so you might need to play around with them to get them to work!
 
 ```{r}
 #| echo: false
@@ -592,4 +590,3 @@ purrr::walk(
   write_file
 )
 ```
-

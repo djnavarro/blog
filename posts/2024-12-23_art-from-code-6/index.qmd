@@ -1,9 +1,10 @@
 ---
 title: "Art from code VI: Tiles and tessellations"
-description: "This is a subtitle"
+description: "There are a lot of rectangles in this post. Also some foolishness with voronoi tessellations I guess"
 date: "2024-12-23"
 categories: ["R", "Art"]
 image: "subdivision.png"
+image-alt: "An irregular quasi-tiling of pastel coloured rectangles against a white background"
 --- 
 
 <!--------------- my typical setup ----------------->
@@ -229,7 +230,7 @@ develop <- function(div, seed = NULL) {
     )) +
     geom_rect(
       colour = "#ffffff", 
-      size = 3,
+      linewidth = 3,
       show.legend = FALSE
     ) +
     scale_fill_gradientn(
@@ -267,7 +268,7 @@ subdivision(nsplits = 500, seed = 103) |> develop()
 ::: {.callout-important icon=false #exercise-subdivision}
 ## Exercise
 
-Code for this system is included in the `subdivision.R` script.
+Code for this system is included in the `subdivision.R` script in the [materials](#materials)
 
 :::
 
@@ -381,7 +382,7 @@ mosaica(nrow = 100, seed = 3)
 ::: {.callout-important icon=false #exercise-mosaica}
 ## Exercise
 
-Code for this system is included in the `mosaica.R` script.
+Code for this system is included in the `mosaica.R` script in the [materials](#materials).
 
 :::
 
@@ -413,7 +414,7 @@ pic <- ggplot(dat, aes(x, y, fill = val)) +
   guides(fill = guide_none()) +
   theme_void()
 
-pic + geom_point(colour = "white", size = 3)
+pic + geom_point(size = 3)
 ```
 
 The points themselves are not very artistically impressive, but we can make something more interesting if we add the Voronoi tesselation. The minimal way to do this is with `geom_voronoi_segment()`
@@ -424,8 +425,8 @@ The points themselves are not very artistically impressive, but we can make some
 #| fig-dpi: 300
 #| fig-align: center
 pic + 
-  geom_voronoi_segment(colour = "white") + 
-  geom_point(colour = "white", size = 3)
+  geom_voronoi_segment() + 
+  geom_point(size = 3)
 ```
 
 We can already see the beginnings of something pleasing. I mean, if I'm being honest this is already quite pretty in a minimalist way but -- as I keep saying -- I have an urge to tinker and see what elaborations we can add. First, let's switch from `geom_voronoi_segment()` to `geom_voronoi_tile()`:  
@@ -436,8 +437,8 @@ We can already see the beginnings of something pleasing. I mean, if I'm being ho
 #| fig-dpi: 300
 #| fig-align: center
 pic + 
-  geom_voronoi_tile(colour = "white") + 
-  geom_point(colour = "white", size = 3)
+  geom_voronoi_tile() + 
+  geom_point(size = 3)
 ```
 
 Setting the `max.radius` argument prevents any tile extending beyond a fixed distance from the point generating the tile, giving the image as a whole a "bubbly" look:
@@ -448,8 +449,8 @@ Setting the `max.radius` argument prevents any tile extending beyond a fixed dis
 #| fig-dpi: 300
 #| fig-align: center
 pic + 
-  geom_voronoi_tile(colour = "white", max.radius = .2) + 
-  geom_point(colour = "white", size = 3)
+  geom_voronoi_tile(max.radius = .2) + 
+  geom_point(size = 3)
 ```
 
 Hm. Those sharp corners between tiles aren't the prettiest thing I've ever seen. Let's round those corners a little bit, shall we? The `radius` argument lets us do that:
@@ -460,12 +461,8 @@ Hm. Those sharp corners between tiles aren't the prettiest thing I've ever seen.
 #| fig-dpi: 300
 #| fig-align: center
 pic + 
-  geom_voronoi_tile(
-    colour = "white", 
-    max.radius = .2, 
-    radius = .02 
-  ) + 
-  geom_point(colour = "white", size = 3)
+  geom_voronoi_tile(max.radius = .2, radius = .02) + 
+  geom_point(size = 3)
 ```
 
 Next, let's shrink all the tiles a tiny bit to create small gaps between adjacent tiles:
@@ -477,12 +474,11 @@ Next, let's shrink all the tiles a tiny bit to create small gaps between adjacen
 #| fig-align: center
 pic + 
   geom_voronoi_tile(
-    colour = "white", 
     max.radius = .2, 
     radius = .02,
     expand = -.005
   ) + 
-  geom_point(colour = "white", size = 3)
+  geom_point(size = 3)
 ```
 
 Let's remove the points themselves, leaving only the rounded tiles:
@@ -494,7 +490,6 @@ Let's remove the points themselves, leaving only the rounded tiles:
 #| fig-align: center
 pic + 
   geom_voronoi_tile(
-    colour = "white", 
     max.radius = .2, 
     radius = .02,
     expand = -.005
@@ -532,7 +527,7 @@ pic +
 ::: {.callout-important icon=false #exercise-voronoi-tiles}
 ## Exercise
 
-A script reproducing this piece is included in the `voronoi-tiles.R` file
+A script reproducing this piece is included in the `voronoi-tiles.R` file in the [materials](#materials).
 
 :::
 
@@ -665,7 +660,7 @@ The possibilities are surprisingly rich, and quite a lot of fun to play around w
 ::: {.callout-important icon=false #exercise-voronoi-unbox}
 ## Exercise
 
-A script containing code for this system is included in the materials folder, as the `voronoi-unbox.R` file
+A script containing code for this system is included in the [materials](#materials), as the `voronoi-unbox.R` file.
 
 :::
 
@@ -681,7 +676,7 @@ Enter stage left, the [voronoise package](https://voronoise.djnavarro.net/). It'
 remotes::install_github("djnavarro/voronoise")
 ```
 
-The voronoise package only does one thing: it supplies `geom_voronoise()`, a geom that behaves just like `geom_voronoi_tile()` except for the fact you can pass it a "perturbing function" that modifies the tiles. Annoyingly -- because I was not a very good software developer at the time and I was not thinking about what someone else (i.e., future me) would use it for later -- the default arguments to `geom_voronoise()` aren't the same as the defaults for `geom_voronoi_tile()`, which means it's a good idea to explicitly specify things like `max.radius` etc even if you're "just going to use the defaults". Sorry. That was my mistake. I cannot stress enough that voronoise is not a good package. But... it'll do for my purposes today.
+The voronoise package only does one thing: it supplies `geom_voronoise()`, a geom that behaves just like `geom_voronoi_tile()` except for the fact you can pass it a "perturbing function" that modifies the tiles. Annoyingly -- because I was not a very good software developer at the time and I was not thinking about what someone else (i.e., future me) would use it for later -- the default arguments to `geom_voronoise()` aren't the same as the defaults for `geom_voronoi_tile()`, which means it's a good idea to explicitly specify things like `max.radius` etc even if you're "just going to use the defaults". Sorry. That was my mistake. I cannot stress enough that **voronoise is not a good package**. But... it'll do for my purposes today.
 
 Here's a simple example where the `perturb` argument is used to shift all the tiles to the right by a random offset:
 
@@ -810,7 +805,7 @@ voronoi_baroque(17, shake)
 ::: {.callout-important icon=false #exercise-voronoi-baroque}
 ## Exercise
 
-Code for this system is included in the `voronoi-baroque.R` script.
+Code for this system is included in the `voronoi-baroque.R` script in the [materials](#materials).
 
 :::
 
@@ -818,7 +813,7 @@ Code for this system is included in the `voronoi-baroque.R` script.
 
 ## Truchet tiles
 
-One final topic to mention before: [truchet tiles](https://en.wikipedia.org/wiki/Truchet_tiles). Truchet tiles are square tiles decorated with asymmetric patterns, designed so that whenever you lay them out randomly, the patterns will connect up in aesthetically pleasing ways. To be honest, I've not explore them much myself but Antonio Páez has written the [truchet package](https://paezha.github.io/truchet/) that you can use to play with these. It's not currently on CRAN, but you can install from GitHub with:
+One final topic to mention before I wrap this one up: [truchet tiles](https://en.wikipedia.org/wiki/Truchet_tiles). Truchet tiles are square tiles decorated with asymmetric patterns, designed so that whenever you lay them out randomly, the patterns will connect up in aesthetically pleasing ways. To be honest, I've not explore them much myself but Antonio Páez has written the [truchet package](https://paezha.github.io/truchet/) that you can use to play with these. It's not currently on CRAN, but you can install from GitHub with:
 
 ``` r
 remotes::install_github("paezha/truchet")
@@ -876,7 +871,7 @@ st_truchet_ss(
   ylim = c(1, 6)
 ) |>
   ggplot() +
-  geom_sf(colour = "white") +
+  geom_sf(colour = "#222222") +
   scale_x_continuous(expand = c(0, 0)) +
   scale_y_continuous(expand = c(0, 0)) +
   theme_void()
@@ -886,16 +881,13 @@ st_truchet_ss(
 ::: {.callout-important icon=false #exercise-truchet}
 ## Exercise
 
-Example code for truchet tiles is included in the `truchet-example.R` script.
+Example code for truchet tiles is included in the `truchet-example.R` script below.
 
 :::
 
-
-
-
 ## Materials
 
-Code for each of the source files referred to in this section of the workshop is included here. Click on the callout box below to see the code for the file you want to look at. 
+Code for each of the source files referred to in this section of the workshop is included here. Click on the callout box below to see the code for the file you want to look at. Please keep in mind that (unlike the code in the main text) I haven't modified these scripts since the original workshop, so you might need to play around with them to get them to work!
 
 ```{r}
 #| echo: false

@@ -1,9 +1,10 @@
 ---
 title: "Art from code VII: Pixel filters"
-description: "This is a subtitle"
+description: "An introduction to the ggfx package. Some weirdly distorted images are created. Good times are had by all concerned"
 date: "2024-12-24"
 categories: ["R", "Art"]
 image: "tree.png"
+image-alt: "A stylised tree image, white against black background in one half and black on white in the other"
 --- 
 
 <!--------------- my typical setup ----------------->
@@ -50,28 +51,13 @@ In this session I'll provide an introduction to ggfx. The API for ggfx takes a l
 
 When we dive into ggfx, it will be handy to have some data that we can use to make interesting art. For that purpose I'll rely on the [flametree package](https://flametree.djnavarro.net/) which I've used in the past to make pretty pictures of trees. The `flametree_grow()` function generates the raw data:
 
-
 ```{r flametree-data}
-#| eval: false
 tree <- flametree_grow(
   seed = 1, 
   time = 9, 
   angle = c(-15, 15, 30)
 )
 tree
-```
-
-```{r flametree-data-2}
-#| column: page
-#| echo: false
-op <- options(width = 150)
-tree <- flametree_grow(
-  seed = 1, 
-  time = 9, 
-  angle = c(-15, 15, 30)
-)
-tree
-options(op)
 ```
 
 You can render the output conveniently with the help of `flametree_plot()`:
@@ -79,23 +65,15 @@ You can render the output conveniently with the help of `flametree_plot()`:
 ```{r flametree-plot-origin, dev.args=list(bg="#ffffff")}
 tree |> 
   flametree_plot(
-    background = "#222222", 
-    palette = c("#ffffff", "#f652a0")
+    background = "#ffffff", 
+    palette = c("#222222", "#f652a0")
   )
 ```
 
 The `flametree_plot()` function is fairly flexible and allows you to draw the tree in several different styles, but for the purposes of this session we'll want to write our own ggplot2 (and ggfx) code, so it may be helpful to explain what you're looking at in this `tree`. Each curved segment in the tree is drawn as a [Bézier curve](https://en.wikipedia.org/wiki/B%C3%A9zier_curve) specified by three control points whose locations are given by the `coord_x` and `coord_y` variables. Each row in the tibble refers to one control point, so there are three rows per segment. Here's the three rows that correspond to the 99th segment in the tree:
 
-```{r flametree-segment, eval=FALSE}
-tree |> filter(path_id == 99)
-```
-
-```{r flametree-segment-2}
-#| column: page
-#| echo: false
-op <- options(width = 150)
+```{r flametree-segment}
 tree |> filter(id_path == 99)
-options(op)
 ```
 
 The various columns here describe different aspects of the tree: there's a `seg_wid` column representing the width of each segment (usually mapped to the size aesthetic), a `seg_col` column specifying a colour (usually mapped to the colour aesthetic), etc. 
@@ -110,6 +88,7 @@ Okay, now let's construct a flametree image piece by piece. I'll start with a `b
 
 ```{r base-plot}
 base <- ggplot() + 
+  scale_linewidth_identity() + 
   scale_size_identity() + 
   theme_void() + 
   coord_equal()
@@ -133,7 +112,12 @@ Now we can do the same thing to create the `trunk`. What we want in this case is
 
 ```{r trunk-layer}
 trunk <- geom_bezier(
-  mapping = aes(coord_x, coord_y, group = id_pathtree, size = seg_wid),
+  mapping = aes(
+    x = coord_x, 
+    y = coord_y,
+    group = id_pathtree, 
+    linewidth = seg_wid
+  ),
   data = tree, 
   lineend = "round", 
   colour = "#555555",
@@ -157,7 +141,7 @@ Very pretty!
 ::: {.callout-important icon=false #exercise-flametree-example}
 ## Exercise
 
-A script containing this code is included as the `flametree-example.R` script.
+A script containing this code is included as the `flametree-example.R` script in the [materials](#materials).
 
 :::
 
@@ -177,10 +161,10 @@ A script containing this code is included as the `flametree-example.R` script.
 base + trunk + leaves
 base +   
   trunk + 
-  with_outer_glow(leaves, colour = "white")
+  with_outer_glow(leaves, colour = "blue")
 base +   
   trunk + 
-  with_outer_glow(leaves, colour = "white", sigma = 5, expand = 3)
+  with_outer_glow(leaves, colour = "blue", sigma = 10, expand =5)
 ```
 
 In the third example, `sigma` is interpreted as the standard deviation of the Gaussian blur added around each point: `sigma = 5` specifies that this standard deviation is 5 pixels in size. The `expand = 3` argument tells ggfx to "expand" each point by 3 pixels before drawing the glow. This can be handy for very small objects that would otherwise be difficult to see even with the added glow.
@@ -193,7 +177,7 @@ As an aside, yes, there is also a `with_inner_glow()` function that applies the 
 ::: {.callout-important icon=false #exercise-ggfx-glow}
 ## Exercise
 
-A script containing this code is included as the `ggfx-glow.R` file
+A script containing this code is included as the `ggfx-glow.R` file in the [materials](#materials).
 
 :::
 
@@ -225,7 +209,7 @@ polar <- tibble(
   arc_end = arc_start + runif(200, min = -.2, max = .2),
   radius = runif(200),
   shade = runif(200), 
-  size = runif(200)
+  width = runif(200)
 )
 
 base <- ggplot(
@@ -236,20 +220,20 @@ base <- ggplot(
     xend = arc_end, 
     yend = radius, 
     colour = shade, 
-    size = size
+    linewidth = width
   )
 ) + 
   coord_polar(clip = "off") +
   scale_y_continuous(limits = c(0, 1), oob = scales::oob_keep) +
   scale_x_continuous(limits = c(0, 1), oob = scales::oob_keep) + 
   scale_colour_viridis_c(option = "magma") +
-  guides(colour = guide_none(), size = guide_none()) + 
-  scale_size(range = c(0, 10)) + 
+  guides(colour = guide_none(), linewidth = guide_none()) + 
+  scale_linewidth(range = c(0, 10)) + 
   theme_void() +
   theme(panel.background = element_rect(fill = "#aaaaaa"))
 ```
 
-The details to this don't matter very much for this session. All that matters is that when we add `geom_segment()` to `base`, it produces radial art like the image shown below on the left. Then, on the right, we can see the effect of the `with_dither()` function. I've reduced the image to five distinct colours in order to exaggerate the dithering effect as much as possible. Any lower than this and the image degrades too much.
+The details to this don't matter very much right now. All that matters is that when we add `geom_segment()` to `base`, it produces radial art like the image shown below on the left. Then, on the right, we can see the effect of the `with_dither()` function. I've reduced the image to five distinct colours in order to exaggerate the dithering effect as much as possible. Any lower than this and the image degrades too much.
 
 
 ```{r dither, dev.args=list(bg="#ffffff")}
@@ -282,7 +266,7 @@ Notice the difference between these two examples. The `with_*()` functions in gg
 ::: {.callout-important icon=false #exercise-ggfx-dither}
 ## Exercise
 
-A script containing this code is included as the `ggfx-dither.R` file
+A script containing this code is included as the `ggfx-dither.R` file in the [materials](#materials).
 
 :::
 
@@ -312,7 +296,7 @@ We're going to use `texture` as our background, but instead of plotting the whol
 
 ```{r mask-layer}
 hex <- tibble(x = sin((0:6)/6 * 2 * pi), y = cos((0:6)/6 * 2 * pi))
-mask <- geom_polygon(aes(x, y), hex, fill = "white")
+mask <- geom_polygon(aes(x, y), hex, fill = "white", color = "black")
 ```
 
 As before I'll create a `base` plot to which we can add these geoms. The code isn't very interesting, but I should be thorough and show it to you anyway:
@@ -402,7 +386,7 @@ That's awfully convenient :)
 ::: {.callout-important icon=false #exercise-ggfx-mask}
 ## Exercise
 
-A script containing this code is included as the `ggfx-mask.R` file
+A script containing this code is included as the `ggfx-mask.R` file in the [materials](#materials).
 
 :::
 
@@ -492,7 +476,7 @@ To be perfectly honest, I find it hard to visualise the effect of `with_displace
 ::: {.callout-important icon=false #exercise-ggfx-displace}
 ## Exercise
 
-A script containing this code is included as the `ggfx-displace.R` file
+A script containing this code is included as the `ggfx-displace.R` file in the [materials](#materials).
 
 :::
 
@@ -501,13 +485,13 @@ A script containing this code is included as the `ggfx-displace.R` file
 
 The last ggfx trick I want to mention is `with_blend()`. Blending filters compose two images together using a particular rule. For example, we could `"darken_intensity"` by selecting the darker of the two pixel values at each location. Or we could use a `"plus"` filter that just adds the pixel values together. Blending is a powerful technique and can be used to mimic the behaviour of other filters (e.g., a mask is really just a very particular type of blend). I'm not going to try to summarise all the different kinds of blend you can do. But I will point you to the [documentation page for with_blend()](https://ggfx.data-imaginist.com/reference/with_blend.html), which provides a pretty good place to start and has links to other resources you can follow up on. 
 
-Meanwhile, I'll give a simple example using an `"xor"` blend. I'll return to our flametree plot as the basis for this example. The `trunk` and `leaves` plot layers below define the flametree image in solid white colour:
+Meanwhile, I'll give a simple example using an `"xor"` blend. I'll return to our flametree plot as the basis for this example. The `trunk` and `leaves` plot layers below define the flametree image in solid black colour:
 
 ```{r blend-tree-components}
 leaves <- geom_point(
   data = leaf, 
   mapping = aes(coord_x, coord_y, colour = seg_col),
-  colour = "white",
+  colour = "black",
   size = 2, 
   stroke = 0
 )
@@ -520,18 +504,18 @@ trunk <- geom_bezier(
     size = seg_wid,
     group = id_pathtree
   ),
-  colour = "white",
+  colour = "black",
   lineend = "round"
 )
 ```
 
-Next I'll create a `triangle` layer that is a solid white triangle on the lower right side of the image, but is otherwise empty:
+Next I'll create a `triangle` layer that is a solid black triangle on the lower right side of the image, but is otherwise empty:
 
 ```{r blend-triangle}
 triangle <- polygon_layer(
   x = c(-4, 2, 2), 
   y = c(0, 0, 6), 
-  fill = "white",
+  fill = "black",
   alpha = 1
 )
 ```
@@ -568,7 +552,7 @@ A script containing this code is included as the `ggfx-blend.R` file
 
 ## Materials
 
-Code for each of the source files referred to in this section of the workshop is included here. Click on the callout box below to see the code for the file you want to look at. 
+Code for each of the source files referred to in this section of the workshop is included here. Click on the callout box below to see the code for the file you want to look at. Please keep in mind that (unlike the code in the main text) I haven't modified these scripts since the original workshop, so you might need to play around with them to get them to work!
 
 ```{r}
 #| echo: false

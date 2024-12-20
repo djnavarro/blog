@@ -1,9 +1,10 @@
 ---
 title: "Art from code II. Spatial tricks with ambient"
-description: "This is a subtitle"
+description: "Fun and games with spatial noise patterns, courtesy of the ambient package"
 date: "2024-12-19"
 categories: ["R", "Art"]
 image: "ridged.png"
+image-alt: "Fractal noise pattern that looks like white clouds against a teal sky"
 --- 
 
 <!--------------- my typical setup ----------------->
@@ -282,7 +283,6 @@ make_noise_art(frequency = 20)
 make_noise_art(frequency = 90)
 ```
 
-
 Here's what happens when I vary `palette`. In the first example I've created a greyscale image by specifying a palette that runs from `"white"` to `"black"`. The other two use palettes output by `sample_canva()`:
 
 ```{r example-art-palette}
@@ -297,9 +297,7 @@ make_noise_art(palette = sample_canva(seed = 123))
 make_noise_art(palette = sample_canva(seed = 456))
 ```
 
-
 Finally, we can vary the `generator` function. It probably will come as no surprise to discover that varying the generator has some wild effects. The output of a checkerboard pattern generator is fundamentally different to the output of a Worley noise generator, which in turn is very distinct from Perlin noise. As you become more familiar with using `ambient` you'll start getting a sense of what each of these generators produce, and develop your own preferences for how to use them. For now, it's enough to note that because the `gen_*()` functions all adopt (roughly) the same API, our `make_noise_art()` function works perfectly well when we swap out one for another:
-
 
 ```{r example-art-generator}
 #| fig-width: 6
@@ -1165,10 +1163,9 @@ The `curl-art-1.R` and `curl-art-2.R` scripts contain code to generate the "smal
 
 :::
 
-
 ## Materials
 
-Code for each of the source files referred to in this section of the workshop is included here. Click on the callout box below to see the code for the file you want to look at. 
+Code for each of the source files referred to in this section of the workshop is included here. Click on the callout box below to see the code for the file you want to look at. Please keep in mind that (unlike the code in the main text) I haven't modified these scripts since the original workshop, so you might need to play around with them to get them to work!
 
 ```{r}
 #| echo: false
