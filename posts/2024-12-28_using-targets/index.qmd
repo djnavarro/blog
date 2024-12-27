@@ -1,0 +1,337 @@
+---
+title: "Using targets"
+description: "Less painful than makefiles"
+date: "2024-12-28"
+--- 
+
+<!--------------- my typical setup ----------------->
+
+```{r}
+#| label: setup
+#| include: false
+very_wide <- 500
+wide <- 136
+narrow <- 76
+options(width = narrow)
+cache_images <- TRUE
+set.seed(1)
+```
+
+<!--------------- post begins here ----------------->
+
+Useful links:
+
+- [targets package website](https://docs.ropensci.org/targets/)
+- [targets user manual](https://books.ropensci.org/targets/)
+
+Unhelpful links:
+
+- [balrogs and makefiles](/posts/2023-06-30_makefiles/)
+- [my shitty repo](https://github.com/djnavarro/tartoys)
+
+```{r}
+library(targets)
+```
+
+## Project 1: D&D spells
+
+The nice thing about a targets workflow is that you can (sometimes) see the entire structure of the project just by looking at the `_targets.R` script:
+
+```{r}
+#| label: dnd-targets-file
+#| eval: false
+#| code-line-numbers: true
+#| filename: "_targets.R"
+# packages used in the pipeline -------------------------------------------
+
+library(targets)
+
+tar_option_set(
+  packages = c(
+    "rprojroot", "fs", "tibble", "readr",
+    "ggplot2", "dplyr", "stringr",
+    "tidyr", "forcats", "ggrepel",
+    "legendry"
+  )
+)
+
+# define functions for the pipeline ---------------------------------------
+
+tar_source(files = c("dice.R", "scholastic.R"))
+
+set_output_dir <- function() {
+  root <- find_root(has_file("_targets.R"))
+  output <- path(root, "output")
+  dir_create(output)
+  return(output)
+}
+
+# define the targets ------------------------------------------------------
+
+list(
+  # preprocessing targets
+  tar_target(input, "spells.csv", format = "file"),
+  tar_target(output, set_output_dir()),
+  tar_target(spells, read_csv(input, show_col_types = FALSE)),
+
+  # dice plot targets
+  tar_target(dice_dat, dice_data(spells)),
+  tar_target(dice_pic, dice_plot(dice_dat, output)),
+
+  # scholastic plot targets
+  tar_target(scholastic_dat, scholastic_data(spells)),
+  tar_target(scholastic_clus, scholastic_clusters(scholastic_dat)),
+  tar_target(
+    scholastic_pic,
+    scholastic_plot(scholastic_dat, scholastic_clus, output)
+  )
+)
+```
+
+There are three clear sections:
+
+- packages needed for the workflow
+- functions used to execute the workflow
+- the list of targets 
+
+blah blah blah. 
+
+As it happens, I have a copy of the project in the `spells` directory within this blog post. However, the project is designed to be a standalone, not part of a blog post, so I'm going to temporarily have knitr execute code from within the `spells` subdirectory
+
+```{r}
+knitr::opts_knit$set(
+  root.dir = here::here(
+    "posts", 
+    "2024-12-28_using-targets",  
+    "spells"
+  )
+)
+```
+
+
+```{r}
+#| label: execute-spells
+tar_make()
+```
+
+```{r}
+#| label: spells-preprocessing
+#| echo: false
+#| eval: true
+
+```
+
+
+Here's the code for `dice.R`:
+
+```{r}
+#| label: dnd-dice-file
+#| eval: true
+#| code-line-numbers: true
+#| filename: "dice.R"
+dice_data <- function(spells) {
+  dice_dat <- spells |>
+    select(name, level, description) |>
+    mutate(
+      dice_txt = str_extract_all(description, "\\b\\d+d\\d+\\b"),
+      dice_txt = purrr::map(dice_txt, unique)
+    ) |>
+    unnest_longer(
+      col = "dice_txt",
+      values_to = "dice_txt",
+      indices_to = "position"
+    ) |>
+    mutate(
+      dice_num = dice_txt |> str_extract("\\d+(?=d)") |> as.numeric(),
+      dice_die = dice_txt |> str_extract("(?<=d)\\d+") |> as.numeric(),
+      dice_val = dice_num * (dice_die + 1)/2,
+      dice_txt = factor(dice_txt) |> fct_reorder(dice_val)
+    )
+  return(dice_dat)
+}
+
+dice_plot <- function(dice_dat, output) {
+
+  palette <- hcl.colors(n = 10, palette = "PuOr")
+
+  labs <- dice_dat |>
+    summarise(
+      dice_txt = first(dice_txt),
+      count = n(),
+      .by = dice_txt
+    )
+
+  pic <- ggplot(
+    data = dice_dat,
+    mapping = aes(
+      x = dice_txt,
+      fill = factor(level)
+    )
+  ) +
+    geom_bar(color = "#222") +
+    geom_label_repel(
+      data = labs,
+      mapping = aes(
+        x = dice_txt,
+        y = count,
+        label = dice_txt
+      ),
+      size = 3,
+      direction = "y",
+      seed = 1,
+      nudge_y = 4,
+      color = "#ccc",
+      fill = "#222",
+      arrow = NULL,
+      inherit.aes = FALSE
+    ) +
+    scale_fill_manual(
+      name = "Spell level",
+      values = palette
+    ) +
+    scale_x_discrete(
+      name = "Increasing average outcome \u27a1",
+      breaks = NULL,
+      expand = expansion(.05)
+    ) +
+    scale_y_continuous(name = NULL) +
+    labs(
+      title = "Frequency of dice rolls described in D&D spell descriptions, by spell level",
+      subtitle = "Or whatever",
+      caption = "Source: https://github.com/rfordatascience/tidytuesday/tree/main/data/2024/2024-12-17"
+    ) +
+    theme_void() +
+    theme(
+      plot.background = element_rect(fill = "#222"),
+      text = element_text(color = "#ccc"),
+      axis.text = element_text(color = "#ccc"),
+      axis.title = element_text(color = "#ccc"),
+      plot.margin = unit(c(1, 1, 1, 1), units = "cm"),
+      legend.position = "inside",
+      legend.position.inside = c(.3, .825),
+      legend.direction = "horizontal",
+      legend.title.position = "top",
+      legend.byrow = TRUE
+    )
+
+  out <- path(output, "dice_pic.png")
+
+  ggsave(
+    filename = out,
+    plot = pic,
+    width = 2000,
+    height = 1000,
+    units = "px",
+    dpi = 150
+  )
+
+  return(out)
+}
+```
+
+Here's the code for `scholastic.R`:
+
+```{r}
+#| label: dnd-scholastic-file
+#| eval: true
+#| code-line-numbers: true
+#| filename: "scholastic.R"
+# constructs the data frame used by geom_tile() later
+scholastic_data <- function(spells) {
+  spells |>
+    select(name, school, bard:wizard) |>
+    pivot_longer(
+      cols = bard:wizard,
+      names_to = "class",
+      values_to = "castable"
+    ) |>
+    summarise(
+      count = sum(castable),
+      .by = c("school", "class")
+    ) |>
+    mutate(
+      school = str_to_title(school),
+      class  = str_to_title(class)
+    )
+}
+
+# hierarchical clustering for the schools and classes
+scholastic_clusters <- function(dat) {
+
+  # matrix of counts for each school/class combination
+  mat <- dat |>
+    pivot_wider(
+      names_from = "school",
+      values_from = "count"
+    ) |>
+    as.data.frame()
+  rownames(mat) <- mat$class
+  mat$class <- NULL
+  as.matrix(mat)
+
+  # each school is a distribution over classes,
+  # each class is a distribution over schools
+  class_distribution  <- mat / replicate(ncol(mat), rowSums(mat))
+  school_distribution <- t(mat) / (replicate(nrow(mat), colSums(mat)))
+
+  # pairwise distances
+  class_dissimilarity  <- dist(class_distribution)
+  school_dissimilarity <- dist(school_distribution)
+
+  # hierarchical clustering
+  clusters <- list(
+    class = hclust(class_dissimilarity, method = "average"),
+    school = hclust(school_dissimilarity, method = "average")
+  )
+
+  return(clusters)
+}
+
+scholastic_plot <- function(dat, clusters, output) {
+
+  pic <- ggplot(dat, aes(school, class, fill = count)) +
+    geom_tile() +
+    scale_x_dendro(
+      clust = clusters$school,
+      guide = guide_axis_dendro(n.dodge = 2),
+      expand = expansion(0, 0),
+      position = "top"
+    ) +
+    scale_y_dendro(
+      clust = clusters$class,
+      expand = expansion(0, 0)
+    ) +
+    scale_fill_distiller(palette = "RdPu") +
+    labs(
+      x = "The Schools of Magic",
+      y = "The Classes of Character",
+      fill = "Number of Learnable Spells"
+    ) +
+    coord_equal() +
+    theme(
+      plot.background = element_rect(fill = "#222", color = "#222"),
+      plot.margin = unit(c(2, 2, 2, 2), units = "cm"),
+      text = element_text(color = "#ccc"),
+      axis.text = element_text(color = "#ccc"),
+      axis.title = element_text(color = "#ccc"),
+      axis.ticks = element_line(color = "#ccc"),
+      legend.position = "bottom",
+      legend.background = element_rect(fill = "#222", color = "#222")
+    )
+
+  out <- path(output, "scholastic_pic.png")
+
+  ggsave(
+    filename = out,
+    plot = pic,
+    width = 1000,
+    height = 1000,
+    units = "px",
+    dpi = 150
+  )
+
+  return(out)
+}
+```
+
+

@@ -1,0 +1,3 @@
+name|type|data|command|depend|seed|path|time|size|bytes|format|repository|iteration|parent|children|seconds|warnings|error
+input|stem||d318d101d9460f77|2c530c1562a7fbd1|-1867563021|spells.csv|t20084.9433074785s||0|file|local|vector|||||_paths_ missing files spells.csv
+set_output_dir|function|ff15fe4c9cf6c73c|||||||||||||||
