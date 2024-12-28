@@ -1,0 +1,39 @@
+---
+title: 
+output:
+  litedown::html_format:
+    options:
+      toc: true
+---
+
+```{r}
+#| echo: false
+#| results: "asis"
+
+# list of posts
+root <- rprojroot::find_root(rprojroot::has_file("_targets.R"))
+post_dir <- fs::path(root, "post")
+post <- post_dir |>
+  fs::dir_ls(
+    recurse = TRUE,
+    regexp = "[.][rR]?md$"
+  ) |> 
+  fs::path_rel(post_dir) |> 
+  fs::path_ext_remove() |> 
+  fs::path_ext_set(".html") |> 
+  setdiff("index.html")
+
+purrr::walk(
+  rev(post), 
+  \(p) {
+    t <- p |> 
+      fs::path_dir() |> 
+      fs::path_split() |> 
+      unlist() |> 
+      paste(collapse = " / ")
+    l <- paste0("[", t, "](", p, ")")
+    cat("-", l, "\n")
+  }
+)
+```
+

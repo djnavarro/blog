@@ -408,5 +408,52 @@ tar_make()
 fs::dir_tree()
 ```
 
+## Project 2: A toy blog
 
+```{r}
+#| label: knitr-setwd-liteblog
+knitr::opts_knit$set(
+  root.dir = here::here(
+    "posts", 
+    "2024-12-28_using-targets",  
+    "liteblog"
+  )
+)
+```
 
+```{r}
+#| label: targets-liteblog-destroy
+#| echo: false
+# complete clean, mimic fresh state
+tar_destroy("all")
+if(fs::dir_exists("_targets")) fs::dir_delete("_targets")
+if(fs::dir_exists("_site")) fs::dir_delete("_site")
+```
+
+```{r}
+#| label: liteblog-filetree-fresh
+fs::dir_tree()
+```
+
+```{r}
+#| label: liteblog-make
+tar_make()
+```
+
+```{r}
+#| label: liteblog-filetree-built
+fs::dir_tree()
+```
+
+```{r}
+#| label: hacky-file-copy
+#| echo: false
+# this shouldn't be needed but I've forgotten how to do it in quarto
+fs::dir_copy(
+  path = "_site",
+  new_path = here::here("_site", "posts", "2024-12-28_using-targets"), 
+  overwrite = TRUE
+)
+```
+
+You can browse the built website [here](./_site/).

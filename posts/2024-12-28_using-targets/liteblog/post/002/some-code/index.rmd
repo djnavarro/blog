@@ -1,0 +1,15 @@
+---
+title: Including code blocks
+subtitle: A minimal R markdown post with code
+---
+
+Adding code to the blog is the same as it would be for any R markdown document:
+
+```{r}
+stringr::str_to_upper("hello cruel world")
+```
+
+<br><br>
+
+[←](/)
+
