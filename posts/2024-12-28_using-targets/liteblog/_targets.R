@@ -1,5 +1,5 @@
 library(targets)
-tar_source(files = "liteblog.R")
+tar_source(files = c("scripts/common.R", "scripts/build.R"))
 list(
   tar_target(opt, get_options()),
   tar_target(page_list, page_paths(opt)),

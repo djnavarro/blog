@@ -1,0 +1,29 @@
+---
+title:  A post that adds some code
+subtitle: This is hardly more interesting
+---
+
+```{r}
+#| label: setup
+#| echo: false
+source(fs::path(
+  rprojroot::find_root(rprojroot::has_file("_targets.R")),
+  "scripts",
+  "common.R"
+))
+opts <- get_options()
+```
+
+Oh look, here is some more text, but now I will add some R code to make it look like this is serious:
+
+```{r}
+stringr::str_to_upper("hello cruel world")
+```
+
+```{r}
+#| label: footer
+#| echo: false
+#| results: asis
+write_footer()
+```
+

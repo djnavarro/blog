@@ -1,18 +1,27 @@
 ---
-title: 
+title: A toy blog
 output:
   litedown::html_format:
     options:
       toc: true
 ---
 
+Posts are listed on the front page, there's nothing at all special here. You probably want to return to the [targets blog post](..).
+
 ```{r}
 #| echo: false
 #| results: "asis"
 
+# shared functions
+source(fs::path(
+  rprojroot::find_root(rprojroot::has_file("_targets.R")),
+  "scripts",
+  "common.R"
+))
+opts <- get_options()
+
 # list of posts
-root <- rprojroot::find_root(rprojroot::has_file("_targets.R"))
-post_dir <- fs::path(root, "post")
+post_dir <- fs::path(opts$root, opts$post)
 post <- post_dir |>
   fs::dir_ls(
     recurse = TRUE,

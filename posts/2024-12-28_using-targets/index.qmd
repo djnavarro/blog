@@ -451,9 +451,14 @@ fs::dir_tree()
 # this shouldn't be needed but I've forgotten how to do it in quarto
 fs::dir_copy(
   path = "_site",
-  new_path = here::here("_site", "posts", "2024-12-28_using-targets"), 
+  new_path = here::here(
+    "_site", 
+    "posts", 
+    "2024-12-28_using-targets",
+    "blog"
+  ), 
   overwrite = TRUE
 )
 ```
 
-You can browse the built website [here](./_site/).
+You can browse the built website [here](./blog/)

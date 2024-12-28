@@ -1,54 +1,4 @@
-
-# targets functions -------------------------------------------------------
-
-# basic options for the blog
-get_options <- function() {
-  list(
-    root = rprojroot::find_root(rprojroot::has_file("_targets.R")),
-    post = "post",
-    site = "_site",
-    static = "static"
-  )
-}
-
-# find paths to the rmd files for the blog
-page_paths <- function(opt = get_options()) {
-  pages <- fs::dir_ls(
-    path = fs::path(opt$root, opt$post),
-    recurse = TRUE,
-    regexp = "[.][rR]?md$"
-  )
-  unname(unclass(pages))
-}
-
-# render a blog post using litedown
-fuse_page <- function(page, opt = get_options()) {
-  post_output <- litedown::fuse(page)
-  site_output <-stringr::str_replace(
-    string = post_output,
-    pattern = paste0(opt$post, "/"),
-    replacement = paste0(opt$site, "/")
-  )
-  fs::dir_create(fs::path_dir(site_output))
-  fs::file_move(post_output, site_output)
-}
-
-# copy the static files into the site folder
-copy_static <- function(opt = get_options()) {
-  fs::dir_create(fs::path(opt$root, opt$site))
-  static_files <- fs::dir_ls(fs::path(opt$root, opt$static), all = TRUE)
-  fs::file_copy(
-    static_files,
-    static_files |> stringr::str_replace(
-      pattern = opt$static,
-      replacement = opt$site
-    ),
-    overwrite = TRUE
-  )
-}
-
-
-# user tools --------------------------------------------------------------
+# user facing tools intended to for interactive use only
 
 # this could be done better
 clean_up <- function(opt = get_options()) {
@@ -113,15 +63,27 @@ new_post <- function(slug, opt = get_options()) {
     "subtitle: subtitle-text",
     "---",
     "",
+    "```{r}",
+    "#| label: setup",
+    "#| echo: false",
+    "source(fs::path(",
+    "  rprojroot::find_root(rprojroot::has_file(\"_targets.R\")),",
+    "  \"scripts\",",
+    "  \"common.R\"",
+    "))",
+    "opts <- get_options()",
+    "```",
+    "",
     "Text",
     "",
-    "<br><br>",
-    "",
-    "[←](/)",
+    "```{r}",
+    "#| label: footer",
+    "#| echo: false",
+    "#| results: asis",
+    "write_footer()",
+    "```",
     ""
   )
   fs::dir_create(dir)
   brio::write_lines(rmd, out)
 }
-
-
