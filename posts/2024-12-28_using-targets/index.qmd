@@ -35,10 +35,36 @@ library(targets)
 
 ## Project 1: D&D spells
 
+The first project is a fun [Tidy Tuesday](https://github.com/rfordatascience/tidytuesday/tree/main/data/2024/2024-12-17) project that makes these two absurd images:
+
+::: {layout="[2,1]" .column-page}
+
+![dice_pic.png](img/dice_pic.png)
+
+![scholastic_pic.png](img/scholastic_pic.png)
+
+:::
+
+```{r}
+#| label: targets-spells-destroy
+#| echo: false
+# complete clean, mimic fresh state
+tar_destroy("all")
+fs::dir_delete("spells/_targets")
+fs::dir_delete("spells/output")
+```
+
+```{r}
+#| label: spells-dir-tree-fresh
+fs::dir_tree("spells")
+```
+
+### Defining the pipeline
+
 The nice thing about a targets workflow is that you can (sometimes) see the entire structure of the project just by looking at the `_targets.R` script:
 
 ```{r}
-#| label: dnd-targets-file
+#| label: spells-targets-file
 #| eval: false
 #| code-line-numbers: true
 #| filename: "_targets.R"
@@ -94,40 +120,16 @@ There are three clear sections:
 - functions used to execute the workflow
 - the list of targets 
 
-blah blah blah. 
+It's not super relevant to the post, but here's the code defined in the `dice.R` and `scholastic.R` scripts. This code does all the work of building the plots, but I'm not going to dive into it in any detail here:
 
-As it happens, I have a copy of the project in the `spells` directory within this blog post. However, the project is designed to be a standalone, not part of a blog post, so I'm going to temporarily have knitr execute code from within the `spells` subdirectory
-
-```{r}
-knitr::opts_knit$set(
-  root.dir = here::here(
-    "posts", 
-    "2024-12-28_using-targets",  
-    "spells"
-  )
-)
-```
-
-
-```{r}
-#| label: execute-spells
-tar_make()
-```
-
-```{r}
-#| label: spells-preprocessing
-#| echo: false
-#| eval: true
-
-```
-
-
-Here's the code for `dice.R`:
+::: {.callout-note icon=false title="Plotting code"}
 
 ```{r}
 #| label: dnd-dice-file
 #| eval: true
 #| code-line-numbers: true
+#| code-fold: true
+#| code-summary: "Click to show/hide the dice.R code"
 #| filename: "dice.R"
 dice_data <- function(spells) {
   dice_dat <- spells |>
@@ -229,12 +231,13 @@ dice_plot <- function(dice_dat, output) {
 }
 ```
 
-Here's the code for `scholastic.R`:
 
 ```{r}
 #| label: dnd-scholastic-file
 #| eval: true
 #| code-line-numbers: true
+#| code-fold: true
+#| code-summary: "Click to show/hide the scholastic.R code"
 #| filename: "scholastic.R"
 # constructs the data frame used by geom_tile() later
 scholastic_data <- function(spells) {
@@ -333,5 +336,77 @@ scholastic_plot <- function(dat, clusters, output) {
   return(out)
 }
 ```
+
+:::
+
+blah blah blah. 
+
+As it happens, I have a copy of the project in the `spells` directory within this blog post, so we can in fact play with this project and see how targets operates. However, the project is designed to be a standalone, not part of a blog post, so I'll tweak my knitr settings so that code will now be executed from the `spells` subdirectory:
+
+```{r}
+#| label: knitr-setwd-spells
+knitr::opts_knit$set(
+  root.dir = here::here(
+    "posts", 
+    "2024-12-28_using-targets",  
+    "spells"
+  )
+)
+```
+
+
+### Inspecting the pipeline
+
+The `tar_visnetwork()` function provides a handy way of visualising the structure of a pipeline as a little HTML widget. By default it will show the dependencies between all functions and all targets, which is often totally fine, but I'm going to simplify it here by setting `targets_only = TRUE` (i.e., don't show the user-defined functions), and also set `exclude = c("input", "output")` to ignore the two really boring pre-processing targets! 
+
+I'm also going to set `physics = TRUE`, which you don't usually need, but in this case turns out to be handy because it pushes some of the vertices in the graph just far enough apart that you can see all the edges properly. 
+
+Anyway, here it is:
+
+```{r}
+#| label: targets-spells-visnetwork
+tar_visnetwork(
+  targets_only = TRUE, 
+  exclude = c("input", "output"),
+  physics = TRUE
+)
+```
+
+This makes the structure of the project clear:
+
+- The `dice_pic` image depends only on the `dice_dat` data set, and the `dice_dat` data set is derived from the `spells` data frame
+- The `scholastic_pic` is a little more complicated because it depends on two data sets: there's the `scholastic_dat` data set that is derived directly from `spells`, but there's also the `scholastic_clus` object that is constructed from the `scholastic_dat` data set. 
+
+If you want a little more detail, you can use `tar_manifest()` to get a summary of all the targets and the command with which they are associated:
+
+```{r}
+#| label: targets-spells-manifest
+tar_manifest()
+```
+
+The output isn't as pretty as the HTML widget, but you can use it to see exactly what the target objects are, as well as the the command used to construct them. 
+
+### Executing the pipeline
+
+In the HTML widget above, all the targets are coloured in blue, indicating that these are "outdated". You can get a listing of all outdated targets like this:
+
+```{r}
+#| label: targets-spells-outdated
+tar_outdated()
+```
+
+These are the targets that need to be (re)run. We can do this by calling `tar_make()`
+
+```{r}
+#| label: execute-spells
+tar_make()
+```
+
+
+```{r}
+#| label: spells-dir-tree-built
+fs::dir_tree()
+```
+
 
 
