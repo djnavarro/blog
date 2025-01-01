@@ -14,7 +14,7 @@ output:
         style: tomorrow
 ---
 
-In the dying days of 2024, a woman who should have been doing something useful like replaying the original Mass Effect trilogy for the n-th time instead decided to learn something about [litedown](https://yihui.org/litedown), [targets](https://books.ropensci.org/targets/), and [legendry](https://teunbrand.github.io/legendry/). This absurdity, which has absolutely no use case whatsoever and should be shunned by one and all, is the inevitable outcome of her poor decision making.
+In the dying days of 2024, a woman who should have been doing something useful like replaying the original Mass Effect trilogy for the n-th time instead decided to create a terrible blogging tool using litedown and targets. This absurdity, which has absolutely no use case whatsoever and should be shunned by one and all, is the inevitable outcome of her poor decision making. This is an automatically constructed list of posts:
 
 ```{r}
 #| label: post-listing
@@ -49,6 +49,6 @@ write_post_list <- function() {
 write_post_list()
 ```
 
-Should you have, in some drug-addled state no doubt, followed a capricious rabbit down some dark internet hole and ended up here by accident, your best bet is to close the browser and take a few deep breaths. You would be ill-advised to go to [blog.djnavarro.net](https://blog.djnavarro.net) to find other things I have written, and even more poorly-advised to point your browser at [djnavarro.net](https://djnavarro.net).
+This version of the "liteblog" is constructed from within the (quarto) blog post describing the project. Another version is live at [liteblog.djnavarro.net](https://liteblog.djnavarro.net). 
 
-The art at [art.djnavarro.net](https://art.djnavarro.net) is kind of neat though. 
+To return to the parent blog post, click [here](/posts/2025-01-02_using-targets/).

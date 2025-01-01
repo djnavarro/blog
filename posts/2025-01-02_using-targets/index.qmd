@@ -401,7 +401,6 @@ These are the targets that need to be (re)run. We can do this by calling `tar_ma
 tar_make()
 ```
 
-
 ```{r}
 #| label: spells-dir-tree-built
 fs::dir_tree()
@@ -425,9 +424,11 @@ knitr::opts_knit$set(
 #| echo: false
 # complete clean, mimic fresh state
 tar_destroy("all")
-if(fs::dir_exists("_targets")) fs::dir_delete("_targets")
-if(fs::dir_exists("site")) fs::dir_delete("site")
-if(fs::file_exists("_liteblog.rds")) fs::file_delete("_liteblog.rds")
+if (fs::dir_exists("_targets")) fs::dir_delete("_targets")
+if (fs::dir_exists("site")) fs::dir_delete("site")
+if (fs::file_exists("_liteblog.rds")) fs::file_delete("_liteblog.rds")
+output_liteblog <- here::here("_site", "posts", "2025-01-02_using-targets", "site")
+if (fs::dir_exists(output_liteblog)) fs::dir_delete(output_liteblog)
 ```
 
 ```{r}
@@ -450,9 +451,10 @@ fs::dir_tree()
 #| echo: false
 fs::dir_copy(
   path = "site",
-  new_path = here::here("_site", "posts", "2025-01-02_using-targets"),
+  new_path = here::here("_site", "posts", "2025-01-02_using-targets", "site"),
   overwrite = TRUE
 )
 ```
 
-You can browse the built website [here](./site/index.html)
+You can browse the built website [here](./site/index.html).
+
