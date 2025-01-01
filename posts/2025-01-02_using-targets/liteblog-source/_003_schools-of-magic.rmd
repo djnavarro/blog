@@ -1,0 +1,230 @@
+---
+title: The schools of magic plot
+output:
+  litedown::html_format:
+    meta:
+      css: ["@article", "../_liteblog.css"]
+      js: ["@sidenotes"]
+      include-before: "_liteblog-header.html"
+      include-after: "_liteblog-footer.html"
+    options:
+      toc: true
+      js_highlight:
+        package: prism
+        style: tomorrow
+---
+
+```{r}
+#| label: setup
+#| echo: false
+.blog <- readRDS("../_liteblog.rds")
+```
+
+This is the code used to produce the "schools of magic" dendrogram/heatmap plot that I posted on social media. As always, I'll start by loading the packages:
+
+```{r}
+#| label: load-packages
+#| message: false
+library(dplyr)
+library(tidyr)
+library(readr)
+library(tibble)
+library(ggplot2)
+library(stringr)
+library(legendry)
+```
+
+## Data wrangling
+
+The data wrangling for this one is slightly more elaborate than for the [spell dice](/002/spell-dice) plot, because we'll need data suitable for the heatmap and also we need data suitable to produce the dendrograms on each axis. We start by loading the `spells` data:
+
+```{r}
+#| label: read-spells
+#| print: print_tinker
+spells <- read_csv("./data/spells.csv", show_col_types = FALSE)
+```
+
+### Data for the heatmap
+
+To produce data for the heatmap, we select the relevant columns: i.e., those corresponding to the character classes, the `school` variable that denotes the school of magic for the spell, and the `name` variable because I like having an id column in my data. We then use `pivot_longer()` to arrange this data set in long form:
+
+```{r}
+#| label: spells-long
+spells_long <- spells |>
+  select(name, school, bard:wizard) |>
+  pivot_longer(
+    cols = bard:wizard,
+    names_to = "class",
+    values_to = "castable"
+  ) 
+
+print(spells_long)
+```
+
+Now we have a tidy data set with one row per "observation", in the sense that it specifies whether a spell of a specific `name` (which belongs to a specific `school`), is in fact `castable` by members of a particular character `class`. We can summarise this by aggregating over the specific spells, and count the number of castable spells for each combination of magic school and character class: 
+
+```{r}
+#| label: scholastic-data
+dat <- spells_long |>
+  summarise(
+    count = sum(castable),
+    .by = c("school", "class")
+  ) |>
+  mutate(
+    school = str_to_title(school),
+    class  = str_to_title(class)
+  )
+
+print(dat)
+```
+
+This `dat` data frame is suitable for plotting as a heat map with `geom_tile()`, so let's now move to stage two of the data wrangling.
+
+### Dissimilarity data for the dendrograms
+
+The data structure that we need at this step is slightly more complicated, because what we want to display on each axis is a hierarchical clustering, of the sort typically produced by `hclust()`. In a distant, distant past I actually wrote my PhD thesis on clustering and scaling tools used to represent item (dis)similarities, and as such I'm acutely aware that these tools are extremely sensitive to the way you define similarity (or dissimilarity, or distance, or association, or whatever...). So I'll be a little careful here, because if you do this in a thoughtless way you get stupid answers. 
+
+Let's start by reorganising the `dat` data frame into a matrix form. The `mat` matrix below contains the exact same information as the data frame: each cell in the matrix represents the number of castable spells for a specific combination of class and school.
+
+```{r}
+print_truncated <- function(x) {
+  if (inherits(x, "matrix")) {
+    rownames(x) <- str_trunc(rownames(x), width = 6, ellipsis = ".")
+    colnames(x) <- str_trunc(colnames(x), width = 6, ellipsis = ".")
+  }
+  if (inherits(x, "dist")) {
+    attr(x, "Labels") <- str_trunc(
+      attr(x, "Labels"), 
+      width = 6, 
+      ellipsis = "."
+    )
+  }
+  print(round(x, digits = 3))
+}
+
+mat <- dat |>
+  pivot_wider(
+    names_from = "school",
+    values_from = "count"
+  ) |>
+  as.data.frame()
+
+rownames(mat) <- mat$class
+mat$class <- NULL
+mat <- as.matrix(mat)
+
+print_truncated(mat)
+```
+
+In this matrix we have a measure of "affinity", in the sense that larger values indicate a higher affinity between a class and a school. The tricky part here is that some classes are simply better at spellwork than others: clerics and wizards can both cast lots of spells; paladins and rangers cannot cast many. The kind of similarity that I have in mind here is not the boring "clerics and wizards are similar because they can both cast lots of spells" kind. What I really want to say is something like "paladins and clerics are  similar because abjuration is the strongest school for both classes". The same applies when thinking about the schools of magic: there are lots of transmutation spells and lots of abjuration spells. That doesn't really make those schools similar, not in the sense I care about. 
+
+What all this amounts to is an acknowledgement that we need to correct for overall prevalance, or -- to frame it in probabilistic terms -- to describe classes in terms of a *distribution over schools* and describe schools in terms of a *distribution over classes*. That gives us the following two matrices:
+
+```{r}
+class_distro  <- mat / replicate(ncol(mat), rowSums(mat))
+school_distro <- t(mat) / (replicate(nrow(mat), colSums(mat)))
+```
+
+The `class_distro` matrix is the one that describes classes as a distribution over schools, and you can see in the printout here that when described in this fashion the paladin row and the cleric row do look rather similar to each other:
+
+```{r}
+print_truncated(class_distro)
+```
+
+A similar phenomenon is observed in the `school_distro` matrix, where you can see that the rows for abjuration and divination are quite similar despite the fact that there are a lot more abjuration spells than divination spells:
+
+```{r}
+print_truncated(school_distro)
+```
+
+We are now in a position to convert both of these to distance/distance matrices. Notwithstanding the fact that it's probably not the ideal way to describe similarity between distributions, I'll call `dist()` using the default Euclidean distance measure. I mean, sure, I could probably do something fancy with [Jensen-Shannon divergence](https://en.wikipedia.org/wiki/Jensen%E2%80%93Shannon_divergence) here, but in my experience the metric you use to measure distributional similarity is *far* less important than the manner in which you construct the distributions from raw features in the first place, so I'm not going to sweat this one. Here's our measure of class dissimilarity:
+
+```{r}
+class_dissim  <- dist(class_distro)
+print_truncated(class_dissim)
+```
+
+Here's our measure of school dissimilarity:
+
+```{r}
+school_dissim <- dist(school_distro)
+print_truncated(school_dissim)
+```
+
+### Hierarchical clustering for the dendrograms
+
+After all that effort in constructing the dissimilarity matrices, the hierarchical clustering is something of an anticlimax. The only substantive choice we need to make here is whether to use single-link, complete-link, average-link, or some other method for agglomeration. This does matter somewhat, at least in my experience, but I'm also feeling lazy so I'm going to go with average-link because it feels appropriate to me in this context:
+
+```{r}
+clusters <- list(
+  class = hclust(class_dissim, method = "average"),
+  school = hclust(school_dissim, method = "average")
+)
+print(clusters)
+```
+
+## Making the plot
+
+Constructing the plot can also be considered a two-part process. In the first stage, we constrict a `base` plot object that uses `geom_tile()` to display the class/school affinities data (i.e., `dat`), and add various stylistic features to make it look pretty:
+
+```{r, dev.args=list(bg="#222")}
+#| label: base-plot
+#| fig.width: 10
+#| fig.height: 10
+base <- ggplot(dat, aes(school, class, fill = count)) +
+  geom_tile() +
+  scale_fill_distiller(palette = "RdPu") +
+  labs(
+    x = "The Schools of Magic",
+    y = "The Classes of Character",
+    fill = "Number of Learnable Spells"
+  ) +
+  coord_equal() +
+  theme(
+    plot.background = element_rect(
+      fill = "#222", 
+      color = "#222"
+    ),
+    plot.margin = unit(c(2, 2, 2, 2), units = "cm"),
+    text = element_text(color = "#ccc", size = 14),
+    axis.text = element_text(color = "#ccc"),
+    axis.title = element_text(color = "#ccc"),
+    axis.ticks = element_line(color = "#ccc"),
+    legend.position = "bottom",
+    legend.background = element_rect(
+      fill = "#222", 
+      color = "#222"
+    )
+  )
+
+plot(base)
+```
+
+In this form, though, you can't really see which schools are similar to each other and nor can you see how the classes are related in terms of their spell-casting affinities. What we really want to do is reorder the rows and columns so that the most similar schools are placed in adjacent columns, and the most similar classes are placed in adjacent rows. Until recently I'd never found a tool for doing this in R that I found satisfying, but with the release of the legendry package by Teun van den Brand (which has a *lot* of tools for working with plot legends and axes that I'm slowly learning...) this has changed. If we pass a hierarchical clustering to the `scale_*_dendro()` functions, the rows/columns are reordered appropriately, and the dendrograms themselves are shown alongside the axes: 
+
+```{r, dev.args=list(bg="#222")}
+#| label: final-plot
+#| fig.width: 10
+#| fig.height: 10
+pic <- base +
+  scale_x_dendro(
+    clust = clusters$school,
+    guide = guide_axis_dendro(n.dodge = 2),
+    expand = expansion(0, 0),
+    position = "top"
+  ) +
+  scale_y_dendro(
+    clust = clusters$class,
+    expand = expansion(0, 0)
+  )
+
+plot(pic)
+```
+
+So much nicer! 
+
+To any D&D player, the plot is immediately interpretable: wizards and sorcerers are very similar spellcasting classes, and the spellcasting abilities of paladins are basically "clerics, but not very good at it". The same dynamic is in play with regards to druids and rangers, in the sense that they're both nature focused spellcasters but rangers aren't very good at it. The grouping of bards and warlocks surprised me a little, until it was pointed out to me that they both rely heavily on charisma in their spellcasting, so there is a kind of connection there. 
+
+On the schools side, the plot is similarly interpretable: enchantment and illusion are closely related schools, as are abjuration and divination. Necromancy feels a little bit like the darker cousin of abjuration so yeah, that tracks too. Transmutation, conjuration, and evocation are all kinda related, so you get a clustering there too.
+
+There are some limitations to hierarchical clustering, of course, and you can see a little bit of that coming through in the plot. By design, I constructed the dissimilarities so that they'd ignore the "primary spellcaster vs secondary spellcaster" distinction, so the overall brightness of adjacent rows and columns varies wildly. But to capture that in a clustering solution while also capturing the "stylistic" similarities I've plotted here, you'd need to use an overlapping clustering tool rather than a hierarchical one, and those are inherently trickier to work with, and I wouldn't be able to draw the pretty dendrograms either!

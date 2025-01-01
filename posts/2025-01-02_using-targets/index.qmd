@@ -429,6 +429,12 @@ if (fs::dir_exists("site")) fs::dir_delete("site")
 if (fs::file_exists("_liteblog.rds")) fs::file_delete("_liteblog.rds")
 output_liteblog <- here::here("_site", "posts", "2025-01-02_using-targets", "site")
 if (fs::dir_exists(output_liteblog)) fs::dir_delete(output_liteblog)
+post_003 <- fs::path("source", "_003_schools-of-magic.rmd")
+post_004 <- fs::path("source", "_004_spell-dice.rmd")
+data_dir <- fs::path("source", "data")
+if (fs::file_exists(post_003)) fs::file_delete(post_003)
+if (fs::file_exists(post_004)) fs::file_delete(post_004)
+if (fs::dir_exists(data_dir)) fs::dir_delete(data_dir)
 ```
 
 ```{r}
@@ -437,14 +443,66 @@ fs::dir_tree()
 ```
 
 ```{r}
+tar_visnetwork()
+```
+
+```{r}
 #| label: liteblog-make
 tar_make()
 ```
 
 ```{r}
+tar_visnetwork()
+```
+
+Why are some targets still showing as outdated? Because that's how I set them up with `tar_cue()`. By design, every time we rebuild, the blog will check the file paths to see if there are any new static files to be copied or new posts to be fused. Consequently, those two targets and everything downstream of those show up as outdated. But notice that when we call `tar_make()` again...
+
+```{r}
+tar_make()
+```
+
+...only the `static_paths` and `post_paths` targets are rerun: nothing has actually changed in the `source` folder, so the fuse and copy targets are skipped.
+
+```{r}
 #| label: liteblog-filetree-built
 fs::dir_tree()
 ```
+
+Now suppose I were to add two new posts into the the `source` folder:
+
+```{r}
+#| label: add-liteblog-posts
+#| echo: false
+fs::file_copy(
+  path = fs::path("..", "liteblog-source", "_003_schools-of-magic.rmd"),
+  new_path = fs::path("source", "_003_schools-of-magic.rmd")
+)
+fs::file_copy(
+  path = fs::path("..", "liteblog-source", "_004_spell-dice.rmd"),
+  new_path = fs::path("source", "_004_spell-dice.rmd")
+)
+fs::dir_copy(
+  path = fs::path("..", "liteblog-source", "data"),
+  new_path = fs::path("source", "data")
+)
+fs::dir_tree("source")
+```
+
+```{r}
+tar_visnetwork()
+```
+
+Looks the same. But this time when we call `tar_make()`, there will actually be some changes to the `source` folder, so the downstream targets run:
+
+```{r}
+tar_make()
+```
+
+This is clearly an inefficient design: whenever the source folder changes, all of the posts get rendered again. In an ideal world we wouldn't do this, and only those posts (or static files) that have been modified would get run again. However, it would take a little more effort than I'm willing to expend on this side-project to make this work properly: in order for it to behave the way we want it to, the build targets need to be able to inspect the internal contents of each blog post to determine which static files (or other posts!) are hidden dependencies. Discovering those dependencies reliably seems like hard work, so for the purposes of this toy project it just renders everything again.
+
+
+You can browse the built website [here](./site/index.html)
+
 
 ```{r}
 #| label: copy-liteblog-to-site
@@ -455,6 +513,4 @@ fs::dir_copy(
   overwrite = TRUE
 )
 ```
-
-You can browse the built website [here](./site/index.html).
 
