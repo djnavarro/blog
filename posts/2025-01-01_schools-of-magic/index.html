@@ -1,0 +1,1480 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.5.52">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Danielle Navarro">
+<meta name="dcterms.date" content="2025-01-01">
+<meta name="description" content="Code and explanations for a Tidy Tuesday data visualisation exercise">
+
+<title>The schools of magic – Notes from a data witch</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<style>
+
+      .quarto-title-block .quarto-title-banner {
+        background: #eeeeee;
+      }
+</style>
+
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="The schools of magic – Notes from a data witch">
+<meta property="og:description" content="Code and explanations for a Tidy Tuesday data visualisation exercise">
+<meta property="og:image" content="https://blog.djnavarro.net/posts/2025-01-01_schools-of-magic/basic.jpg">
+<meta property="og:site_name" content="Notes from a data witch">
+<meta property="og:image:alt" content="Dragon picture on the cover of the D&amp;D basic rules, a.k.a. 'The Red Box'">
+<meta name="twitter:title" content="The schools of magic – Notes from a data witch">
+<meta name="twitter:description" content="Code and explanations for a Tidy Tuesday data visualisation exercise">
+<meta name="twitter:image" content="https://blog.djnavarro.net/posts/2025-01-01_schools-of-magic/basic.jpg">
+<meta name="twitter:creator" content="@djnavarro">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image:alt" content="Dragon picture on the cover of the D&amp;D basic rules, a.k.a. 'The Red Box'">
+</head>
+
+<body class="floating nav-fixed slimcontent">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.xml"> 
+<span class="menu-text">RSS</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-sites" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Sites</span>
+    </a>
+    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="nav-menu-sites">    
+        <li>
+    <a class="dropdown-item" href="https://djnavarro.net">
+ <span class="dropdown-text">Homepage</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://blog.djnavarro.net">
+ <span class="dropdown-text">Data science blog</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://art.djnavarro.net">
+ <span class="dropdown-text">Generative art</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://papers.djnavarro.net">
+ <span class="dropdown-text">Academic papers</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://djnavarro.net/sites">
+ <span class="dropdown-text">More…</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default toc-left page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">The schools of magic</h1>
+                  <div>
+        <div class="description">
+          Code and explanations for a Tidy Tuesday data visualisation exercise
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">R</div>
+                <div class="quarto-category">Data Visualisation</div>
+                <div class="quarto-category">Tidy Tuesday</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p><a href="https://djnavarro.net">Danielle Navarro</a> <a href="https://orcid.org/0000-0001-7648-6578" class="quarto-title-author-orcid"> <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA2ZpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYwIDYxLjEzNDc3NywgMjAxMC8wMi8xMi0xNzozMjowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo1N0NEMjA4MDI1MjA2ODExOTk0QzkzNTEzRjZEQTg1NyIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDozM0NDOEJGNEZGNTcxMUUxODdBOEVCODg2RjdCQ0QwOSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDozM0NDOEJGM0ZGNTcxMUUxODdBOEVCODg2RjdCQ0QwOSIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ1M1IE1hY2ludG9zaCI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOkZDN0YxMTc0MDcyMDY4MTE5NUZFRDc5MUM2MUUwNEREIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjU3Q0QyMDgwMjUyMDY4MTE5OTRDOTM1MTNGNkRBODU3Ii8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+84NovQAAAR1JREFUeNpiZEADy85ZJgCpeCB2QJM6AMQLo4yOL0AWZETSqACk1gOxAQN+cAGIA4EGPQBxmJA0nwdpjjQ8xqArmczw5tMHXAaALDgP1QMxAGqzAAPxQACqh4ER6uf5MBlkm0X4EGayMfMw/Pr7Bd2gRBZogMFBrv01hisv5jLsv9nLAPIOMnjy8RDDyYctyAbFM2EJbRQw+aAWw/LzVgx7b+cwCHKqMhjJFCBLOzAR6+lXX84xnHjYyqAo5IUizkRCwIENQQckGSDGY4TVgAPEaraQr2a4/24bSuoExcJCfAEJihXkWDj3ZAKy9EJGaEo8T0QSxkjSwORsCAuDQCD+QILmD1A9kECEZgxDaEZhICIzGcIyEyOl2RkgwAAhkmC+eAm0TAAAAABJRU5ErkJggg=="></a></p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">January 1, 2025</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#the-spells-data" id="toc-the-spells-data" class="nav-link active" data-scroll-target="#the-spells-data">The spells data</a></li>
+  <li><a href="#the-spell-dice-plot" id="toc-the-spell-dice-plot" class="nav-link" data-scroll-target="#the-spell-dice-plot">The spell dice plot</a>
+  <ul class="collapse">
+  <li><a href="#data-wrangling" id="toc-data-wrangling" class="nav-link" data-scroll-target="#data-wrangling">Data wrangling</a></li>
+  <li><a href="#making-the-plot" id="toc-making-the-plot" class="nav-link" data-scroll-target="#making-the-plot">Making the plot</a></li>
+  </ul></li>
+  <li><a href="#the-schools-of-magic" id="toc-the-schools-of-magic" class="nav-link" data-scroll-target="#the-schools-of-magic">The schools of magic</a>
+  <ul class="collapse">
+  <li><a href="#data-for-the-heatmap" id="toc-data-for-the-heatmap" class="nav-link" data-scroll-target="#data-for-the-heatmap">Data for the heatmap</a></li>
+  <li><a href="#dissimilarity-data-for-the-dendrograms" id="toc-dissimilarity-data-for-the-dendrograms" class="nav-link" data-scroll-target="#dissimilarity-data-for-the-dendrograms">Dissimilarity data for the dendrograms</a></li>
+  <li><a href="#hierarchical-clustering-for-the-dendrograms" id="toc-hierarchical-clustering-for-the-dendrograms" class="nav-link" data-scroll-target="#hierarchical-clustering-for-the-dendrograms">Hierarchical clustering for the dendrograms</a></li>
+  <li><a href="#plotting-the-heatmap" id="toc-plotting-the-heatmap" class="nav-link" data-scroll-target="#plotting-the-heatmap">Plotting the heatmap</a></li>
+  <li><a href="#adding-the-dendrograms" id="toc-adding-the-dendrograms" class="nav-link" data-scroll-target="#adding-the-dendrograms">Adding the dendrograms</a></li>
+  </ul></li>
+  <li><a href="#epilogue" id="toc-epilogue" class="nav-link" data-scroll-target="#epilogue">Epilogue</a></li>
+  </ul>
+</nav>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block page-columns page-full" id="quarto-document-content">
+
+
+
+
+
+<!--------------- my typical setup ----------------->
+<!--------------- post begins here ----------------->
+<p>In the dying days of 2024 I found myself doing <a href="https://www.tidytuesday.com/">Tidy Tuesday</a> again. I really like playing around with data wrangling and visualisation in these exercises, and I wish I were able to find the time to do it more often. But life so often gets in the way, and I suppose I should simply be happy that I get to do it sometimes. Anyway, one of the recent Tidy Tuesday data sets is related to Dungeons &amp; Dragons, which I used to play when I was a teenager, and my children are pestering me to play again now that they’re old enough to get into it. So I decided to play around with this data set as part of a totally unrelated side project (for a different post!) and I ended up posting these two images to social media:</p>
+<div>
+
+</div>
+<div class="column-page quarto-layout-panel" data-layout="[2,1]">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 66.7%;justify-content: center;">
+<p><img src="dice.png" class="img-fluid"></p>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
+<p><img src="schools.png" class="img-fluid"></p>
+</div>
+</div>
+</div>
+<p>A couple of people emailed me asking for the code for these, and I haven’t gotten around to replying to them yet. Part of the reason I didn’t reply initially was that the code was tangled up with the code for the other side project, which made it a little awkward to explain without going down a whole other rabbit hole.</p>
+<p>So now I find myself rewriting the code in a slightly more palatable form and posting it to this blog. I mean, why not? It’s the first day of a new year, and I have nothing better to do this morning.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyr)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(purrr)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readr)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tibble)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(stringr)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(forcats)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggrepel)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(legendry)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="the-spells-data" class="level2 page-columns page-full">
+<h2 class="anchored" data-anchor-id="the-spells-data">The spells data</h2>
+<p>The <code>spells</code> data that I’m using here comes from the <a href="https://github.com/rfordatascience/tidytuesday/tree/main/data/2024/2024-12-17">TidyTuesday D&amp;D Spells</a> data set. The data set was compiled by Jon Harmon, and originates in the recently released <a href="https://www.dndbeyond.com/sources/dnd/free-rules">Dungeons &amp; Dragons Free Rules</a>. If you’ve played D&amp;D before, this should be quite familiar:</p>
+<div class="cell" data-print="print_tinker">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>spells <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"./spells.csv"</span>, <span class="at">show_col_types =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(spells)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 314 × 27
+   name      level school bard  cleric druid paladin ranger sorcerer warlock
+   &lt;chr&gt;     &lt;dbl&gt; &lt;chr&gt;  &lt;lgl&gt; &lt;lgl&gt;  &lt;lgl&gt; &lt;lgl&gt;   &lt;lgl&gt;  &lt;lgl&gt;    &lt;lgl&gt;  
+ 1 Acid Spl…     0 evoca… FALSE FALSE  FALSE FALSE   FALSE  TRUE     FALSE  
+ 2 Aid           2 abjur… TRUE  TRUE   TRUE  TRUE    TRUE   FALSE    FALSE  
+ 3 Alarm         1 abjur… FALSE FALSE  FALSE FALSE   TRUE   FALSE    FALSE  
+ 4 Alter Se…     2 trans… FALSE FALSE  FALSE FALSE   FALSE  TRUE     FALSE  
+ 5 Animal F…     1 encha… TRUE  FALSE  TRUE  FALSE   TRUE   FALSE    FALSE  
+ 6 Animal M…     2 encha… TRUE  FALSE  TRUE  FALSE   TRUE   FALSE    FALSE  
+ 7 Animal S…     8 trans… FALSE FALSE  TRUE  FALSE   FALSE  FALSE    FALSE  
+ 8 Animate …     3 necro… FALSE TRUE   FALSE FALSE   FALSE  FALSE    FALSE  
+ 9 Animate …     5 trans… TRUE  FALSE  FALSE FALSE   FALSE  TRUE     FALSE  
+10 Antilife…     5 abjur… FALSE FALSE  TRUE  FALSE   FALSE  FALSE    FALSE  
+# ℹ 304 more rows
+# ℹ 17 more variables: wizard &lt;lgl&gt;, casting_time &lt;chr&gt;, action &lt;lgl&gt;,
+#   bonus_action &lt;lgl&gt;, reaction &lt;lgl&gt;, ritual &lt;lgl&gt;,
+#   casting_time_long &lt;chr&gt;, trigger &lt;chr&gt;, range &lt;chr&gt;, range_type &lt;chr&gt;,
+#   verbal_component &lt;lgl&gt;, somatic_component &lt;lgl&gt;,
+#   material_component &lt;lgl&gt;, material_component_details &lt;chr&gt;,
+#   duration &lt;chr&gt;, concentration &lt;lgl&gt;, description &lt;chr&gt;</code></pre>
+</div>
+</div>
+<p>If you don’t already know what you’re looking at, here’s a quick summary of the columns that I’m actually using for these plots:</p>
+<ul>
+<li><code>name</code>: the name of the spell, obviously</li>
+<li><code>level</code>: the spell difficulty level, with level 0 spells (cantrips) being the easiest and level 9 being the most difficult</li>
+<li><code>school</code>: which of the nine schools of magic (e.g., enhantment, illusion, necromancy, etc) does this spell belong to?</li>
+<li><code>bard</code>, <code>cleric</code>, <code>druid</code>, etc: is this spell learnable by characters that belong to this class?</li>
+<li><code>description</code>: the text for the spell description</li>
+</ul>
+<p>The values stored in most of these variables are pretty straightforward, but it’s probably useful to look at the <code>description</code> variable in particular since that one is a long string. Here’s a few spell descriptions:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>describe_spell <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">spell =</span> <span class="cn">NULL</span>) {</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">is.null</span>(spell)) spell <span class="ot">&lt;-</span> <span class="fu">sample</span>(spells<span class="sc">$</span>name, <span class="dv">1</span>L)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  spells <span class="sc">|&gt;</span> </span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(name <span class="sc">==</span> spell) <span class="sc">|&gt;</span> </span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">pull</span>(description) <span class="sc">|&gt;</span> </span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">str_wrap</span>(<span class="at">width =</span> <span class="dv">70</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">cat</span>()</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="fu">describe_spell</span>(<span class="st">"Acid Splash"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>You create an acidic bubble at a point within range, where it explodes
+in a 5-foot-radius Sphere. Each creature in that Sphere must succeed
+on a Dexterity saving throw or take 1d6 Acid damage. Cantrip Upgrade.
+The damage increases by 1d6 when you reach levels 5 (2d6), 11 (3d6),
+and 17 (4d6).</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">describe_spell</span>(<span class="st">"Fireball"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>A bright streak flashes from you to a point you choose within range
+and then blossoms with a low roar into a fiery explosion. Each
+creature in a 20-foot-radius Sphere centered on that point makes a
+Dexterity saving throw, taking 8d6 Fire damage on a failed save or
+half as much damage on a successful one. Flammable objects in the area
+that aren’t being worn or carried start burning. Using a Higher-Level
+Spell Slot. The damage increases by 1d6 for each spell slot level
+above 3.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">describe_spell</span>(<span class="st">"Prismatic Spray"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Eight rays of light flash from you in a 60-foot Cone. Each creature
+in the Cone makes a Dexterity saving throw. For each target, roll 1d8
+to determine which color ray affects it, consulting the Prismatic Rays
+table. Prismatic Rays 1d8 Ray 1 Red. Failed Save: 12d6 Fire damage.
+Successful Save: Half as much damage. 2 Orange. Failed Save: 12d6 Acid
+damage. Successful Save: Half as much damage. 3 Yellow. Failed Save:
+12d6 Lightning damage. Successful Save: Half as much damage. 4 Green.
+Failed Save: 12d6 Poison damage. Successful Save: Half as much damage.
+5 Blue. Failed Save: 12d6 Cold damage. Successful Save: Half as much
+damage. 6 Indigo. Failed Save: The target has the Restrained condition
+and makes a Constitution saving throw at the end of each of its turns.
+If it successfully saves three times, the condition ends. If it fails
+three times, it has the Petrified condition until it is freed by an
+effect like the Greater Restoration spell. The successes and failures
+needn’t be consecutive; keep track of both until the target collects
+three of a kind. 7 Violet. Failed Save: The target has the Blinded
+condition and makes a Wisdom saving throw at the start of your next
+turn. On a successful save, the condition ends. On a failed save,
+the condition ends, and the creature teleports to another plane of
+existence (DM’s choice). 8 Special. The target is struck by two rays.
+Roll twice, rerolling any 8.</code></pre>
+</div>
+</div>
+
+<div class="no-row-height column-margin column-container"><div class="">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="basic.jpg" class="img-fluid figure-img"></p>
+<figcaption>D&amp;D Boxed Set: Basic Rules</figcaption>
+</figure>
+</div>
+</div></div></section>
+<section id="the-spell-dice-plot" class="level2 page-columns page-full">
+<h2 class="anchored" data-anchor-id="the-spell-dice-plot">The spell dice plot</h2>
+<p>Reading these spell descriptions I had the thought that it would be interesting to explore the distribution of dice rolls mentioned in the spell descriptions. In the description for “Acid Splash”, for example, it refers to a 1d6 roll, a 2d6 roll, a 3d6 roll, and a 4d6 roll. “Fireball” mentions 8d6 and 1d6 in the text. What does the distribution of these dice rolls look like.</p>
+<section id="data-wrangling" class="level3 page-columns page-full">
+<h3 class="anchored" data-anchor-id="data-wrangling">Data wrangling</h3>
+<p>To start with let’s think about what information we want to extract from the spell descriptions, and how we want to do it. Using <code>str_extract_all()</code> and a bit of <a href="../../posts/2024-12-16_regex-backreferences/">regular expression sorcery</a>, we can pull this information out of a description. Here’s what we get for the three spells I listed above:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>spells <span class="sc">|&gt;</span> </span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Acid Splash"</span>, <span class="st">"Fireball"</span>, <span class="st">"Prismatic Spray"</span>)) <span class="sc">|&gt;</span> </span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(description) <span class="sc">|&gt;</span> </span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">str_extract_all</span>(<span class="st">"</span><span class="sc">\\</span><span class="st">b</span><span class="sc">\\</span><span class="st">d+d</span><span class="sc">\\</span><span class="st">d+</span><span class="sc">\\</span><span class="st">b"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[[1]]
+[1] "1d6" "1d6" "2d6" "3d6" "4d6"
+
+[[2]]
+[1] "8d6" "1d6"
+
+[[3]]
+[1] "1d8"  "1d8"  "12d6" "12d6" "12d6" "12d6" "12d6"</code></pre>
+</div>
+</div>
+<p>This list highlights a decision we need to make about counting tokens: in the “Prismatic Spray” description, there are five separate mentions of a 12d6 dice roll. Do we want to count all five of these, or to we want to consider unique mentions only? After a bit of thought I ended up going with the latter, so the extraction code would look like this:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>spells <span class="sc">|&gt;</span> </span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Acid Splash"</span>, <span class="st">"Fireball"</span>, <span class="st">"Prismatic Spray"</span>)) <span class="sc">|&gt;</span> </span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(description) <span class="sc">|&gt;</span> </span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">str_extract_all</span>(<span class="st">"</span><span class="sc">\\</span><span class="st">b</span><span class="sc">\\</span><span class="st">d+d</span><span class="sc">\\</span><span class="st">d+</span><span class="sc">\\</span><span class="st">b"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">map</span>(unique)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[[1]]
+[1] "1d6" "2d6" "3d6" "4d6"
+
+[[2]]
+[1] "8d6" "1d6"
+
+[[3]]
+[1] "1d8"  "12d6"</code></pre>
+</div>
+</div>
+<p>Doing this within a data frame produces a <code>dice_txt</code> list column:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>spells <span class="sc">|&gt;</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(name, level, description) <span class="sc">|&gt;</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">dice_txt =</span> description <span class="sc">|&gt;</span> </span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>      <span class="fu">str_extract_all</span>(<span class="st">"</span><span class="sc">\\</span><span class="st">b</span><span class="sc">\\</span><span class="st">d+d</span><span class="sc">\\</span><span class="st">d+</span><span class="sc">\\</span><span class="st">b"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>      <span class="fu">map</span>(unique)</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 314 × 4
+   name              level description                              dice_txt
+   &lt;chr&gt;             &lt;dbl&gt; &lt;chr&gt;                                    &lt;list&gt;  
+ 1 Acid Splash           0 "You create an acidic bubble at a point… &lt;chr&gt;   
+ 2 Aid                   2 "Choose up to three creatures within ra… &lt;chr&gt;   
+ 3 Alarm                 1 "You set an alarm against intrusion. Ch… &lt;chr&gt;   
+ 4 Alter Self            2 "You alter your physical form. Choose o… &lt;chr&gt;   
+ 5 Animal Friendship     1 "Target a Beast that you can see within… &lt;chr&gt;   
+ 6 Animal Messenger      2 "A Tiny Beast of your choice that you c… &lt;chr&gt;   
+ 7 Animal Shapes         8 "Choose any number of willing creatures… &lt;chr&gt;   
+ 8 Animate Dead          3 "Choose a pile of bones or a corpse of … &lt;chr&gt;   
+ 9 Animate Objects       5 "Objects animate at your command. Choos… &lt;chr&gt;   
+10 Antilife Shell        5 "An aura extends from you in a 10-foot … &lt;chr&gt;   
+# ℹ 304 more rows</code></pre>
+</div>
+</div>
+<p>List columns aren’t the easiest thing to visualise, so I’ll use the <code>unnest_longer()</code> function to produce a tidy data set that has one row per unique dice roll mention:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>spells <span class="sc">|&gt;</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(name, level, description) <span class="sc">|&gt;</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">dice_txt =</span> description <span class="sc">|&gt;</span> </span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>      <span class="fu">str_extract_all</span>(<span class="st">"</span><span class="sc">\\</span><span class="st">b</span><span class="sc">\\</span><span class="st">d+d</span><span class="sc">\\</span><span class="st">d+</span><span class="sc">\\</span><span class="st">b"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>      <span class="fu">map</span>(unique)</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unnest_longer</span>(</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">col =</span> <span class="st">"dice_txt"</span>,</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_to =</span> <span class="st">"dice_txt"</span>,</span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">indices_to =</span> <span class="st">"position"</span></span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 236 × 5
+   name            level description                       dice_txt position
+   &lt;chr&gt;           &lt;dbl&gt; &lt;chr&gt;                             &lt;chr&gt;       &lt;int&gt;
+ 1 Acid Splash         0 "You create an acidic bubble at … 1d6             1
+ 2 Acid Splash         0 "You create an acidic bubble at … 2d6             2
+ 3 Acid Splash         0 "You create an acidic bubble at … 3d6             3
+ 4 Acid Splash         0 "You create an acidic bubble at … 4d6             4
+ 5 Alter Self          2 "You alter your physical form. C… 1d6             1
+ 6 Animate Objects     5 "Objects animate at your command… 1d4             1
+ 7 Animate Objects     5 "Objects animate at your command… 1d6             2
+ 8 Animate Objects     5 "Objects animate at your command… 1d12            3
+ 9 Animate Objects     5 "Objects animate at your command… 2d6             4
+10 Animate Objects     5 "Objects animate at your command… 2d12            5
+# ℹ 226 more rows</code></pre>
+</div>
+</div>
+<p>With a little more data wrangling, we can carve up a <code>dice_txt</code> value like “3d6” into the number of dice to be rolled (i.e.&nbsp;<code>die_num</code> is 3), the number of sides on the die to be rolled (i.e., <code>die_die</code> is 6), and the average value that you’d get from rolling these dice (i.e., <code>die_val</code> is 10.5). Here’s the final processed data:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>dice_dat <span class="ot">&lt;-</span> spells <span class="sc">|&gt;</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(name, level, description) <span class="sc">|&gt;</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">dice_txt =</span> description <span class="sc">|&gt;</span> </span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>      <span class="fu">str_extract_all</span>(<span class="st">"</span><span class="sc">\\</span><span class="st">b</span><span class="sc">\\</span><span class="st">d+d</span><span class="sc">\\</span><span class="st">d+</span><span class="sc">\\</span><span class="st">b"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>      <span class="fu">map</span>(unique)</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unnest_longer</span>(</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">col =</span> <span class="st">"dice_txt"</span>,</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_to =</span> <span class="st">"dice_txt"</span>,</span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">indices_to =</span> <span class="st">"position"</span></span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">dice_num =</span> dice_txt <span class="sc">|&gt;</span> <span class="fu">str_extract</span>(<span class="st">"</span><span class="sc">\\</span><span class="st">d+(?=d)"</span>) <span class="sc">|&gt;</span> <span class="fu">as.numeric</span>(),</span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">dice_die =</span> dice_txt <span class="sc">|&gt;</span> <span class="fu">str_extract</span>(<span class="st">"(?&lt;=d)</span><span class="sc">\\</span><span class="st">d+"</span>) <span class="sc">|&gt;</span> <span class="fu">as.numeric</span>(),</span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">dice_val =</span> dice_num <span class="sc">*</span> (dice_die <span class="sc">+</span> <span class="dv">1</span>)<span class="sc">/</span><span class="dv">2</span>,</span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">dice_txt =</span> <span class="fu">factor</span>(dice_txt) <span class="sc">|&gt;</span> <span class="fu">fct_reorder</span>(dice_val)</span>
+<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(dice_dat)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 236 × 8
+   name       level description dice_txt position dice_num dice_die dice_val
+   &lt;chr&gt;      &lt;dbl&gt; &lt;chr&gt;       &lt;fct&gt;       &lt;int&gt;    &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;
+ 1 Acid Spla…     0 "You creat… 1d6             1        1        6      3.5
+ 2 Acid Spla…     0 "You creat… 2d6             2        2        6      7  
+ 3 Acid Spla…     0 "You creat… 3d6             3        3        6     10.5
+ 4 Acid Spla…     0 "You creat… 4d6             4        4        6     14  
+ 5 Alter Self     2 "You alter… 1d6             1        1        6      3.5
+ 6 Animate O…     5 "Objects a… 1d4             1        1        4      2.5
+ 7 Animate O…     5 "Objects a… 1d6             2        1        6      3.5
+ 8 Animate O…     5 "Objects a… 1d12            3        1       12      6.5
+ 9 Animate O…     5 "Objects a… 2d6             4        2        6      7  
+10 Animate O…     5 "Objects a… 2d12            5        2       12     13  
+# ℹ 226 more rows</code></pre>
+</div>
+</div>
+<p>Notice that this processed version of the data codes <code>dice_txt</code> as a factor, and the levels are arranged by increasing <code>dice_val</code>. That’s the mechanism by which the die rolls will be ordered sensibly in the plot.</p>
+
+<div class="no-row-height column-margin column-container"><div class="">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="expert.jpg" class="img-fluid figure-img"></p>
+<figcaption>D&amp;D Boxed Set: Expert Rules</figcaption>
+</figure>
+</div>
+</div></div></section>
+<section id="making-the-plot" class="level3 page-columns page-full">
+<h3 class="anchored" data-anchor-id="making-the-plot">Making the plot</h3>
+<p>A basic version of the plot we want to create looks like this:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(dice_dat, <span class="fu">aes</span>(dice_txt, <span class="at">fill =</span> <span class="fu">factor</span>(level))) <span class="sc">+</span> <span class="fu">geom_bar</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>There’s a lot of tinkering required to make it look pretty, but this is essentially the data we want to display and the format we want it to be displayed in. The full code for the visualisation looks like this:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>palette <span class="ot">&lt;-</span> <span class="fu">hcl.colors</span>(<span class="at">n =</span> <span class="dv">10</span>, <span class="at">palette =</span> <span class="st">"PuOr"</span>)</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>labs <span class="ot">&lt;-</span> dice_dat <span class="sc">|&gt;</span></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">dice_txt =</span> <span class="fu">first</span>(dice_txt),</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">count =</span> <span class="fu">n</span>(),</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">.by =</span> dice_txt</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>pic <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(</span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> dice_dat,</span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">mapping =</span> <span class="fu">aes</span>(</span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> dice_txt,</span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> <span class="fu">factor</span>(level)</span>
+<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a>) <span class="sc">+</span></span>
+<span id="cb21-17"><a href="#cb21-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_bar</span>(<span class="at">color =</span> <span class="st">"#222"</span>) <span class="sc">+</span></span>
+<span id="cb21-18"><a href="#cb21-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_label_repel</span>(</span>
+<span id="cb21-19"><a href="#cb21-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> labs,</span>
+<span id="cb21-20"><a href="#cb21-20" aria-hidden="true" tabindex="-1"></a>    <span class="at">mapping =</span> <span class="fu">aes</span>(</span>
+<span id="cb21-21"><a href="#cb21-21" aria-hidden="true" tabindex="-1"></a>      <span class="at">x =</span> dice_txt,</span>
+<span id="cb21-22"><a href="#cb21-22" aria-hidden="true" tabindex="-1"></a>      <span class="at">y =</span> count,</span>
+<span id="cb21-23"><a href="#cb21-23" aria-hidden="true" tabindex="-1"></a>      <span class="at">label =</span> dice_txt</span>
+<span id="cb21-24"><a href="#cb21-24" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb21-25"><a href="#cb21-25" aria-hidden="true" tabindex="-1"></a>    <span class="at">size =</span> <span class="dv">3</span>,</span>
+<span id="cb21-26"><a href="#cb21-26" aria-hidden="true" tabindex="-1"></a>    <span class="at">direction =</span> <span class="st">"y"</span>,</span>
+<span id="cb21-27"><a href="#cb21-27" aria-hidden="true" tabindex="-1"></a>    <span class="at">seed =</span> <span class="dv">1</span>,</span>
+<span id="cb21-28"><a href="#cb21-28" aria-hidden="true" tabindex="-1"></a>    <span class="at">nudge_y =</span> <span class="dv">4</span>,</span>
+<span id="cb21-29"><a href="#cb21-29" aria-hidden="true" tabindex="-1"></a>    <span class="at">color =</span> <span class="st">"#ccc"</span>,</span>
+<span id="cb21-30"><a href="#cb21-30" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> <span class="st">"#222"</span>,</span>
+<span id="cb21-31"><a href="#cb21-31" aria-hidden="true" tabindex="-1"></a>    <span class="at">arrow =</span> <span class="cn">NULL</span>,</span>
+<span id="cb21-32"><a href="#cb21-32" aria-hidden="true" tabindex="-1"></a>    <span class="at">inherit.aes =</span> <span class="cn">FALSE</span></span>
+<span id="cb21-33"><a href="#cb21-33" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb21-34"><a href="#cb21-34" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(</span>
+<span id="cb21-35"><a href="#cb21-35" aria-hidden="true" tabindex="-1"></a>    <span class="at">name =</span> <span class="st">"Spell level"</span>,</span>
+<span id="cb21-36"><a href="#cb21-36" aria-hidden="true" tabindex="-1"></a>    <span class="at">values =</span> palette</span>
+<span id="cb21-37"><a href="#cb21-37" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb21-38"><a href="#cb21-38" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_discrete</span>(</span>
+<span id="cb21-39"><a href="#cb21-39" aria-hidden="true" tabindex="-1"></a>    <span class="at">name =</span> <span class="st">"Increasing average outcome \u27a1"</span>,</span>
+<span id="cb21-40"><a href="#cb21-40" aria-hidden="true" tabindex="-1"></a>    <span class="at">breaks =</span> <span class="cn">NULL</span>,</span>
+<span id="cb21-41"><a href="#cb21-41" aria-hidden="true" tabindex="-1"></a>    <span class="at">expand =</span> <span class="fu">expansion</span>(.<span class="dv">05</span>)</span>
+<span id="cb21-42"><a href="#cb21-42" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb21-43"><a href="#cb21-43" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(<span class="at">name =</span> <span class="cn">NULL</span>) <span class="sc">+</span></span>
+<span id="cb21-44"><a href="#cb21-44" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Dice rolls in D&amp;D spell descriptions by spell level"</span>) <span class="sc">+</span></span>
+<span id="cb21-45"><a href="#cb21-45" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>() <span class="sc">+</span></span>
+<span id="cb21-46"><a href="#cb21-46" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(</span>
+<span id="cb21-47"><a href="#cb21-47" aria-hidden="true" tabindex="-1"></a>    <span class="at">plot.background =</span> <span class="fu">element_rect</span>(<span class="at">fill =</span> <span class="st">"#222"</span>),</span>
+<span id="cb21-48"><a href="#cb21-48" aria-hidden="true" tabindex="-1"></a>    <span class="at">text =</span> <span class="fu">element_text</span>(<span class="at">color =</span> <span class="st">"#ccc"</span>),</span>
+<span id="cb21-49"><a href="#cb21-49" aria-hidden="true" tabindex="-1"></a>    <span class="at">axis.text =</span> <span class="fu">element_text</span>(<span class="at">color =</span> <span class="st">"#ccc"</span>),</span>
+<span id="cb21-50"><a href="#cb21-50" aria-hidden="true" tabindex="-1"></a>    <span class="at">axis.title =</span> <span class="fu">element_text</span>(<span class="at">color =</span> <span class="st">"#ccc"</span>),</span>
+<span id="cb21-51"><a href="#cb21-51" aria-hidden="true" tabindex="-1"></a>    <span class="at">plot.margin =</span> <span class="fu">unit</span>(<span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>), <span class="at">units =</span> <span class="st">"cm"</span>),</span>
+<span id="cb21-52"><a href="#cb21-52" aria-hidden="true" tabindex="-1"></a>    <span class="at">legend.position =</span> <span class="st">"inside"</span>,</span>
+<span id="cb21-53"><a href="#cb21-53" aria-hidden="true" tabindex="-1"></a>    <span class="at">legend.position.inside =</span> <span class="fu">c</span>(.<span class="dv">3</span>, .<span class="dv">825</span>),</span>
+<span id="cb21-54"><a href="#cb21-54" aria-hidden="true" tabindex="-1"></a>    <span class="at">legend.direction =</span> <span class="st">"horizontal"</span>,</span>
+<span id="cb21-55"><a href="#cb21-55" aria-hidden="true" tabindex="-1"></a>    <span class="at">legend.title.position =</span> <span class="st">"top"</span>,</span>
+<span id="cb21-56"><a href="#cb21-56" aria-hidden="true" tabindex="-1"></a>    <span class="at">legend.byrow =</span> <span class="cn">TRUE</span></span>
+<span id="cb21-57"><a href="#cb21-57" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb21-58"><a href="#cb21-58" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-59"><a href="#cb21-59" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(pic)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/make-plot-1.png" class="img-fluid figure-img" width="1152"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Very pretty.</p>
+<p>There’s a small mystery that this plot leads to. As a general pattern, the low-level spells tend to mention die rolls with lower average value when compared to higher-level spells (i.e., there’s lots of brown and orange bars on the left, and mostly blueish/purple bars on the right). That makes sense, especially because the dice rolls mentioned in spell descriptions are usually describing the amount of damage the spell does.</p>
+<p>So what’s the story with this one weird outlier, the level 0 spell that mentions a 12d6 roll? To answer this we need to work out which spell it is:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>dice_dat <span class="sc">|&gt;</span> </span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(level <span class="sc">==</span> <span class="dv">0</span> <span class="sc">&amp;</span> dice_txt <span class="sc">==</span> <span class="st">"12d6"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "Druidcraft"</code></pre>
+</div>
+</div>
+<p>Now let’s look at the description:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">describe_spell</span>(<span class="st">"Druidcraft"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Whispering to the spirits of nature, you create one of the following
+effects within range. Weather Sensor. You create a Tiny, harmless
+sensory effect that predicts what the weather will be at your location
+for the next 24 hours. The effect might manifest as a golden orb for
+clear skies, a cloud for rain, falling snowflakes for snow, and so on.
+This effect persists for 1 round. Bloom. You instantly make a flower
+blossom, a seed pod open, or a leaf bud bloom. Sensory Effect. You
+create a harmless sensory effect, such as falling leaves, spectral
+dancing fairies, a gentle breeze, the sound of an animal, or the
+faint odor of skunk. The effect must fit in a 5-foot Cube. Fire Play.
+You light or snuff out a candle, a torch, or a campfire. Spells (E)
+Earthquake Level 8 Transmutation (Cleric, Druid, Sorcerer) Casting
+Time: Action Range: 500 feet Components: V, S, M (a fractured rock)
+Duration: Concentration, up to 1 minute Choose a point on the ground
+that you can see within range. For the duration, an intense tremor
+rips through the ground in a 100-foot-radius circle centered on that
+point. The ground there is Difficult Terrain. When you cast this spell
+and at the end of each of your turns for the duration, each creature
+on the ground in the area makes a Dexterity saving throw. On a failed
+save, a creature has the Prone condition, and its Concentration is
+broken. You can also cause the effects below. Fissures. A total of 1d6
+fissures open in the spell’s area at the end of the turn you cast it.
+You choose the fissures’ locations, which can’t be under structures.
+Each fissure is 1d10 × 10 feet deep and 10 feet wide, and it extends
+from one edge of the spell’s area to another edge. A creature in the
+same space as a fissure must succeed on a Dexterity saving throw or
+fall in. A creature that successfully saves moves with the fissure’s
+edge as it opens. Structures. The tremor deals 50 Bludgeoning damage
+to any structure in contact with the ground in the area when you cast
+the spell and at the end of each of your turns until the spell ends.
+If a structure drops to 0 Hit Points, it collapses. A creature within
+a distance from a collapsing structure equal to half the structure’s
+height makes a Dexterity saving throw. On a failed save, the creature
+takes 12d6 Bludgeoning damage, has the Prone condition, and is buried
+in the rubble, requiring a DC 20 Strength (Athletics) check as an
+action to escape. On a successful save, the creature takes half as
+much damage only.</code></pre>
+</div>
+</div>
+<p>Ah… now it makes more sense: it’s a parsing error from when the data set was constructed. The stats and description for “Earthquake” (an 8th level spell) has been appended to the description for “Druidcraft”, and the 12d6 roll in question isn’t for “Druidcraft” it’s for “Earthquake”.</p>
+<p>Mystery solved.</p>
+
+<div class="no-row-height column-margin column-container"><div class="">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="companions.jpg" class="img-fluid figure-img"></p>
+<figcaption>D&amp;D Boxed Set: Companion Rules</figcaption>
+</figure>
+</div>
+</div></div></section>
+</section>
+<section id="the-schools-of-magic" class="level2 page-columns page-full">
+<h2 class="anchored" data-anchor-id="the-schools-of-magic">The schools of magic</h2>
+<p>Okay, so that’s the story behind the first plot. What about the second one, the one that looks like a heatmap with some dendrograms? The data wrangling for that one one is a little more elaborate, because we have to construct data for the heatmap and data for the dendrograms.</p>
+<section id="data-for-the-heatmap" class="level3">
+<h3 class="anchored" data-anchor-id="data-for-the-heatmap">Data for the heatmap</h3>
+<p>To produce data for the heatmap, we select the relevant columns: i.e., those corresponding to the character classes, the <code>school</code> variable that denotes the school of magic for the spell, and the <code>name</code> variable because I like having an id column in my data. We then use <code>pivot_longer()</code> to arrange this data set in long form:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>spells_long <span class="ot">&lt;-</span> spells <span class="sc">|&gt;</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(name, school, bard<span class="sc">:</span>wizard) <span class="sc">|&gt;</span></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">cols =</span> bard<span class="sc">:</span>wizard,</span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">names_to =</span> <span class="st">"class"</span>,</span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_to =</span> <span class="st">"castable"</span></span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>  ) </span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(spells_long)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 2,512 × 4
+   name        school     class    castable
+   &lt;chr&gt;       &lt;chr&gt;      &lt;chr&gt;    &lt;lgl&gt;   
+ 1 Acid Splash evocation  bard     FALSE   
+ 2 Acid Splash evocation  cleric   FALSE   
+ 3 Acid Splash evocation  druid    FALSE   
+ 4 Acid Splash evocation  paladin  FALSE   
+ 5 Acid Splash evocation  ranger   FALSE   
+ 6 Acid Splash evocation  sorcerer TRUE    
+ 7 Acid Splash evocation  warlock  FALSE   
+ 8 Acid Splash evocation  wizard   TRUE    
+ 9 Aid         abjuration bard     TRUE    
+10 Aid         abjuration cleric   TRUE    
+# ℹ 2,502 more rows</code></pre>
+</div>
+</div>
+<p>Now we have a tidy data set with one row per “observation”, in the sense that it specifies whether a spell of a specific <code>name</code> (which belongs to a specific <code>school</code>), is in fact <code>castable</code> by members of a particular character <code>class</code>. We can summarise this by aggregating over the specific spells, and count the number of castable spells for each combination of magic school and character class:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>dat <span class="ot">&lt;-</span> spells_long <span class="sc">|&gt;</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">count =</span> <span class="fu">sum</span>(castable),</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">.by =</span> <span class="fu">c</span>(<span class="st">"school"</span>, <span class="st">"class"</span>)</span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">school =</span> <span class="fu">str_to_title</span>(school),</span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">class  =</span> <span class="fu">str_to_title</span>(class)</span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-11"><a href="#cb28-11" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(dat)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 64 × 3
+   school     class    count
+   &lt;chr&gt;      &lt;chr&gt;    &lt;int&gt;
+ 1 Evocation  Bard         7
+ 2 Evocation  Cleric      12
+ 3 Evocation  Druid       17
+ 4 Evocation  Paladin      3
+ 5 Evocation  Ranger       3
+ 6 Evocation  Sorcerer    30
+ 7 Evocation  Warlock      4
+ 8 Evocation  Wizard      30
+ 9 Abjuration Bard        16
+10 Abjuration Cleric      33
+# ℹ 54 more rows</code></pre>
+</div>
+</div>
+<p>This <code>dat</code> data frame is suitable for plotting as a heat map with <code>geom_tile()</code>, so let’s now move to stage two of the data wrangling.</p>
+</section>
+<section id="dissimilarity-data-for-the-dendrograms" class="level3 page-columns page-full">
+<h3 class="anchored" data-anchor-id="dissimilarity-data-for-the-dendrograms">Dissimilarity data for the dendrograms</h3>
+<p>The data structure that we need at this step is slightly more complicated, because what we want to display on each axis is a hierarchical clustering, of the sort typically produced by <code>hclust()</code>. In a distant, distant past I actually wrote my PhD thesis on clustering and scaling tools used to represent item (dis)similarities, and as such I’m acutely aware that these tools are extremely sensitive to the way you define similarity (or dissimilarity, or distance, or association, or whatever…). So I’ll be a little careful here, because if you do this in a thoughtless way you get stupid answers.</p>
+<p>Before I begin, I’ll quickly define a boring function that I’ll used when printing matrices. It’s not a very good function, but it works for the purposes I need it for in this post:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>print_truncated <span class="ot">&lt;-</span> <span class="cf">function</span>(x) {</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">inherits</span>(x, <span class="st">"matrix"</span>)) {</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">rownames</span>(x) <span class="ot">&lt;-</span> <span class="fu">str_trunc</span>(<span class="fu">rownames</span>(x), <span class="at">width =</span> <span class="dv">6</span>, <span class="at">ellipsis =</span> <span class="st">"."</span>)</span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">colnames</span>(x) <span class="ot">&lt;-</span> <span class="fu">str_trunc</span>(<span class="fu">colnames</span>(x), <span class="at">width =</span> <span class="dv">6</span>, <span class="at">ellipsis =</span> <span class="st">"."</span>)</span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">inherits</span>(x, <span class="st">"dist"</span>)) {</span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">attr</span>(x, <span class="st">"Labels"</span>) <span class="ot">&lt;-</span> <span class="fu">str_trunc</span>(<span class="fu">attr</span>(x, <span class="st">"Labels"</span>), <span class="at">width =</span> <span class="dv">6</span>, <span class="at">ellipsis =</span> <span class="st">"."</span>)</span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">print</span>(<span class="fu">round</span>(x, <span class="at">digits =</span> <span class="dv">3</span>))</span>
+<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Okay, now let’s get to work on the data wrangling. We’ll start by reorganising the <code>dat</code> data frame into a matrix form. The <code>mat</code> matrix below contains the exact same information as the data frame: each cell in the matrix represents the number of castable spells for a specific combination of class and school.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>mat <span class="ot">&lt;-</span> dat <span class="sc">|&gt;</span></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">names_from =</span> <span class="st">"school"</span>,</span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_from =</span> <span class="st">"count"</span></span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as.data.frame</span>()</span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a><span class="fu">rownames</span>(mat) <span class="ot">&lt;-</span> mat<span class="sc">$</span>class</span>
+<span id="cb31-9"><a href="#cb31-9" aria-hidden="true" tabindex="-1"></a>mat<span class="sc">$</span>class <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb31-10"><a href="#cb31-10" aria-hidden="true" tabindex="-1"></a>mat <span class="ot">&lt;-</span> <span class="fu">as.matrix</span>(mat)</span>
+<span id="cb31-11"><a href="#cb31-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-12"><a href="#cb31-12" aria-hidden="true" tabindex="-1"></a><span class="fu">print_truncated</span>(mat)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>       Evoca. Abjur. Trans. Encha. Necro. Divin. Illus. Conju.
+Bard        7     16     18     28      5     18     22      8
+Cleric     12     33     13      8     14     17      1     11
+Druid      17     17     33      9      7     14      2     21
+Palad.      3     16      3      5      3      5      0      2
+Ranger      3     11     13      3      1      9      1      7
+Sorce.     30      7     33     13      9      8     14     19
+Warlo.      4      8      6     12     10      9     11      9
+Wizard     30     22     41     15     18     19     26     24</code></pre>
+</div>
+</div>
+<p>In this matrix we have a measure of “affinity”, in the sense that larger values indicate a higher affinity between a class and a school. The tricky part here is that some classes are simply better at spellwork than others: clerics and wizards can both cast lots of spells; paladins and rangers cannot cast many. The kind of similarity that I have in mind here is not the boring “clerics and wizards are similar because they can both cast lots of spells” kind. What I really want to say is something like “paladins and clerics are similar because abjuration is the strongest school for both classes”. The same applies when thinking about the schools of magic: there are lots of transmutation spells and lots of abjuration spells. That doesn’t really make those schools similar, not in the sense I care about.</p>
+<p>What all this amounts to is an acknowledgement that we need to correct for overall prevalance, or – to frame it in probabilistic terms – to describe classes in terms of a “distribution over schools” and describe schools in terms of a “distribution over classes”. That gives us the following two matrices:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>class_distro  <span class="ot">&lt;-</span> mat <span class="sc">/</span> <span class="fu">replicate</span>(<span class="fu">ncol</span>(mat), <span class="fu">rowSums</span>(mat))</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>school_distro <span class="ot">&lt;-</span> <span class="fu">t</span>(mat) <span class="sc">/</span> (<span class="fu">replicate</span>(<span class="fu">nrow</span>(mat), <span class="fu">colSums</span>(mat)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The <code>class_distro</code> matrix is the one that describes classes as a distribution over schools, and you can see in the printout here that when described in this fashion the paladin row and the cleric row do look rather similar to each other:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print_truncated</span>(class_distro)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>       Evoca. Abjur. Trans. Encha. Necro. Divin. Illus. Conju.
+Bard    0.057  0.131  0.148  0.230  0.041  0.148  0.180  0.066
+Cleric  0.110  0.303  0.119  0.073  0.128  0.156  0.009  0.101
+Druid   0.142  0.142  0.275  0.075  0.058  0.117  0.017  0.175
+Palad.  0.081  0.432  0.081  0.135  0.081  0.135  0.000  0.054
+Ranger  0.062  0.229  0.271  0.062  0.021  0.188  0.021  0.146
+Sorce.  0.226  0.053  0.248  0.098  0.068  0.060  0.105  0.143
+Warlo.  0.058  0.116  0.087  0.174  0.145  0.130  0.159  0.130
+Wizard  0.154  0.113  0.210  0.077  0.092  0.097  0.133  0.123</code></pre>
+</div>
+</div>
+<p>A similar phenomenon is observed in the <code>school_distro</code> matrix, where you can see that the rows for abjuration and divination are quite similar despite the fact that there are a lot more abjuration spells than divination spells:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print_truncated</span>(school_distro)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>        Bard Cleric Druid Palad. Ranger Sorce. Warlo. Wizard
+Evoca. 0.066  0.113 0.160  0.028  0.028  0.283  0.038  0.283
+Abjur. 0.123  0.254 0.131  0.123  0.085  0.054  0.062  0.169
+Trans. 0.112  0.081 0.206  0.019  0.081  0.206  0.038  0.256
+Encha. 0.301  0.086 0.097  0.054  0.032  0.140  0.129  0.161
+Necro. 0.075  0.209 0.104  0.045  0.015  0.134  0.149  0.269
+Divin. 0.182  0.172 0.141  0.051  0.091  0.081  0.091  0.192
+Illus. 0.286  0.013 0.026  0.000  0.013  0.182  0.143  0.338
+Conju. 0.079  0.109 0.208  0.020  0.069  0.188  0.089  0.238</code></pre>
+</div>
+</div>
+<p>We are now in a position to convert both of these to distance/distance matrices. Notwithstanding the fact that it’s probably not the ideal way to describe similarity between distributions, I’ll call <code>dist()</code> using the default Euclidean distance measure. I mean, sure, I could probably do something fancy with <a href="https://en.wikipedia.org/wiki/Jensen%E2%80%93Shannon_divergence">Jensen-Shannon divergence</a> here, but in my experience the metric you use to measure distributional similarity is <em>far</em> less important than the manner in which you construct the distributions from raw features in the first place, so I’m not going to sweat this one. Here’s our measure of class dissimilarity:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>class_dissim  <span class="ot">&lt;-</span> <span class="fu">dist</span>(class_distro)</span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a><span class="fu">print_truncated</span>(class_dissim)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>        Bard Cleric Druid Palad. Ranger Sorce. Warlo.
+Cleric 0.309                                         
+Druid  0.296  0.251                                  
+Palad. 0.373  0.167 0.381                            
+Ranger 0.294  0.213 0.146  0.313                     
+Sorce. 0.286  0.342 0.168  0.468  0.292              
+Warlo. 0.151  0.270 0.288  0.371  0.312  0.279       
+Wizard 0.218  0.259 0.152  0.389  0.228  0.118  0.196</code></pre>
+</div>
+</div>
+<p>Here’s our measure of school dissimilarity:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>school_dissim <span class="ot">&lt;-</span> <span class="fu">dist</span>(school_distro)</span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a><span class="fu">print_truncated</span>(school_dissim)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>       Evoca. Abjur. Trans. Encha. Necro. Divin. Illus.
+Abjur.  0.320                                          
+Trans.  0.122  0.279                                   
+Encha.  0.323  0.284  0.270                            
+Necro.  0.218  0.200  0.226  0.281                     
+Divin.  0.271  0.133  0.203  0.181  0.179              
+Illus.  0.319  0.409  0.301  0.217  0.313  0.303       
+Conju.  0.134  0.251  0.073  0.273  0.178  0.184  0.319</code></pre>
+</div>
+</div>
+
+<div class="no-row-height column-margin column-container"><div class="">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="master.jpg" class="img-fluid figure-img"></p>
+<figcaption>D&amp;D Boxed Set: Master Rules</figcaption>
+</figure>
+</div>
+</div></div></section>
+<section id="hierarchical-clustering-for-the-dendrograms" class="level3">
+<h3 class="anchored" data-anchor-id="hierarchical-clustering-for-the-dendrograms">Hierarchical clustering for the dendrograms</h3>
+<p>After all that effort in constructing the dissimilarity matrices, the hierarchical clustering is something of an anticlimax. The only substantive choice we need to make here is whether to use single-link, complete-link, average-link, or some other method for agglomeration. This does matter somewhat, at least in my experience, but I’m also feeling lazy so I’m going to go with average-link because it feels appropriate to me in this context:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>clusters <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">class =</span> <span class="fu">hclust</span>(class_dissim, <span class="at">method =</span> <span class="st">"average"</span>),</span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">school =</span> <span class="fu">hclust</span>(school_dissim, <span class="at">method =</span> <span class="st">"average"</span>)</span>
+<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(clusters)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$class
+
+Call:
+hclust(d = class_dissim, method = "average")
+
+Cluster method   : average 
+Distance         : euclidean 
+Number of objects: 8 
+
+
+$school
+
+Call:
+hclust(d = school_dissim, method = "average")
+
+Cluster method   : average 
+Distance         : euclidean 
+Number of objects: 8 </code></pre>
+</div>
+</div>
+</section>
+<section id="plotting-the-heatmap" class="level3">
+<h3 class="anchored" data-anchor-id="plotting-the-heatmap">Plotting the heatmap</h3>
+<p>Constructing the plot can also be considered a two-part process. In the first stage, we constrict a <code>base</code> plot object that uses <code>geom_tile()</code> to display the class/school affinities data (i.e., <code>dat</code>), and add various stylistic features to make it look pretty:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>base <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(dat, <span class="fu">aes</span>(school, class, <span class="at">fill =</span> count)) <span class="sc">+</span></span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_tile</span>() <span class="sc">+</span></span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_distiller</span>(<span class="at">palette =</span> <span class="st">"RdPu"</span>) <span class="sc">+</span></span>
+<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"The Schools of Magic"</span>,</span>
+<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"The Classes of Character"</span>,</span>
+<span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> <span class="st">"Number of Learnable Spells"</span></span>
+<span id="cb44-8"><a href="#cb44-8" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb44-9"><a href="#cb44-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_equal</span>() <span class="sc">+</span></span>
+<span id="cb44-10"><a href="#cb44-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(</span>
+<span id="cb44-11"><a href="#cb44-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">plot.background =</span> <span class="fu">element_rect</span>(</span>
+<span id="cb44-12"><a href="#cb44-12" aria-hidden="true" tabindex="-1"></a>      <span class="at">fill =</span> <span class="st">"#222"</span>, </span>
+<span id="cb44-13"><a href="#cb44-13" aria-hidden="true" tabindex="-1"></a>      <span class="at">color =</span> <span class="st">"#222"</span></span>
+<span id="cb44-14"><a href="#cb44-14" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb44-15"><a href="#cb44-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">plot.margin =</span> <span class="fu">unit</span>(<span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">2</span>, <span class="dv">2</span>, <span class="dv">2</span>), <span class="at">units =</span> <span class="st">"cm"</span>),</span>
+<span id="cb44-16"><a href="#cb44-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">text =</span> <span class="fu">element_text</span>(<span class="at">color =</span> <span class="st">"#ccc"</span>, <span class="at">size =</span> <span class="dv">14</span>),</span>
+<span id="cb44-17"><a href="#cb44-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">axis.text =</span> <span class="fu">element_text</span>(<span class="at">color =</span> <span class="st">"#ccc"</span>),</span>
+<span id="cb44-18"><a href="#cb44-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">axis.title =</span> <span class="fu">element_text</span>(<span class="at">color =</span> <span class="st">"#ccc"</span>),</span>
+<span id="cb44-19"><a href="#cb44-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">axis.ticks =</span> <span class="fu">element_line</span>(<span class="at">color =</span> <span class="st">"#ccc"</span>),</span>
+<span id="cb44-20"><a href="#cb44-20" aria-hidden="true" tabindex="-1"></a>    <span class="at">legend.position =</span> <span class="st">"bottom"</span>,</span>
+<span id="cb44-21"><a href="#cb44-21" aria-hidden="true" tabindex="-1"></a>    <span class="at">legend.background =</span> <span class="fu">element_rect</span>(</span>
+<span id="cb44-22"><a href="#cb44-22" aria-hidden="true" tabindex="-1"></a>      <span class="at">fill =</span> <span class="st">"#222"</span>, </span>
+<span id="cb44-23"><a href="#cb44-23" aria-hidden="true" tabindex="-1"></a>      <span class="at">color =</span> <span class="st">"#222"</span></span>
+<span id="cb44-24"><a href="#cb44-24" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb44-25"><a href="#cb44-25" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb44-26"><a href="#cb44-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb44-27"><a href="#cb44-27" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(base)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/base-plot-1.png" class="img-fluid figure-img" width="960"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>In this form, though, you can’t really see which schools are similar to each other and nor can you see how the classes are related in terms of their spell-casting affinities. What we really want to do is reorder the rows and columns so that the most similar schools are placed in adjacent columns, and the most similar classes are placed in adjacent rows.</p>
+</section>
+<section id="adding-the-dendrograms" class="level3 page-columns page-full">
+<h3 class="anchored" data-anchor-id="adding-the-dendrograms">Adding the dendrograms</h3>
+<p>Until recently I’d never found a tool for doing this in R that I found satisfying, but with the release of the <a href="https://teunbrand.github.io/legendry/">legendry</a> package by Teun van den Brand (which has a <em>lot</em> of tools for working with plot legends and axes that I’m slowly learning…) this has changed. If we pass a hierarchical clustering to the <code>scale_*_dendro()</code> functions, the rows/columns are reordered appropriately, and the dendrograms themselves are shown alongside the axes:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>pic <span class="ot">&lt;-</span> base <span class="sc">+</span></span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_dendro</span>(</span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">clust =</span> clusters<span class="sc">$</span>school,</span>
+<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">guide =</span> <span class="fu">guide_axis_dendro</span>(<span class="at">n.dodge =</span> <span class="dv">2</span>),</span>
+<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">expand =</span> <span class="fu">expansion</span>(<span class="dv">0</span>, <span class="dv">0</span>),</span>
+<span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">position =</span> <span class="st">"top"</span></span>
+<span id="cb45-7"><a href="#cb45-7" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb45-8"><a href="#cb45-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_dendro</span>(</span>
+<span id="cb45-9"><a href="#cb45-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">clust =</span> clusters<span class="sc">$</span>class,</span>
+<span id="cb45-10"><a href="#cb45-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">expand =</span> <span class="fu">expansion</span>(<span class="dv">0</span>, <span class="dv">0</span>)</span>
+<span id="cb45-11"><a href="#cb45-11" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb45-12"><a href="#cb45-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-13"><a href="#cb45-13" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(pic)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/final-plot-1.png" class="img-fluid figure-img" width="960"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>So much nicer!</p>
+<p>To any D&amp;D player, the plot is immediately interpretable: wizards and sorcerers are very similar spellcasting classes, and the spellcasting abilities of paladins are basically “clerics, but not very good at it”. The same dynamic is in play with regards to druids and rangers, in the sense that they’re both nature focused spellcasters but rangers aren’t very good at it. The grouping of bards and warlocks surprised me a little, until it was pointed out to me that they both rely heavily on charisma in their spellcasting, so there is a kind of connection there.</p>
+<p>On the schools side, the plot is similarly interpretable: enchantment and illusion are closely related schools, as are abjuration and divination. Necromancy feels a little bit like the darker cousin of abjuration so yeah, that tracks too. Transmutation, conjuration, and evocation are all kinda related, so you get a clustering there too.</p>
+<p>There are some limitations to hierarchical clustering, of course, and you can see a little bit of that coming through in the plot. By design, I constructed the dissimilarities so that they’d ignore the “primary spellcaster vs secondary spellcaster” distinction, so the overall brightness of adjacent rows and columns varies wildly. But to capture that in a clustering solution while also capturing the “stylistic” similarities I’ve plotted here, you’d need to use an overlapping clustering tool rather than a hierarchical one, and those are inherently trickier to work with, and I wouldn’t be able to draw the pretty dendrograms either!</p>
+
+<div class="no-row-height column-margin column-container"><div class="">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="immortals.jpg" class="img-fluid figure-img"></p>
+<figcaption>D&amp;D Boxed Set: Immortals Rules</figcaption>
+</figure>
+</div>
+</div></div></section>
+</section>
+<section id="epilogue" class="level2">
+<h2 class="anchored" data-anchor-id="epilogue">Epilogue</h2>
+<p>One weirdly enjoyable game I discovered when writing this post is calling the <code>describe_spell()</code> helper function without specifying the actual spell to describe, which produces the description of a randomly selected spell. Trying to identify the spell name from the description is kind of fun:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="fu">describe_spell</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>You create a floating, spectral force that resembles a weapon of your
+choice and lasts for the duration. The force appears within range in
+a space of your choice, and you can immediately make one melee spell
+attack against one creature within 5 feet of the force. On a hit, the
+target takes Force damage equal to 1d8 plus your spellcasting ability
+modifier. As a Bonus Action on your later turns, you can move the
+force up to 20 feet and repeat the attack against a creature within 5
+feet of it. Using a Higher-Level Spell Slot. The damage increases by
+1d8 for every slot level above 2.</code></pre>
+</div>
+</div>
+<p>This one?</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="fu">describe_spell</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>You create an illusion of an object, a creature, or some other visible
+phenomenon within range that activates when a specific trigger occurs.
+The illusion is imperceptible until then. It must be no larger than a
+30-foot Cube, and you decide when you cast the spell how the illusion
+behaves and what sounds it makes. This scripted performance can last
+up to 5 minutes. When the trigger you specify occurs, the illusion
+springs into existence and performs in the manner you described. Once
+the illusion finishes performing, it disappears and remains dormant
+for 10 minutes, after which the illusion can be activated again. The
+trigger can be as general or as detailed as you like, though it must
+be based on visual or audible phenomena that occur within 30 feet
+of the area. For example, you could create an illusion of yourself
+to appear and warn off others who attempt to open a trapped door.
+Physical interaction with the image reveals it to be illusory, since
+things can pass through it. A creature that takes the Study action
+to examine the image can determine that it is an illusion with a
+successful Intelligence (Investigation) check against your spell save
+DC. If a creature discerns the illusion for what it is, the creature
+can see through the image, and any noise it makes sounds hollow to the
+creature.</code></pre>
+</div>
+</div>
+<p>Or this one?</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="fu">describe_spell</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>You receive an omen from an otherworldly entity about the results of a
+course of action that you plan to take within the next 30 minutes. The
+DM chooses the omen from the Omens table. Omens Omen For Results That
+Will Be... Weal Good Woe Bad Weal and woe Good and bad Indifference
+Neither good nor bad The spell doesn’t account for circumstances, such
+as other spells, that might change the results. If you cast the spell
+more than once before finishing a Long Rest, there is a cumulative
+25 percent chance for each casting after the first that you get no
+answer.</code></pre>
+</div>
+</div>
+<p>Enjoy!</p>
+
+
+</section>
+
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" id="quarto-reuse"><h2 class="anchored quarto-appendix-heading">Reuse</h2><div class="quarto-appendix-contents"><div><a rel="license" href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></div></div></section><section class="quarto-appendix-contents" id="quarto-citation"><h2 class="anchored quarto-appendix-heading">Citation</h2><div><div class="quarto-appendix-secondary-label">BibTeX citation:</div><pre class="sourceCode code-with-copy quarto-appendix-bibtex"><code class="sourceCode bibtex">@online{navarro2025,
+  author = {Navarro, Danielle},
+  title = {The Schools of Magic},
+  date = {2025-01-01},
+  url = {https://blog.djnavarro.net/posts/2025-01-01_schools-of-magic/},
+  langid = {en}
+}
+</code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre><div class="quarto-appendix-secondary-label">For attribution, please cite this work as:</div><div id="ref-navarro2025" class="csl-entry quarto-appendix-citeas" role="listitem">
+Navarro, Danielle. 2025. <span>“The Schools of Magic.”</span> January 1,
+2025. <a href="https://blog.djnavarro.net/posts/2025-01-01_schools-of-magic/">https://blog.djnavarro.net/posts/2025-01-01_schools-of-magic/</a>.
+</div></div></section></div></main> <!-- /main -->
+<!-- plausible -->
+<script async="" defer="" data-domain="blog.djnavarro.net" src="https://plausible.io/js/plausible.js"></script>
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp("https:\/\/blog\.djnavarro\.net");
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+    <a class="nav-link" href="https://blog.djnavarro.net">
+<p>blog.djnavarro.net</p>
+</a>
+  </li>  
+</ul>
+    </div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>
