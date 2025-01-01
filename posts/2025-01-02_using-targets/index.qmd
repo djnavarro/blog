@@ -1,7 +1,7 @@
 ---
 title: "Using targets"
 description: "Less painful than makefiles"
-date: "2024-12-28"
+date: "2025-01-02"
 --- 
 
 <!--------------- my typical setup ----------------->
