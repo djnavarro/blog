@@ -1,0 +1,54 @@
+---
+title: Targets, litedown, and D&D spells
+output:
+  litedown::html_format:
+    meta:
+      css: ["@article", "../_liteblog.css"]
+      js: ["@sidenotes"]
+      include-before: "_liteblog-header.html"
+      include-after: "_liteblog-footer.html"
+    options:
+      toc: false
+      js_highlight:
+        package: prism
+        style: tomorrow
+---
+
+In the dying days of 2024, a woman who should have been doing something useful like replaying the original Mass Effect trilogy for the n-th time instead decided to learn something about [litedown](https://yihui.org/litedown), [targets](https://books.ropensci.org/targets/), and [legendry](https://teunbrand.github.io/legendry/). This absurdity, which has absolutely no use case whatsoever and should be shunned by one and all, is the inevitable outcome of her poor decision making.
+
+```{r}
+#| label: post-listing
+#| echo: false
+#| results: "asis"
+.blog <- readRDS("../_liteblog.rds")
+
+write_post_list <- function() {
+  post_dir <- fs::path(.blog$root, .blog$source)
+  post <- post_dir |>
+    fs::dir_ls(regexp = .blog$pattern) |>
+    fs::path_rel(post_dir) |>
+    stringr::str_subset("^_") |>
+    stringr::str_remove("^_") |>
+    stringr::str_replace_all("_", "/") |>
+    fs::path_ext_remove() |>
+    stringr::str_replace("$", "/index.html")
+  purrr::walk(
+    rev(post),
+    \(p) {
+      t <- p |>
+        fs::path_dir() |>
+        fs::path_split() |>
+        unlist() |>
+        paste(collapse = " / ")
+      l <- paste0("[", t, "](", p, ")")
+      cat("-", l, "\n")
+    }
+  )
+}
+
+write_post_list()
+```
+
+Should you have, in some drug-addled state no doubt, followed a capricious rabbit down some dark internet hole and ended up here by accident, your best bet is to close the browser and take a few deep breaths. You would be ill-advised to go to [blog.djnavarro.net](https://blog.djnavarro.net) to find other things I have written, and even more poorly-advised to point your browser at [djnavarro.net](https://djnavarro.net).
+
+The art at [art.djnavarro.net](https://art.djnavarro.net) is kind of neat though. 

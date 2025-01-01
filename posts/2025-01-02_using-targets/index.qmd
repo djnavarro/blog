@@ -35,7 +35,7 @@ library(targets)
 
 ## Project 1: D&D spells
 
-The first project is a fun [Tidy Tuesday](https://github.com/rfordatascience/tidytuesday/tree/main/data/2024/2024-12-17) project that makes these two absurd images:
+The first project is a fun [Tidy Tuesday](https://github.com/rfordatascience/tidytuesday/tree/main/data/2024/2024-12-17) project that makes these two images: 
 
 ::: {layout="[2,1]" .column-page}
 
@@ -49,9 +49,8 @@ The first project is a fun [Tidy Tuesday](https://github.com/rfordatascience/tid
 #| label: targets-spells-destroy
 #| echo: false
 # complete clean, mimic fresh state
-tar_destroy("all")
-fs::dir_delete("spells/_targets")
-fs::dir_delete("spells/output")
+if (fs::dir_exists("spells/_targets")) fs::dir_delete("spells/_targets")
+if (fs::dir_exists("spells/output")) fs::dir_delete("spells/output")
 ```
 
 ```{r}
@@ -348,7 +347,7 @@ As it happens, I have a copy of the project in the `spells` directory within thi
 knitr::opts_knit$set(
   root.dir = here::here(
     "posts", 
-    "2024-12-28_using-targets",  
+    "2025-01-02_using-targets",  
     "spells"
   )
 )
@@ -415,7 +414,7 @@ fs::dir_tree()
 knitr::opts_knit$set(
   root.dir = here::here(
     "posts", 
-    "2024-12-28_using-targets",  
+    "2025-01-02_using-targets",  
     "liteblog"
   )
 )
@@ -427,7 +426,8 @@ knitr::opts_knit$set(
 # complete clean, mimic fresh state
 tar_destroy("all")
 if(fs::dir_exists("_targets")) fs::dir_delete("_targets")
-if(fs::dir_exists("_site")) fs::dir_delete("_site")
+if(fs::dir_exists("site")) fs::dir_delete("site")
+if(fs::file_exists("_liteblog.rds")) fs::file_delete("_liteblog.rds")
 ```
 
 ```{r}
@@ -446,19 +446,13 @@ fs::dir_tree()
 ```
 
 ```{r}
-#| label: hacky-file-copy
+#| label: copy-liteblog-to-site
 #| echo: false
-# this shouldn't be needed but I've forgotten how to do it in quarto
 fs::dir_copy(
-  path = "_site",
-  new_path = here::here(
-    "_site", 
-    "posts", 
-    "2024-12-28_using-targets",
-    "blog"
-  ), 
+  path = "site",
+  new_path = here::here("_site", "posts", "2025-01-02_using-targets"),
   overwrite = TRUE
 )
 ```
 
-You can browse the built website [here](./blog/)
+You can browse the built website [here](./site/index.html)
