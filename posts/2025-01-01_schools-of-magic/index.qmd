@@ -1,0 +1,521 @@
+---
+title: "The schools of magic"
+description: "Code and explanations for a Tidy Tuesday data visualisation exercise"
+date: "2025-01-01"
+categories: ["R", "Data Visualisation", "Tidy Tuesday"]
+image: "basic.jpg"
+image-alt: "Dragon picture on the cover of the D&D basic rules, a.k.a. 'The Red Box'"
+--- 
+
+<!--------------- my typical setup ----------------->
+
+```{r}
+#| label: setup
+#| include: false
+very_wide <- 500
+wide <- 136
+narrow <- 76
+options(width = narrow)
+cache_images <- TRUE
+set.seed(1)
+```
+
+<!--------------- post begins here ----------------->
+
+
+In the dying days of 2024 I found myself doing [Tidy Tuesday](https://www.tidytuesday.com/) again. I really like playing around with data wrangling and visualisation in these exercises, and I wish I were able to find the time to do it more often. But life so often gets in the way, and I suppose I should simply be happy that I get to do it sometimes. Anyway, one of the recent Tidy Tuesday data sets is related to Dungeons & Dragons, which I used to play when I was a teenager, and my children are pestering me to play again now that they're old enough to get into it. So I decided to play around with this data set as part of a totally unrelated side project (for a different post!) and I ended up posting these two images to social media:
+
+::: {.column-page layout="[2,1]"}
+
+![](dice.png)
+
+![](schools.png)
+
+:::
+
+A couple of people emailed me asking for the code for these, and I haven't gotten around to replying to them yet. Part of the reason I didn't reply initially was that the code was tangled up with the code for the other side project, which made it a little awkward to explain without going down a whole other rabbit hole. 
+
+So now I find myself rewriting the code in a slightly more palatable form and posting it to this blog. I mean, why not? It's the first day of a new year, and I have nothing better to do this morning.
+
+```{r}
+#| label: load-packages
+#| message: false
+library(dplyr)
+library(tidyr)
+library(purrr)
+library(readr)
+library(tibble)
+library(ggplot2)
+library(stringr)
+library(forcats)
+library(ggrepel)
+library(legendry)
+```
+
+## The spells data
+
+The `spells` data that I'm using here comes from the [TidyTuesday D&D Spells](https://github.com/rfordatascience/tidytuesday/tree/main/data/2024/2024-12-17) data set. The data set was compiled by Jon Harmon, and originates in the recently released [Dungeons & Dragons Free Rules](https://www.dndbeyond.com/sources/dnd/free-rules). If you've played D&D before, this should be quite familiar:
+
+```{r}
+#| label: read-spells
+#| print: print_tinker
+spells <- read_csv("./spells.csv", show_col_types = FALSE)
+print(spells)
+```
+
+If you don't already know what you're looking at, here's a quick summary of the columns that I'm actually using for these plots:
+
+- `name`: the name of the spell, obviously
+- `level`: the spell difficulty level, with level 0 spells (cantrips) being the easiest and level 9 being the most difficult
+- `school`: which of the nine schools of magic (e.g., enhantment, illusion, necromancy, etc) does this spell belong to?
+- `bard`, `cleric`, `druid`, etc: is this spell learnable by characters that belong to this class?
+- `description`: the text for the spell description
+
+The values stored in most of these variables are pretty straightforward, but it's probably useful to look at the `description` variable in particular since that one is a long string. Here's a few spell descriptions:
+
+```{r}
+describe_spell <- function(spell = NULL) {
+  if (is.null(spell)) spell <- sample(spells$name, 1L)
+  spells |> 
+    filter(name == spell) |> 
+    pull(description) |> 
+    str_wrap(width = 70) |> 
+    cat()
+}
+
+describe_spell("Acid Splash")
+describe_spell("Fireball")
+describe_spell("Prismatic Spray")
+```
+
+::: {.column-margin}
+
+![D&D Boxed Set: Basic Rules](basic.jpg)
+
+:::
+
+## The spell dice plot
+
+Reading these spell descriptions I had the thought that it would be interesting to explore the distribution of dice rolls mentioned in the spell descriptions. In the description for "Acid Splash", for example, it refers to a 1d6 roll, a 2d6 roll, a 3d6 roll, and a 4d6 roll. "Fireball" mentions 8d6 and 1d6 in the text. What does the distribution of these dice rolls look like.
+
+### Data wrangling
+
+To start with let's think about what information we want to extract from the spell descriptions, and how we want to do it. Using `str_extract_all()` and a bit of [regular expression sorcery](/posts/2024-12-16_regex-backreferences/), we can pull this information out of a description. Here's what we get for the three spells I listed above:
+
+```{r}
+spells |> 
+  filter(name %in% c("Acid Splash", "Fireball", "Prismatic Spray")) |> 
+  pull(description) |> 
+  str_extract_all("\\b\\d+d\\d+\\b")
+```
+
+This list highlights a decision we need to make about counting tokens: in the "Prismatic Spray" description, there are five separate mentions of a 12d6 dice roll. Do we want to count all five of these, or to we want to consider unique mentions only? After a bit of thought I ended up going with the latter, so the extraction code would look like this:
+
+```{r}
+spells |> 
+  filter(name %in% c("Acid Splash", "Fireball", "Prismatic Spray")) |> 
+  pull(description) |> 
+  str_extract_all("\\b\\d+d\\d+\\b") |> 
+  map(unique)
+```
+
+Doing this within a data frame produces a `dice_txt` list column:
+
+```{r}
+spells |>
+  select(name, level, description) |>
+  mutate(
+    dice_txt = description |> 
+      str_extract_all("\\b\\d+d\\d+\\b") |> 
+      map(unique)
+  )
+```
+
+List columns aren't the easiest thing to visualise, so I'll use the `unnest_longer()` function to produce a tidy data set that has one row per unique dice roll mention:
+
+```{r}
+spells |>
+  select(name, level, description) |>
+  mutate(
+    dice_txt = description |> 
+      str_extract_all("\\b\\d+d\\d+\\b") |> 
+      map(unique)
+  ) |> 
+  unnest_longer(
+    col = "dice_txt",
+    values_to = "dice_txt",
+    indices_to = "position"
+  )
+```
+
+With a little more data wrangling, we can carve up a `dice_txt` value like "3d6" into the number of dice to be rolled (i.e. `die_num` is 3), the number of sides on the die to be rolled (i.e., `die_die` is 6), and the average value that you'd get from rolling these dice (i.e., `die_val` is 10.5). Here's the final processed data:
+
+```{r}
+#| label: spell-dice-data
+dice_dat <- spells |>
+  select(name, level, description) |>
+  mutate(
+    dice_txt = description |> 
+      str_extract_all("\\b\\d+d\\d+\\b") |> 
+      map(unique)
+  ) |> 
+  unnest_longer(
+    col = "dice_txt",
+    values_to = "dice_txt",
+    indices_to = "position"
+  ) |>
+  mutate(
+    dice_num = dice_txt |> str_extract("\\d+(?=d)") |> as.numeric(),
+    dice_die = dice_txt |> str_extract("(?<=d)\\d+") |> as.numeric(),
+    dice_val = dice_num * (dice_die + 1)/2,
+    dice_txt = factor(dice_txt) |> fct_reorder(dice_val)
+  )
+
+print(dice_dat)
+```
+
+Notice that this processed version of the data codes `dice_txt` as a factor, and the levels are arranged by increasing `dice_val`. That's the mechanism by which the die rolls will be ordered sensibly in the plot. 
+
+::: {.column-margin}
+
+![D&D Boxed Set: Expert Rules](expert.jpg)
+
+:::
+
+### Making the plot
+
+A basic version of the plot we want to create looks like this:
+
+```{r}
+ggplot(dice_dat, aes(dice_txt, fill = factor(level))) + geom_bar()
+```
+
+There's a lot of tinkering required to make it look pretty, but this is essentially the data we want to display and the format we want it to be displayed in. The full code for the visualisation looks like this:    
+
+```{r}
+#| label: make-plot
+#| fig.width: 12
+#| fig.height: 6
+palette <- hcl.colors(n = 10, palette = "PuOr")
+
+labs <- dice_dat |>
+  summarise(
+    dice_txt = first(dice_txt),
+    count = n(),
+    .by = dice_txt
+  )
+
+pic <- ggplot(
+  data = dice_dat,
+  mapping = aes(
+    x = dice_txt,
+    fill = factor(level)
+  )
+) +
+  geom_bar(color = "#222") +
+  geom_label_repel(
+    data = labs,
+    mapping = aes(
+      x = dice_txt,
+      y = count,
+      label = dice_txt
+    ),
+    size = 3,
+    direction = "y",
+    seed = 1,
+    nudge_y = 4,
+    color = "#ccc",
+    fill = "#222",
+    arrow = NULL,
+    inherit.aes = FALSE
+  ) +
+  scale_fill_manual(
+    name = "Spell level",
+    values = palette
+  ) +
+  scale_x_discrete(
+    name = "Increasing average outcome \u27a1",
+    breaks = NULL,
+    expand = expansion(.05)
+  ) +
+  scale_y_continuous(name = NULL) +
+  labs(title = "Dice rolls in D&D spell descriptions by spell level") +
+  theme_void() +
+  theme(
+    plot.background = element_rect(fill = "#222"),
+    text = element_text(color = "#ccc"),
+    axis.text = element_text(color = "#ccc"),
+    axis.title = element_text(color = "#ccc"),
+    plot.margin = unit(c(1, 1, 1, 1), units = "cm"),
+    legend.position = "inside",
+    legend.position.inside = c(.3, .825),
+    legend.direction = "horizontal",
+    legend.title.position = "top",
+    legend.byrow = TRUE
+  )
+
+plot(pic)
+```
+
+Very pretty.
+
+There's a small mystery that this plot leads to. As a general pattern, the low-level spells tend to mention die rolls with lower average value when compared to higher-level spells (i.e., there's lots of brown and orange bars on the left, and mostly blueish/purple bars on the right). That makes sense, especially because the dice rolls mentioned in spell descriptions are usually describing the amount of damage the spell does. 
+
+So what's the story with this one weird outlier, the level 0 spell that mentions a 12d6 roll? To answer this we need to work out which spell it is:
+
+```{r}
+dice_dat |> 
+  filter(level == 0 & dice_txt == "12d6") |> 
+  pull(name)
+```
+
+Now let's look at the description:
+
+```{r}
+describe_spell("Druidcraft")
+```
+
+Ah... now it makes more sense: it's a parsing error from when the data set was constructed. The stats and description for "Earthquake" (an 8th level spell) has been appended to the description for "Druidcraft", and the 12d6 roll in question isn't for "Druidcraft" it's for "Earthquake".
+
+Mystery solved. 
+
+::: {.column-margin}
+
+![D&D Boxed Set: Companion Rules](companions.jpg)
+
+:::
+
+
+## The schools of magic
+
+Okay, so that's the story behind the first plot. What about the second one, the one that looks like a heatmap with some dendrograms? The data wrangling for that one one is a little more elaborate, because we have to construct data for the heatmap and data for the dendrograms. 
+
+### Data for the heatmap
+
+To produce data for the heatmap, we select the relevant columns: i.e., those corresponding to the character classes, the `school` variable that denotes the school of magic for the spell, and the `name` variable because I like having an id column in my data. We then use `pivot_longer()` to arrange this data set in long form:
+
+```{r}
+#| label: spells-long
+spells_long <- spells |>
+  select(name, school, bard:wizard) |>
+  pivot_longer(
+    cols = bard:wizard,
+    names_to = "class",
+    values_to = "castable"
+  ) 
+
+print(spells_long)
+```
+
+Now we have a tidy data set with one row per "observation", in the sense that it specifies whether a spell of a specific `name` (which belongs to a specific `school`), is in fact `castable` by members of a particular character `class`. We can summarise this by aggregating over the specific spells, and count the number of castable spells for each combination of magic school and character class: 
+
+```{r}
+#| label: scholastic-data
+dat <- spells_long |>
+  summarise(
+    count = sum(castable),
+    .by = c("school", "class")
+  ) |>
+  mutate(
+    school = str_to_title(school),
+    class  = str_to_title(class)
+  )
+
+print(dat)
+```
+
+This `dat` data frame is suitable for plotting as a heat map with `geom_tile()`, so let's now move to stage two of the data wrangling.
+
+### Dissimilarity data for the dendrograms
+
+The data structure that we need at this step is slightly more complicated, because what we want to display on each axis is a hierarchical clustering, of the sort typically produced by `hclust()`. In a distant, distant past I actually wrote my PhD thesis on clustering and scaling tools used to represent item (dis)similarities, and as such I'm acutely aware that these tools are extremely sensitive to the way you define similarity (or dissimilarity, or distance, or association, or whatever...). So I'll be a little careful here, because if you do this in a thoughtless way you get stupid answers.
+
+Before I begin, I'll quickly define a boring function that I'll used when printing matrices. It's not a very good function, but it works for the purposes I need it for in this post:
+
+```{r}
+print_truncated <- function(x) {
+  if (inherits(x, "matrix")) {
+    rownames(x) <- str_trunc(rownames(x), width = 6, ellipsis = ".")
+    colnames(x) <- str_trunc(colnames(x), width = 6, ellipsis = ".")
+  }
+  if (inherits(x, "dist")) {
+    attr(x, "Labels") <- str_trunc(attr(x, "Labels"), width = 6, ellipsis = ".")
+  }
+  print(round(x, digits = 3))
+}
+```
+
+Okay, now let's get to work on the data wrangling. We'll start by reorganising the `dat` data frame into a matrix form. The `mat` matrix below contains the exact same information as the data frame: each cell in the matrix represents the number of castable spells for a specific combination of class and school.
+
+```{r}
+mat <- dat |>
+  pivot_wider(
+    names_from = "school",
+    values_from = "count"
+  ) |>
+  as.data.frame()
+
+rownames(mat) <- mat$class
+mat$class <- NULL
+mat <- as.matrix(mat)
+
+print_truncated(mat)
+```
+
+In this matrix we have a measure of "affinity", in the sense that larger values indicate a higher affinity between a class and a school. The tricky part here is that some classes are simply better at spellwork than others: clerics and wizards can both cast lots of spells; paladins and rangers cannot cast many. The kind of similarity that I have in mind here is not the boring "clerics and wizards are similar because they can both cast lots of spells" kind. What I really want to say is something like "paladins and clerics are  similar because abjuration is the strongest school for both classes". The same applies when thinking about the schools of magic: there are lots of transmutation spells and lots of abjuration spells. That doesn't really make those schools similar, not in the sense I care about. 
+
+What all this amounts to is an acknowledgement that we need to correct for overall prevalance, or -- to frame it in probabilistic terms -- to describe classes in terms of a "distribution over schools" and describe schools in terms of a "distribution over classes". That gives us the following two matrices:
+
+```{r}
+class_distro  <- mat / replicate(ncol(mat), rowSums(mat))
+school_distro <- t(mat) / (replicate(nrow(mat), colSums(mat)))
+```
+
+The `class_distro` matrix is the one that describes classes as a distribution over schools, and you can see in the printout here that when described in this fashion the paladin row and the cleric row do look rather similar to each other:
+
+```{r}
+print_truncated(class_distro)
+```
+
+A similar phenomenon is observed in the `school_distro` matrix, where you can see that the rows for abjuration and divination are quite similar despite the fact that there are a lot more abjuration spells than divination spells:
+
+```{r}
+print_truncated(school_distro)
+```
+
+We are now in a position to convert both of these to distance/distance matrices. Notwithstanding the fact that it's probably not the ideal way to describe similarity between distributions, I'll call `dist()` using the default Euclidean distance measure. I mean, sure, I could probably do something fancy with [Jensen-Shannon divergence](https://en.wikipedia.org/wiki/Jensen%E2%80%93Shannon_divergence) here, but in my experience the metric you use to measure distributional similarity is *far* less important than the manner in which you construct the distributions from raw features in the first place, so I'm not going to sweat this one. Here's our measure of class dissimilarity:
+
+```{r}
+class_dissim  <- dist(class_distro)
+print_truncated(class_dissim)
+```
+
+Here's our measure of school dissimilarity:
+
+```{r}
+school_dissim <- dist(school_distro)
+print_truncated(school_dissim)
+```
+
+::: {.column-margin}
+
+![D&D Boxed Set: Master Rules](master.jpg)
+
+:::
+
+
+### Hierarchical clustering for the dendrograms
+
+After all that effort in constructing the dissimilarity matrices, the hierarchical clustering is something of an anticlimax. The only substantive choice we need to make here is whether to use single-link, complete-link, average-link, or some other method for agglomeration. This does matter somewhat, at least in my experience, but I'm also feeling lazy so I'm going to go with average-link because it feels appropriate to me in this context:
+
+```{r}
+clusters <- list(
+  class = hclust(class_dissim, method = "average"),
+  school = hclust(school_dissim, method = "average")
+)
+print(clusters)
+```
+
+### Plotting the heatmap
+
+Constructing the plot can also be considered a two-part process. In the first stage, we constrict a `base` plot object that uses `geom_tile()` to display the class/school affinities data (i.e., `dat`), and add various stylistic features to make it look pretty:
+
+```{r, dev.args=list(bg="#222")}
+#| label: base-plot
+#| fig.width: 10
+#| fig.height: 10
+base <- ggplot(dat, aes(school, class, fill = count)) +
+  geom_tile() +
+  scale_fill_distiller(palette = "RdPu") +
+  labs(
+    x = "The Schools of Magic",
+    y = "The Classes of Character",
+    fill = "Number of Learnable Spells"
+  ) +
+  coord_equal() +
+  theme(
+    plot.background = element_rect(
+      fill = "#222", 
+      color = "#222"
+    ),
+    plot.margin = unit(c(2, 2, 2, 2), units = "cm"),
+    text = element_text(color = "#ccc", size = 14),
+    axis.text = element_text(color = "#ccc"),
+    axis.title = element_text(color = "#ccc"),
+    axis.ticks = element_line(color = "#ccc"),
+    legend.position = "bottom",
+    legend.background = element_rect(
+      fill = "#222", 
+      color = "#222"
+    )
+  )
+
+plot(base)
+```
+
+In this form, though, you can't really see which schools are similar to each other and nor can you see how the classes are related in terms of their spell-casting affinities. What we really want to do is reorder the rows and columns so that the most similar schools are placed in adjacent columns, and the most similar classes are placed in adjacent rows. 
+
+### Adding the dendrograms
+
+Until recently I'd never found a tool for doing this in R that I found satisfying, but with the release of the [legendry](https://teunbrand.github.io/legendry/) package by Teun van den Brand (which has a *lot* of tools for working with plot legends and axes that I'm slowly learning...) this has changed. If we pass a hierarchical clustering to the `scale_*_dendro()` functions, the rows/columns are reordered appropriately, and the dendrograms themselves are shown alongside the axes: 
+
+```{r, dev.args=list(bg="#222")}
+#| label: final-plot
+#| fig.width: 10
+#| fig.height: 10
+pic <- base +
+  scale_x_dendro(
+    clust = clusters$school,
+    guide = guide_axis_dendro(n.dodge = 2),
+    expand = expansion(0, 0),
+    position = "top"
+  ) +
+  scale_y_dendro(
+    clust = clusters$class,
+    expand = expansion(0, 0)
+  )
+
+plot(pic)
+```
+
+So much nicer! 
+
+To any D&D player, the plot is immediately interpretable: wizards and sorcerers are very similar spellcasting classes, and the spellcasting abilities of paladins are basically "clerics, but not very good at it". The same dynamic is in play with regards to druids and rangers, in the sense that they're both nature focused spellcasters but rangers aren't very good at it. The grouping of bards and warlocks surprised me a little, until it was pointed out to me that they both rely heavily on charisma in their spellcasting, so there is a kind of connection there. 
+
+On the schools side, the plot is similarly interpretable: enchantment and illusion are closely related schools, as are abjuration and divination. Necromancy feels a little bit like the darker cousin of abjuration so yeah, that tracks too. Transmutation, conjuration, and evocation are all kinda related, so you get a clustering there too.
+
+There are some limitations to hierarchical clustering, of course, and you can see a little bit of that coming through in the plot. By design, I constructed the dissimilarities so that they'd ignore the "primary spellcaster vs secondary spellcaster" distinction, so the overall brightness of adjacent rows and columns varies wildly. But to capture that in a clustering solution while also capturing the "stylistic" similarities I've plotted here, you'd need to use an overlapping clustering tool rather than a hierarchical one, and those are inherently trickier to work with, and I wouldn't be able to draw the pretty dendrograms either!
+
+::: {.column-margin}
+
+![D&D Boxed Set: Immortals Rules](immortals.jpg)
+
+:::
+
+
+## Epilogue
+
+```{r}
+#| include: false
+set.seed(105)
+```
+
+One weirdly enjoyable game I discovered when writing this post is calling the `describe_spell()` helper function without specifying the actual spell to describe, which produces the description of a randomly selected spell. Trying to identify the spell name from the description is kind of fun:
+
+```{r}
+describe_spell()
+```
+
+This one?
+
+```{r}
+describe_spell()
+```
+
+Or this one?
+
+```{r}
+describe_spell()
+```
+
+Enjoy!
