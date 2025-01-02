@@ -28,7 +28,7 @@ library(targets)
 
 ## Preliminaries
 
-One key thing about targets is that it's a project oriented workflow, and not surprisingly it's easiest to use from *within* the project. By default, code in a quarto blog post like this one executes with the working directory set to the folder containing the qmd file, but to make my life easier I'll sometimes change that directory so that when I'm discussing a specific targets project, the code will execute from the root directory of that project. However, using `setwd()` to do this is not ideal: the proper way to do this within any knitr-based tool (quarto, rmarkdown, etc) is to set the `root.dir` knitr option. To that end, I'll define a little convenience function:
+One key thing about targets is that it's a project oriented workflow, and not surprisingly it's easiest to use from *within* the project. By default, code in a quarto blog post like this one executes with the working directory set to the folder containing the qmd file, but to make my life easier I'll sometimes change that directory so that when I'm discussing a specific targets project, the code will execute from the root directory of that project. However, using `setwd()` to do this is not ideal: the proper way to do this within any knitr-based tool (quarto, rmarkdown, etc) is to set the `root.dir` knitr option. To that end, I'll define a little convenience function to take care of this whenever I need to switch to a new project:
 
 ```{r}
 post_dir <- here::here("posts", "2025-01-02_using-targets")
@@ -37,10 +37,12 @@ set_knitr_dir <- function(dir, base = post_dir) {
 }
 ```
 
+Right then. Time to play around with targets...
+
 ## Project 1: D&D spells
 
 
-The first project is the fun [Tidy Tuesday](https://github.com/rfordatascience/tidytuesday/tree/main/data/2024/2024-12-17) project that I described in my [last post](). In that post, I talked about two data visualisation I made using data about D&D spells. When I wrote that post, I didn't talk about targets at all, and none of the code presented in that blog post is written in a "targets-friendly" way. However, all though that form of the code was the simplest way to write it up, it's not how I originally wrote it. The actual code was written for targets (it's included as the `spells` folder in  [this github repo](https://github.com/djnavarro/tartoys)). 
+The first project is the fun [Tidy Tuesday](https://github.com/rfordatascience/tidytuesday/tree/main/data/2024/2024-12-17) project that I described in my [last post](/posts/2025-01-01_schools-of-magic/). In that post, I talked about two data visualisation I made using data about D&D spells. When I wrote that post, I didn't talk about targets at all, and none of the code presented in that blog post is written in a "targets-friendly" way. However, all though that form of the code was the simplest way to write it up, it's not how I originally wrote it. The actual code was written for targets (it's included as the `spells` folder in [this github repo](https://github.com/djnavarro/tartoys)). 
 
 As it happens, I have a slightly-modified copy of the project in the `spells` directory within this blog post, so that I play with this project within this post, and see how targets operates. With that in mind, the very first thing I'll do is navigate into that project folder:
 
@@ -56,36 +58,41 @@ if (fs::dir_exists("_targets")) fs::dir_delete("_targets")
 if (fs::dir_exists("output")) fs::dir_delete("output")
 ```
 
+Next, let's take a look at the structure of this project. At the moment this is a clean project (i.e., no code has been run yet), so it contains only the source files. There are only three:
+
 ```{r}
 #| label: spells-dir-tree-fresh
 fs::dir_tree()
 ```
 
-### Defining the pipeline
+Here's what each file does:
 
-The nice thing about a targets workflow is that you can (sometimes) see the entire structure of the project just by looking at the `_targets.R` script:
+- The `spells.csv` file is the data set I wish to analyse
+- The `analysis.R` script defines a collection of functions which, when called, will perform the required analyses and generate the outputs
+- The `_targets.R` script is (unsurprisingly) the build script. It's the targets analog of a makefile, more or less
+
+Let's unpack this a little further. If you read the [schools of magic](/posts/2025-01-01_schools-of-magic/) post, you've already seen the code underpinning the analysis. The only difference between the version in that post and the version I've used here is that the `analysis.R` script wraps each step of the analysis into a function. For example, the pipeline that constructs the "spell dice" plot uses these three functions:
+
+- `set_output_dir()` returns the path to the output folder to which the images will be written, creating that output folder if it doesn't already exist
+- `dice_data()` takes the spells data as input, and performs all the data wrangling steps required to construct a tidied version of the data that is suitable for visualisation
+- `dice_plot()` takes the tidied dice data as input, specifies the "spell dice" plot, and writes it to an output file
+
+To produce the "schools of magic" plot I also need these three functions:
+
+- `scholastic_data()` takes the spells data as input, and performs the data wrangling steps required to create tidy data suitable for constructing the heatmap
+- `scholastic_clusters()` takes this tidy data as input, and the performs additional steps required to construct the hierarchical clustering used to draw dendrograms alongside the heatmap
+- `scholastic_plot()` takes the data set and the clustering as input, and uses them to build the "schools of magic" plot that is written to an output file
+
+The actual code for these functions isn't very important, but for what it's worth the code is included below the fold here:
 
 ```{r}
-#| label: spells-targets-file
-#| eval: false
+#| label: spells-analysis
+#| eval: true
 #| code-line-numbers: true
-#| filename: "_targets.R"
-# packages used in the pipeline -------------------------------------------
-
-library(targets)
-
-tar_option_set(
-  packages = c(
-    "rprojroot", "fs", "tibble", "readr",
-    "ggplot2", "dplyr", "stringr",
-    "tidyr", "forcats", "ggrepel",
-    "legendry"
-  )
-)
-
-# define functions for the pipeline ---------------------------------------
-
-tar_source(files = c("dice.R", "scholastic.R"))
+#| code-fold: true
+#| code-summary: "Click to show/hide the analysis.R code"
+#| filename: "analysis.R"
+# helper ------------------------------------------------------------------
 
 set_output_dir <- function() {
   root <- find_root(has_file("_targets.R"))
@@ -94,45 +101,8 @@ set_output_dir <- function() {
   return(output)
 }
 
-# define the targets ------------------------------------------------------
+# spell dice plot ---------------------------------------------------------
 
-list(
-  # preprocessing targets
-  tar_target(input, "spells.csv", format = "file"),
-  tar_target(output, set_output_dir()),
-  tar_target(spells, read_csv(input, show_col_types = FALSE)),
-  
-  # dice plot targets
-  tar_target(dice_dat, dice_data(spells)),
-  tar_target(dice_pic, dice_plot(dice_dat, output)),
-  
-  # scholastic plot targets
-  tar_target(scholastic_dat, scholastic_data(spells)),
-  tar_target(scholastic_clus, scholastic_clusters(scholastic_dat)),
-  tar_target(
-    scholastic_pic,
-    scholastic_plot(scholastic_dat, scholastic_clus, output)
-  )
-)
-```
-
-There are three clear sections:
-
-- packages needed for the workflow
-- functions used to execute the workflow
-- the list of targets 
-
-It's not super relevant to the post, but here's the code defined in the `dice.R` and `scholastic.R` scripts. This code does all the work of building the plots, but I'm not going to dive into it in any detail here:
-
-::: {.callout-note icon=false title="Plotting code"}
-
-```{r}
-#| label: dnd-dice-file
-#| eval: true
-#| code-line-numbers: true
-#| code-fold: true
-#| code-summary: "Click to show/hide the dice.R code"
-#| filename: "dice.R"
 dice_data <- function(spells) {
   dice_dat <- spells |>
     select(name, level, description) |>
@@ -199,11 +169,7 @@ dice_plot <- function(dice_dat, output) {
       expand = expansion(.05)
     ) +
     scale_y_continuous(name = NULL) +
-    labs(
-      title = "Frequency of dice rolls described in D&D spell descriptions, by spell level",
-      subtitle = "Or whatever",
-      caption = "Source: https://github.com/rfordatascience/tidytuesday/tree/main/data/2024/2024-12-17"
-    ) +
+    labs(title = "Dice rolls described in D&D spell descriptions") +
     theme_void() +
     theme(
       plot.background = element_rect(fill = "#222"),
@@ -231,16 +197,10 @@ dice_plot <- function(dice_dat, output) {
   
   return(out)
 }
-```
 
 
-```{r}
-#| label: dnd-scholastic-file
-#| eval: true
-#| code-line-numbers: true
-#| code-fold: true
-#| code-summary: "Click to show/hide the scholastic.R code"
-#| filename: "scholastic.R"
+# schools of magic plot ---------------------------------------------------
+
 # constructs the data frame used by geom_tile() later
 scholastic_data <- function(spells) {
   spells |>
@@ -339,25 +299,73 @@ scholastic_plot <- function(dat, clusters, output) {
 }
 ```
 
-:::
+### Defining the pipeline
 
-blah blah blah. 
+Now that you've read the verbal description of what each function does, it's intuitively pretty clear how the analysis pipeline is supposed to work. Roughly speaking, you'd expect the analysis to be executed using a script like this:
+
+```{r}
+#| eval: false
+# setup
+input  <- "spells.csv"
+output <- set_output_dir()
+spells <- readr::read_csv(input)
+
+# make the spell dice plot & write to output
+dice_dat <- dice_data(spells)
+dice_pic <- dice_plot(dice_dat, output)
+
+# make the schools of magic plot & write to output
+scholastic_dat  <- scholastic_data(spells)
+scholastic_clus <- scholastic_clusters(scholastic_dat)
+scholastic_pic  <- scholastic_plot(scholastic_dat, scholastic_clus, output)
+```
+
+So, how does it work with targets? Well, if we take a look at the `_targets.R` script, we can see it looks suspiciously similar to the code above:
+
+```{r}
+#| label: spells-targets-file
+#| eval: false
+#| code-line-numbers: true
+#| filename: "_targets.R"
+library(targets)
+
+tar_option_set(packages = c(
+  "rprojroot", "fs", "tibble", "readr", "ggplot2", "dplyr",
+  "stringr", "tidyr", "forcats", "ggrepel", "legendry"
+))
+
+tar_source("analysis.R")
+
+list(
+  # preprocessing targets
+  tar_target(input, "spells.csv", format = "file"),
+  tar_target(output, set_output_dir()),
+  tar_target(spells, read_csv(input, show_col_types = FALSE)),
+  
+  # dice plot targets
+  tar_target(dice_dat, dice_data(spells)),
+  tar_target(dice_pic, dice_plot(dice_dat, output)),
+  
+  # scholastic plot targets
+  tar_target(scholastic_dat, scholastic_data(spells)),
+  tar_target(scholastic_clus, scholastic_clusters(scholastic_dat)),
+  tar_target(
+    scholastic_pic,
+    scholastic_plot(scholastic_dat, scholastic_clus, output)
+  )
+)
+```
+
 
 ### Inspecting the pipeline
 
 The `tar_visnetwork()` function provides a handy way of visualising the structure of a pipeline as a little HTML widget. By default it will show the dependencies between all functions and all targets, which is often totally fine, but I'm going to simplify it here by setting `targets_only = TRUE` (i.e., don't show the user-defined functions), and also set `exclude = c("input", "output")` to ignore the two really boring pre-processing targets! 
 
-I'm also going to set `physics = TRUE`, which you don't usually need, but in this case turns out to be handy because it pushes some of the vertices in the graph just far enough apart that you can see all the edges properly. 
-
 Anyway, here it is:
 
 ```{r}
 #| label: targets-spells-visnetwork
-tar_visnetwork(
-  targets_only = TRUE, 
-  exclude = c("input", "output"),
-  physics = TRUE
-)
+tar_visnetwork()
 ```
 
 This makes the structure of the project clear:

@@ -75,11 +75,7 @@ dice_plot <- function(dice_dat, output) {
       expand = expansion(.05)
     ) +
     scale_y_continuous(name = NULL) +
-    labs(
-      title = "Frequency of dice rolls described in D&D spell descriptions, by spell level",
-      subtitle = "Or whatever",
-      caption = "Source: https://github.com/rfordatascience/tidytuesday/tree/main/data/2024/2024-12-17"
-    ) +
+    labs(title = "Dice rolls described in D&D spell descriptions") +
     theme_void() +
     theme(
       plot.background = element_rect(fill = "#222"),
