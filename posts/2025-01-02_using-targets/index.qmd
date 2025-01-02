@@ -1,7 +1,8 @@
 ---
 title: "Using targets"
-description: "Less painful than makefiles"
+description: "A build automation tool that works really well for R projects"
 date: "2025-01-02"
+categories: ["R", "Reproducibility"]
 --- 
 
 <!--------------- my typical setup ----------------->
@@ -19,43 +20,45 @@ set.seed(1)
 
 <!--------------- post begins here ----------------->
 
-Useful links:
-
-- [targets package website](https://docs.ropensci.org/targets/)
-- [targets user manual](https://books.ropensci.org/targets/)
-
-Unhelpful links:
-
-- [balrogs and makefiles](/posts/2023-06-30_makefiles/)
-- [my shitty repo](https://github.com/djnavarro/tartoys)
+About 18 months ago I wrote a post about [balrogs and makefiles](/posts/2023-06-30_makefiles/). The post was long, strange, but also cathartic. It had bothered me for years that I didn't really understand [make](https://www.gnu.org/software/make/) as well as I wanted to, and it was really helpful to write up some notes about it as a way of teaching myself how to use it more effectively than I had done in the past.^[In all fairness, this is the *primary* purpose of this blog. Yes, it makes me very happy that other people find my posts useful and/or enjoyable, but that is actually a secondary goal. I write these posts for myself, because the act of writing is also an act of learning for me.] Buried at the very end of the post, somewhat sheepishly, is a reference to the [targets](https://docs.ropensci.org/targets/) R package by Will Landau. Even then I knew that I was going to need to learn how to use targets, but... life gets in the way. I have been preoccupied by other tasks, sadly, and it has taken me until now to (a) sit down and read through the [targets user manual](https://books.ropensci.org/targets/), and (b) come up with some [fun side projects](https://github.com/djnavarro/tartoys) that would give me the opportunity to try it out. 
 
 ```{r}
 library(targets)
 ```
 
+## Preliminaries
+
+One key thing about targets is that it's a project oriented workflow, and not surprisingly it's easiest to use from *within* the project. By default, code in a quarto blog post like this one executes with the working directory set to the folder containing the qmd file, but to make my life easier I'll sometimes change that directory so that when I'm discussing a specific targets project, the code will execute from the root directory of that project. However, using `setwd()` to do this is not ideal: the proper way to do this within any knitr-based tool (quarto, rmarkdown, etc) is to set the `root.dir` knitr option. To that end, I'll define a little convenience function:
+
+```{r}
+post_dir <- here::here("posts", "2025-01-02_using-targets")
+set_knitr_dir <- function(dir, base = post_dir) {
+  knitr::opts_knit$set(root.dir = fs::path(base, dir))
+}
+```
+
 ## Project 1: D&D spells
 
-The first project is a fun [Tidy Tuesday](https://github.com/rfordatascience/tidytuesday/tree/main/data/2024/2024-12-17) project that makes these two images: 
 
-::: {layout="[2,1]" .column-page}
+The first project is the fun [Tidy Tuesday](https://github.com/rfordatascience/tidytuesday/tree/main/data/2024/2024-12-17) project that I described in my [last post](). In that post, I talked about two data visualisation I made using data about D&D spells. When I wrote that post, I didn't talk about targets at all, and none of the code presented in that blog post is written in a "targets-friendly" way. However, all though that form of the code was the simplest way to write it up, it's not how I originally wrote it. The actual code was written for targets (it's included as the `spells` folder in  [this github repo](https://github.com/djnavarro/tartoys)). 
 
-![dice_pic.png](img/dice_pic.png)
+As it happens, I have a slightly-modified copy of the project in the `spells` directory within this blog post, so that I play with this project within this post, and see how targets operates. With that in mind, the very first thing I'll do is navigate into that project folder:
 
-![scholastic_pic.png](img/scholastic_pic.png)
-
-:::
+```{r}
+set_knitr_dir("spells")
+```
 
 ```{r}
 #| label: targets-spells-destroy
 #| echo: false
 # complete clean, mimic fresh state
-if (fs::dir_exists("spells/_targets")) fs::dir_delete("spells/_targets")
-if (fs::dir_exists("spells/output")) fs::dir_delete("spells/output")
+if (fs::dir_exists("_targets")) fs::dir_delete("_targets")
+if (fs::dir_exists("output")) fs::dir_delete("output")
 ```
 
 ```{r}
 #| label: spells-dir-tree-fresh
-fs::dir_tree("spells")
+fs::dir_tree()
 ```
 
 ### Defining the pipeline
@@ -98,11 +101,11 @@ list(
   tar_target(input, "spells.csv", format = "file"),
   tar_target(output, set_output_dir()),
   tar_target(spells, read_csv(input, show_col_types = FALSE)),
-
+  
   # dice plot targets
   tar_target(dice_dat, dice_data(spells)),
   tar_target(dice_pic, dice_plot(dice_dat, output)),
-
+  
   # scholastic plot targets
   tar_target(scholastic_dat, scholastic_data(spells)),
   tar_target(scholastic_clus, scholastic_clusters(scholastic_dat)),
@@ -152,16 +155,16 @@ dice_data <- function(spells) {
 }
 
 dice_plot <- function(dice_dat, output) {
-
+  
   palette <- hcl.colors(n = 10, palette = "PuOr")
-
+  
   labs <- dice_dat |>
     summarise(
       dice_txt = first(dice_txt),
       count = n(),
       .by = dice_txt
     )
-
+  
   pic <- ggplot(
     data = dice_dat,
     mapping = aes(
@@ -214,9 +217,9 @@ dice_plot <- function(dice_dat, output) {
       legend.title.position = "top",
       legend.byrow = TRUE
     )
-
+  
   out <- path(output, "dice_pic.png")
-
+  
   ggsave(
     filename = out,
     plot = pic,
@@ -225,7 +228,7 @@ dice_plot <- function(dice_dat, output) {
     units = "px",
     dpi = 150
   )
-
+  
   return(out)
 }
 ```
@@ -259,7 +262,7 @@ scholastic_data <- function(spells) {
 
 # hierarchical clustering for the schools and classes
 scholastic_clusters <- function(dat) {
-
+  
   # matrix of counts for each school/class combination
   mat <- dat |>
     pivot_wider(
@@ -270,27 +273,27 @@ scholastic_clusters <- function(dat) {
   rownames(mat) <- mat$class
   mat$class <- NULL
   as.matrix(mat)
-
+  
   # each school is a distribution over classes,
   # each class is a distribution over schools
   class_distribution  <- mat / replicate(ncol(mat), rowSums(mat))
   school_distribution <- t(mat) / (replicate(nrow(mat), colSums(mat)))
-
+  
   # pairwise distances
   class_dissimilarity  <- dist(class_distribution)
   school_dissimilarity <- dist(school_distribution)
-
+  
   # hierarchical clustering
   clusters <- list(
     class = hclust(class_dissimilarity, method = "average"),
     school = hclust(school_dissimilarity, method = "average")
   )
-
+  
   return(clusters)
 }
 
 scholastic_plot <- function(dat, clusters, output) {
-
+  
   pic <- ggplot(dat, aes(school, class, fill = count)) +
     geom_tile() +
     scale_x_dendro(
@@ -320,9 +323,9 @@ scholastic_plot <- function(dat, clusters, output) {
       legend.position = "bottom",
       legend.background = element_rect(fill = "#222", color = "#222")
     )
-
+  
   out <- path(output, "scholastic_pic.png")
-
+  
   ggsave(
     filename = out,
     plot = pic,
@@ -331,7 +334,7 @@ scholastic_plot <- function(dat, clusters, output) {
     units = "px",
     dpi = 150
   )
-
+  
   return(out)
 }
 ```
@@ -339,20 +342,6 @@ scholastic_plot <- function(dat, clusters, output) {
 :::
 
 blah blah blah. 
-
-As it happens, I have a copy of the project in the `spells` directory within this blog post, so we can in fact play with this project and see how targets operates. However, the project is designed to be a standalone, not part of a blog post, so I'll tweak my knitr settings so that code will now be executed from the `spells` subdirectory:
-
-```{r}
-#| label: knitr-setwd-spells
-knitr::opts_knit$set(
-  root.dir = here::here(
-    "posts", 
-    "2025-01-02_using-targets",  
-    "spells"
-  )
-)
-```
-
 
 ### Inspecting the pipeline
 
@@ -409,14 +398,7 @@ fs::dir_tree()
 ## Project 2: A toy blog
 
 ```{r}
-#| label: knitr-setwd-liteblog
-knitr::opts_knit$set(
-  root.dir = here::here(
-    "posts", 
-    "2025-01-02_using-targets",  
-    "liteblog"
-  )
-)
+set_knitr_dir("liteblog")
 ```
 
 ```{r}

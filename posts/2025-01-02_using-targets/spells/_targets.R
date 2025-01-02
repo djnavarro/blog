@@ -1,28 +1,11 @@
-# packages used in the pipeline -------------------------------------------
-
 library(targets)
 
-tar_option_set(
-  packages = c(
-    "rprojroot", "fs", "tibble", "readr",
-    "ggplot2", "dplyr", "stringr",
-    "tidyr", "forcats", "ggrepel",
-    "legendry"
-  )
-)
+tar_option_set(packages = c(
+  "rprojroot", "fs", "tibble", "readr", "ggplot2", "dplyr",
+  "stringr", "tidyr", "forcats", "ggrepel", "legendry"
+))
 
-# define functions for the pipeline ---------------------------------------
-
-tar_source(files = c("dice.R", "scholastic.R"))
-
-set_output_dir <- function() {
-  root <- find_root(has_file("_targets.R"))
-  output <- path(root, "output")
-  dir_create(output)
-  return(output)
-}
-
-# define the targets ------------------------------------------------------
+tar_source("analysis.R")
 
 list(
   # preprocessing targets
