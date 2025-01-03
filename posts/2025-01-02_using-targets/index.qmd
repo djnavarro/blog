@@ -506,6 +506,8 @@ fs::dir_copy(
 
 ## Project 3: Parallel computing
 
+For my third foray into targets, I wanted to take a look at how a targets pipeline can be distributed across multiple parallel threads. Happily, parallel computing is supported out of the box in targets, using the [crew](https://wlandau.github.io/crew/) package to distribute the targets across multiple workers. 
+
 ### Minimal version
 
 ```{r}
@@ -517,7 +519,7 @@ set_knitr_dir("threading1")
 tar_destroy(destroy = "all", ask = FALSE)
 ```
 
-Honestly this one isn't even pretending to be a real project. I just wanted to try out the parallel computing support with an example so minimal that it would be painfully obvious that it's working. There's not even an analysis script for this, it's just this one `_targets.R` file:
+As a very minimal implementation, consider this pipeline:
 
 ```{r}
 #| label: threading1-targets-file
@@ -537,11 +539,13 @@ list(
 )
 ```
 
-There are four targets here, and all they do is pause execution. If these were run serially, you would expect this to take about 10 seconds to complete. But that's not what happens because I'm using the [crew](https://wlandau.github.io/crew/) package to split the processing across three workers. Here's what actually happens:
+There are four targets here, and all they do is pause execution. If these were run serially, you would expect this to take about 10 seconds to complete. But that's not what happens because I'm using `crew_controller_local()` to define a controller that will split the processing across three parallel workers. Here's what actually happens:
 
 ```{r}
 tar_make()
 ```
+
+Upon starting the job, the first three targets (`wait1`, `wait2`, and `wait3`) are dispatched to the three workers and they all start running concurrently. The fourth job (`wait4`) is placed on hold, and doesn't start until the first of the three jobs finishes (`wait1`). Only then does the fourth job start. As the remaining jobs complete, the user is notified, and once they are all finalised targets reports that the pipeline is complete.
 
 ### Slightly less minimal version
 
