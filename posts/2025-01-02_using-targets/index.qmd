@@ -506,8 +506,10 @@ fs::dir_copy(
 
 ## Project 3: Parallel computing
 
+### Minimal version
+
 ```{r}
-set_knitr_dir("threading")
+set_knitr_dir("threading1")
 ```
 
 ```{r}
@@ -518,7 +520,42 @@ tar_destroy(destroy = "all", ask = FALSE)
 Honestly this one isn't even pretending to be a real project. I just wanted to try out the parallel computing support with an example so minimal that it would be painfully obvious that it's working. There's not even an analysis script for this, it's just this one `_targets.R` file:
 
 ```{r}
-#| label: threading-targets-file
+#| label: threading1-targets-file
+#| eval: false
+#| code-line-numbers: true
+#| filename: "_targets.R"
+library(targets)
+library(crew)
+
+tar_option_set(controller = crew_controller_local(workers = 3))
+
+list(
+  tar_target(wait1, Sys.sleep(1)),
+  tar_target(wait2, Sys.sleep(2)),
+  tar_target(wait3, Sys.sleep(3)),
+  tar_target(wait4, Sys.sleep(4))
+)
+```
+
+There are four targets here, and all they do is pause execution. If these were run serially, you would expect this to take about 10 seconds to complete. But that's not what happens because I'm using the [crew](https://wlandau.github.io/crew/) package to split the processing across three workers. Here's what actually happens:
+
+```{r}
+tar_make()
+```
+
+### Slightly less minimal version
+
+```{r}
+set_knitr_dir("threading2")
+```
+
+```{r}
+#| echo: false
+tar_destroy(destroy = "all", ask = FALSE)
+```
+
+```{r}
+#| label: threading2-targets-file
 #| eval: false
 #| code-line-numbers: true
 #| filename: "_targets.R"
@@ -582,7 +619,13 @@ list(
 )
 ```
 
-There are four targets here, and all they do is pause execution. If these were run serially, you would expect this to take about 10 seconds to complete. But that's not what happens because I'm using the [crew](https://wlandau.github.io/crew/) package to split the processing across three workers. Here's what actually happens:
+Essentially the same as the last project, but with some better tracking. Here's the network:
+
+```{r}
+tar_visnetwork(targets_only = TRUE)
+```
+
+Build:
 
 ```{r}
 tar_make()
@@ -592,11 +635,15 @@ Details:
 
 ```{r}
 trace <- tar_read(trace)
-crew  <- tar_crew()
-
 trace
-crew
+```
 
+```{r}
+crew  <- tar_crew()
+crew
+```
+
+```{r}
 trace_sum <- trace |> 
   dplyr::select(worker_pid, duration) |> 
   dplyr::summarise(
@@ -604,13 +651,22 @@ trace_sum <- trace |>
     targets = dplyr::n(), 
     .by = worker_pid
   )
+trace_sum
+```
 
-worker_lookup <- dplyr::inner_join(
-  x = crew, 
-  y = trace_sum, 
-  by = dplyr::join_by(targets, dplyr::closest(x$seconds > y$seconds))
-) |> 
+```{r}
+worker_lookup <- crew |> 
+  dplyr::left_join(
+    trace_sum, 
+    by = dplyr::join_by(
+      targets, 
+      dplyr::closest(x$seconds > y$seconds)
+    )
+  ) |> 
   dplyr::select(worker, worker_pid)
+worker_lookup
+```
 
-dplyr::left_join(trace, worker_lookup, by = "worker_pid")
+```{r}
+trace |> dplyr::left_join(worker_lookup, by = "worker_pid")
 ```
