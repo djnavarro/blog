@@ -1,0 +1,167 @@
+---
+title:  Hello cruel world
+output:
+  litedown::html_format:
+    meta:
+      css: ["@article", "../_liteblog.css"]
+      js: ["@sidenotes"]
+      include-before: "_liteblog-header.html"
+      include-after: "_liteblog-footer.html"
+    options:
+      toc: true
+      js_highlight:
+        package: prism
+        style: tomorrow
+---
+
+```{r}
+#| label: setup
+#| echo: false
+.blog <- readRDS("../_liteblog.rds")
+```
+
+It is traditional, when tinkering with a new blogging tool that you just made and will almost certainly abandon within a week, to write a "hello world" style post that serves as a quick check that the tool is working. This tradition almost certainly developed because nobody bothers to write unit tests for code that isn't supposed to be used in the wild. This blog is no exception. 
+
+## Markdown
+
+### Lists
+
+Unnumbered lists, with nesting.
+
+- blah blah blah
+    - blah blah
+    - blah
+- blah blah blah
+- blah blah
+
+Numbered lists, also with nesting.
+
+1. blah blah blah
+    1. blah blah
+    2. blah
+2. blah blah blah
+3. blah blah
+
+### Font
+
+Markdown syntax for *italics* is supported, as is **boldface**, and ~strikethrough~.
+
+### Tables
+
+State       |Code  |Capital   |Population
+------------|-----:|---------:|---------:
+New South Wales|NSW|Sydney|8,484,357 	
+Victoria|VIC|Melbourne|6,981,352
+Queensland|QLD|Brisbane|5,586,322
+Western Australia|WA|Perth|2,965,159
+South Australia|SA|Adelaide|1,878,029
+Tasmania|TAS|Hobart|575,366
+
+### Blocks
+
+Code blocks without syntax highlighting:
+
+```
+var printText = $('.text').data('text');
+var contentArray = printText.split('/n');
+```
+
+Code blocks with language specified for highlighting:
+
+```js
+var printText = $('.text').data('text');
+
+var contentArray = printText.split('/n');
+$.each(contentArray, function(index, newLine) {
+  $('.text').append('<span style="display:block;" id="'+index+'"></span>');
+  
+  var lineID = index;
+  var self = $(this);
+    setTimeout(function () {
+      $.each(self, function(index, chunk){
+          setTimeout(function () {
+            $('#'+lineID).append("<span>"+chunk+"</span>");
+            $('body, html').scrollTop($(document).height());
+          }, index*5);
+      });
+      
+    }, index*100);
+});
+```
+
+Block quotes: 
+
+> And in her mind saw again the line of desert hills beyond the stone balustrade of the hotel room balcony, and the faint crease of dawn-light above, suddenly swamped by the stuttering pulses of silent fire from beyond the horizon. She had watched – dazed and dazzled and wondering – as that distant eruption of annihilation had lit up the face of her lover
+
+## Footnotes, sidenotes
+
+It has traditionally[^1] been considered a necessity that any blog worthy of the name be overrun by a hedonistic number of footnotes that the author[^2] uses to go on pointless tangents, and it is therefore important that this blog support this worthy activity. Margin comments are supported (on the left and the right). You can float quotes (or whatever) to the left or the right
+
+[^1]: By homosexuals
+
+[^2]: Noted transsexual
+
+::: {.side .side-right}
+
+A thing on the right, why not? It can be anything, though I doubt the full text of *Moby Dick* would be a good choice
+
+:::
+
+::: {.quote-right}
+
+> I am a blockquote that has been floated to the right of the page. The author was so preoccupied with whether or not she could, she didn't stop to think if she should. 
+
+:::
+
+I ... cannot think of anything except evil[^3] applications.
+
+[^3]: Bisexual
+
+Oh well.
+
+Such a shame.
+
+Moving on.
+
+## Equations
+
+Inline equations work for simple expressions like $x^2$, but it's better to switch to display mode for more complex expressions. If I wanted to illustrate that a Maclaurin series expansion is a [Taylor series](https://en.wikipedia.org/wiki/Taylor_series) expansion of $f(x)$ around $x = 0$, I'd do this:
+
+$$
+f(0) + \frac{f^\prime(0)}{1!} x + \frac{f^{\prime\prime}(0)}{2!} x^2 + \frac{f^{\prime\prime\prime}(0)}{3!} x^3 + \ldots
+$$
+## Code
+
+```{r}
+(12 ^ 2) / 3.14
+```
+
+```{r}
+#| message: false
+library(stringr)
+library(ggplot2)
+library(tibble)
+library(dplyr)
+
+msg <- "hello cruel world"
+msg |> 
+  str_to_upper() |> 
+  str_view("WORLD")
+```
+
+The litedown package defaults to `xfun::record_print()` for printing data frames and tibbles, which in turn uses `xfun::md_table()` to render the object as a markdown table. That produces results like this:
+
+```{r}
+starwars |> 
+  select(name:homeworld, species) |> 
+  filter(species == "Human")
+```
+
+You can specify your own print options to change this behaviour, or you can just call `print()` explicitly:
+
+```{r}
+starwars |> 
+  select(name:homeworld, species) |> 
+  filter(species == "Human") |> 
+  print()
+```

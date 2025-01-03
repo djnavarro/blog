@@ -1,0 +1,15 @@
+{
+  "hash": "d355782e20e14703ccbf2280eb9f347b",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: Hello cruel world\nsubtitle: I am a blog post\n---\n\n\n\nThere is some text in this post. It would be weird if there weren't. \n\n<br><br>\n\n[←](/)\n \n\n\n\n\n\n\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

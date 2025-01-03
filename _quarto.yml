@@ -1,7 +1,10 @@
 project:
   type: website
   resources:
-    - CNAME
+    - CNAME    
+  render:
+    - "*.qmd"
+    - "!posts/2024-12-28_using-targets/liteblog"
 
 website:
   title: "Notes from a data witch"
