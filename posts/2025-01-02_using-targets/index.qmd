@@ -2,7 +2,7 @@
 title: "Using targets"
 description: "A build automation tool that works really well for R projects"
 date: "2025-01-02"
-categories: ["R", "Reproducibility"]
+categories: ["R", "Reproducibility", "Parallel Computing"]
 --- 
 
 <!--------------- my typical setup ----------------->
@@ -24,6 +24,8 @@ About 18 months ago I wrote a post about [balrogs and makefiles](/posts/2023-06-
 
 ```{r}
 library(targets)
+library(ggplot2)
+library(dplyr)
 ```
 
 ## Preliminaries
@@ -545,7 +547,13 @@ There are four targets here, and all they do is pause execution. If these were r
 tar_make()
 ```
 
-Upon starting the job, the first three targets (`wait1`, `wait2`, and `wait3`) are dispatched to the three workers and they all start running concurrently. The fourth job (`wait4`) is placed on hold, and doesn't start until the first of the three jobs finishes (`wait1`). Only then does the fourth job start. As the remaining jobs complete, the user is notified, and once they are all finalised targets reports that the pipeline is complete.
+Upon starting the job, the first three targets (`wait1`, `wait2`, and `wait3`) are dispatched to the three workers and they all start running concurrently. The fourth job (`wait4`) is placed on hold, and doesn't start until the first of the three jobs finishes (`wait1`). Only then does the fourth job start. As the remaining jobs complete, the user is notified, and once they are all finalised targets reports that the pipeline is complete. You can get a high-level summary of the allocation of tasks across workers by calling `tar_crew()`:
+
+```{r}
+tar_crew()
+```
+
+As expected based on the intuitive description above, this output confirms that there's one worker process that handled two of the targets, and one each handled by the other two. 
 
 ### Slightly less minimal version
 
@@ -557,6 +565,16 @@ set_knitr_dir("threading2")
 #| echo: false
 tar_destroy(destroy = "all", ask = FALSE)
 ```
+
+The previous example gives a general sense of how parallel execution works in a crew/targets pipeline, but -- possibly because once upon a time I used [callr](https://callr.r-lib.org/) to write my own R6 implementation of a multi-threaded [queue](/posts/2022-12-22_queue/),^[I hasten to add that nobody should be using the [queue](https://queue.djnavarro.net/) package. I wrote it to prove to myself that I could do it, but it's little more than a toy.] which piqued my curiosity about how these things play out -- I found myself wanting a finer-grained description of what each of the workers is doing at each point in time. 
+
+As far as I can tell, neither targets nor crew provides an easy way to do this (but if they do, I would love it if someone can point me in the right direction), so I wrote a slightly more elaborate version of the previous pipeline, in which the targets themselves keep track of the time at which execution starts and stops, as well as the pid of the R process in which they are being executed. In this version, there are three functions that do the work:
+
+- `startup()` is called to build the first target (`start`), and its primary job is to capture the system time at which execution of the first target begins
+- `sleeper()` is used to build the `wait1`, `wait2`, `wait3`, and `wait4` targets. These targets are analogous to the wait targets in the original version, but they also capture information about when execution of these targets started and stopped
+- `collate()` is called at the very end, and is used to construct the `trace` target. This target aggregates all the information from the other targets
+
+Here's the entire code:
 
 ```{r}
 #| label: threading2-targets-file
@@ -623,54 +641,85 @@ list(
 )
 ```
 
-Essentially the same as the last project, but with some better tracking. Here's the network:
+To give you a sense of the dependencies, this is what the targets network looks like for this version of the pipeline. All four `wait` targets depend on the `start` target, and the `trace` target depends on everything:
 
 ```{r}
 tar_visnetwork(targets_only = TRUE)
 ```
 
-Build:
+In hindsight, I realised that this could have been done more efficiently, but efficiency is not the primary goal here. I just want a pipeline in which all the targets report some detailed information about their execution. So let's run it and see what we get:
 
 ```{r}
 tar_make()
 ```
 
-Details:
+Okay yes this makes sense. Every other target is dependent on `start`, and by design this target is *always* treated as outdated. So when the pipeline begins, the first thing that happens is that the `start` target is dispatched to a worker; the other two workers do nothing. Once `start` completes, all four wait targets are eligible for dispatch, but we only have three workers and so `wait1`, `wait2`, and `wait4` are farmed out to workers while `wait4` remains in the queue. When `wait1` completes, one of the workers is freed up, thereby allowing `wait4` to be dispatched. Once all four of the wait targets are completed, the final `trace` target is built.
 
-```{r}
-trace <- tar_read(trace)
-trace
-```
+If we call `tar_crew()`, we get the same high-level overview that we got last time:
 
 ```{r}
 crew  <- tar_crew()
 crew
 ```
 
+However, this time around we also have access to the `trace` target that provides a more detailed summary of which R process excecuted each target, and at what time that execution started and stopped:
+
+```{r}
+trace <- tar_read(trace)
+trace
+```
+
+In this data frame, the `begins_at` column records the amount of time that has passed between the time at which the pipeline started, and the time at which the current target begins execution. Similarly `finishes_at` records the time from pipeline start to the current target finishing. The `duration` column is the difference between the two. That being said, if you look at the code I used to calculate these, it's clearly an approximation. But it will suffice. 
+
+The nice thing about the `trace` data is that the `worker_pid` column associates each target with a specific pid for the R process used to build that target. This is slightly finer-grained information than what we got by calling `tar_crew()`. For example, I now know that `start` and `wait1` were both executed by the same R process (i.e., pid `r trace$worker_pid[1]`). Admittedly this is not much of a revelation: I could have guessed that just by looking at the logs when I called `tar_make()` and a few reasonable assumptions about how the scheduler^[Scheduling in `crew` is handled with the [mirai](https://shikokuchuo.net/mirai/) package, which looks amazing and is now on my to-do list to learn] works. 
+
+One minor irritation I have with the `trace` output is that it doesn't directly allow me to match the `worker_pid` column against the `worker` column produced by `tar_crew()`. You can see the issue most cleanly if I aggregate the `trace` data frame by `worker_pid` like so:
+
 ```{r}
 trace_sum <- trace |> 
-  dplyr::select(worker_pid, duration) |> 
-  dplyr::summarise(
+  select(worker_pid, duration) |> 
+  summarise(
     seconds = sum(duration), 
-    targets = dplyr::n(), 
+    targets = n(), 
     .by = worker_pid
   )
 trace_sum
 ```
 
+Looking at this it's immediately apparent that worker 1 must corresponded to the R process with pid `r trace_sum$worker_pid[1]`, since `trace` and `crew` both agree that this is the only worker that executed four distinct targets. However, workers 2 and 3 both executed a single target, so we'll have to resolve the ambiguity by looking at the `seconds` column. This is a little awkward because `trace_sum$seconds` will necessarily be slightly lower than `crew$seconds` because the time estimate in the `trace` data is constructed from *within* the R process that builds the target, but `tar_crew()` would (I assume) estimate the time from outside that process. The differences will be small, but noticeable. So I'll use a rolling join:
+
 ```{r}
 worker_lookup <- crew |> 
-  dplyr::left_join(
+  left_join(
     trace_sum, 
-    by = dplyr::join_by(
-      targets, 
-      dplyr::closest(x$seconds > y$seconds)
-    )
+    by = join_by(targets, closest(x$seconds > y$seconds))
   ) |> 
-  dplyr::select(worker, worker_pid)
+  select(worker, worker_pid)
 worker_lookup
 ```
 
+It's not ideal but it works: we now have a mapping between the numeric `worker` value returned by `tar_crew()` and the `worker_pid` value returned when `Sys.getpid()` is called from within the target function. Joining this gives us the following table:
+
 ```{r}
-trace |> dplyr::left_join(worker_lookup, by = "worker_pid")
+target_trace <- trace |> 
+  left_join(worker_lookup, by = "worker_pid") |> 
+  mutate(id = row_number()) |> 
+  relocate(worker, .before = "worker_pid")
+target_trace
 ```
+
+Or, to adopt a slightly nicer way of looking at it, we can draw a picture:
+
+```{r}
+#| fig.height: 3
+#| fig.width: 8
+ggplot(target_trace, aes(begins_at, worker, color = name)) + 
+  geom_segment(aes(xend = finishes_at, yend = worker)) +
+  geom_point() +
+  geom_point(aes(x = finishes_at)) +
+  theme_bw() + 
+  scale_x_continuous(breaks = 0:6) +
+  labs(x = "time", y = "worker", color = "target")
+```
+
+Okay yes, this now gives a detailed sense of which targets are dispatched to which workers, and at what time, but it does leave one thing missing: the total elapsed time shown by `target_trace` is about 5-6 seconds, but when I called `tar_make()` the total elapsed time was reported to be a little over 7 seconds. The discrepancy between the two is that the timing information recorded by my code doesn't account for the time that the targets package spends setting up the pipeline, and recording metadata and target values in the `_targets` folder. 
