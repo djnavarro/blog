@@ -1,6 +1,6 @@
 ---
-title: "Using targets"
-description: "A build automation tool that works really well for R projects"
+title: "Three short stories about targets"
+description: "In which our intrepid adventurer turns a hacky data visualisation exercise into an analysis pipeline; builds an R blog with litedown and targets; and tries to wrap her head around the crews integration for multithreaded target building"
 date: "2025-01-02"
 categories: ["R", "Reproducibility", "Parallel Computing"]
 --- 
@@ -23,8 +23,11 @@ set.seed(1)
 About 18 months ago I wrote a post about [balrogs and makefiles](/posts/2023-06-30_makefiles/). The post was long, strange, but also cathartic. It had bothered me for years that I didn't really understand [make](https://www.gnu.org/software/make/) as well as I wanted to, and it was really helpful to write up some notes about it as a way of teaching myself how to use it more effectively than I had done in the past.^[In all fairness, this is the *primary* purpose of this blog. Yes, it makes me very happy that other people find my posts useful and/or enjoyable, but that is actually a secondary goal. I write these posts for myself, because the act of writing is also an act of learning for me.] Buried at the very end of the post, somewhat sheepishly, is a reference to the [targets](https://docs.ropensci.org/targets/) R package by Will Landau. Even then I knew that I was going to need to learn how to use targets, but... life gets in the way. I have been preoccupied by other tasks, sadly, and it has taken me until now to (a) sit down and read through the [targets user manual](https://books.ropensci.org/targets/), and (b) come up with some [fun side projects](https://github.com/djnavarro/tartoys) that would give me the opportunity to try it out. 
 
 ```{r}
+#| label: package-load
+#| message: false
 library(targets)
 library(ggplot2)
+library(legendry)
 library(dplyr)
 ```
 
@@ -33,6 +36,7 @@ library(dplyr)
 One key thing about targets is that it's a project oriented workflow, and not surprisingly it's easiest to use from *within* the project. By default, code in a quarto blog post like this one executes with the working directory set to the folder containing the qmd file, but to make my life easier I'll sometimes change that directory so that when I'm discussing a specific targets project, the code will execute from the root directory of that project. However, using `setwd()` to do this is not ideal: the proper way to do this within any knitr-based tool (quarto, rmarkdown, etc) is to set the `root.dir` knitr option. To that end, I'll define a little convenience function to take care of this whenever I need to switch to a new project:
 
 ```{r}
+#| label: set-knitr-dir
 post_dir <- here::here("posts", "2025-01-02_using-targets")
 set_knitr_dir <- function(dir, base = post_dir) {
   knitr::opts_knit$set(root.dir = fs::path(base, dir))
@@ -41,14 +45,14 @@ set_knitr_dir <- function(dir, base = post_dir) {
 
 Right then. Time to play around with targets...
 
-## Project 1: D&D spells
-
+## Project 1: Analysis pipelines
 
 The first project is the fun [Tidy Tuesday](https://github.com/rfordatascience/tidytuesday/tree/main/data/2024/2024-12-17) project that I described in my [last post](/posts/2025-01-01_schools-of-magic/). In that post, I talked about two data visualisation I made using data about D&D spells. When I wrote that post, I didn't talk about targets at all, and none of the code presented in that blog post is written in a "targets-friendly" way. However, all though that form of the code was the simplest way to write it up, it's not how I originally wrote it. The actual code was written for targets (it's included as the `spells` folder in [this github repo](https://github.com/djnavarro/tartoys)). 
 
 As it happens, I have a slightly-modified copy of the project in the `spells` directory within this blog post, so that I play with this project within this post, and see how targets operates. With that in mind, the very first thing I'll do is navigate into that project folder:
 
 ```{r}
+#| label: switch-to-spells
 set_knitr_dir("spells")
 ```
 
@@ -306,6 +310,7 @@ scholastic_plot <- function(dat, clusters, output) {
 Now that you've read the verbal description of what each function does, it's intuitively pretty clear how the analysis pipeline is supposed to work. Roughly speaking, you'd expect the analysis to be executed using a script like this:
 
 ```{r}
+#| label: spells-without-targets
 #| eval: false
 # setup
 input  <- "spells.csv"
@@ -405,9 +410,42 @@ tar_make()
 fs::dir_tree()
 ```
 
-## Project 2: A toy blog
+### Postmortem
+
+For a first attempt at using targets, I'm not unhappy with this. It did what I needed it to do, and I was able to understand the basic structure of the package.
+
+But there are some limitations. One thing that really bothers me is the way I handled the ggplot code. My thinking at the time was based on the thinking that real life analysis pipelines often have some *very* slow ggplot2 code, but the slow part is not the construction of the object itself, but rather the build, render, and draw stages. It's not much of an issue in this specific example because everything is runs fast, but you can see why I had this worry by looking at what `benchplot()` has to say about the plots I created here:
 
 ```{r}
+tar_load(c(scholastic_dat, scholastic_clus))
+
+benchplot(
+  ggplot(scholastic_dat, aes(school, class, fill = count)) +
+    geom_tile() +
+    scale_x_dendro(
+      clust = scholastic_clus$school,
+      guide = guide_axis_dendro(n.dodge = 2),
+      expand = expansion(0, 0),
+      position = "top"
+    ) +
+    scale_y_dendro(
+      clust = scholastic_clus$class,
+      expand = expansion(0, 0)
+    ) +
+    coord_equal()
+)
+```
+
+Even in this example, where there isn't very much that needs to be drawn to the graphics device, constructing the plot isn't the step that takes the most time. So it makes very little sense to treat the plot specification (i.e., the `gg` plot object) as the terminal target of a plotting pipeline, because 90% of the compute time takes place *after* the `gg` object is specified (this is even more obvious when you have a scatterplot that needs to draw millions of dots to the canvas).
+
+Having been burned by this in the past, I made the decision that my plotting target would encapsulate *all* stages in the plot rendering process. Only once the image has been written to a file would my plot target be deemed complete. As far as it goes, this is very sensible reasoning, but in retrospect I think it might have made a lot more sense to split the plotting target into stages. Saving the `gg` object as an intermediate target (and possibly other stages of the plot construction too) might have been sensible. It might seem like I'm being weirdly nitpicky, but my motivation here is very practical: I have a couple of projects at work where rerunning the analysis very time-consuming, and the biggest bottleneck (by far) is rendering some very unpleasant `gg` objects. I've been using a variety of tricks to work around this issue, none of which have been satisfying. Targets offers a much cleaner solution to my problem, but it's clear to me just from this toy exercise that I will need to be careful about how I set up targets for these analysis pipelines.
+
+Still, it seems very clear to me that the problem can be solved with targets. My toy example is a kind of worst case solution... if all else fails, I can define the output image itself as the the target to be built. From that perspective, mission accomplished babes. 
+
+## Project 2: Building a blog
+
+```{r}
+#| label: switch-to-liteblog
 set_knitr_dir("liteblog")
 ```
 
@@ -435,6 +473,7 @@ fs::dir_tree()
 ```
 
 ```{r}
+#| label: liteblog-visnetwork-1
 tar_visnetwork()
 ```
 
@@ -444,12 +483,14 @@ tar_make()
 ```
 
 ```{r}
+#| label: liteblog-visnetwork-2
 tar_visnetwork()
 ```
 
 Why are some targets still showing as outdated? Because that's how I set them up with `tar_cue()`. By design, every time we rebuild, the blog will check the file paths to see if there are any new static files to be copied or new posts to be fused. Consequently, those two targets and everything downstream of those show up as outdated. But notice that when we call `tar_make()` again...
 
 ```{r}
+#| label: liteblog-make-1
 tar_make()
 ```
 
@@ -481,17 +522,18 @@ fs::dir_tree("source")
 ```
 
 ```{r}
+#| label: liteblog-visnetwork-3
 tar_visnetwork()
 ```
 
 Looks the same. But this time when we call `tar_make()`, there will actually be some changes to the `source` folder, so the downstream targets run:
 
 ```{r}
+#| label: liteblog-make-2
 tar_make()
 ```
 
 This is clearly an inefficient design: whenever the source folder changes, all of the posts get rendered again. In an ideal world we wouldn't do this, and only those posts (or static files) that have been modified would get run again. However, it would take a little more effort than I'm willing to expend on this side-project to make this work properly: in order for it to behave the way we want it to, the build targets need to be able to inspect the internal contents of each blog post to determine which static files (or other posts!) are hidden dependencies. Discovering those dependencies reliably seems like hard work, so for the purposes of this toy project it just renders everything again.
-
 
 You can browse the built website [here](./site/index.html)
 
@@ -508,15 +550,17 @@ fs::dir_copy(
 
 ## Project 3: Parallel computing
 
-For my third foray into targets, I wanted to take a look at how a targets pipeline can be distributed across multiple parallel threads. Happily, parallel computing is supported out of the box in targets, using the [crew](https://wlandau.github.io/crew/) package to distribute the targets across multiple workers. 
+For my third foray into targets, I wanted to take a look at how a targets pipeline can be distributed across multiple parallel threads. Happily, parallel computing is supported out of the box in targets, using the [crew](https://wlandau.github.io/crew/) package to distribute the targets across multiple workers. There are a few slightly different variations on how I looked at this, and I'll go through them each in turn. 
 
 ### Minimal version
 
 ```{r}
+#| label: switch-to-threading-1
 set_knitr_dir("threading1")
 ```
 
 ```{r}
+#| label: threading-1-mimic-clean-state
 #| echo: false
 tar_destroy(destroy = "all", ask = FALSE)
 ```
@@ -544,12 +588,14 @@ list(
 There are four targets here, and all they do is pause execution. If these were run serially, you would expect this to take about 10 seconds to complete. But that's not what happens because I'm using `crew_controller_local()` to define a controller that will split the processing across three parallel workers. Here's what actually happens:
 
 ```{r}
+#| label: threading-1-make
 tar_make()
 ```
 
 Upon starting the job, the first three targets (`wait1`, `wait2`, and `wait3`) are dispatched to the three workers and they all start running concurrently. The fourth job (`wait4`) is placed on hold, and doesn't start until the first of the three jobs finishes (`wait1`). Only then does the fourth job start. As the remaining jobs complete, the user is notified, and once they are all finalised targets reports that the pipeline is complete. You can get a high-level summary of the allocation of tasks across workers by calling `tar_crew()`:
 
 ```{r}
+#| label: threading-1-crew
 tar_crew()
 ```
 
@@ -558,10 +604,12 @@ As expected based on the intuitive description above, this output confirms that 
 ### Slightly less minimal version
 
 ```{r}
+#| label: switch-to-threading-2
 set_knitr_dir("threading2")
 ```
 
 ```{r}
+#| label: mimic-clean-state-threading-2
 #| echo: false
 tar_destroy(destroy = "all", ask = FALSE)
 ```
@@ -644,12 +692,14 @@ list(
 To give you a sense of the dependencies, this is what the targets network looks like for this version of the pipeline. All four `wait` targets depend on the `start` target, and the `trace` target depends on everything:
 
 ```{r}
+#| label: threading-2-visnetwork
 tar_visnetwork(targets_only = TRUE)
 ```
 
 In hindsight, I realised that this could have been done more efficiently, but efficiency is not the primary goal here. I just want a pipeline in which all the targets report some detailed information about their execution. So let's run it and see what we get:
 
 ```{r}
+#| label: threading-2-make
 tar_make()
 ```
 
@@ -658,6 +708,7 @@ Okay yes this makes sense. Every other target is dependent on `start`, and by de
 If we call `tar_crew()`, we get the same high-level overview that we got last time:
 
 ```{r}
+#| label: threading-2-crew
 crew  <- tar_crew()
 crew
 ```
@@ -665,6 +716,7 @@ crew
 However, this time around we also have access to the `trace` target that provides a more detailed summary of which R process excecuted each target, and at what time that execution started and stopped:
 
 ```{r}
+#| label: threading-2-trace
 trace <- tar_read(trace)
 trace
 ```
@@ -676,6 +728,7 @@ The nice thing about the `trace` data is that the `worker_pid` column associates
 One minor irritation I have with the `trace` output is that it doesn't directly allow me to match the `worker_pid` column against the `worker` column produced by `tar_crew()`. You can see the issue most cleanly if I aggregate the `trace` data frame by `worker_pid` like so:
 
 ```{r}
+#| label: threading-2-trace-sum
 trace_sum <- trace |> 
   select(worker_pid, duration) |> 
   summarise(
@@ -689,6 +742,7 @@ trace_sum
 Looking at this it's immediately apparent that worker 1 must corresponded to the R process with pid `r trace_sum$worker_pid[1]`, since `trace` and `crew` both agree that this is the only worker that executed four distinct targets. However, workers 2 and 3 both executed a single target, so we'll have to resolve the ambiguity by looking at the `seconds` column. This is a little awkward because `trace_sum$seconds` will necessarily be slightly lower than `crew$seconds` because the time estimate in the `trace` data is constructed from *within* the R process that builds the target, but `tar_crew()` would (I assume) estimate the time from outside that process. The differences will be small, but noticeable. So I'll use a rolling join:
 
 ```{r}
+#| label: threading-2-worker-lookup
 worker_lookup <- crew |> 
   left_join(
     trace_sum, 
@@ -701,6 +755,7 @@ worker_lookup
 It's not ideal but it works: we now have a mapping between the numeric `worker` value returned by `tar_crew()` and the `worker_pid` value returned when `Sys.getpid()` is called from within the target function. Joining this gives us the following table:
 
 ```{r}
+#| label: threading-2-target-trace
 target_trace <- trace |> 
   left_join(worker_lookup, by = "worker_pid") |> 
   mutate(id = row_number()) |> 
@@ -711,6 +766,7 @@ target_trace
 Or, to adopt a slightly nicer way of looking at it, we can draw a picture:
 
 ```{r}
+#| label: threading-2-trace-plot
 #| fig.height: 3
 #| fig.width: 8
 ggplot(target_trace, aes(begins_at, worker, color = name)) + 
@@ -723,3 +779,32 @@ ggplot(target_trace, aes(begins_at, worker, color = name)) +
 ```
 
 Okay yes, this now gives a detailed sense of which targets are dispatched to which workers, and at what time, but it does leave one thing missing: the total elapsed time shown by `target_trace` is about 5-6 seconds, but when I called `tar_make()` the total elapsed time was reported to be a little over 7 seconds. The discrepancy between the two is that the timing information recorded by my code doesn't account for the time that the targets package spends setting up the pipeline, and recording metadata and target values in the `_targets` folder. 
+
+### Postmortem
+
+One thing that bothered me a *lot* about the second version, when I implemented it, was this nagging intuition that most of what I was doing felt unnecessary. Certainly, there's a limitation to the output of `tar_crew()` in the sense that it doesn't tell you the worker to which each target was assigned, nor does it report the pid for each worker. That seems a little odd to me, but I am very willing to believe there's a good reason for that.
+
+The part that seemed utterly baffling to me was seeing that the on-screen output to `tar_make()` reports the execution time for each target, but (at the time) I couldn't work out how to extract that information programmatically. It beggars belief to think that a package as sophisticated as targets wouldn't record that information somewhere and...
+
+...yeah, of course it does. I was just looking in the wrong place. If you call `tar_meta()` it returns a tibble that stores a detailed listing of all targets -- including the "secret"^[Not very secret] one that records the value of [`.Random.seed`](/posts/2023-12-27_seedcatcher/) -- that includes their execution time, any warnings or errors produced during their execution, and a great deal more besides:
+
+```{r}
+#| echo: false
+options(width = very_wide)
+```
+
+```{r}
+#| label: threading-2-metadata
+#| column: page
+tar_meta()
+```
+
+True, it doesn't contain information about the system pid that executes the target, so I'd still have some work to do, but at least now I have the correct timing information for each target.
+
+```{r}
+fs::dir_tree("_targets")
+```
+
+Oh well. I'll know better next time, and anyway the entire point of this exercise was to teach myself how to use the package, so it's all good really.
+
+
