@@ -9,8 +9,8 @@ tar_source("analysis.R")
 
 list(
   # preprocessing targets
-  tar_target(input, "spells.csv", format = "file"),
   tar_target(output, set_output_dir()),
+  tar_target(input, "spells.csv", format = "file"),
   tar_target(spells, read_csv(input, show_col_types = FALSE)),
 
   # dice plot targets

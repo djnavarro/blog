@@ -313,10 +313,25 @@ Now that you've read the verbal description of what each function does, it's int
 ```{r}
 #| label: spells-without-targets
 #| eval: false
+#| code-line-numbers: true
+#| filename: "run_analysis.R"
+# packages
+library(rprojroot)
+library(fs) 
+library(tibble) 
+library(readr) 
+library(ggplot2)
+library(dplyr)
+library(stringr)
+library(tidyr)
+library(forcats)
+library(ggrepel)
+library(legendry)
+
 # setup
-input  <- "spells.csv"
 output <- set_output_dir()
-spells <- readr::read_csv(input)
+input  <- "spells.csv"
+spells <- read_csv(input, show_col_types = FALSE)
 
 # make the spell dice plot & write to output
 dice_dat <- dice_data(spells)
@@ -346,14 +361,14 @@ tar_source("analysis.R")
 
 list(
   # preprocessing targets
-  tar_target(input, "spells.csv", format = "file"),
   tar_target(output, set_output_dir()),
+  tar_target(input, "spells.csv", format = "file"),
   tar_target(spells, read_csv(input, show_col_types = FALSE)),
-  
+
   # dice plot targets
   tar_target(dice_dat, dice_data(spells)),
   tar_target(dice_pic, dice_plot(dice_dat, output)),
-  
+
   # scholastic plot targets
   tar_target(scholastic_dat, scholastic_data(spells)),
   tar_target(scholastic_clus, scholastic_clusters(scholastic_dat)),
@@ -364,10 +379,56 @@ list(
 )
 ```
 
+In this pipeline, the set up involves two steps:
+
+- I've used [`tar_option_set()`](https://docs.ropensci.org/targets/reference/tar_option_set.html) to declare the required R packages, thereby making those packages available to the pipeline
+- I've used [`tar_source()`](https://docs.ropensci.org/targets/reference/tar_source.html) to read the analysis script, thereby making the functions in that file accessible to the pipeline
+
+Having taken care of the preliminaries, the pipeline is specified via a list of targets, each of which is defined by a call to [`tar_target()`](https://docs.ropensci.org/targets/reference/tar_target.html). Each target has a `name`, and is associated with a `command` that is to be executed. If I'd named the arguments on line 12 in my `_targets.R` script, the code would look like this:
+
+```{r}
+#| label: spells-targets-argument-names
+#| eval: false
+tar_target(
+  name = output, 
+  command = set_output_dir()
+)
+```
+
+Notice the similarity to line 15 of the fictitious `run_analysis.R` script:
+
+```{r}
+#| label: spells-set-output-dir
+#| eval: false
+output <- set_output_dir()
+```
+
+In essence, that's what I'm doing with the call to `tar_target()`. I'm specifying that the command `set_output_dir()` is to be executed, and the results should be stored as the variable `output`. However, instead of immediately executing this code in the current R environment, what `tar_target()` does is create the infrastructure so that this command can be incorporated into the pipeline when it actually gets built. With one exception, this is the recipe I followed for constructing all the targeta in my `_targets.R` script.
+
+The one exception to this pattern occurs on line 13, where my target is defined by this call to `tar_target()`:
+
+```{r}
+#| label: spells-targets-for-files
+#| eval: false
+tar_target(
+  name = input, 
+  command = "spells.csv", 
+  format = "file"
+)
+```
+
+In one sense, this target is pretty much the same as the others: it defines a variable called `input` using the "command" `"spells.csv"`, and so in that respect it's much the same as line 16 of the `run_analysis.R` script:
+
+```{r}
+#| eval: false
+input <- "spells.csv"
+```
+
+However, notice that I've also specified that `format = "file"`. This tells targets that `"spells.csv"` isn't *just* a string, it's also the name of a file that needs to be tracked. By declaring it as a file target, I'm ensuring that if the `spells.csv` file gets altered in some way, this target and any target that depends on it will need to be rebuilt.  
 
 ### Inspecting the pipeline
 
-The `tar_visnetwork()` function provides a handy way of visualising the structure of a pipeline as a little HTML widget. By default it will show the dependencies between all functions and all targets, which is often totally fine, but I'm going to simplify it here by setting `targets_only = TRUE` (i.e., don't show the user-defined functions), and also set `exclude = c("input", "output")` to ignore the two really boring pre-processing targets! 
+The [`tar_visnetwork()`](https://docs.ropensci.org/targets/reference/tar_visnetwork.html) function provides a handy way of visualising the structure of a pipeline as a little HTML widget.
 
 Anyway, here it is:
 
@@ -719,6 +780,8 @@ In this version, you can see that most of the build pipeline depends on the `blo
 The other four targets are less interesting. Three of them (`blog_css`, `blog_hdr`, and `blog_ftr`) are used to keep track of the style files (i.e. `_liteblog.css`, `_liteblog-header.html`, and `_liteblog-footer.html`), so that if any of those files are modified the it will trigger a rebuild of any target that uses those files. The fourth one, `blog_rds`, is a bit of an odd one and I'm not sure I like it: basically it's just a serialised version of the `blog` object itself written to an rds file. The only reason that one is there is to make `blog` visible *within* an R markdown post (i.e., a post can read the `_liteblog.rds` file and call any of the relevant methods if necessary). In general you wouldn't need that, but it's useful if you want to construct a listing page. 
  
 ### Building the blog
+
+Having now walked through the structure of the pipeline, it's time to call `tar_make()` and build the blog:
 
 ```{r}
 #| label: liteblog-make
