@@ -28,6 +28,7 @@ About 18 months ago I wrote a post about [balrogs and makefiles](/posts/2023-06-
 library(targets)
 library(ggplot2)
 library(legendry)
+library(tidyselect)
 library(dplyr)
 ```
 
@@ -467,15 +468,257 @@ if (fs::file_exists(post_004)) fs::file_delete(post_004)
 if (fs::dir_exists(data_dir)) fs::dir_delete(data_dir)
 ```
 
+The second project I attempted was a little more ambitious: I decided to write a lightweight blogging tool using [litedown](https://yihui.org/litedown/) to convert R markdown documents to HTML pages, and using targets to manage the build process for the site as a whole.^[I seem to have developed a habit for rolling my own half-arsed blogging tools. About a year ago I got bored and built a very silly [blog based on knitr and eleventy](https://knitr-11ty.djnavarro.net/), for literally no reason except that I was bored. The [liteblog](https://liteblog.djnavarro.net/) site I put together for this side project is no less stupid.] 
+
+### Designing the blog
+
+To give you a sense of how the blog is organised, this is what a "clean" version of the project looks like:
+
 ```{r}
 #| label: liteblog-filetree-fresh
 fs::dir_tree()
 ```
 
+Inside the `source` folder there are four R markdown documents that will need to be built. Of these four, two should be built into the site root directory:
+
+- the `index.rmd` document becomes the blog homepage `index.html`
+- the `404.rmd` document becomes the 404 page `404.html`
+
+The other two documents both correspond to blog posts, and in both cases the underscore is intended to have syntactic meaning. However, unlike the "usual" behaviour that you might expect (e.g., from R markdown, blogdown, quarto, etc), the underscore doesn't mean "do not build".^[If this were a serious project, this would be a very bad idea: the underscore has an accepted meaning in the various R-based literate programming tools, and it is not good practice to violate user expectations the way I'm doing here. However, this is a silly side project that is not intended to be used for anything, so I feel no compunction at all to follow the usual conventions.] Instead, it is a signifier used to describe the file path expected for the built file:
+
+- `_001_hello-cruel-world.rmd` becomes a post at `/001/hello-cruel-world/index.html`
+- `_002_blog-object.rmd` becomes a post at `/002/blog-object/index.html`
+
+The other five files in the project folder define the structure and visual appearance of the blog itself. Three of these are grossly typical for any blogging tool:
+
+- `_liteblog-header.html` and `_liteblog-footer.html` are HTML document fragments that will be inserted above and below the content that is specified within the R markdown files
+- `_liteblog.css`, unsurprisingly, provides the styling
+
+The final two files are `_liteblog.R` and `_targets.R`. These do all the heavy lifting:
+
+- `_liteblog.R` supplies an [R6](https://r6.r-lib.org/) class called `Liteblog`. The intended usage is that any specific blog is an instance of the class, such that user-specified options (e.g., the name of the site folder, the url for the blog, etc) are supplied as arguments, and the resulting blog object provides all the core functionality (e.g., building pages to the correct folder) for the blog. 
+- `_targets.R` provides the build tools: monitoring the source directory, building outdated pages, etc. 
+
+Because the `_liteblog.R` and `_targets.R` scripts are intended to work together, I'll discuss both of them. First, here's what the `_liteblog.R` script looks like:
+
+```{r}
+#| label: liteblog-object-file
+#| eval: true
+#| code-line-numbers: true
+#| filename: "_liteblog.R"
+Liteblog <- R6::R6Class(
+  classname = "Liteblog",
+  public = list(
+
+    initialize = function(root, source, output, url) {
+      self$root <- root
+      self$source <- source
+      self$output <- output
+      self$url <- url
+    },
+
+    root = NULL,
+    source = NULL,
+    output = NULL,
+    url = NULL,
+    pattern = "[.][rR]?md$",
+
+    find_posts = function() {
+      files <- fs::dir_ls(
+        path = fs::path(self$root, self$source),
+        recurse = TRUE,
+        regexp = self$pattern,
+        type = "file"
+      )
+      unname(unclass(files))
+    },
+
+    find_static = function() {
+      files <- fs::dir_ls(
+        path = fs::path(self$root, self$source),
+        recurse = TRUE,
+        regexp = self$pattern,
+        invert = TRUE,
+        all = TRUE,
+        type = "file"
+      )
+      unname(unclass(files))
+    },
+
+    fuse_post = function(file, ...) {
+      output_path <- litedown::fuse(file)
+      output_file <- fs::path_file(output_path)
+      if (stringr::str_detect(output_file, "^_")) {
+        destination <- output_file |>
+          stringr::str_replace_all("_", "/") |>
+          stringr::str_replace("\\.html$", "/index.html") |>
+          stringr::str_replace("^", paste0(self$output, "/"))
+      } else {
+        destination <- paste0(self$output, "/", output_file)
+      }
+      destination <- fs::path(self$root, destination)
+      fs::dir_create(fs::path_dir(destination))
+      fs::file_move(output_path, destination)
+    },
+
+    copy_static = function(file) {
+      destination <- file |>
+        stringr::str_replace(
+          pattern = paste0("/", self$source, "/"),
+          replacement = paste0("/", self$output, "/")
+        )
+      fs::dir_create(fs::path_dir(destination))
+      fs::file_copy(
+        path = file,
+        new_path = destination,
+        overwrite = TRUE
+      )
+    }
+
+  )
+)
+```
+
+It's not a very complicated R6 class as these things go, and to be honest it could use a lot more love than I've given it. But it works for my purposes so I'll run with it. To initialise a blog I call `Liteblog$new()`, indicating that the current directory is the project root, the `source` folder is the `"source"` folder, the `output` folder is called `"site"`, and the `url` for the blog is `"liteblog.djnavarro.net"`:
+
+```{r}
+blog <- Liteblog$new(
+  root = fs::path_abs("."),
+  source = "source",
+  output = "site",
+  url = "liteblog.djnavarro.net"
+)
+```
+
+Looking at the code above, you can see that there are four methods:
+
+- `$find_posts()` looks in the source folder and detects the R markdown documents
+- `$find_static()` looks in the source folder and detects other files
+- `$fuse_post()` takes the path to one R markdown document as input, and will build it (called "fusing" in the litedown nomenclature) to an HTML file at the appropriate location
+- `$copy_static()` takes the path to a static file as input, and copies it to the output folder
+
+This provides the core blogging toolkit that I'll now use when writing my target pipeline. It's *extremely* bare bones, and not very customisable, but of course my intention here isn't to build a proper blogging platform. It's just a toy that I can play with when building a more complex build pipeline. Speaking of which...
+
+### The build pipeline
+
+So, without further tedious exposition, here's the `_targets.R` file:
+
+```{r}
+#| label: liteblog-targets-file
+#| eval: false
+#| code-line-numbers: true
+#| filename: "_targets.R"
+library(targets)
+tar_source("_liteblog.R")
+
+list(
+
+  # define blog configuration
+  tar_target(
+    name = blog,
+    command = Liteblog$new(
+      root = rprojroot::find_root(
+        rprojroot::has_file("_liteblog.R")
+      ),
+      source = "source",
+      output = "site",
+      url = "liteblog.djnavarro.net"
+    )
+  ),
+
+  # track configuration files
+  tar_target(
+    name = blog_rds, 
+    command = saveRDS(blog, file = "_liteblog.rds"), 
+    format = "file"
+  ),
+  tar_target(blog_css, "_liteblog.css", format = "file"),
+  tar_target(blog_hdr, "_liteblog-header.html", format = "file"),
+  tar_target(blog_ftr, "_liteblog-footer.html", format = "file"),
+
+  # detect file paths (always run)
+  tar_target(
+    name = post_paths, 
+    command = blog$find_posts(), 
+    cue = tar_cue("always")
+  ),
+  tar_target(
+    name = static_paths, 
+    command = blog$find_static(), 
+    cue = tar_cue("always")
+  ),
+
+  # specify file targets
+  tar_target(
+    name = post_files, 
+    command = post_paths, 
+    pattern = map(post_paths), 
+    format = "file"
+  ),
+  tar_target(
+    name = static_files, 
+    command = static_paths, 
+    pattern = map(static_paths), 
+    format = "file"
+  ),
+
+  # fuse targets depend on blog configuration files
+  # copy targets don't need dependencies
+  tar_target(
+    name = post_fuse,
+    command = blog$fuse_post(
+      post_files,
+      post_paths,
+      blog_css,
+      blog_hdr,
+      blog_ftr
+    ),
+    pattern = map(post_files)
+  ),
+  tar_target(
+    name = static_copy, 
+    command = blog$copy_static(static_files), 
+    pattern = map(static_files)
+  )
+)
+```
+
+This is a bit more elaborate than the pipeline I built in my data visualisation process, and uses some fancier tools to work. To get an overall sense of how the pipeline works, I'll call `tar_visnetwork()` again. First, here's a version that only shows the "core" of the build pipeline:
+
 ```{r}
 #| label: liteblog-visnetwork-1
+tar_visnetwork(
+  allow = any_of(c(
+    "static_paths", "post_paths", "post_files", 
+    "static_files", "post_fuse", "static_copy"
+  ))
+)
+```
+
+Reduced to this core, the build process is actually pretty simple. There are two separate pipelines. To build the blog posts, we use targets to:
+
+1. Search the source folder to find all the R markdown posts. This is a *single* build target, it consists of a character vector `post_paths` that lists the paths to the various R markdown files. If a post is deleted, or a new R markdown file is added, this vector will change.
+2. Next, we create a target called `post_files` that keeps track of the R markdown files themselves. Or, to be more precise, we create a *pattern* that defines a collection of targets, one per file. If any of those files change, the target will be outdated. I'll talk more about patterns later.
+3. Finally, we have a `post_fuse` target which is used primarily for the side-effect that occurs when the target is built. Specifically, this is the target that renders the blog posts to HTML files, and then copies them over to the blog output folder. 
+
+The second pipeline is analogous, but it operates on everything *other* than the markdown files:
+
+1. The `static_paths` target tracks the paths to the files
+2. The `static_files` target tracks the content of the files
+3. The `static_copy` target copies the static files to the output folder
+
+Here's the full network:
+
+```{r}
+#| label: liteblog-visnetwork-2
 tar_visnetwork()
 ```
+
+In this version, you can see that most of the build pipeline depends on the `blog` object: that makes sense because this is the R6 object that defines methods such as `$find_posts()` and `$fuse_post()` that are called when the blog is built. Similarly, since `blog` is itself an instance of the `Liteblog` class, the class itself is an upstream dependency of `blog`.
+
+The other four targets are less interesting. Three of them (`blog_css`, `blog_hdr`, and `blog_ftr`) are used to keep track of the style files (i.e. `_liteblog.css`, `_liteblog-header.html`, and `_liteblog-footer.html`), so that if any of those files are modified the it will trigger a rebuild of any target that uses those files. The fourth one, `blog_rds`, is a bit of an odd one and I'm not sure I like it: basically it's just a serialised version of the `blog` object itself written to an rds file. The only reason that one is there is to make `blog` visible *within* an R markdown post (i.e., a post can read the `_liteblog.rds` file and call any of the relevant methods if necessary). In general you wouldn't need that, but it's useful if you want to construct a listing page. 
+ 
+### Building the blog
 
 ```{r}
 #| label: liteblog-make
@@ -483,7 +726,7 @@ tar_make()
 ```
 
 ```{r}
-#| label: liteblog-visnetwork-2
+#| label: liteblog-visnetwork-3
 tar_visnetwork()
 ```
 
@@ -522,7 +765,7 @@ fs::dir_tree("source")
 ```
 
 ```{r}
-#| label: liteblog-visnetwork-3
+#| label: liteblog-visnetwork-4
 tar_visnetwork()
 ```
 
@@ -547,6 +790,9 @@ fs::dir_copy(
   overwrite = TRUE
 )
 ```
+
+### Postmortem
+
 
 ## Project 3: Parallel computing
 
