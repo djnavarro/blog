@@ -3,7 +3,10 @@
 dice_data <- function(spells) {
   dice_dat <- spells |>
     select(name, level, description) |>
-    mutate(dice_txt = str_extract_all(description, "\\b\\d+d\\d+\\b")) |>
+    mutate(
+      dice_txt = str_extract_all(description, "\\b\\d+d\\d+\\b"),
+      dice_txt = purrr::map(dice_txt, unique)
+    ) |>
     unnest_longer(
       col = "dice_txt",
       values_to = "dice_txt",
@@ -158,7 +161,7 @@ scholastic_plot <- function(dat, clusters) {
       clust = clusters$class,
       expand = expansion(0, 0)
     ) +
-    scale_fill_distiller() +
+    scale_fill_distiller(palette = "RdPu") +
     labs(
       x = "The Schools of Magic",
       y = "The Classes of Character",
@@ -166,8 +169,14 @@ scholastic_plot <- function(dat, clusters) {
     ) +
     coord_equal() +
     theme(
+      plot.background = element_rect(fill = "#222", color = "#222"),
       plot.margin = unit(c(2, 2, 2, 2), units = "cm"),
-      legend.position = "bottom"
+      text = element_text(color = "#ccc"),
+      axis.text = element_text(color = "#ccc"),
+      axis.title = element_text(color = "#ccc"),
+      axis.ticks = element_line(color = "#ccc"),
+      legend.position = "bottom",
+      legend.background = element_rect(fill = "#222", color = "#222")
     )
 
   ggsave(

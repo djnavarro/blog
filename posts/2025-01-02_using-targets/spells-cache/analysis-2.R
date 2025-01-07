@@ -3,7 +3,10 @@
 dice_data <- function(spells) {
   dice_dat <- spells |>
     select(name, level, description) |>
-    mutate(dice_txt = str_extract_all(description, "\\b\\d+d\\d+\\b")) |>
+    mutate(
+      dice_txt = str_extract_all(description, "\\b\\d+d\\d+\\b"),
+      dice_txt = purrr::map(dice_txt, unique)
+    ) |>
     unnest_longer(
       col = "dice_txt",
       values_to = "dice_txt",

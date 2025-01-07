@@ -22,6 +22,8 @@ set.seed(1)
 
 About 18 months ago I wrote a post about [balrogs and makefiles](/posts/2023-06-30_makefiles/). The post was long, strange, but also cathartic. It had bothered me for years that I didn't really understand [make](https://www.gnu.org/software/make/) as well as I wanted to, and it was really helpful to write up some notes about it as a way of teaching myself how to use it more effectively than I had done in the past.^[In all fairness, this is the *primary* purpose of this blog. Yes, it makes me very happy that other people find my posts useful and/or enjoyable, but that is actually a secondary goal. I write these posts for myself, because the act of writing is also an act of learning for me.] Buried at the very end of the post, somewhat sheepishly, is a reference to the [targets](https://docs.ropensci.org/targets/) R package by Will Landau. Even then I knew that I was going to need to learn how to use targets, but... life gets in the way. I have been preoccupied by other tasks, sadly, and it has taken me until now to (a) sit down and read through the [targets user manual](https://books.ropensci.org/targets/), and (b) come up with some [fun side projects](https://github.com/djnavarro/tartoys) that would give me the opportunity to try it out. 
 
+Right then. Time to play around with targets...
+
 ```{r}
 #| label: package-load
 #| message: false
@@ -30,30 +32,20 @@ library(ggplot2)
 library(legendry)
 library(tidyselect)
 library(dplyr)
+library(fs)
 ```
 
-## Preliminaries
+## Project 1: An analysis pipeline
 
-One key thing about targets is that it's a project oriented workflow, and not surprisingly it's easiest to use from *within* the project. By default, code in a quarto blog post like this one executes with the working directory set to the folder containing the qmd file, but to make my life easier I'll sometimes change that directory so that when I'm discussing a specific targets project, the code will execute from the root directory of that project. However, using `setwd()` to do this is not ideal: the proper way to do this within any knitr-based tool (quarto, rmarkdown, etc) is to set the `root.dir` knitr option. To that end, I'll define a little convenience function to take care of this whenever I need to switch to a new project:
+The first project is the fun [Tidy Tuesday](https://github.com/rfordatascience/tidytuesday/tree/main/data/2024/2024-12-17) project that I described in my [last post](/posts/2025-01-01_schools-of-magic/). In that post, I talked about two data visualisations I made using a data set about Dungeons & Dragons spells. When I wrote that post, I didn't talk about targets at all, and none of the code presented in that blog post is written in a "targets-friendly" way. However, all though that form of the code was the simplest way to write it up, it's not how I originally wrote it. The actual code was written for targets (it's included as the `spells` folder in [this github repo](https://github.com/djnavarro/tartoys)). 
+
+As it happens, I have a slightly-modified copy of the project in the `spells` directory within this blog post, so that I can play with this project within this post. This in turn brings us to the first point to make about targets: it's a *project-oriented* tool, in the sense that each project corresponds to a single folder (and its sub-folders), and not surprisingly it's easiest to use from within the project. To make my life easier I'll sometimes change that directory so that when I'm discussing a specific targets project, the code will execute from the root directory of that project. At the R console we would use `setwd()` to do so, but that's not the best approach within a knitr-based tool (quarto, rmarkdown, etc), and you will get warning messages if you try to do it that way. The preferred method for changing directories with an R markdown or quarto document is to set the `root.dir` knitr option. Because I'll be doing that several times in this post, I'll write a little convenience function to take care of this whenever I need to switch to a new project:
 
 ```{r}
 #| label: set-knitr-dir
-post_dir <- here::here("posts", "2025-01-02_using-targets")
-set_knitr_dir <- function(dir, base = post_dir) {
-  knitr::opts_knit$set(root.dir = fs::path(base, dir))
+set_knitr_dir <- function(dir, post = "2025-01-02_using-targets") {
+  knitr::opts_knit$set(root.dir = here::here("posts", post, dir))
 }
-```
-
-Right then. Time to play around with targets...
-
-## Project 1: Analysis pipelines
-
-The first project is the fun [Tidy Tuesday](https://github.com/rfordatascience/tidytuesday/tree/main/data/2024/2024-12-17) project that I described in my [last post](/posts/2025-01-01_schools-of-magic/). In that post, I talked about two data visualisation I made using data about D&D spells. When I wrote that post, I didn't talk about targets at all, and none of the code presented in that blog post is written in a "targets-friendly" way. However, all though that form of the code was the simplest way to write it up, it's not how I originally wrote it. The actual code was written for targets (it's included as the `spells` folder in [this github repo](https://github.com/djnavarro/tartoys)). 
-
-As it happens, I have a slightly-modified copy of the project in the `spells` directory within this blog post, so that I play with this project within this post, and see how targets operates. With that in mind, the very first thing I'll do is navigate into that project folder:
-
-```{r}
-#| label: switch-to-spells
 set_knitr_dir("spells")
 ```
 
@@ -61,36 +53,58 @@ set_knitr_dir("spells")
 #| label: targets-spells-destroy
 #| echo: false
 # complete clean, mimic fresh state
-if (fs::dir_exists("_targets")) fs::dir_delete("_targets")
-if (fs::dir_exists("output")) fs::dir_delete("output")
+if (dir_exists("_targets")) dir_delete("_targets")
+if (file_exists("dice_pic.png")) file_delete("dice_pic.png")
+if (file_exists("scholastic_pic.png")) file_delete("scholastic_pic.png")
+if (file_exists("analysis.R")) file_delete("analysis.R")
+file_copy("../spells-cache/analysis.R", "analysis.R")
 ```
 
 Next, let's take a look at the structure of this project. At the moment this is a clean project (i.e., no code has been run yet), so it contains only the source files. There are only three:
 
 ```{r}
 #| label: spells-dir-tree-fresh
-fs::dir_tree()
+dir_tree()
 ```
 
 Here's what each file does:
 
 - The `spells.csv` file is the data set I wish to analyse
 - The `analysis.R` script defines a collection of functions which, when called, will perform the required analyses and generate the outputs
-- The `_targets.R` script is (unsurprisingly) the build script. It's the targets analog of a makefile, more or less
+- The `_targets.R` script is (unsurprisingly) the build script
 
-Let's unpack this a little further. If you read the [schools of magic](/posts/2025-01-01_schools-of-magic/) post, you've already seen the code underpinning the analysis. The only difference between the version in that post and the version I've used here is that the `analysis.R` script wraps each step of the analysis into a function. For example, the pipeline that constructs the "spell dice" plot uses these three functions:
+In a moment I'll talk about the `_targets.R` script, but first I'll quickly describe what the analysis itself does.
 
-- `set_output_dir()` returns the path to the output folder to which the images will be written, creating that output folder if it doesn't already exist
+### What does the analysis do?
+
+If you read the [schools of magic](/posts/2025-01-01_schools-of-magic/) post that I wrote earlier this year, you've already seen the code underpinning the analysis. The only difference between the version in the previous post and the version I've used here is that the `analysis.R` script wraps each step of the analysis into a function. This is pretty crucial to constructing a targets pipeline, actually, and the targets user manual has a whole section discussing [function-oriented workflow](https://books.ropensci.org/targets/functions.html).
+
+> Functions are the building blocks of most computer code. They make code easier to think about, and they break down complicated ideas into small manageable pieces. Out of context, you can develop and test a function in isolation without mentally juggling the rest of the project. In the context of the whole workflow, functions are convenient shorthand to make your work easier to read.
+
+One thing that continually surprises me about analysis scripts that I encounter in the wild is that *analysts don't write functions enough*. It's easily the most common trap I see people falling into, to be honest, and it leads to some very dangerous and hard-to-isolate bugs because the dependencies between different parts of the code become hard to see as the script gets longer. So I am a big fan of the design feature in targets that pushes the user to break a big analysis into a smaller number of functions that perform specific tasks. For example, once the `spells` data set has been loaded, the pipeline that constructs the "spell dice" plot is encapsulated by two key functions: 
+
 - `dice_data()` takes the spells data as input, and performs all the data wrangling steps required to construct a tidied version of the data that is suitable for visualisation
 - `dice_plot()` takes the tidied dice data as input, specifies the "spell dice" plot, and writes it to an output file
 
-To produce the "schools of magic" plot I also need these three functions:
+::: {.column-margin}
+
+![dice_pic.png](./spells-cache/dice_pic.png)
+
+:::
+
+The "schools of magic" plot is slightly more elaborate, and uses three functions:
 
 - `scholastic_data()` takes the spells data as input, and performs the data wrangling steps required to create tidy data suitable for constructing the heatmap
 - `scholastic_clusters()` takes this tidy data as input, and the performs additional steps required to construct the hierarchical clustering used to draw dendrograms alongside the heatmap
 - `scholastic_plot()` takes the data set and the clustering as input, and uses them to build the "schools of magic" plot that is written to an output file
 
-The actual code for these functions isn't very important, but for what it's worth the code is included below the fold here:
+::: {.column-margin}
+
+![scholastic_pic.png](./spells-cache/scholastic_pic.png)
+
+:::
+
+The actual code for these functions isn't very important for the purposes of understanding the targets pipelinem, and in any case I've described the plots in detail before. But for what it's worth, the exact code is included below the fold here:
 
 ```{r}
 #| label: spells-analysis
@@ -99,15 +113,6 @@ The actual code for these functions isn't very important, but for what it's wort
 #| code-fold: true
 #| code-summary: "Click to show/hide the analysis.R code"
 #| filename: "analysis.R"
-# helper ------------------------------------------------------------------
-
-set_output_dir <- function() {
-  root <- find_root(has_file("_targets.R"))
-  output <- path(root, "output")
-  dir_create(output)
-  return(output)
-}
-
 # spell dice plot ---------------------------------------------------------
 
 dice_data <- function(spells) {
@@ -131,17 +136,17 @@ dice_data <- function(spells) {
   return(dice_dat)
 }
 
-dice_plot <- function(dice_dat, output) {
-  
+dice_plot <- function(dice_dat) {
+
   palette <- hcl.colors(n = 10, palette = "PuOr")
-  
+
   labs <- dice_dat |>
     summarise(
       dice_txt = first(dice_txt),
       count = n(),
       .by = dice_txt
     )
-  
+
   pic <- ggplot(
     data = dice_dat,
     mapping = aes(
@@ -190,19 +195,17 @@ dice_plot <- function(dice_dat, output) {
       legend.title.position = "top",
       legend.byrow = TRUE
     )
-  
-  out <- path(output, "dice_pic.png")
-  
+
   ggsave(
-    filename = out,
+    filename = "dice_pic.png",
     plot = pic,
     width = 2000,
     height = 1000,
     units = "px",
     dpi = 150
   )
-  
-  return(out)
+
+  return("dice_pic.png")
 }
 
 
@@ -229,7 +232,7 @@ scholastic_data <- function(spells) {
 
 # hierarchical clustering for the schools and classes
 scholastic_clusters <- function(dat) {
-  
+
   # matrix of counts for each school/class combination
   mat <- dat |>
     pivot_wider(
@@ -240,27 +243,27 @@ scholastic_clusters <- function(dat) {
   rownames(mat) <- mat$class
   mat$class <- NULL
   as.matrix(mat)
-  
+
   # each school is a distribution over classes,
   # each class is a distribution over schools
   class_distribution  <- mat / replicate(ncol(mat), rowSums(mat))
   school_distribution <- t(mat) / (replicate(nrow(mat), colSums(mat)))
-  
+
   # pairwise distances
   class_dissimilarity  <- dist(class_distribution)
   school_dissimilarity <- dist(school_distribution)
-  
+
   # hierarchical clustering
   clusters <- list(
     class = hclust(class_dissimilarity, method = "average"),
     school = hclust(school_dissimilarity, method = "average")
   )
-  
+
   return(clusters)
 }
 
-scholastic_plot <- function(dat, clusters, output) {
-  
+scholastic_plot <- function(dat, clusters) {
+
   pic <- ggplot(dat, aes(school, class, fill = count)) +
     geom_tile() +
     scale_x_dendro(
@@ -290,19 +293,17 @@ scholastic_plot <- function(dat, clusters, output) {
       legend.position = "bottom",
       legend.background = element_rect(fill = "#222", color = "#222")
     )
-  
-  out <- path(output, "scholastic_pic.png")
-  
+
   ggsave(
-    filename = out,
+    filename = "scholastic_pic.png",
     plot = pic,
     width = 1000,
     height = 1000,
     units = "px",
     dpi = 150
   )
-  
-  return(out)
+
+  return("scholastic_pic.png")
 }
 ```
 
@@ -315,11 +316,9 @@ Now that you've read the verbal description of what each function does, it's int
 #| eval: false
 #| code-line-numbers: true
 #| filename: "run_analysis.R"
-# packages
-library(rprojroot)
-library(fs) 
-library(tibble) 
-library(readr) 
+# load packages
+library(tibble)
+library(readr)
 library(ggplot2)
 library(dplyr)
 library(stringr)
@@ -328,19 +327,21 @@ library(forcats)
 library(ggrepel)
 library(legendry)
 
+# read analysis script
+source("analysis.R")
+
 # setup
-output <- set_output_dir()
 input  <- "spells.csv"
 spells <- read_csv(input, show_col_types = FALSE)
 
 # make the spell dice plot & write to output
 dice_dat <- dice_data(spells)
-dice_pic <- dice_plot(dice_dat, output)
+dice_pic <- dice_plot(dice_dat)
 
 # make the schools of magic plot & write to output
 scholastic_dat  <- scholastic_data(spells)
 scholastic_clus <- scholastic_clusters(scholastic_dat)
-scholastic_pic  <- scholastic_plot(scholastic_dat, scholastic_clus, output)
+scholastic_pic  <- scholastic_plot(scholastic_dat, scholastic_clus)
 ```
 
 So, how does it work with targets? Well, if we take a look at the `_targets.R` script, we can see it looks suspiciously similar to the code above:
@@ -352,29 +353,30 @@ So, how does it work with targets? Well, if we take a look at the `_targets.R` s
 #| filename: "_targets.R"
 library(targets)
 
+# specify required packages
 tar_option_set(packages = c(
-  "rprojroot", "fs", "tibble", "readr", "ggplot2", "dplyr",
-  "stringr", "tidyr", "forcats", "ggrepel", "legendry"
+  "tibble", "readr", "ggplot2", "dplyr", "stringr", 
+  "tidyr", "forcats", "ggrepel", "legendry"
 ))
 
+# read analysis script
 tar_source("analysis.R")
 
 list(
-  # preprocessing targets
-  tar_target(output, set_output_dir()),
+  # setup
   tar_target(input, "spells.csv", format = "file"),
   tar_target(spells, read_csv(input, show_col_types = FALSE)),
 
-  # dice plot targets
+  # dice plot
   tar_target(dice_dat, dice_data(spells)),
-  tar_target(dice_pic, dice_plot(dice_dat, output)),
+  tar_target(dice_pic, dice_plot(dice_dat)),
 
-  # scholastic plot targets
+  # scholastic plot
   tar_target(scholastic_dat, scholastic_data(spells)),
   tar_target(scholastic_clus, scholastic_clusters(scholastic_dat)),
   tar_target(
     scholastic_pic,
-    scholastic_plot(scholastic_dat, scholastic_clus, output)
+    scholastic_plot(scholastic_dat, scholastic_clus)
   )
 )
 ```
@@ -384,28 +386,28 @@ In this pipeline, the set up involves two steps:
 - I've used [`tar_option_set()`](https://docs.ropensci.org/targets/reference/tar_option_set.html) to declare the required R packages, thereby making those packages available to the pipeline
 - I've used [`tar_source()`](https://docs.ropensci.org/targets/reference/tar_source.html) to read the analysis script, thereby making the functions in that file accessible to the pipeline
 
-Having taken care of the preliminaries, the pipeline is specified via a list of targets, each of which is defined by a call to [`tar_target()`](https://docs.ropensci.org/targets/reference/tar_target.html). Each target has a `name`, and is associated with a `command` that is to be executed. If I'd named the arguments on line 12 in my `_targets.R` script, the code would look like this:
+Having taken care of the preliminaries, the pipeline is specified via a list of targets, each of which is defined by a call to [`tar_target()`](https://docs.ropensci.org/targets/reference/tar_target.html). Each target has a `name`, and is associated with a `command` that is to be executed. If I'd named the arguments on line 18 in my `_targets.R` script, the code would look like this:
 
 ```{r}
 #| label: spells-targets-argument-names
 #| eval: false
 tar_target(
-  name = output, 
-  command = set_output_dir()
+  name = dice_dat, 
+  command = dice_data(spells)
 )
 ```
 
-Notice the similarity to line 15 of the fictitious `run_analysis.R` script:
+Notice the similarity to line 20 of the `run_analysis.R` script:
 
 ```{r}
-#| label: spells-set-output-dir
+#| label: spells-dice-pic-code
 #| eval: false
-output <- set_output_dir()
+dice_dat <- dice_data(spells)
 ```
 
 In essence, that's what I'm doing with the call to `tar_target()`. I'm specifying that the command `set_output_dir()` is to be executed, and the results should be stored as the variable `output`. However, instead of immediately executing this code in the current R environment, what `tar_target()` does is create the infrastructure so that this command can be incorporated into the pipeline when it actually gets built. With one exception, this is the recipe I followed for constructing all the targeta in my `_targets.R` script.
 
-The one exception to this pattern occurs on line 13, where my target is defined by this call to `tar_target()`:
+The one exception to this pattern occurs on line 14 of `_targets.R`, where my target is defined by this call to `tar_target()`:
 
 ```{r}
 #| label: spells-targets-for-files
@@ -417,60 +419,136 @@ tar_target(
 )
 ```
 
-In one sense, this target is pretty much the same as the others: it defines a variable called `input` using the "command" `"spells.csv"`, and so in that respect it's much the same as line 16 of the `run_analysis.R` script:
+In one sense, this target is pretty much the same as the others: it defines a variable called `input` using the "command" `"spells.csv"`, and so in that respect it's much the same as line 16 of the `run_analysis.R` script. However, notice that I've also specified that `format = "file"`. This tells targets that `"spells.csv"` isn't *just* a string, it's also the name of a file that needs to be tracked. By declaring it as a file target, I'm ensuring that if the `spells.csv` file gets altered in some way, this target and any target that depends on it will need to be rebuilt.  
+
+The [`tar_visnetwork()`](https://docs.ropensci.org/targets/reference/tar_visnetwork.html) function provides a handy way of visualising the structure of a pipeline as a little HTML widget. To keep things as simple as possible, at least for the moment, I'll set `targets_only = TRUE` so that the graph ignores the functions defined in `analysis.R`, and only focuses on the targets themselves:^[You can also call `tar_manifest()` to get a slightly more precise list of the targets and the commands with which they are associated, but I'm not going to bother with that here.]
 
 ```{r}
-#| eval: false
-input <- "spells.csv"
+#| label: targets-spells-visnetwork-1
+tar_visnetwork(targets_only = TRUE)
 ```
 
-However, notice that I've also specified that `format = "file"`. This tells targets that `"spells.csv"` isn't *just* a string, it's also the name of a file that needs to be tracked. By declaring it as a file target, I'm ensuring that if the `spells.csv` file gets altered in some way, this target and any target that depends on it will need to be rebuilt.  
-
-### Inspecting the pipeline
-
-The [`tar_visnetwork()`](https://docs.ropensci.org/targets/reference/tar_visnetwork.html) function provides a handy way of visualising the structure of a pipeline as a little HTML widget.
-
-Anyway, here it is:
-
-```{r}
-#| label: targets-spells-visnetwork
-tar_visnetwork()
-```
-
-This makes the structure of the project clear:
-
-- The `dice_pic` image depends only on the `dice_dat` data set, and the `dice_dat` data set is derived from the `spells` data frame
-- The `scholastic_pic` is a little more complicated because it depends on two data sets: there's the `scholastic_dat` data set that is derived directly from `spells`, but there's also the `scholastic_clus` object that is constructed from the `scholastic_dat` data set. 
-
-If you want a little more detail, you can use `tar_manifest()` to get a summary of all the targets and the command with which they are associated:
-
-```{r}
-#| label: targets-spells-manifest
-tar_manifest()
-```
-
-The output isn't as pretty as the HTML widget, but you can use it to see exactly what the target objects are, as well as the the command used to construct them. 
-
-### Executing the pipeline
-
-In the HTML widget above, all the targets are coloured in blue, indicating that these are "outdated". You can get a listing of all outdated targets like this:
+All these targets are shown in blue, indicating that they are "outdated". That's to be expected at this point, of course: I haven't actually run anything yet! I'll get to that momentarily, but before I do I'll call [`tar_outdated()`](https://docs.ropensci.org/targets/reference/tar_outdated.html) to confirm the obvious:
 
 ```{r}
 #| label: targets-spells-outdated
 tar_outdated()
 ```
 
-These are the targets that need to be (re)run. We can do this by calling `tar_make()`
+These are the targets that need to be (re)run. 
+
+### Running the pipeline
+
+Okay, it is now time to run the pipeline. We can do this by calling [`tar_make()`](https://docs.ropensci.org/targets/reference/tar_make.html). Here's what happens when we do that:
 
 ```{r}
 #| label: execute-spells
 tar_make()
 ```
 
+The output here is pretty descriptive, but it's still worth expanding on it a little. For each target, there are two lines of output that look like this:
+
+```
+▶ dispatched target TARGETNAME
+● completed target TARGETNAME [blah seconds, blah kilobytes]
+```
+
+What these two lines mean is that, under the hood, targets "dispatches" the task to a separate R session using the [callr](https://github.com/r-lib/callr/) package, and the code is executed there. The target is deemed "completed" once that R session finishes running the code and returns the output. This approach has two advantages over simply running the code at the console. First, it is more reproducible, because each target is run in a clean R session. Second, this design makes it waaaaaaaay easier to parallelise the execution. More on that later. 
+
+In any case, now that we've finished running the pipeline, let's take a look at the state of our "spells" project folder:
+
 ```{r}
 #| label: spells-dir-tree-built
-fs::dir_tree()
+dir_tree(recurse = FALSE)
 ```
+
+There are three new things here. First, as expected, we have two image files `dice_pic.png` and `scholastic_pic.png`. These are the outputs produced by our analysis script. Yay, it worked! There's also a `_targets` folder: this is the place where the targets package stashes all its metadata and stores copies of the built targets. I'll talk more about the contents of this folder later, but just to give a sense of it now, here's a sneak peek at what is stored in that folder:
+
+```{r}
+dir_tree("_targets")
+```
+
+### When the project changes
+
+Now that we've run the pipeline, let's take another look at the network. The structure of it hasn't changed, but all the targets are showing as "up to date":
+
+```{r}
+#| label: targets-spells-visnetwork-2
+tar_visnetwork(targets_only = TRUE)
+```
+
+If I call `tar_make()` again, essentially nothing happens. All the targets are up to date, so everything is skipped:
+
+```{r}
+tar_make()
+```
+
+Nice!
+
+Actually, you know what? Now feels like a good time to show the full network, including all the functions that contribute to the pipeline...
+
+```{r}
+#| label: targets-spells-visnetwork-3
+tar_visnetwork()
+```
+
+```{r}
+#| echo: false
+if (file_exists("analysis.R")) file_delete("analysis.R")
+file_copy("../spells-cache/analysis-2.R", "analysis.R")
+```
+
+Now let's suppose that, for whatever reason, I tinker with the plotting code for the "schools of magic" image. Perhaps I want to use a different colour scheme or something. So I go back into my code and change the code for the `scholastic_plot()` function, but *only* that function. Let's see what this does to the pipeline visualisation:
+
+```{r}
+#| label: targets-spells-visnetwork-4
+tar_visnetwork()
+```
+
+Not only does targets detect that the function has been altered, it also recognises that the `scholastic_pic` target (and only that target) is now outdated:
+
+```{r}
+tar_outdated()
+```
+
+Taking this a little further, suppose I also decide to tinker with the `dice_data()` function. Perhaps I've decided that actually I would like the plot to count every *instance* of a dice roll description in each spell, not merely the unique instances. Let's see what it looks like now:
+
+```{r}
+#| echo: false
+if (file_exists("analysis.R")) file_delete("analysis.R")
+file_copy("../spells-cache/analysis-3.R", "analysis.R")
+```
+
+```{r}
+#| label: targets-spells-visnetwork-5
+tar_visnetwork()
+```
+
+That makes sense too: the `dice_data()` function affects the `dice_dat` target, but that also has implications for the `dice_pic` target because it depends on `dice_dat`. So now our list of outdated targets looks like this:
+
+```{r}
+tar_outdated()
+```
+
+When we re-run the pipeline this time, those three targets (and only those three targets) are rebuilt. The others are skipped:
+
+```{r}
+tar_make()
+```
+
+This, as you might imagine, is extremely useful in situations where you have a project that involves hundreds of analyses and figures that take a really long time to execute if you re-run everything from the beginning... but all you actually want to do is change the fontsize on figure 312.
+
+::: {.column-margin}
+
+![dice_pic_2.png](./spells-cache/dice_pic_2.png)
+
+:::
+
+::: {.column-margin}
+
+![scholastic_pic_2.png](./spells-cache/scholastic_pic_2.png)
+
+:::
 
 ### Postmortem
 
@@ -500,7 +578,7 @@ benchplot(
 
 Even in this example, where there isn't very much that needs to be drawn to the graphics device, constructing the plot isn't the step that takes the most time. So it makes very little sense to treat the plot specification (i.e., the `gg` plot object) as the terminal target of a plotting pipeline, because 90% of the compute time takes place *after* the `gg` object is specified (this is even more obvious when you have a scatterplot that needs to draw millions of dots to the canvas).
 
-Having been burned by this in the past, I made the decision that my plotting target would encapsulate *all* stages in the plot rendering process. Only once the image has been written to a file would my plot target be deemed complete. As far as it goes, this is very sensible reasoning, but in retrospect I think it might have made a lot more sense to split the plotting target into stages. Saving the `gg` object as an intermediate target (and possibly other stages of the plot construction too) might have been sensible. It might seem like I'm being weirdly nitpicky, but my motivation here is very practical: I have a couple of projects at work where rerunning the analysis very time-consuming, and the biggest bottleneck (by far) is rendering some very unpleasant `gg` objects. I've been using a variety of tricks to work around this issue, none of which have been satisfying. Targets offers a much cleaner solution to my problem, but it's clear to me just from this toy exercise that I will need to be careful about how I set up targets for these analysis pipelines.
+Having been burned by this in the past, I made the decision that my plotting target would encapsulate *all* stages in the plot rendering process. Only once the image has been written to a file would my plot target be deemed complete. As far as it goes, this is very sensible reasoning, but in retrospect I think it might have made a lot more sense to split the plotting target into stages. Saving the `gg` object as an intermediate target (and possibly other stages of the plot construction too) might have been sensible. It might seem like I'm being weirdly nitpicky, but my motivation here is very practical: I have a couple of projects where rerunning the analysis very time-consuming, and the biggest bottleneck (by far) is rendering and drawing some very unpleasant `gg` objects. I've been using a variety of tricks to work around this issue, none of which have been satisfying.^[I mean, if you've reached the point where you're *manually* invalidating parts of the R markdown cache to spare yourself 15 minutes of compute time every time you want to tinker with a figure, girl he's not the man for you and it's time to look for better options.] Targets offers a much cleaner solution to my problem, but it's clear to me just from this toy exercise that I will need to be careful about how I set up targets for these analysis pipelines.
 
 Still, it seems very clear to me that the problem can be solved with targets. My toy example is a kind of worst case solution... if all else fails, I can define the output image itself as the the target to be built. From that perspective, mission accomplished babes. 
 
@@ -516,17 +594,17 @@ set_knitr_dir("liteblog")
 #| echo: false
 # complete clean, mimic fresh state
 tar_destroy("all")
-if (fs::dir_exists("_targets")) fs::dir_delete("_targets")
-if (fs::dir_exists("site")) fs::dir_delete("site")
-if (fs::file_exists("_liteblog.rds")) fs::file_delete("_liteblog.rds")
+if (dir_exists("_targets")) dir_delete("_targets")
+if (dir_exists("site")) dir_delete("site")
+if (file_exists("_liteblog.rds")) file_delete("_liteblog.rds")
 output_liteblog <- here::here("_site", "posts", "2025-01-02_using-targets", "site")
-if (fs::dir_exists(output_liteblog)) fs::dir_delete(output_liteblog)
-post_003 <- fs::path("source", "_003_schools-of-magic.rmd")
-post_004 <- fs::path("source", "_004_spell-dice.rmd")
-data_dir <- fs::path("source", "data")
-if (fs::file_exists(post_003)) fs::file_delete(post_003)
-if (fs::file_exists(post_004)) fs::file_delete(post_004)
-if (fs::dir_exists(data_dir)) fs::dir_delete(data_dir)
+if (dir_exists(output_liteblog)) dir_delete(output_liteblog)
+post_003 <- path("source", "_003_schools-of-magic.rmd")
+post_004 <- path("source", "_004_spell-dice.rmd")
+data_dir <- path("source", "data")
+if (file_exists(post_003)) file_delete(post_003)
+if (file_exists(post_004)) file_delete(post_004)
+if (dir_exists(data_dir)) dir_delete(data_dir)
 ```
 
 The second project I attempted was a little more ambitious: I decided to write a lightweight blogging tool using [litedown](https://yihui.org/litedown/) to convert R markdown documents to HTML pages, and using targets to manage the build process for the site as a whole.^[I seem to have developed a habit for rolling my own half-arsed blogging tools. About a year ago I got bored and built a very silly [blog based on knitr and eleventy](https://knitr-11ty.djnavarro.net/), for literally no reason except that I was bored. The [liteblog](https://liteblog.djnavarro.net/) site I put together for this side project is no less stupid.] 
@@ -537,7 +615,7 @@ To give you a sense of how the blog is organised, this is what a "clean" version
 
 ```{r}
 #| label: liteblog-filetree-fresh
-fs::dir_tree()
+dir_tree()
 ```
 
 Inside the `source` folder there are four R markdown documents that will need to be built. Of these four, two should be built into the site root directory:
@@ -545,7 +623,7 @@ Inside the `source` folder there are four R markdown documents that will need to
 - the `index.rmd` document becomes the blog homepage `index.html`
 - the `404.rmd` document becomes the 404 page `404.html`
 
-The other two documents both correspond to blog posts, and in both cases the underscore is intended to have syntactic meaning. However, unlike the "usual" behaviour that you might expect (e.g., from R markdown, blogdown, quarto, etc), the underscore doesn't mean "do not build".^[If this were a serious project, this would be a very bad idea: the underscore has an accepted meaning in the various R-based literate programming tools, and it is not good practice to violate user expectations the way I'm doing here. However, this is a silly side project that is not intended to be used for anything, so I feel no compunction at all to follow the usual conventions.] Instead, it is a signifier used to describe the file path expected for the built file:
+The other two documents both correspond to blog posts, and in both cases the underscore is intended to have syntactic meaning. However, unlike the "usual" behaviour that you might expect (e.g., from R markdown, blogdown, quarto, etc), the underscore doesn't mean "do not build".^[If this were a serious project, this would be a very bad idea: the underscore has an accepted meaning in the various R-based literate programming tools, and it is not good practice to violate user expectations the way I'm doing here. However, this is a silly side project that is not intended to be used for anything, so I feel no compunction at all about violating conventions.] Instead, it is a signifier used to describe the file path expected for the built file:
 
 - `_001_hello-cruel-world.rmd` becomes a post at `/001/hello-cruel-world/index.html`
 - `_002_blog-object.rmd` becomes a post at `/002/blog-object/index.html`
@@ -585,7 +663,7 @@ Liteblog <- R6::R6Class(
     pattern = "[.][rR]?md$",
 
     find_posts = function() {
-      files <- fs::dir_ls(
+      files <- dir_ls(
         path = fs::path(self$root, self$source),
         recurse = TRUE,
         regexp = self$pattern,
@@ -804,7 +882,7 @@ tar_make()
 
 ```{r}
 #| label: liteblog-filetree-built
-fs::dir_tree()
+dir_tree()
 ```
 
 Now suppose I were to add two new posts into the the `source` folder:
@@ -812,19 +890,19 @@ Now suppose I were to add two new posts into the the `source` folder:
 ```{r}
 #| label: add-liteblog-posts
 #| echo: false
-fs::file_copy(
-  path = fs::path("..", "liteblog-source", "_003_schools-of-magic.rmd"),
-  new_path = fs::path("source", "_003_schools-of-magic.rmd")
+file_copy(
+  path = path("..", "liteblog-source", "_003_schools-of-magic.rmd"),
+  new_path = path("source", "_003_schools-of-magic.rmd")
 )
-fs::file_copy(
-  path = fs::path("..", "liteblog-source", "_004_spell-dice.rmd"),
-  new_path = fs::path("source", "_004_spell-dice.rmd")
+file_copy(
+  path = path("..", "liteblog-source", "_004_spell-dice.rmd"),
+  new_path = path("source", "_004_spell-dice.rmd")
 )
-fs::dir_copy(
-  path = fs::path("..", "liteblog-source", "data"),
-  new_path = fs::path("source", "data")
+dir_copy(
+  path = path("..", "liteblog-source", "data"),
+  new_path = path("source", "data")
 )
-fs::dir_tree("source")
+dir_tree("source")
 ```
 
 ```{r}
@@ -847,7 +925,7 @@ You can browse the built website [here](./site/index.html)
 ```{r}
 #| label: copy-liteblog-to-site
 #| echo: false
-fs::dir_copy(
+dir_copy(
   path = "site",
   new_path = here::here("_site", "posts", "2025-01-02_using-targets", "site"),
   overwrite = TRUE
@@ -877,7 +955,7 @@ tar_destroy(destroy = "all", ask = FALSE)
 As a very minimal implementation, consider this pipeline:
 
 ```{r}
-#| label: threading1-targets-file
+#| label: threading-1-targets-file
 #| eval: false
 #| code-line-numbers: true
 #| filename: "_targets.R"
@@ -923,7 +1001,7 @@ set_knitr_dir("threading2")
 tar_destroy(destroy = "all", ask = FALSE)
 ```
 
-The previous example gives a general sense of how parallel execution works in a crew/targets pipeline, but -- possibly because once upon a time I used [callr](https://callr.r-lib.org/) to write my own R6 implementation of a multi-threaded [queue](/posts/2022-12-22_queue/),^[I hasten to add that nobody should be using the [queue](https://queue.djnavarro.net/) package. I wrote it to prove to myself that I could do it, but it's little more than a toy.] which piqued my curiosity about how these things play out -- I found myself wanting a finer-grained description of what each of the workers is doing at each point in time. 
+The previous example gives a general sense of how parallel execution works in a crew/targets pipeline, but -- possibly because once upon a time I used [callr](https://callr.r-lib.org/) to write my own R6 implementation of a multi-threaded [queue](/posts/2022-12-22_queue/),^[I hasten to add that nobody should be using the [queue](https://queue.djnavarro.net/) package. Like most of my side-projects it was something I wrote just to prove to myself that I could do it, but it's little more than a toy.] which piqued my curiosity about how these things play out -- I found myself wanting a finer-grained description of what each of the workers is doing at each point in time. 
 
 As far as I can tell, neither targets nor crew provides an easy way to do this (but if they do, I would love it if someone can point me in the right direction), so I wrote a slightly more elaborate version of the previous pipeline, in which the targets themselves keep track of the time at which execution starts and stops, as well as the pid of the R process in which they are being executed. In this version, there are three functions that do the work:
 
@@ -934,7 +1012,7 @@ As far as I can tell, neither targets nor crew provides an easy way to do this (
 Here's the entire code:
 
 ```{r}
-#| label: threading2-targets-file
+#| label: threading-2-targets-file
 #| eval: false
 #| code-line-numbers: true
 #| filename: "_targets.R"
@@ -1032,7 +1110,7 @@ trace
 
 In this data frame, the `begins_at` column records the amount of time that has passed between the time at which the pipeline started, and the time at which the current target begins execution. Similarly `finishes_at` records the time from pipeline start to the current target finishing. The `duration` column is the difference between the two. That being said, if you look at the code I used to calculate these, it's clearly an approximation. But it will suffice. 
 
-The nice thing about the `trace` data is that the `worker_pid` column associates each target with a specific pid for the R process used to build that target. This is slightly finer-grained information than what we got by calling `tar_crew()`. For example, I now know that `start` and `wait1` were both executed by the same R process (i.e., pid `r trace$worker_pid[1]`). Admittedly this is not much of a revelation: I could have guessed that just by looking at the logs when I called `tar_make()` and a few reasonable assumptions about how the scheduler^[Scheduling in `crew` is handled with the [mirai](https://shikokuchuo.net/mirai/) package, which looks amazing and is now on my to-do list to learn] works. 
+The nice thing about the `trace` data is that the `worker_pid` column associates each target with a specific pid for the R process used to build that target. This is slightly finer-grained information than what we got by calling `tar_crew()`. For example, I now know that `start` and `wait1` were both executed by the same R process (i.e., pid `r trace$worker_pid[1]`). Admittedly this is not much of a revelation: I could have guessed that just by looking at the logs when I called `tar_make()` and a few reasonable assumptions about how the scheduler^[Scheduling in `crew` is handled with the [mirai](https://shikokuchuo.net/mirai/) package, which looks amazing and is now on my to-do list to learn.] works. 
 
 One minor irritation I have with the `trace` output is that it doesn't directly allow me to match the `worker_pid` column against the `worker` column produced by `tar_crew()`. You can see the issue most cleanly if I aggregate the `trace` data frame by `worker_pid` like so:
 
@@ -1095,7 +1173,7 @@ One thing that bothered me a *lot* about the second version, when I implemented 
 
 The part that seemed utterly baffling to me was seeing that the on-screen output to `tar_make()` reports the execution time for each target, but (at the time) I couldn't work out how to extract that information programmatically. It beggars belief to think that a package as sophisticated as targets wouldn't record that information somewhere and...
 
-...yeah, of course it does. I was just looking in the wrong place. If you call `tar_meta()` it returns a tibble that stores a detailed listing of all targets -- including the "secret"^[Not very secret] one that records the value of [`.Random.seed`](/posts/2023-12-27_seedcatcher/) -- that includes their execution time, any warnings or errors produced during their execution, and a great deal more besides:
+...yeah, of course it does. I was just looking in the wrong place. If you call `tar_meta()` it returns a tibble that stores a detailed listing of all targets -- including the "secret"^[Not very secret.] one that records the value of [`.Random.seed`](/posts/2023-12-27_seedcatcher/) -- that includes their execution time, any warnings or errors produced during their execution, and a great deal more besides:
 
 ```{r}
 #| echo: false
@@ -1111,7 +1189,7 @@ tar_meta()
 True, it doesn't contain information about the system pid that executes the target, so I'd still have some work to do, but at least now I have the correct timing information for each target.
 
 ```{r}
-fs::dir_tree("_targets")
+dir_tree("_targets")
 ```
 
 Oh well. I'll know better next time, and anyway the entire point of this exercise was to teach myself how to use the package, so it's all good really.
