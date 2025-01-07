@@ -3,6 +3,8 @@ title: "Three short stories about targets"
 description: "In which our intrepid adventurer turns a hacky data visualisation exercise into an analysis pipeline; builds an R blog with litedown and targets; and tries to wrap her head around the crews integration for multithreaded target building"
 date: "2025-01-02"
 categories: ["R", "Reproducibility", "Parallel Computing", "Blogging", "Literate Programming"]
+image: "img/engin-akyurt-lVD6WBdY_5M-unsplash.jpg"
+image-alt: "A dartboard with a dart on the bullseye"
 --- 
 
 <!--------------- my typical setup ----------------->
