@@ -891,14 +891,16 @@ site_copy <- function(dir) {
 site_copy("site-1")
 ```
 
-The blog has now been built (you can view it [here](./site-1/index.html)), and the project folder now looks like this:
+Setting aside obvious questions like "what's going on with all those weirdly named targets like `post_files_bfe2f528519c0ff0`???", the gist of this is pretty clear: everything has run smoothly and the blog has been built. In fact, you can see a live version of what this version of the blog looks like (i.e., when the source files are as described up to this point in thhis post) [here](./site-1/index.html)). After the blog has been built, the project folder now looks like this:
 
 ```{r}
 #| label: liteblog-filetree-built
 dir_tree()
 ```
 
-Two new folders have been added: `_targets` stores metadata and tracked objects for the pipeline, and `site` contains the built website. 
+Two new folders have been added: `_targets` stores metadata and tracked objects for the pipeline, and `site` contains the built website. Yay! It works!
+
+So now let's start digging into the details...
 
 ::: {.column-margin}
 
@@ -906,9 +908,53 @@ Two new folders have been added: `_targets` stores metadata and tracked objects 
 
 :::
 
+### Always-run targets
+
+One of the problems I ran into pretty early in this project was how to monitor the source directory properly. It's easy enough to list the contents of a directory, of course: the `$find_posts()` and `$find_static()` methods for `Liteblog` objects do exactly this. But consider a target like this:
+
+```{r}
+#| results: hide
+tar_target(post_paths, blog$find_posts())
+```
+
+This target stores a list of all R markdown posts, but it has only one dependency: the `blog` object itself. It is *not* dependent on the current state of the source folder. It can't be: a folder in the file system isn't an R object and cannot itself be a target. So, if the state of the folder changes (e.g., a new blog post is added), targets would have no way of knowing that the `post_paths` target is now outdated. Moreover, since the contents of the folder can change at any time (even when R isn't running), it doesn't make a lot of sense to ask targets to constantly monitor the folder.
+
+A simpler solution is to declare that the `post_paths` target should never be considered up to date, and must always be run whenever `tar_make()` is called. We can do this by using [`tar_cue()`](https://docs.ropensci.org/targets/reference/tar_cue.html), and that's why the actual target is defined like this:
+
+```{r}
+#| results: hide
+tar_target(
+  name = post_paths, 
+  command = blog$find_posts(), 
+  cue = tar_cue("always")
+)
+```
+
+A similar approach is taken when defining the `static_paths` target. These two targets are always executed at build time, which makes a lot of sense for a project like this one. What this means, in practice, is that even though I have just run `tar_make()` and haven't changed any of the files since then, the network visualisation appears like this: 
+
+```{r}
+#| label: liteblog-visnetwork-3
+tar_visnetwork()
+```
+
+As expected, `static_paths` and `post_paths` both show up as outdated targets, and so does everything downstream of those two. Again, this makes sense: until those two targets are re-run, the targets package has no way to know if the downstream targets will also need to be rebuilt. Consequently, calling `tar_outdated()` gives us this:
+
+```{r}
+tar_outdated()
+```
+
+However, the fact that the downstream targets are flagged as outdated doesn't mean these targets will need to be executed again. To see this, let's call `tar_make()` again:
+
+```{r}
+#| label: liteblog-make-1
+tar_make()
+```
+
+As expected, the `static_paths` and `post_paths` targets are both re-run, as instructed by `tar_cue("always")`. However, once those targets are completed, the targets package is smart enough to detect that nothing has actually changed. The `static_paths` and `post_paths` objects are exactly the same as they were previously, so there is no need to execute any of the downstream targets. In other words, at build time the blog will always check to see if the content in the source folder has changed, but if nothing has changed the fuse and copy targets are skipped.
+
 ### Dynamic branching
 
-Okay, time to talk about the [dynamic branching](https://books.ropensci.org/targets/dynamic.html). You'll probably have noticed that although the `_targets.R` file *defines* only the one target called `post_files`, in the section of code that reads like this...
+Okay, I've put it off as long as I could, but the time has come where I have to talk about [dynamic branching](https://books.ropensci.org/targets/dynamic.html). You'll probably have noticed that although the `_targets.R` file *defines* only the one target called `post_files`, in the section of code that reads like this...
 
 ```r
 tar_target(
@@ -928,21 +974,21 @@ post_files_64b628c4152d280c
 post_files_31d6f026c8bea126
 ```
 
-Okay yeah but I didn't actually have to scan over the output, I could have just called `tar_branches()`:
+Of course, I didn't actually have to do this manually. Instead, I could have called [`tar_branches()`](https://docs.ropensci.org/targets/reference/tar_branches.html):
 
 ```{r}
-tar_branches(post_files)
+pf_branches <- tar_branches(post_files)
+pf_branches
 ```
 
-What are these branches? Let's find out:
+As you can see by comparison to the manual listing above, the first column lists the four branches of the `post_files` target. 
 
 ```{r}
-tar_read(post_files)
+tar_read_raw(pf_branches$post_files[1])
 ```
 
 ```{r}
-post_file_bfe2f <- tar_read(post_files_bfe2f528519c0ff0)
-post_file_bfe2f
+tar_read(post_paths)
 ```
 
 Hm. Okay so...
@@ -973,20 +1019,6 @@ tar_make(post_files)
 ```
 
 ### Adding new pages
-
-```{r}
-#| label: liteblog-visnetwork-3
-tar_visnetwork()
-```
-
-Why are some targets still showing as outdated? Because that's how I set them up with `tar_cue()`. By design, every time we rebuild, the blog will check the file paths to see if there are any new static files to be copied or new posts to be fused. Consequently, those two targets and everything downstream of those show up as outdated. But notice that when we call `tar_make()` again...
-
-```{r}
-#| label: liteblog-make-1
-tar_make()
-```
-
-...only the `static_paths` and `post_paths` targets are rerun: nothing has actually changed in the `source` folder, so the fuse and copy targets are skipped.
 
 Now suppose I were to add two new posts into the the `source` folder:
 
