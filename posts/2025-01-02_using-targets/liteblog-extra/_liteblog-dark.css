@@ -4,21 +4,21 @@ body, .footer, .header {
   margin: auto;
   padding: 1em;
   line-height: 1.5;
-  background-color: #ddd;
-  color: #222;
+  background-color: #222;
+  color: #ccc;
 }
 
 .body, .side, .footnote-backref, .footnote-ref, .footnote-ref:hover,
 .side-right, .side-left, .footnotes {
-  background-color: #ddd;
-  color: #222;
+  background-color: #222;
+  color: #ccc;
   box-shadow: none;
 }
 .frontmatter {
   box-shadow: none;
 }
 .note-ref:hover + .side {
-  background-color: #ddd;
+  background-color: #222;
   border: 1px solid #666;
 }
 
@@ -72,7 +72,7 @@ table {
   margin: auto; border-top: 1px solid #666;
   thead th { border-bottom: 1px solid #666; }
   th, td { padding: 5px; }
-  thead, tfoot, tr:nth-child(even) { background: #ddd; }
+  thead, tfoot, tr:nth-child(even) { background: #222; }
 }
 
 .table-full {
@@ -84,8 +84,8 @@ blockquote {
   margin: 0;
   padding: 1px 1em;
   border-left: .5em solid #333;
-  background: #ddd;
-  color: #222;
+  background: #222;
+  color: #ccc;
 }
 
 hr, .footnotes::before {
