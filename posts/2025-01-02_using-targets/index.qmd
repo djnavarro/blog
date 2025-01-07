@@ -601,9 +601,12 @@ output_liteblog <- here::here("_site", "posts", "2025-01-02_using-targets", "sit
 if (dir_exists(output_liteblog)) dir_delete(output_liteblog)
 post_003 <- path("source", "_003_schools-of-magic.rmd")
 post_004 <- path("source", "_004_spell-dice.rmd")
+page_404 <- path("source", "404.rmd")
 data_dir <- path("source", "data")
 if (file_exists(post_003)) file_delete(post_003)
 if (file_exists(post_004)) file_delete(post_004)
+if (file_exists(page_404)) file_delete(page_404)
+file_copy("../liteblog-source/404.rmd", page_404)
 if (dir_exists(data_dir)) dir_delete(data_dir)
 ```
 
@@ -651,7 +654,7 @@ For reasons that I have already forgotten, I made a decision to implement the bl
 Liteblog <- R6::R6Class(
   classname = "Liteblog",
   public = list(
-
+    
     initialize = function(root = ".",
                           source = "source",
                           output = "site",
@@ -661,13 +664,13 @@ Liteblog <- R6::R6Class(
       self$output <- output
       self$url <- url
     },
-
+    
     root = NULL,
     source = NULL,
     output = NULL,
     url = NULL,
     pattern = "[.][rR]?md$",
-
+    
     find_posts = function() {
       files <- fs::dir_ls(
         path = fs::path(self$root, self$source),
@@ -677,7 +680,7 @@ Liteblog <- R6::R6Class(
       )
       unname(unclass(files))
     },
-
+    
     find_static = function() {
       files <- fs::dir_ls(
         path = fs::path(self$root, self$source),
@@ -689,7 +692,7 @@ Liteblog <- R6::R6Class(
       )
       unname(unclass(files))
     },
-
+    
     fuse_post = function(file, ...) {
       output_path <- litedown::fuse(file)
       output_file <- fs::path_file(output_path)
@@ -705,7 +708,7 @@ Liteblog <- R6::R6Class(
       fs::dir_create(fs::path_dir(destination))
       fs::file_move(output_path, destination)
     },
-
+    
     copy_static = function(file) {
       destination <- file |>
         stringr::str_replace(
@@ -868,7 +871,7 @@ The other four targets are less interesting. Three of them (`blog_css`, `blog_hd
 
 ### Building the blog
 
-At this point, you probably (hopefully!) have a general sense of what the build process looks like for this blog. I haven't explained all the details yet, but I hope the gist is clear already. So -- kicking the can down the road just a little further -- let's ignore those tiresome details and call `tar_make()` and build the blog:
+At this point, you probably (hopefully!) have a general sense of what the build process looks like for this blog. I haven't explained all the details yet, but I hope the gist is clear already. So -- kicking the can down the road just a little further -- let's ignore those tiresome details and call `tar_make()` and build the blog. The output is long and tedious, but there's not much in there that we didn't already see earlier with the D&D spells project: 
 
 ```{r}
 #| label: liteblog-make
@@ -888,7 +891,14 @@ site_copy <- function(dir) {
 site_copy("site-1")
 ```
 
-You can browse the built website as it currently looks [here](./site-1/index.html).
+The blog has now been built (you can view it [here](./site-1/index.html)), and the project folder now looks like this:
+
+```{r}
+#| label: liteblog-filetree-built
+dir_tree()
+```
+
+Two new folders have been added: `_targets` stores metadata and tracked objects for the pipeline, and `site` contains the built website. 
 
 ::: {.column-margin}
 
@@ -896,6 +906,73 @@ You can browse the built website as it currently looks [here](./site-1/index.htm
 
 :::
 
+### Dynamic branching
+
+Okay, time to talk about the [dynamic branching](https://books.ropensci.org/targets/dynamic.html). You'll probably have noticed that although the `_targets.R` file *defines* only the one target called `post_files`, in the section of code that reads like this...
+
+```r
+tar_target(
+  name = post_files, 
+  command = post_paths, 
+  pattern = map(post_paths), 
+  format = "file"
+)
+```
+
+this corresponds to several *tracked* objects. Sifting through the output of calling `tar_make()` we see that `post_files` actually corresponds to the following four "branches"...
+
+```
+post_files_bfe2f528519c0ff0
+post_files_0d76c076472d293c
+post_files_64b628c4152d280c
+post_files_31d6f026c8bea126
+```
+
+Okay yeah but I didn't actually have to scan over the output, I could have just called `tar_branches()`:
+
+```{r}
+tar_branches(post_files)
+```
+
+What are these branches? Let's find out:
+
+```{r}
+tar_read(post_files)
+```
+
+```{r}
+post_file_bfe2f <- tar_read(post_files_bfe2f528519c0ff0)
+post_file_bfe2f
+```
+
+Hm. Okay so...
+
+### Editing an existing page
+
+Let's modify the source for the 404 page:
+
+```{r}
+#| echo: false
+file_copy(
+  path = "../liteblog-extra/404.rmd", 
+  new_path = "source/404.rmd", 
+  overwrite = TRUE
+)
+```
+
+What does that do in terms of target outdating?
+
+```{r}
+tar_outdated()
+```
+
+Make:
+
+```{r}
+tar_make(post_files)
+```
+
+### Adding new pages
 
 ```{r}
 #| label: liteblog-visnetwork-3
@@ -910,11 +987,6 @@ tar_make()
 ```
 
 ...only the `static_paths` and `post_paths` targets are rerun: nothing has actually changed in the `source` folder, so the fuse and copy targets are skipped.
-
-```{r}
-#| label: liteblog-filetree-built
-dir_tree()
-```
 
 Now suppose I were to add two new posts into the the `source` folder:
 
