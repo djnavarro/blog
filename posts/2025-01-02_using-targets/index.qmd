@@ -607,18 +607,22 @@ if (file_exists(post_004)) file_delete(post_004)
 if (dir_exists(data_dir)) dir_delete(data_dir)
 ```
 
-The second project I attempted was a little more ambitious: I decided to write a lightweight blogging tool using [litedown](https://yihui.org/litedown/) to convert R markdown documents to HTML pages, and using targets to manage the build process for the site as a whole.^[I seem to have developed a habit for rolling my own half-arsed blogging tools. About a year ago I got bored and built a very silly [blog based on knitr and eleventy](https://knitr-11ty.djnavarro.net/), for literally no reason except that I was bored. The [liteblog](https://liteblog.djnavarro.net/) site I put together for this side project is no less stupid.] 
+Okay, so the first project went better than I'd hoped. Shall we try something different then? This time around I decided I'd be a little more ambitious, and attempted to write a lightweight blogging tool using [litedown](https://yihui.org/litedown/) as a drop-in replacement for R markdown or quarto, and using targets to manage the build process for the site as a whole. I had two reasons for picking this as my second attempt. First, personal preference: I seem to have developed a habit for rolling my own half-arsed blogging tools. A very long time ago I wrote a bad blogging package called [caladown](https://caladown.djnavarro.net/) that I would not recommend anyone use ever, and about a about a year ago I repeated the foolishness over my summer break when I got bored and built a very silly [blog based on knitr and eleventy](https://knitr-11ty.djnavarro.net/), for literally no reason. Neither exercise was particularly useful, but both were fun. 
+
+The second reason for choosing this project is a little more serious. Unlike a simple analysis pipeline, there are a lot of details about the blog you don't know in advance. You don't know what the files will be called, you don't know how many of them there will be, and so on. On top of that, even if you are able to write a target for "build a blog post", you will need to build dozens or hundreds of tiny variations of the same target. There is *no way in hell* anyone wants to hand-code a targets pipeline for this situation: instead, we'll need a mechanism for defining and building targets on the fly, rather than trying to specify all the targets in advance.
+
+In other words, we'll need to think about [dynamic branching](https://books.ropensci.org/targets/dynamic.html).^[Okay fine, yes, if you've read the user manual you'd probably recognise that static branching would also work here if you were clever enough, and if I'm honest that was what I tried first. But then I realised that a blog is genuinely better suited to dynamic branching and the code was soooooo much simpler this way, so that's what I ran with in the end.]
 
 ### Designing the blog
 
-To give you a sense of how the blog is organised, this is what a "clean" version of the project looks like:
+Just like last time, before we talk about the targets pipeline, it's helpful to understand the rest of the project. After a bit of thought, I decided that a "liteblog" project would have a structure that looks something like this: 
 
 ```{r}
 #| label: liteblog-filetree-fresh
 dir_tree()
 ```
 
-Inside the `source` folder there are four R markdown documents that will need to be built. Of these four, two should be built into the site root directory:
+This is, of course, what a clean project looks like *before* the blog has been built. Inside the `source` folder there are four R markdown documents, each of which will become an HTML page in the blog. Of these four, two should be built into the site root directory:
 
 - the `index.rmd` document becomes the blog homepage `index.html`
 - the `404.rmd` document becomes the 404 page `404.html`
@@ -630,7 +634,7 @@ The other two documents both correspond to blog posts, and in both cases the und
 
 The other five files in the project folder define the structure and visual appearance of the blog itself. Three of these are grossly typical for any blogging tool:
 
-- `_liteblog-header.html` and `_liteblog-footer.html` are HTML document fragments that will be inserted above and below the content that is specified within the R markdown files
+- `_liteblog-header.html` and `_liteblog-footer.html` are HTML document fragments that will be inserted above and below the content in the R markdown
 - `_liteblog.css`, unsurprisingly, provides the styling
 
 The final two files are `_liteblog.R` and `_targets.R`. These do all the heavy lifting:
