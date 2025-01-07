@@ -749,7 +749,7 @@ This provides the core blogging toolkit that I'll now use when writing my target
 
 ### The build pipeline
 
-So, without further tedious exposition, here's the `_targets.R` file:
+The `_targets.R` file for this project is a little more complicated than the one I used for the D&D spells plots, and will take a bit of effort to unpack all of it. Let's start by looking at the file as a whole:
 
 ```{r}
 #| label: liteblog-targets-file
@@ -831,7 +831,7 @@ list(
 )
 ```
 
-This is a bit more elaborate than the pipeline I built in my data visualisation process, and uses some fancier tools to work. To get an overall sense of how the pipeline works, I'll call `tar_visnetwork()` again. First, here's a version that only shows the "core" of the build pipeline:
+Okay, yes, there's a lot to unpack here as the young people^[Well, millenials. Not young people. The actual young people in my life keep talking about "rizz" and telling me what slaps, and sending memes I don't understand. Frankly I need them to stop. My brain melted when my daughter tried to explain "skibidi" and it has never truly recovered.] say. Not only is the code considerably longer than it was last time, I'm also making use of several targets features that weren't present last time. Rather than try to explain it all at once, I'll start by calling `tar_visnetwork()` again, focusing only on the targets that form the core of my build pipeline:
 
 ```{r}
 #| label: liteblog-visnetwork-1
@@ -843,19 +843,19 @@ tar_visnetwork(
 )
 ```
 
-Reduced to this core, the build process is actually pretty simple. There are two separate pipelines. To build the blog posts, we use targets to:
+Let's look at the top path first. It comprises the following steps:
 
-1. Search the source folder to find all the R markdown posts. This is a *single* build target, it consists of a character vector `post_paths` that lists the paths to the various R markdown files. If a post is deleted, or a new R markdown file is added, this vector will change.
-2. Next, we create a target called `post_files` that keeps track of the R markdown files themselves. Or, to be more precise, we create a *pattern* that defines a collection of targets, one per file. If any of those files change, the target will be outdated. I'll talk more about patterns later.
-3. Finally, we have a `post_fuse` target which is used primarily for the side-effect that occurs when the target is built. Specifically, this is the target that renders the blog posts to HTML files, and then copies them over to the blog output folder. 
+1. Find the R markdown documents using `blog$find_posts()`. This creates a single build target, a character vector `post_paths`.
+2. Declare that *every* R markdown document should be a tracked file. This is the role of the `post_files` target, but this is actually many targets bundled together (see below). 
+3. For each tracked R markdown document, use `blog$post_fuse()` to build the post and move the resulting HTML file to the correct location. This is the role of `post_fuse`, and again this bundles many targets together.
 
-The second pipeline is analogous, but it operates on everything *other* than the markdown files:
+The lower pipeline is analogous but simpler:
 
-1. The `static_paths` target tracks the paths to the files
-2. The `static_files` target tracks the content of the files
+1. The `static_paths` target tracks the paths to static files
+2. The `static_files` target tracks the content of the static files
 3. The `static_copy` target copies the static files to the output folder
 
-Here's the full network:
+These two paths form the core of the build process, but it's not the whole story. So let's zoom out now and take a look at the complete network:
 
 ```{r}
 #| label: liteblog-visnetwork-2
@@ -868,7 +868,7 @@ The other four targets are less interesting. Three of them (`blog_css`, `blog_hd
 
 ### Building the blog
 
-Having now walked through the structure of the pipeline, it's time to call `tar_make()` and build the blog:
+At this point, you probably (hopefully!) have a general sense of what the build process looks like for this blog. I haven't explained all the details yet, but I hope the gist is clear already. So -- kicking the can down the road just a little further -- let's ignore those tiresome details and call `tar_make()` and build the blog:
 
 ```{r}
 #| label: liteblog-make
