@@ -137,16 +137,16 @@ dice_data <- function(spells) {
 }
 
 dice_plot <- function(dice_dat) {
-
+  
   palette <- hcl.colors(n = 10, palette = "PuOr")
-
+  
   labs <- dice_dat |>
     summarise(
       dice_txt = first(dice_txt),
       count = n(),
       .by = dice_txt
     )
-
+  
   pic <- ggplot(
     data = dice_dat,
     mapping = aes(
@@ -195,7 +195,7 @@ dice_plot <- function(dice_dat) {
       legend.title.position = "top",
       legend.byrow = TRUE
     )
-
+  
   ggsave(
     filename = "dice_pic.png",
     plot = pic,
@@ -204,7 +204,7 @@ dice_plot <- function(dice_dat) {
     units = "px",
     dpi = 150
   )
-
+  
   return("dice_pic.png")
 }
 
@@ -232,7 +232,7 @@ scholastic_data <- function(spells) {
 
 # hierarchical clustering for the schools and classes
 scholastic_clusters <- function(dat) {
-
+  
   # matrix of counts for each school/class combination
   mat <- dat |>
     pivot_wider(
@@ -243,27 +243,27 @@ scholastic_clusters <- function(dat) {
   rownames(mat) <- mat$class
   mat$class <- NULL
   as.matrix(mat)
-
+  
   # each school is a distribution over classes,
   # each class is a distribution over schools
   class_distribution  <- mat / replicate(ncol(mat), rowSums(mat))
   school_distribution <- t(mat) / (replicate(nrow(mat), colSums(mat)))
-
+  
   # pairwise distances
   class_dissimilarity  <- dist(class_distribution)
   school_dissimilarity <- dist(school_distribution)
-
+  
   # hierarchical clustering
   clusters <- list(
     class = hclust(class_dissimilarity, method = "average"),
     school = hclust(school_dissimilarity, method = "average")
   )
-
+  
   return(clusters)
 }
 
 scholastic_plot <- function(dat, clusters) {
-
+  
   pic <- ggplot(dat, aes(school, class, fill = count)) +
     geom_tile() +
     scale_x_dendro(
@@ -293,7 +293,7 @@ scholastic_plot <- function(dat, clusters) {
       legend.position = "bottom",
       legend.background = element_rect(fill = "#222", color = "#222")
     )
-
+  
   ggsave(
     filename = "scholastic_pic.png",
     plot = pic,
@@ -302,7 +302,7 @@ scholastic_plot <- function(dat, clusters) {
     units = "px",
     dpi = 150
   )
-
+  
   return("scholastic_pic.png")
 }
 ```
@@ -366,11 +366,11 @@ list(
   # setup
   tar_target(input, "spells.csv", format = "file"),
   tar_target(spells, read_csv(input, show_col_types = FALSE)),
-
+  
   # dice plot
   tar_target(dice_dat, dice_data(spells)),
   tar_target(dice_pic, dice_plot(dice_dat)),
-
+  
   # scholastic plot
   tar_target(scholastic_dat, scholastic_data(spells)),
   tar_target(scholastic_clus, scholastic_clusters(scholastic_dat)),
@@ -622,27 +622,26 @@ Just like last time, before we talk about the targets pipeline, it's helpful to 
 dir_tree()
 ```
 
-This is, of course, what a clean project looks like *before* the blog has been built. Inside the `source` folder there are four R markdown documents, each of which will become an HTML page in the blog. Of these four, two should be built into the site root directory:
+This is what a clean project looks like *before* the blog has been built. Inside the `source` folder there are four R markdown documents, corresponding to the four HTML documents that will be created when the site is built. Specifically:^[In all honesty I don't think this decision to use underscores to represent folder structure is a great design feature. Yes there was some logic for it at the time, but the underscore has an accepted meaning in the various R-based literate programming tools, and it is not good practice to violate user expectations the way I'm doing here. However, this is a silly side project that is not intended to be used for anything, so I feel no compunction at all about violating conventions.]
 
-- the `index.rmd` document becomes the blog homepage `index.html`
-- the `404.rmd` document becomes the 404 page `404.html`
+- `index.rmd` becomes the blog homepage `index.html`
+- `404.rmd` becomes the 404 page `404.html`
+- `_001_hello-cruel-world.rmd` becomes `/001/hello-cruel-world/index.html`
+- `_002_blog-object.rmd` becomes `/002/blog-object/index.html`
 
-The other two documents both correspond to blog posts, and in both cases the underscore is intended to have syntactic meaning. However, unlike the "usual" behaviour that you might expect (e.g., from R markdown, blogdown, quarto, etc), the underscore doesn't mean "do not build".^[If this were a serious project, this would be a very bad idea: the underscore has an accepted meaning in the various R-based literate programming tools, and it is not good practice to violate user expectations the way I'm doing here. However, this is a silly side project that is not intended to be used for anything, so I feel no compunction at all about violating conventions.] Instead, it is a signifier used to describe the file path expected for the built file:
+The other files are used to define blog structure, style, and build process:
 
-- `_001_hello-cruel-world.rmd` becomes a post at `/001/hello-cruel-world/index.html`
-- `_002_blog-object.rmd` becomes a post at `/002/blog-object/index.html`
+- `_liteblog-header.html` provides HTML for the blog navbar
+- `_liteblog-footer.html` provides HTML for the blog footer
+- `_liteblog.css` provides the visual styling
+- `_liteblog.R` supplies an [R6](https://r6.r-lib.org/) class called `Liteblog` used to configure the blog
+- `_targets.R` defines the build process
 
-The other five files in the project folder define the structure and visual appearance of the blog itself. Three of these are grossly typical for any blogging tool:
+The header, footer, and css files aren't very important for our purposes, and neither is the content of the R markdown files. All the heavy lifting is done by `_liteblog.R` and `_targets.R`. I'll talk about each of these in turn.
 
-- `_liteblog-header.html` and `_liteblog-footer.html` are HTML document fragments that will be inserted above and below the content in the R markdown
-- `_liteblog.css`, unsurprisingly, provides the styling
+### The Liteblog class
 
-The final two files are `_liteblog.R` and `_targets.R`. These do all the heavy lifting:
-
-- `_liteblog.R` supplies an [R6](https://r6.r-lib.org/) class called `Liteblog`. The intended usage is that any specific blog is an instance of the class, such that user-specified options (e.g., the name of the site folder, the url for the blog, etc) are supplied as arguments, and the resulting blog object provides all the core functionality (e.g., building pages to the correct folder) for the blog. 
-- `_targets.R` provides the build tools: monitoring the source directory, building outdated pages, etc. 
-
-Because the `_liteblog.R` and `_targets.R` scripts are intended to work together, I'll discuss both of them. First, here's what the `_liteblog.R` script looks like:
+For reasons that I have already forgotten, I made a decision to implement the blogging tool as an R6 class. This blog post isn't the place to talk about how R6 works, but conveniently [Hadley already did this better than I could](https://adv-r.hadley.nz/r6.html) so now I don't have to. Even more conveniently, it doesn't matter too much for this post if you don't already know R6. But for those who do, here's the code:
 
 ```{r}
 #| label: liteblog-object-file
@@ -653,7 +652,10 @@ Liteblog <- R6::R6Class(
   classname = "Liteblog",
   public = list(
 
-    initialize = function(root, source, output, url) {
+    initialize = function(root = ".",
+                          source = "source",
+                          output = "site",
+                          url = NULL) {
       self$root <- root
       self$source <- source
       self$output <- output
@@ -667,7 +669,7 @@ Liteblog <- R6::R6Class(
     pattern = "[.][rR]?md$",
 
     find_posts = function() {
-      files <- dir_ls(
+      files <- fs::dir_ls(
         path = fs::path(self$root, self$source),
         recurse = TRUE,
         regexp = self$pattern,
@@ -717,28 +719,31 @@ Liteblog <- R6::R6Class(
         overwrite = TRUE
       )
     }
-
   )
 )
 ```
 
-It's not a very complicated R6 class as these things go, and to be honest it could use a lot more love than I've given it. But it works for my purposes so I'll run with it. To initialise a blog I call `Liteblog$new()`, indicating that the current directory is the project root, the `source` folder is the `"source"` folder, the `output` folder is called `"site"`, and the `url` for the blog is `"liteblog.djnavarro.net"`:
+It's... honestly not that great.^[Why is the `url` field never used? Should `pattern` really be called that? Shouldn't some of these be private methods/fields? Blah blah blah. I threw this together quickly, it's not meant to be taken seriously.] It is fit for purpose, so to speak, but if I were ever intending to use this in real life I'd want to give it a lot more love than I have to date. Nevertheless, just to give you a sense of how it works, I'll create a new blog object by calling `Liteblog$new()`:
 
 ```{r}
-blog <- Liteblog$new(
-  root = fs::path_abs("."),
-  source = "source",
-  output = "site",
-  url = "liteblog.djnavarro.net"
-)
+blog <- Liteblog$new()
+blog
 ```
 
-Looking at the code above, you can see that there are four methods:
+Ignoring the boring parts of this output, you can see that this `blog` object has four methods that will get used when the site gets built by our targets pipeline:
 
-- `$find_posts()` looks in the source folder and detects the R markdown documents
-- `$find_static()` looks in the source folder and detects other files
-- `$fuse_post()` takes the path to one R markdown document as input, and will build it (called "fusing" in the litedown nomenclature) to an HTML file at the appropriate location
-- `$copy_static()` takes the path to a static file as input, and copies it to the output folder
+- `$find_posts()` detects R markdown documents in the source folder
+- `$find_static()` detects other files in the source folder
+- `$fuse_post()` converts an R markdown file to HTML in the output folder
+- `$copy_static()` copies a file to the output folder
+
+There's not much to be gained by diving very deep into these functions, but as an example, here's what you would do to discover all the R markdown posts in this project:
+
+```{r}
+blog$find_posts()
+```
+
+
 
 This provides the core blogging toolkit that I'll now use when writing my target pipeline. It's *extremely* bare bones, and not very customisable, but of course my intention here isn't to build a proper blogging platform. It's just a toy that I can play with when building a more complex build pipeline. Speaking of which...
 
@@ -755,7 +760,7 @@ library(targets)
 tar_source("_liteblog.R")
 
 list(
-
+  
   # define blog configuration
   tar_target(
     name = blog,
@@ -768,7 +773,7 @@ list(
       url = "liteblog.djnavarro.net"
     )
   ),
-
+  
   # track configuration files
   tar_target(
     name = blog_rds, 
@@ -778,7 +783,7 @@ list(
   tar_target(blog_css, "_liteblog.css", format = "file"),
   tar_target(blog_hdr, "_liteblog-header.html", format = "file"),
   tar_target(blog_ftr, "_liteblog-footer.html", format = "file"),
-
+  
   # detect file paths (always run)
   tar_target(
     name = post_paths, 
@@ -790,7 +795,7 @@ list(
     command = blog$find_static(), 
     cue = tar_cue("always")
   ),
-
+  
   # specify file targets
   tar_target(
     name = post_files, 
@@ -804,7 +809,7 @@ list(
     pattern = map(static_paths), 
     format = "file"
   ),
-
+  
   # fuse targets depend on blog configuration files
   # copy targets don't need dependencies
   tar_target(
@@ -860,7 +865,7 @@ tar_visnetwork()
 In this version, you can see that most of the build pipeline depends on the `blog` object: that makes sense because this is the R6 object that defines methods such as `$find_posts()` and `$fuse_post()` that are called when the blog is built. Similarly, since `blog` is itself an instance of the `Liteblog` class, the class itself is an upstream dependency of `blog`.
 
 The other four targets are less interesting. Three of them (`blog_css`, `blog_hdr`, and `blog_ftr`) are used to keep track of the style files (i.e. `_liteblog.css`, `_liteblog-header.html`, and `_liteblog-footer.html`), so that if any of those files are modified the it will trigger a rebuild of any target that uses those files. The fourth one, `blog_rds`, is a bit of an odd one and I'm not sure I like it: basically it's just a serialised version of the `blog` object itself written to an rds file. The only reason that one is there is to make `blog` visible *within* an R markdown post (i.e., a post can read the `_liteblog.rds` file and call any of the relevant methods if necessary). In general you wouldn't need that, but it's useful if you want to construct a listing page. 
- 
+
 ### Building the blog
 
 Having now walked through the structure of the pipeline, it's time to call `tar_make()` and build the blog:
@@ -869,6 +874,28 @@ Having now walked through the structure of the pipeline, it's time to call `tar_
 #| label: liteblog-make
 tar_make()
 ```
+
+```{r}
+#| label: copy-liteblog-to-site-1
+#| echo: false
+site_copy <- function(dir) {
+  dir_copy(
+    path = "site",
+    new_path = here::here("_site", "posts", "2025-01-02_using-targets", dir),
+    overwrite = TRUE
+  )
+}
+site_copy("site-1")
+```
+
+You can browse the built website as it currently looks [here](./site-1/index.html).
+
+::: {.column-margin}
+
+[![the blog homepage](./img/liteblog-home.png)](./site-1/index.html)
+
+:::
+
 
 ```{r}
 #| label: liteblog-visnetwork-3
@@ -923,17 +950,13 @@ tar_make()
 
 This is clearly an inefficient design: whenever the source folder changes, all of the posts get rendered again. In an ideal world we wouldn't do this, and only those posts (or static files) that have been modified would get run again. However, it would take a little more effort than I'm willing to expend on this side-project to make this work properly: in order for it to behave the way we want it to, the build targets need to be able to inspect the internal contents of each blog post to determine which static files (or other posts!) are hidden dependencies. Discovering those dependencies reliably seems like hard work, so for the purposes of this toy project it just renders everything again.
 
-You can browse the built website [here](./site/index.html)
+You can browse the built website [here](./site-2/index.html)
 
 
 ```{r}
-#| label: copy-liteblog-to-site
+#| label: copy-liteblog-to-site-2
 #| echo: false
-dir_copy(
-  path = "site",
-  new_path = here::here("_site", "posts", "2025-01-02_using-targets", "site"),
-  overwrite = TRUE
-)
+site_copy("site-2")
 ```
 
 ### Postmortem

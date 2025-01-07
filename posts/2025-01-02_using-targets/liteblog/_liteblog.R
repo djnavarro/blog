@@ -2,7 +2,10 @@ Liteblog <- R6::R6Class(
   classname = "Liteblog",
   public = list(
 
-    initialize = function(root, source, output, url) {
+    initialize = function(root = ".",
+                          source = "source",
+                          output = "site",
+                          url = NULL) {
       self$root <- root
       self$source <- source
       self$output <- output
@@ -66,7 +69,5 @@ Liteblog <- R6::R6Class(
         overwrite = TRUE
       )
     }
-
   )
 )
-
