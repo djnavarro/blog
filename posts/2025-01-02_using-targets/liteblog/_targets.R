@@ -58,7 +58,6 @@ list(
     name = post_fuse,
     command = blog$fuse_post(
       post_files,
-      post_paths,
       blog_css,
       blog_hdr,
       blog_ftr

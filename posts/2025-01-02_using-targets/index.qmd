@@ -819,7 +819,6 @@ list(
     name = post_fuse,
     command = blog$fuse_post(
       post_files,
-      post_paths,
       blog_css,
       blog_hdr,
       blog_ftr
@@ -849,10 +848,10 @@ tar_visnetwork(
 Let's look at the top path first. It comprises the following steps:
 
 1. Find the R markdown documents using `blog$find_posts()`. This creates a single build target, a character vector `post_paths`.
-2. Declare that *every* R markdown document should be a tracked file. This is the role of the `post_files` target, but this is actually many targets bundled together (see below). 
-3. For each tracked R markdown document, use `blog$post_fuse()` to build the post and move the resulting HTML file to the correct location. This is the role of `post_fuse`, and again this bundles many targets together.
+2. Declare that *every* R markdown document should be a tracked file. This is the role of the `post_files` target, but it's a target comprised of several *branches*, and those branches are defined using a *pattern*. More on this later.
+3. For each tracked R markdown document, use `blog$post_fuse()` to build the post and move the resulting HTML file to the correct location. This is the role of `post_fuse`, and again this is a pattern target comprised of many branches.
 
-The lower pipeline is analogous but simpler:
+The second path in the pipeline is analogous, but simpler:
 
 1. The `static_paths` target tracks the paths to static files
 2. The `static_files` target tracks the content of the static files
@@ -865,13 +864,13 @@ These two paths form the core of the build process, but it's not the whole story
 tar_visnetwork()
 ```
 
-In this version, you can see that most of the build pipeline depends on the `blog` object: that makes sense because this is the R6 object that defines methods such as `$find_posts()` and `$fuse_post()` that are called when the blog is built. Similarly, since `blog` is itself an instance of the `Liteblog` class, the class itself is an upstream dependency of `blog`.
+In this version, you can see that most of the build pipeline depends on the `blog` object: that makes sense because this is the R6 object that defines methods like `$find_posts()` and `$fuse_post()`, and it's these functions that are called when the blog is built. Similarly, since `blog` is itself an instance of the `Liteblog` class, the class itself is an upstream dependency of `blog`.
 
 The other four targets are less interesting. Three of them (`blog_css`, `blog_hdr`, and `blog_ftr`) are used to keep track of the style files (i.e. `_liteblog.css`, `_liteblog-header.html`, and `_liteblog-footer.html`), so that if any of those files are modified the it will trigger a rebuild of any target that uses those files. The fourth one, `blog_rds`, is a bit of an odd one and I'm not sure I like it: basically it's just a serialised version of the `blog` object itself written to an rds file. The only reason that one is there is to make `blog` visible *within* an R markdown post (i.e., a post can read the `_liteblog.rds` file and call any of the relevant methods if necessary). In general you wouldn't need that, but it's useful if you want to construct a listing page. 
 
 ### Building the blog
 
-At this point, you probably (hopefully!) have a general sense of what the build process looks like for this blog. I haven't explained all the details yet, but I hope the gist is clear already. So -- kicking the can down the road just a little further -- let's ignore those tiresome details and call `tar_make()` and build the blog. The output is long and tedious, but there's not much in there that we didn't already see earlier with the D&D spells project: 
+At this point, you probably (hopefully!) have a general sense of what the build process looks like for this blog. I haven't explained all the details yet, but I hope the gist is clear already. So let's ignore those tiresome details for a little longer and call `tar_make()` to build the blog. The output is long, but there's not much in there that we didn't already see earlier with the D&D spells project: 
 
 ```{r}
 #| label: liteblog-make
@@ -891,14 +890,14 @@ site_copy <- function(dir) {
 site_copy("site-1")
 ```
 
-Setting aside obvious questions like "what's going on with all those weirdly named targets like `post_files_bfe2f528519c0ff0`???", the gist of this is pretty clear: everything has run smoothly and the blog has been built. In fact, you can see a live version of what this version of the blog looks like (i.e., when the source files are as described up to this point in thhis post) [here](./site-1/index.html)). After the blog has been built, the project folder now looks like this:
+Setting aside obvious questions like "what's going on with all those weirdly named targets like `post_files_bfe2f528519c0ff0`???", the gist of this is pretty clear: everything has run smoothly and the blog has been built. In fact, you can see a live version of the blog, built from the source as it exists up to this point: it's [here](./site-1/index.html)). The project folder now looks like this:
 
 ```{r}
 #| label: liteblog-filetree-built
 dir_tree()
 ```
 
-Two new folders have been added: `_targets` stores metadata and tracked objects for the pipeline, and `site` contains the built website. Yay! It works!
+The key thing to notice here is that two new folders have been created: `_targets` stores metadata and tracked objects for the pipeline, and `site` contains the built website. Yay! It works!
 
 So now let's start digging into the details...
 
@@ -910,16 +909,16 @@ So now let's start digging into the details...
 
 ### Always-run targets
 
-One of the problems I ran into pretty early in this project was how to monitor the source directory properly. It's easy enough to list the contents of a directory, of course: the `$find_posts()` and `$find_static()` methods for `Liteblog` objects do exactly this. But consider a target like this:
+One of the problems I ran into pretty early in this project was how to monitor the source directory properly. It's easy enough to scan a directory to find the files that live there: the `$find_posts()` and `$find_static()` methods for `Liteblog` objects do exactly this. But consider a target like this:
 
 ```{r}
 #| results: hide
 tar_target(post_paths, blog$find_posts())
 ```
 
-This target stores a list of all R markdown posts, but it has only one dependency: the `blog` object itself. It is *not* dependent on the current state of the source folder. It can't be: a folder in the file system isn't an R object and cannot itself be a target. So, if the state of the folder changes (e.g., a new blog post is added), targets would have no way of knowing that the `post_paths` target is now outdated. Moreover, since the contents of the folder can change at any time (even when R isn't running), it doesn't make a lot of sense to ask targets to constantly monitor the folder.
+This target stores a list of all R markdown posts, but it has only one dependency: the `blog` object itself. It is not dependent on the state of the source folder. It can't be: a folder in the file system isn't an R object. So, if the state of the folder changes (e.g., a new blog post is added), targets would have no way to know that the `post_paths` target needs to be updated. 
 
-A simpler solution is to declare that the `post_paths` target should never be considered up to date, and must always be run whenever `tar_make()` is called. We can do this by using [`tar_cue()`](https://docs.ropensci.org/targets/reference/tar_cue.html), and that's why the actual target is defined like this:
+A simple solution is to declare that the `post_paths` target must always be run whenever `tar_make()` is called. We can do this by using [`tar_cue()`](https://docs.ropensci.org/targets/reference/tar_cue.html), and that's why the actual target is defined like this:
 
 ```{r}
 #| results: hide
@@ -930,7 +929,7 @@ tar_target(
 )
 ```
 
-A similar approach is taken when defining the `static_paths` target. These two targets are always executed at build time, which makes a lot of sense for a project like this one. What this means, in practice, is that even though I have just run `tar_make()` and haven't changed any of the files since then, the network visualisation appears like this: 
+A similar approach is taken when defining the `static_paths` target. These two targets are always executed at build time. What this means, in practice, is that even though I have just run `tar_make()` and haven't changed any of the files since then, the network visualisation appears like this: 
 
 ```{r}
 #| label: liteblog-visnetwork-3
@@ -954,9 +953,17 @@ As expected, the `static_paths` and `post_paths` targets are both re-run, as ins
 
 ### Dynamic branching
 
-Okay, I've put it off as long as I could, but the time has come where I have to talk about [dynamic branching](https://books.ropensci.org/targets/dynamic.html). You'll probably have noticed that although the `_targets.R` file *defines* only the one target called `post_files`, in the section of code that reads like this...
+The second design feature that caused me some grief was how to write a `_targets.R` file that would build every R markdown post in the source folder, even though I wouldn't know in advance how many of those documents exist or what they would be called. As described in the last section, one part of the solution was to define the `post_paths` target, which would always be executed at build time, and would store the names of all the R markdown documents. I'll use [`tar_read()`](https://docs.ropensci.org/targets/reference/tar_read.html) to pull these paths from targets storage:^[These are absolute paths on my local filesystem, but in hindsight this seems like a bad choice: it would make more sense for them to be relative paths, taken from the blog root folder. Oh well.]
 
-```r
+```{r}
+#| column: page-right
+tar_read(post_paths)
+```
+
+Each of these corresponds to a file that needs to be tracked, in much the same way I treated `spells.csv` as a tracked file in the D&D plots project. There are multiple ways you can do this in targets, but after a few different tries I decided to use [dynamic branching](https://books.ropensci.org/targets/dynamic.html), a trick in which a single target is split at build time into multiple distinct branches. For the liteblog project, I defined `post_file` like this:
+
+```{r}
+#| results: hide
 tar_target(
   name = post_files, 
   command = post_paths, 
@@ -965,37 +972,17 @@ tar_target(
 )
 ```
 
-this corresponds to several *tracked* objects. Sifting through the output of calling `tar_make()` we see that `post_files` actually corresponds to the following four "branches"...
-
-```
-post_files_bfe2f528519c0ff0
-post_files_0d76c076472d293c
-post_files_64b628c4152d280c
-post_files_31d6f026c8bea126
-```
-
-Of course, I didn't actually have to do this manually. Instead, I could have called [`tar_branches()`](https://docs.ropensci.org/targets/reference/tar_branches.html):
+By including the argument `pattern = map(post_paths)`, I am telling targets to create a separate branch for `post_files` for every element in the `post_paths` vector. Specifically, since I've also set `format = "file"`, I'm instructing each of these branches to track the state of one of these files. If that file changes, the branch that tracks the file will become outdated and need to be rebuilt. To get a little more information about the branches, I can call  [`tar_branches()`](https://docs.ropensci.org/targets/reference/tar_branches.html):
 
 ```{r}
-pf_branches <- tar_branches(post_files)
-pf_branches
+tar_branches(post_files)
 ```
 
-As you can see by comparison to the manual listing above, the first column lists the four branches of the `post_files` target. 
+Each branch corresponds to a single row in this table: the value of the `post_files` column records the name assigned by targets to that branch, and the value of the `post_paths` column assigns a name to the corresponding element of the `post_paths` target over which we have branched. These names aren't particularly user-friendly, to be sure, but nevertheless my problem is solved.
 
-```{r}
-tar_read_raw(pf_branches$post_files[1])
-```
-
-```{r}
-tar_read(post_paths)
-```
-
-Hm. Okay so...
+To see how this dynamic branching plays out in practice, let's see what happens when I modify the content of the blog in different ways. 
 
 ### Editing an existing page
-
-Let's modify the source for the 404 page:
 
 ```{r}
 #| echo: false
@@ -1006,17 +993,25 @@ file_copy(
 )
 ```
 
-What does that do in terms of target outdating?
+Let's modify the source for the 404 page. I'll change it so that the title of the page now reads "404 PAGE NOT FOUND" rather than simply "404" as it had previously. 
 
-```{r}
-tar_outdated()
-```
+Okay... yep, done. I've edited the file now. 
 
-Make:
+How does this edit get picked up in the targets build process? This time around, I'll build it in stages so that the output is a little easier to read. First, let's build the `post_files` target again:
 
 ```{r}
 tar_make(post_files)
 ```
+
+You can see that one (and only one) of the `post_files` branches has been rebuilt, specifically the one corresponding to the `404.rmd` file that we just edited. Okay, next let's see what happens when `post_fuse` is rebuilt:
+
+```{r}
+tar_make(post_fuse)
+```
+
+Because `post_paths` is set to always run, it does indeed run, but nothing has changed. As a consequence, none of the downstream `post_files` branches need updating (not surprising, since I literally just updated them in the previous line of code!) Nevertheless, one of the posts (i.e., the modified `404.rmd` file) has not yet been fused into an HTML file. So that one branch is dispatched by targets, and the `404.html` file in the site folder has now been updated appropriately. 
+
+Yay!
 
 ### Adding new pages
 
@@ -1040,28 +1035,30 @@ dir_copy(
 dir_tree("source")
 ```
 
-```{r}
-#| label: liteblog-visnetwork-4
-tar_visnetwork()
-```
-
-Looks the same. But this time when we call `tar_make()`, there will actually be some changes to the `source` folder, so the downstream targets run:
+Again, let's see how this plays out in the build process:
 
 ```{r}
 #| label: liteblog-make-2
+tar_make(post_files)
+```
+
+```{r}
+tar_make(post_fuse)
+```
+
+```{r}
 tar_make()
 ```
 
-This is clearly an inefficient design: whenever the source folder changes, all of the posts get rendered again. In an ideal world we wouldn't do this, and only those posts (or static files) that have been modified would get run again. However, it would take a little more effort than I'm willing to expend on this side-project to make this work properly: in order for it to behave the way we want it to, the build targets need to be able to inspect the internal contents of each blog post to determine which static files (or other posts!) are hidden dependencies. Discovering those dependencies reliably seems like hard work, so for the purposes of this toy project it just renders everything again.
-
 You can browse the built website [here](./site-2/index.html)
-
 
 ```{r}
 #| label: copy-liteblog-to-site-2
 #| echo: false
 site_copy("site-2")
 ```
+
+### Editing the style files
 
 ### Postmortem
 
