@@ -22,9 +22,13 @@ set.seed(1)
 
 <!--------------- post begins here ----------------->
 
-About 18 months ago I wrote a post about [balrogs and makefiles](/posts/2023-06-30_makefiles/). The post was long, strange, but also cathartic. It had bothered me for years that I didn't really understand [make](https://www.gnu.org/software/make/) as well as I wanted to, and it was really helpful to write up some notes about it as a way of teaching myself how to use it more effectively than I had done in the past.^[In all fairness, this is the *primary* purpose of this blog. Yes, it makes me very happy that other people find my posts useful and/or enjoyable, but that is actually a secondary goal. I write these posts for myself, because the act of writing is also an act of learning for me.] Buried at the very end of the post, somewhat sheepishly, is a reference to the [targets](https://docs.ropensci.org/targets/) R package by Will Landau. Even then I knew that I was going to need to learn how to use targets, but... life gets in the way. I have been preoccupied by other tasks, sadly, and it has taken me until now to (a) sit down and read through the [targets user manual](https://books.ropensci.org/targets/), and (b) come up with some [fun side projects](https://github.com/djnavarro/tartoys) that would give me the opportunity to try it out. 
+About 18 months ago I wrote a post about [balrogs and makefiles](/posts/2023-06-30_makefiles/). The post was long, strange, but also cathartic. It had bothered me for years that I didn't really understand [make](https://www.gnu.org/software/make/) as well as I wanted to, and it was really helpful to write up some notes about it as a way of teaching myself how to use it more effectively than I had done in the past.^[In all fairness, this is the *primary* purpose of this blog. Yes, it makes me very happy that other people find my posts useful and/or enjoyable, but that is actually a secondary goal. I write these posts for myself, because the act of writing is also an act of learning for me.] Buried at the very end of the post is an almost-apologetic reference to the [targets](https://docs.ropensci.org/targets/) R package by Will Landau, which provides a similar toolkit designed to work cleanly for R users.
 
-Right then. Time to play around with targets...
+Even then I knew that I was going to need to learn how to use targets, but somehow I never quite got around to it... life gets in the way, I suppose. I have been preoccupied by other tasks, sadly, and it has taken me until now to (a) sit down and read through the [targets user manual](https://books.ropensci.org/targets/), and (b) come up with some fun side projects that would give me the opportunity to try it out. 
+
+Thankfully, I recently managed to set some time aside to teach myself how to use the package, using three toy projects that I bundled together into a [small github repository](https://github.com/djnavarro/tartoys). Realising that I would inevitably forget what I've learned if I didn't write up some notes on the projects, I decided to write them up as a blog post. 
+
+So, here goes. This is a tale of three targets...
 
 ```{r}
 #| label: package-load
@@ -37,11 +41,17 @@ library(dplyr)
 library(fs)
 ```
 
-## Project 1: An analysis pipeline
+<br><br>
 
-The first project is the fun [Tidy Tuesday](https://github.com/rfordatascience/tidytuesday/tree/main/data/2024/2024-12-17) project that I described in my [last post](/posts/2025-01-01_schools-of-magic/). In that post, I talked about two data visualisations I made using a data set about Dungeons & Dragons spells. When I wrote that post, I didn't talk about targets at all, and none of the code presented in that blog post is written in a "targets-friendly" way. However, all though that form of the code was the simplest way to write it up, it's not how I originally wrote it. The actual code was written for targets (it's included as the `spells` folder in [this github repo](https://github.com/djnavarro/tartoys)). 
+![Pipelines, of course](./img/chuttersnap-_EFvjSgbw1c-unsplash.jpg)
 
-As it happens, I have a slightly-modified copy of the project in the `spells` directory within this blog post, so that I can play with this project within this post. This in turn brings us to the first point to make about targets: it's a *project-oriented* tool, in the sense that each project corresponds to a single folder (and its sub-folders), and not surprisingly it's easiest to use from within the project. To make my life easier I'll sometimes change that directory so that when I'm discussing a specific targets project, the code will execute from the root directory of that project. At the R console we would use `setwd()` to do so, but that's not the best approach within a knitr-based tool (quarto, rmarkdown, etc), and you will get warning messages if you try to do it that way. The preferred method for changing directories with an R markdown or quarto document is to set the `root.dir` knitr option. Because I'll be doing that several times in this post, I'll write a little convenience function to take care of this whenever I need to switch to a new project:
+<br>
+
+## Story 1: An analysis pipeline
+
+The first pipeline I built using targets was based the fun [Tidy Tuesday](https://github.com/rfordatascience/tidytuesday/tree/main/data/2024/2024-12-17) visualisations that I described in my [last post](/posts/2025-01-01_schools-of-magic/). In that post, I talked about two images I made using a data set about Dungeons & Dragons spells. When I wrote that post, I didn't talk about targets at all, and none of the code presented in that blog post is written in a "targets-friendly" way. However, although that form of the code was the simplest way to write it up, it's not how I originally wrote it. It was originally written as a targets pipeline. 
+
+As it happens, I have a slightly-modified copy of the project in the `spells` directory within this blog post, so that I can play with the project within this post. Yay! But this in turn brings us to the first point to make about targets: it's a *project-oriented* tool, in the sense that each project corresponds to a single folder (and its sub-folders), and not surprisingly it's easiest to use from within the project. To make my life easier I'll sometimes change that directory so that when I'm discussing a specific targets project, the code will execute from the root directory of that project. At the R console we would use `setwd()` to do so, but that's not the best approach within a knitr-based tool (quarto, rmarkdown, etc), and you will get warning messages if you try to do it that way. The preferred method for changing directories with an R markdown or quarto document is to set the `root.dir` knitr option. Because I'll be doing that several times in this post, I'll write a little convenience function to take care of this whenever I need to switch to a new project:
 
 ```{r}
 #| label: set-knitr-dir
@@ -552,7 +562,7 @@ This, as you might imagine, is extremely useful in situations where you have a p
 
 :::
 
-### Postmortem
+### Epilogue
 
 For a first attempt at using targets, I'm not unhappy with this. It did what I needed it to do, and I was able to understand the basic structure of the package.
 
@@ -584,7 +594,13 @@ Having been burned by this in the past, I made the decision that my plotting tar
 
 Still, it seems very clear to me that the problem can be solved with targets. My toy example is a kind of worst case solution... if all else fails, I can define the output image itself as the the target to be built. From that perspective, mission accomplished babes. 
 
-## Project 2: Building a blog
+<br><br>
+
+![An even more lightweight blog](./img/joanna-kosinska-B6yDtYs2IgY-unsplash.jpg)
+
+<br>
+
+## Story 2: Building a blog
 
 ```{r}
 #| label: switch-to-liteblog
@@ -1100,16 +1116,27 @@ tar_make()
 site_copy("site-3")
 ```
 
-...that's exactly what happens. You can browse the built website, as it appears at this stage in the process, at the cached location [here](./site-3/index.html).
+...that's exactly what happens. Again, you can browse the built website, horrible CSS failures and all, at the cached location [here](./site-3/index.html).
 
+::: {.column-margin}
 
-### Postmortem
+[![light-themed blog homepage](./img/liteblog-home-2.png)](./site-3/index.html)
+
+:::
+
+### Epilogue
 
 That... went about as well as could be expected, I suppose? This "liteblog" project was never intended to be a serious effort at writing a blogging tool, but it does actually work, and maybe one day I'll use it for something. Probably not though. Having gotten as far as I have into building this, I can see a lot of design limitations that would cause difficulties if I ever tried to use it for real.
 
 So what was the point? Well, I now have a basic understanding of litedown, and I have a better grasp of dynamic branching in targets. That's a big win as far as I'm concerned. 
 
-## Project 3: Parallel computing
+<br><br>
+
+![Multiple threads in parallel](./img/kamran-gholami-20T7ctRArtA-unsplash.jpg)
+
+<br>
+
+## Story 3: Parallel computing
 
 For my third foray into targets -- and the last one for this blog post -- I wanted to take a look at how a targets pipeline can be distributed across multiple parallel threads. Happily, parallel computing is supported out of the box in targets, using the [crew](https://wlandau.github.io/crew/) package to distribute the targets across multiple workers. This ended up being the smallest of my three projects, but there are a couple slightly different variations on how I looked at this, and I'll go through them each in turn. 
 
@@ -1341,7 +1368,7 @@ ggplot(target_trace, aes(begins_at, worker, color = name)) +
 
 Okay yes, this now gives a detailed sense of which targets are dispatched to which workers, and at what time, but it does leave one thing missing: the total elapsed time shown by `target_trace` is about 5-6 seconds, but when I called `tar_make()` the total elapsed time was reported to be a little over 7 seconds. The discrepancy between the two is that the timing information recorded by my code doesn't account for the time that the targets package spends setting up the pipeline, and recording metadata and target values in the `_targets` folder. 
 
-### Postmortem
+### Epilogue
 
 One thing that bothered me a *lot* about the second version, when I implemented it, was this nagging intuition that most of what I was doing felt unnecessary. Certainly, there's a limitation to the output of `tar_crew()` in the sense that it doesn't tell you the worker to which each target was assigned, nor does it report the pid for each worker. That seems a little odd to me, but I am very willing to believe there's a good reason for that.
 
