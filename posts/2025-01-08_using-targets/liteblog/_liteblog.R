@@ -1,0 +1,73 @@
+Liteblog <- R6::R6Class(
+  classname = "Liteblog",
+  public = list(
+
+    initialize = function(root = ".",
+                          source = "source",
+                          output = "site",
+                          url = NULL) {
+      self$root <- root
+      self$source <- source
+      self$output <- output
+      self$url <- url
+    },
+
+    root = NULL,
+    source = NULL,
+    output = NULL,
+    url = NULL,
+    pattern = "[.][rR]?md$",
+
+    find_posts = function() {
+      files <- fs::dir_ls(
+        path = fs::path(self$root, self$source),
+        recurse = TRUE,
+        regexp = self$pattern,
+        type = "file"
+      )
+      unname(unclass(files))
+    },
+
+    find_static = function() {
+      files <- fs::dir_ls(
+        path = fs::path(self$root, self$source),
+        recurse = TRUE,
+        regexp = self$pattern,
+        invert = TRUE,
+        all = TRUE,
+        type = "file"
+      )
+      unname(unclass(files))
+    },
+
+    fuse_post = function(file, ...) {
+      output_path <- litedown::fuse(file)
+      output_file <- fs::path_file(output_path)
+      if (stringr::str_detect(output_file, "^_")) {
+        destination <- output_file |>
+          stringr::str_replace_all("_", "/") |>
+          stringr::str_replace("\\.html$", "/index.html") |>
+          stringr::str_replace("^", paste0(self$output, "/"))
+      } else {
+        destination <- paste0(self$output, "/", output_file)
+      }
+      destination <- fs::path(self$root, destination)
+      fs::dir_create(fs::path_dir(destination))
+      fs::file_move(output_path, destination)
+    },
+
+    copy_static = function(file) {
+      destination <- file |>
+        stringr::str_replace(
+          pattern = paste0("/", self$source, "/"),
+          replacement = paste0("/", self$output, "/")
+        )
+      fs::dir_create(fs::path_dir(destination))
+      fs::file_copy(
+        path = file,
+        new_path = destination,
+        overwrite = TRUE
+      )
+    }
+  )
+)

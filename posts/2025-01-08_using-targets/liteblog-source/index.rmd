@@ -1,0 +1,54 @@
+---
+title: Targets, litedown, and D&D spells
+output:
+  litedown::html_format:
+    meta:
+      css: ["@article", "../_liteblog.css"]
+      js: ["@sidenotes"]
+      include-before: "_liteblog-header.html"
+      include-after: "_liteblog-footer.html"
+    options:
+      toc: false
+      js_highlight:
+        package: prism
+        style: tomorrow
+---
+
+In the dying days of 2024, a woman who should have been doing something useful like replaying the original Mass Effect trilogy for the n-th time instead decided to create a terrible blogging tool using litedown and targets. This absurdity, which has absolutely no use case whatsoever and should be shunned by one and all, is the inevitable outcome of her poor decision making. This is an automatically constructed list of posts:
+
+```{r}
+#| label: post-listing
+#| echo: false
+#| results: "asis"
+.blog <- readRDS("../_liteblog.rds")
+
+write_post_list <- function() {
+  post_dir <- fs::path(.blog$root, .blog$source)
+  post <- post_dir |>
+    fs::dir_ls(regexp = .blog$pattern) |>
+    fs::path_rel(post_dir) |>
+    stringr::str_subset("^_") |>
+    stringr::str_remove("^_") |>
+    stringr::str_replace_all("_", "/") |>
+    fs::path_ext_remove() |>
+    stringr::str_replace("$", "/index.html")
+  purrr::walk(
+    rev(post),
+    \(p) {
+      t <- p |>
+        fs::path_dir() |>
+        fs::path_split() |>
+        unlist() |>
+        paste(collapse = " / ")
+      l <- paste0("[", t, "](", p, ")")
+      cat("-", l, "\n")
+    }
+  )
+}
+
+write_post_list()
+```
+
+This version of the "liteblog" is constructed from within the (quarto) blog post describing the project. Another version is live at [liteblog.djnavarro.net](https://liteblog.djnavarro.net). 
+
+To return to the parent blog post, click [here](/posts/2025-01-02_using-targets/).

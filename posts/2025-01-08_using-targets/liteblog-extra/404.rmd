@@ -1,0 +1,16 @@
+---
+title: 404 FILE NOT FOUND
+output:
+  litedown::html_format:
+    meta:
+      css: ["@article", "../_liteblog.css"]
+      js: ["@sidenotes"]
+      include-before: "_liteblog-header.html"
+      include-after: "_liteblog-footer.html"
+    options:
+      toc: false
+      js_highlight:
+        package: prism
+        style: tomorrow
+---
+
