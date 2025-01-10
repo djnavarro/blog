@@ -632,7 +632,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell">
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>dice_dat <span class="ot">&lt;-</span> <span class="fu">dice_data</span>(spells)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>In essence, that’s what I’m doing with the call to <code>tar_target()</code>. I’m specifying that the command <code>set_output_dir()</code> is to be executed, and the results should be stored as the variable <code>output</code>. However, instead of immediately executing this code in the current R environment, what <code>tar_target()</code> does is create the infrastructure so that this command can be incorporated into the pipeline when it actually gets built. With one exception, this is the recipe I followed for constructing all the targeta in my <code>_targets.R</code> script.</p>
+<p>In essence, that’s what I’m doing with the call to <code>tar_target()</code>. I’m specifying that the command <code>dice_data(spells)</code> is to be executed, and the results should be stored as the variable <code>dice_dat</code>. However, instead of immediately executing this code in the current R environment, what <code>tar_target()</code> does is create the infrastructure so that this command can be incorporated into the pipeline when it actually gets built. With one exception, this is the recipe I followed for constructing all the targets in my <code>_targets.R</code> script.</p>
 <p>The one exception to this pattern occurs on line 14 of <code>_targets.R</code>, where my target is defined by this call to <code>tar_target()</code>:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tar_target</span>(</span>
@@ -667,20 +667,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tar_make</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>▶ dispatched target input
-● completed target input [0.285 seconds, 302.514 kilobytes]
+● completed target input [0.314 seconds, 302.514 kilobytes]
 ▶ dispatched target spells
-● completed target spells [0.115 seconds, 73.966 kilobytes]
+● completed target spells [0.111 seconds, 73.966 kilobytes]
 ▶ dispatched target scholastic_dat
 ● completed target scholastic_dat [0.016 seconds, 401 bytes]
 ▶ dispatched target dice_dat
-● completed target dice_dat [0.028 seconds, 33.486 kilobytes]
+● completed target dice_dat [0.024 seconds, 33.486 kilobytes]
 ▶ dispatched target scholastic_clus
-● completed target scholastic_clus [0.016 seconds, 634 bytes]
+● completed target scholastic_clus [0.014 seconds, 634 bytes]
 ▶ dispatched target dice_pic
-● completed target dice_pic [0.95 seconds, 65 bytes]
+● completed target dice_pic [0.908 seconds, 65 bytes]
 ▶ dispatched target scholastic_pic
-● completed target scholastic_pic [0.221 seconds, 71 bytes]
-▶ ended pipeline [1.727 seconds]</code></pre>
+● completed target scholastic_pic [0.229 seconds, 71 bytes]
+▶ ended pipeline [1.708 seconds]</code></pre>
 </div>
 </div>
 <p>The output here is pretty descriptive, but it’s still worth expanding on it a little. For each target, there are two lines of output that look like this:</p>
@@ -727,7 +727,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tar_visnetwork</span>(<span class="at">targets_only =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div class="visNetwork html-widget html-fill-item" id="htmlwidget-21697d58abce2053a245" style="width:100%;height:464px;"></div>
-<script type="application/json" data-for="htmlwidget-21697d58abce2053a245">{"x":{"nodes":{"name":["dice_dat","dice_pic","input","scholastic_clus","scholastic_dat","scholastic_pic","spells"],"type":["stem","stem","stem","stem","stem","stem","stem"],"description":[null,null,null,null,null,null,null],"status":["uptodate","uptodate","uptodate","uptodate","uptodate","uptodate","uptodate"],"seconds":[0.028,0.95,0.285,0.016,0.016,0.221,0.115],"bytes":[33486,65,302514,634,401,71,73966],"branches":[null,null,null,null,null,null,null],"label":["dice_dat","dice_pic","input","scholastic_clus","scholastic_dat","scholastic_pic","spells"],"color":["#354823","#354823","#354823","#354823","#354823","#354823","#354823"],"id":["dice_dat","dice_pic","input","scholastic_clus","scholastic_dat","scholastic_pic","spells"],"level":[3,4,1,4,3,5,2],"shape":["dot","dot","dot","dot","dot","dot","dot"]},"edges":{"from":["scholastic_dat","spells","input","scholastic_clus","scholastic_dat","dice_dat","spells"],"to":["scholastic_clus","scholastic_dat","spells","scholastic_pic","scholastic_pic","dice_pic","dice_dat"],"arrows":["to","to","to","to","to","to","to"]},"nodesToDataframe":true,"edgesToDataframe":true,"options":{"width":"100%","height":"100%","nodes":{"shape":"dot","physics":false},"manipulation":{"enabled":false},"edges":{"smooth":{"type":"cubicBezier","forceDirection":"horizontal"}},"physics":{"stabilization":false},"interaction":{"zoomSpeed":1},"layout":{"hierarchical":{"enabled":true,"direction":"LR"}}},"groups":null,"width":null,"height":null,"idselection":{"enabled":false,"style":"width: 150px; height: 26px","useLabels":true,"main":"Select by id"},"byselection":{"enabled":false,"style":"width: 150px; height: 26px","multiple":false,"hideColor":"rgba(200,200,200,0.5)","highlight":false},"main":{"text":"","style":"font-family:Georgia, Times New Roman, Times, serif;font-weight:bold;font-size:20px;text-align:center;"},"submain":null,"footer":null,"background":"rgba(0, 0, 0, 0)","highlight":{"enabled":true,"hoverNearest":false,"degree":{"from":1,"to":1},"algorithm":"hierarchical","hideColor":"rgba(200,200,200,0.5)","labelOnly":true},"collapse":{"enabled":true,"fit":false,"resetHighlight":true,"clusterOptions":null,"keepCoord":true,"labelSuffix":"(cluster)"},"legend":{"width":0.2,"useGroups":false,"position":"right","ncol":1,"stepX":100,"stepY":100,"zoom":true,"nodes":{"label":["Up to date","Stem"],"color":["#354823","#899DA4"],"shape":["dot","dot"]},"nodesToDataframe":true},"tooltipStay":300,"tooltipStyle":"position: fixed;visibility:hidden;padding: 5px;white-space: nowrap;font-family: verdana;font-size:14px;font-color:#000000;background-color: #f5f4ed;-moz-border-radius: 3px;-webkit-border-radius: 3px;border-radius: 3px;border: 1px solid #808074;box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);"},"evals":[],"jsHooks":[]}</script>
+<script type="application/json" data-for="htmlwidget-21697d58abce2053a245">{"x":{"nodes":{"name":["dice_dat","dice_pic","input","scholastic_clus","scholastic_dat","scholastic_pic","spells"],"type":["stem","stem","stem","stem","stem","stem","stem"],"description":[null,null,null,null,null,null,null],"status":["uptodate","uptodate","uptodate","uptodate","uptodate","uptodate","uptodate"],"seconds":[0.024,0.908,0.314,0.014,0.016,0.229,0.111],"bytes":[33486,65,302514,634,401,71,73966],"branches":[null,null,null,null,null,null,null],"label":["dice_dat","dice_pic","input","scholastic_clus","scholastic_dat","scholastic_pic","spells"],"color":["#354823","#354823","#354823","#354823","#354823","#354823","#354823"],"id":["dice_dat","dice_pic","input","scholastic_clus","scholastic_dat","scholastic_pic","spells"],"level":[3,4,1,4,3,5,2],"shape":["dot","dot","dot","dot","dot","dot","dot"]},"edges":{"from":["scholastic_dat","spells","input","scholastic_clus","scholastic_dat","dice_dat","spells"],"to":["scholastic_clus","scholastic_dat","spells","scholastic_pic","scholastic_pic","dice_pic","dice_dat"],"arrows":["to","to","to","to","to","to","to"]},"nodesToDataframe":true,"edgesToDataframe":true,"options":{"width":"100%","height":"100%","nodes":{"shape":"dot","physics":false},"manipulation":{"enabled":false},"edges":{"smooth":{"type":"cubicBezier","forceDirection":"horizontal"}},"physics":{"stabilization":false},"interaction":{"zoomSpeed":1},"layout":{"hierarchical":{"enabled":true,"direction":"LR"}}},"groups":null,"width":null,"height":null,"idselection":{"enabled":false,"style":"width: 150px; height: 26px","useLabels":true,"main":"Select by id"},"byselection":{"enabled":false,"style":"width: 150px; height: 26px","multiple":false,"hideColor":"rgba(200,200,200,0.5)","highlight":false},"main":{"text":"","style":"font-family:Georgia, Times New Roman, Times, serif;font-weight:bold;font-size:20px;text-align:center;"},"submain":null,"footer":null,"background":"rgba(0, 0, 0, 0)","highlight":{"enabled":true,"hoverNearest":false,"degree":{"from":1,"to":1},"algorithm":"hierarchical","hideColor":"rgba(200,200,200,0.5)","labelOnly":true},"collapse":{"enabled":true,"fit":false,"resetHighlight":true,"clusterOptions":null,"keepCoord":true,"labelSuffix":"(cluster)"},"legend":{"width":0.2,"useGroups":false,"position":"right","ncol":1,"stepX":100,"stepY":100,"zoom":true,"nodes":{"label":["Up to date","Stem"],"color":["#354823","#899DA4"],"shape":["dot","dot"]},"nodesToDataframe":true},"tooltipStay":300,"tooltipStyle":"position: fixed;visibility:hidden;padding: 5px;white-space: nowrap;font-family: verdana;font-size:14px;font-color:#000000;background-color: #f5f4ed;-moz-border-radius: 3px;-webkit-border-radius: 3px;border-radius: 3px;border: 1px solid #808074;box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);"},"evals":[],"jsHooks":[]}</script>
 </div>
 </div>
 <p>If I call <code>tar_make()</code> again, essentially nothing happens. All the targets are up to date, so everything is skipped:</p>
@@ -741,7 +741,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 ✔ skipped target scholastic_clus
 ✔ skipped target dice_pic
 ✔ skipped target scholastic_pic
-✔ skipped pipeline [0.074 seconds]</code></pre>
+✔ skipped pipeline [0.069 seconds]</code></pre>
 </div>
 </div>
 <p>Nice!</p>
@@ -750,7 +750,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tar_visnetwork</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div class="visNetwork html-widget html-fill-item" id="htmlwidget-4929a56e939b13f92b78" style="width:100%;height:464px;"></div>
-<script type="application/json" data-for="htmlwidget-4929a56e939b13f92b78">{"x":{"nodes":{"name":["dice_dat","dice_pic","input","scholastic_clus","scholastic_dat","scholastic_pic","spells","scholastic_data","scholastic_plot","dice_data","scholastic_clusters","dice_plot"],"type":["stem","stem","stem","stem","stem","stem","stem","function","function","function","function","function"],"description":[null,null,null,null,null,null,null,null,null,null,null,null],"status":["uptodate","uptodate","uptodate","uptodate","uptodate","uptodate","uptodate","uptodate","uptodate","uptodate","uptodate","uptodate"],"seconds":[0.028,0.95,0.285,0.016,0.016,0.221,0.115,null,null,null,null,null],"bytes":[33486,65,302514,634,401,71,73966,null,null,null,null,null],"branches":[null,null,null,null,null,null,null,null,null,null,null,null],"label":["dice_dat","dice_pic","input","scholastic_clus","scholastic_dat","scholastic_pic","spells","scholastic_data","scholastic_plot","dice_data","scholastic_clusters","dice_plot"],"color":["#354823","#354823","#354823","#354823","#354823","#354823","#354823","#354823","#354823","#354823","#354823","#354823"],"id":["dice_dat","dice_pic","input","scholastic_clus","scholastic_dat","scholastic_pic","spells","scholastic_data","scholastic_plot","dice_data","scholastic_clusters","dice_plot"],"level":[3,4,1,4,3,5,2,1,1,1,1,1],"shape":["dot","dot","dot","dot","dot","dot","dot","triangle","triangle","triangle","triangle","triangle"]},"edges":{"from":["scholastic_clusters","scholastic_dat","scholastic_data","spells","input","scholastic_clus","scholastic_dat","scholastic_plot","dice_dat","dice_plot","dice_data","spells"],"to":["scholastic_clus","scholastic_clus","scholastic_dat","scholastic_dat","spells","scholastic_pic","scholastic_pic","scholastic_pic","dice_pic","dice_pic","dice_dat","dice_dat"],"arrows":["to","to","to","to","to","to","to","to","to","to","to","to"]},"nodesToDataframe":true,"edgesToDataframe":true,"options":{"width":"100%","height":"100%","nodes":{"shape":"dot","physics":false},"manipulation":{"enabled":false},"edges":{"smooth":{"type":"cubicBezier","forceDirection":"horizontal"}},"physics":{"stabilization":false},"interaction":{"zoomSpeed":1},"layout":{"hierarchical":{"enabled":true,"direction":"LR"}}},"groups":null,"width":null,"height":null,"idselection":{"enabled":false,"style":"width: 150px; height: 26px","useLabels":true,"main":"Select by id"},"byselection":{"enabled":false,"style":"width: 150px; height: 26px","multiple":false,"hideColor":"rgba(200,200,200,0.5)","highlight":false},"main":{"text":"","style":"font-family:Georgia, Times New Roman, Times, serif;font-weight:bold;font-size:20px;text-align:center;"},"submain":null,"footer":null,"background":"rgba(0, 0, 0, 0)","highlight":{"enabled":true,"hoverNearest":false,"degree":{"from":1,"to":1},"algorithm":"hierarchical","hideColor":"rgba(200,200,200,0.5)","labelOnly":true},"collapse":{"enabled":true,"fit":false,"resetHighlight":true,"clusterOptions":null,"keepCoord":true,"labelSuffix":"(cluster)"},"legend":{"width":0.2,"useGroups":false,"position":"right","ncol":1,"stepX":100,"stepY":100,"zoom":true,"nodes":{"label":["Up to date","Stem","Function"],"color":["#354823","#899DA4","#899DA4"],"shape":["dot","dot","triangle"]},"nodesToDataframe":true},"tooltipStay":300,"tooltipStyle":"position: fixed;visibility:hidden;padding: 5px;white-space: nowrap;font-family: verdana;font-size:14px;font-color:#000000;background-color: #f5f4ed;-moz-border-radius: 3px;-webkit-border-radius: 3px;border-radius: 3px;border: 1px solid #808074;box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);"},"evals":[],"jsHooks":[]}</script>
+<script type="application/json" data-for="htmlwidget-4929a56e939b13f92b78">{"x":{"nodes":{"name":["dice_dat","dice_pic","input","scholastic_clus","scholastic_dat","scholastic_pic","spells","scholastic_data","scholastic_plot","dice_data","scholastic_clusters","dice_plot"],"type":["stem","stem","stem","stem","stem","stem","stem","function","function","function","function","function"],"description":[null,null,null,null,null,null,null,null,null,null,null,null],"status":["uptodate","uptodate","uptodate","uptodate","uptodate","uptodate","uptodate","uptodate","uptodate","uptodate","uptodate","uptodate"],"seconds":[0.024,0.908,0.314,0.014,0.016,0.229,0.111,null,null,null,null,null],"bytes":[33486,65,302514,634,401,71,73966,null,null,null,null,null],"branches":[null,null,null,null,null,null,null,null,null,null,null,null],"label":["dice_dat","dice_pic","input","scholastic_clus","scholastic_dat","scholastic_pic","spells","scholastic_data","scholastic_plot","dice_data","scholastic_clusters","dice_plot"],"color":["#354823","#354823","#354823","#354823","#354823","#354823","#354823","#354823","#354823","#354823","#354823","#354823"],"id":["dice_dat","dice_pic","input","scholastic_clus","scholastic_dat","scholastic_pic","spells","scholastic_data","scholastic_plot","dice_data","scholastic_clusters","dice_plot"],"level":[3,4,1,4,3,5,2,1,1,1,1,1],"shape":["dot","dot","dot","dot","dot","dot","dot","triangle","triangle","triangle","triangle","triangle"]},"edges":{"from":["scholastic_clusters","scholastic_dat","scholastic_data","spells","input","scholastic_clus","scholastic_dat","scholastic_plot","dice_dat","dice_plot","dice_data","spells"],"to":["scholastic_clus","scholastic_clus","scholastic_dat","scholastic_dat","spells","scholastic_pic","scholastic_pic","scholastic_pic","dice_pic","dice_pic","dice_dat","dice_dat"],"arrows":["to","to","to","to","to","to","to","to","to","to","to","to"]},"nodesToDataframe":true,"edgesToDataframe":true,"options":{"width":"100%","height":"100%","nodes":{"shape":"dot","physics":false},"manipulation":{"enabled":false},"edges":{"smooth":{"type":"cubicBezier","forceDirection":"horizontal"}},"physics":{"stabilization":false},"interaction":{"zoomSpeed":1},"layout":{"hierarchical":{"enabled":true,"direction":"LR"}}},"groups":null,"width":null,"height":null,"idselection":{"enabled":false,"style":"width: 150px; height: 26px","useLabels":true,"main":"Select by id"},"byselection":{"enabled":false,"style":"width: 150px; height: 26px","multiple":false,"hideColor":"rgba(200,200,200,0.5)","highlight":false},"main":{"text":"","style":"font-family:Georgia, Times New Roman, Times, serif;font-weight:bold;font-size:20px;text-align:center;"},"submain":null,"footer":null,"background":"rgba(0, 0, 0, 0)","highlight":{"enabled":true,"hoverNearest":false,"degree":{"from":1,"to":1},"algorithm":"hierarchical","hideColor":"rgba(200,200,200,0.5)","labelOnly":true},"collapse":{"enabled":true,"fit":false,"resetHighlight":true,"clusterOptions":null,"keepCoord":true,"labelSuffix":"(cluster)"},"legend":{"width":0.2,"useGroups":false,"position":"right","ncol":1,"stepX":100,"stepY":100,"zoom":true,"nodes":{"label":["Up to date","Stem","Function"],"color":["#354823","#899DA4","#899DA4"],"shape":["dot","dot","triangle"]},"nodesToDataframe":true},"tooltipStay":300,"tooltipStyle":"position: fixed;visibility:hidden;padding: 5px;white-space: nowrap;font-family: verdana;font-size:14px;font-color:#000000;background-color: #f5f4ed;-moz-border-radius: 3px;-webkit-border-radius: 3px;border-radius: 3px;border: 1px solid #808074;box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);"},"evals":[],"jsHooks":[]}</script>
 </div>
 </div>
 <p>Now let’s suppose that, for whatever reason, I tinker with the plotting code for the “schools of magic” image. Perhaps I want to use a different colour scheme or something. So I go back into my code and change the code for the <code>scholastic_plot()</code> function, but <em>only</em> that function <em>&lt;edits the file behind the scenes…&gt;</em>. Let’s see what this does to the pipeline visualisation:</p>
@@ -758,7 +758,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tar_visnetwork</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div class="visNetwork html-widget html-fill-item" id="htmlwidget-56457827ab1876f7c579" style="width:100%;height:464px;"></div>
-<script type="application/json" data-for="htmlwidget-56457827ab1876f7c579">{"x":{"nodes":{"name":["dice_dat","dice_pic","input","scholastic_clus","scholastic_dat","scholastic_pic","spells","scholastic_data","scholastic_plot","dice_data","scholastic_clusters","dice_plot"],"type":["stem","stem","stem","stem","stem","stem","stem","function","function","function","function","function"],"description":[null,null,null,null,null,null,null,null,null,null,null,null],"status":["uptodate","uptodate","uptodate","uptodate","uptodate","outdated","uptodate","uptodate","outdated","uptodate","uptodate","uptodate"],"seconds":[0.028,0.95,0.285,0.016,0.016,0.221,0.115,null,null,null,null,null],"bytes":[33486,65,302514,634,401,71,73966,null,null,null,null,null],"branches":[null,null,null,null,null,null,null,null,null,null,null,null],"label":["dice_dat","dice_pic","input","scholastic_clus","scholastic_dat","scholastic_pic","spells","scholastic_data","scholastic_plot","dice_data","scholastic_clusters","dice_plot"],"color":["#354823","#354823","#354823","#354823","#354823","#78B7C5","#354823","#354823","#78B7C5","#354823","#354823","#354823"],"id":["dice_dat","dice_pic","input","scholastic_clus","scholastic_dat","scholastic_pic","spells","scholastic_data","scholastic_plot","dice_data","scholastic_clusters","dice_plot"],"level":[3,4,1,4,3,5,2,1,1,1,1,1],"shape":["dot","dot","dot","dot","dot","dot","dot","triangle","triangle","triangle","triangle","triangle"]},"edges":{"from":["scholastic_clusters","scholastic_dat","scholastic_data","spells","input","scholastic_clus","scholastic_dat","scholastic_plot","dice_dat","dice_plot","dice_data","spells"],"to":["scholastic_clus","scholastic_clus","scholastic_dat","scholastic_dat","spells","scholastic_pic","scholastic_pic","scholastic_pic","dice_pic","dice_pic","dice_dat","dice_dat"],"arrows":["to","to","to","to","to","to","to","to","to","to","to","to"]},"nodesToDataframe":true,"edgesToDataframe":true,"options":{"width":"100%","height":"100%","nodes":{"shape":"dot","physics":false},"manipulation":{"enabled":false},"edges":{"smooth":{"type":"cubicBezier","forceDirection":"horizontal"}},"physics":{"stabilization":false},"interaction":{"zoomSpeed":1},"layout":{"hierarchical":{"enabled":true,"direction":"LR"}}},"groups":null,"width":null,"height":null,"idselection":{"enabled":false,"style":"width: 150px; height: 26px","useLabels":true,"main":"Select by id"},"byselection":{"enabled":false,"style":"width: 150px; height: 26px","multiple":false,"hideColor":"rgba(200,200,200,0.5)","highlight":false},"main":{"text":"","style":"font-family:Georgia, Times New Roman, Times, serif;font-weight:bold;font-size:20px;text-align:center;"},"submain":null,"footer":null,"background":"rgba(0, 0, 0, 0)","highlight":{"enabled":true,"hoverNearest":false,"degree":{"from":1,"to":1},"algorithm":"hierarchical","hideColor":"rgba(200,200,200,0.5)","labelOnly":true},"collapse":{"enabled":true,"fit":false,"resetHighlight":true,"clusterOptions":null,"keepCoord":true,"labelSuffix":"(cluster)"},"legend":{"width":0.2,"useGroups":false,"position":"right","ncol":1,"stepX":100,"stepY":100,"zoom":true,"nodes":{"label":["Up to date","Outdated","Stem","Function"],"color":["#354823","#78B7C5","#899DA4","#899DA4"],"shape":["dot","dot","dot","triangle"]},"nodesToDataframe":true},"tooltipStay":300,"tooltipStyle":"position: fixed;visibility:hidden;padding: 5px;white-space: nowrap;font-family: verdana;font-size:14px;font-color:#000000;background-color: #f5f4ed;-moz-border-radius: 3px;-webkit-border-radius: 3px;border-radius: 3px;border: 1px solid #808074;box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);"},"evals":[],"jsHooks":[]}</script>
+<script type="application/json" data-for="htmlwidget-56457827ab1876f7c579">{"x":{"nodes":{"name":["dice_dat","dice_pic","input","scholastic_clus","scholastic_dat","scholastic_pic","spells","scholastic_data","scholastic_plot","dice_data","scholastic_clusters","dice_plot"],"type":["stem","stem","stem","stem","stem","stem","stem","function","function","function","function","function"],"description":[null,null,null,null,null,null,null,null,null,null,null,null],"status":["uptodate","uptodate","uptodate","uptodate","uptodate","outdated","uptodate","uptodate","outdated","uptodate","uptodate","uptodate"],"seconds":[0.024,0.908,0.314,0.014,0.016,0.229,0.111,null,null,null,null,null],"bytes":[33486,65,302514,634,401,71,73966,null,null,null,null,null],"branches":[null,null,null,null,null,null,null,null,null,null,null,null],"label":["dice_dat","dice_pic","input","scholastic_clus","scholastic_dat","scholastic_pic","spells","scholastic_data","scholastic_plot","dice_data","scholastic_clusters","dice_plot"],"color":["#354823","#354823","#354823","#354823","#354823","#78B7C5","#354823","#354823","#78B7C5","#354823","#354823","#354823"],"id":["dice_dat","dice_pic","input","scholastic_clus","scholastic_dat","scholastic_pic","spells","scholastic_data","scholastic_plot","dice_data","scholastic_clusters","dice_plot"],"level":[3,4,1,4,3,5,2,1,1,1,1,1],"shape":["dot","dot","dot","dot","dot","dot","dot","triangle","triangle","triangle","triangle","triangle"]},"edges":{"from":["scholastic_clusters","scholastic_dat","scholastic_data","spells","input","scholastic_clus","scholastic_dat","scholastic_plot","dice_dat","dice_plot","dice_data","spells"],"to":["scholastic_clus","scholastic_clus","scholastic_dat","scholastic_dat","spells","scholastic_pic","scholastic_pic","scholastic_pic","dice_pic","dice_pic","dice_dat","dice_dat"],"arrows":["to","to","to","to","to","to","to","to","to","to","to","to"]},"nodesToDataframe":true,"edgesToDataframe":true,"options":{"width":"100%","height":"100%","nodes":{"shape":"dot","physics":false},"manipulation":{"enabled":false},"edges":{"smooth":{"type":"cubicBezier","forceDirection":"horizontal"}},"physics":{"stabilization":false},"interaction":{"zoomSpeed":1},"layout":{"hierarchical":{"enabled":true,"direction":"LR"}}},"groups":null,"width":null,"height":null,"idselection":{"enabled":false,"style":"width: 150px; height: 26px","useLabels":true,"main":"Select by id"},"byselection":{"enabled":false,"style":"width: 150px; height: 26px","multiple":false,"hideColor":"rgba(200,200,200,0.5)","highlight":false},"main":{"text":"","style":"font-family:Georgia, Times New Roman, Times, serif;font-weight:bold;font-size:20px;text-align:center;"},"submain":null,"footer":null,"background":"rgba(0, 0, 0, 0)","highlight":{"enabled":true,"hoverNearest":false,"degree":{"from":1,"to":1},"algorithm":"hierarchical","hideColor":"rgba(200,200,200,0.5)","labelOnly":true},"collapse":{"enabled":true,"fit":false,"resetHighlight":true,"clusterOptions":null,"keepCoord":true,"labelSuffix":"(cluster)"},"legend":{"width":0.2,"useGroups":false,"position":"right","ncol":1,"stepX":100,"stepY":100,"zoom":true,"nodes":{"label":["Up to date","Outdated","Stem","Function"],"color":["#354823","#78B7C5","#899DA4","#899DA4"],"shape":["dot","dot","dot","triangle"]},"nodesToDataframe":true},"tooltipStay":300,"tooltipStyle":"position: fixed;visibility:hidden;padding: 5px;white-space: nowrap;font-family: verdana;font-size:14px;font-color:#000000;background-color: #f5f4ed;-moz-border-radius: 3px;-webkit-border-radius: 3px;border-radius: 3px;border: 1px solid #808074;box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);"},"evals":[],"jsHooks":[]}</script>
 </div>
 </div>
 <p>Not only does targets detect that the function has been altered, it also recognises that the <code>scholastic_pic</code> target (and only that target) is now outdated:</p>
@@ -773,7 +773,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tar_visnetwork</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div class="visNetwork html-widget html-fill-item" id="htmlwidget-26b22985179f0d812c91" style="width:100%;height:464px;"></div>
-<script type="application/json" data-for="htmlwidget-26b22985179f0d812c91">{"x":{"nodes":{"name":["dice_dat","dice_pic","input","scholastic_clus","scholastic_dat","scholastic_pic","spells","scholastic_data","scholastic_plot","dice_data","scholastic_clusters","dice_plot"],"type":["stem","stem","stem","stem","stem","stem","stem","function","function","function","function","function"],"description":[null,null,null,null,null,null,null,null,null,null,null,null],"status":["outdated","outdated","uptodate","uptodate","uptodate","outdated","uptodate","uptodate","outdated","outdated","uptodate","uptodate"],"seconds":[0.028,0.95,0.285,0.016,0.016,0.221,0.115,null,null,null,null,null],"bytes":[33486,65,302514,634,401,71,73966,null,null,null,null,null],"branches":[null,null,null,null,null,null,null,null,null,null,null,null],"label":["dice_dat","dice_pic","input","scholastic_clus","scholastic_dat","scholastic_pic","spells","scholastic_data","scholastic_plot","dice_data","scholastic_clusters","dice_plot"],"color":["#78B7C5","#78B7C5","#354823","#354823","#354823","#78B7C5","#354823","#354823","#78B7C5","#78B7C5","#354823","#354823"],"id":["dice_dat","dice_pic","input","scholastic_clus","scholastic_dat","scholastic_pic","spells","scholastic_data","scholastic_plot","dice_data","scholastic_clusters","dice_plot"],"level":[3,4,1,4,3,5,2,1,1,1,1,1],"shape":["dot","dot","dot","dot","dot","dot","dot","triangle","triangle","triangle","triangle","triangle"]},"edges":{"from":["scholastic_clusters","scholastic_dat","scholastic_data","spells","input","scholastic_clus","scholastic_dat","scholastic_plot","dice_dat","dice_plot","dice_data","spells"],"to":["scholastic_clus","scholastic_clus","scholastic_dat","scholastic_dat","spells","scholastic_pic","scholastic_pic","scholastic_pic","dice_pic","dice_pic","dice_dat","dice_dat"],"arrows":["to","to","to","to","to","to","to","to","to","to","to","to"]},"nodesToDataframe":true,"edgesToDataframe":true,"options":{"width":"100%","height":"100%","nodes":{"shape":"dot","physics":false},"manipulation":{"enabled":false},"edges":{"smooth":{"type":"cubicBezier","forceDirection":"horizontal"}},"physics":{"stabilization":false},"interaction":{"zoomSpeed":1},"layout":{"hierarchical":{"enabled":true,"direction":"LR"}}},"groups":null,"width":null,"height":null,"idselection":{"enabled":false,"style":"width: 150px; height: 26px","useLabels":true,"main":"Select by id"},"byselection":{"enabled":false,"style":"width: 150px; height: 26px","multiple":false,"hideColor":"rgba(200,200,200,0.5)","highlight":false},"main":{"text":"","style":"font-family:Georgia, Times New Roman, Times, serif;font-weight:bold;font-size:20px;text-align:center;"},"submain":null,"footer":null,"background":"rgba(0, 0, 0, 0)","highlight":{"enabled":true,"hoverNearest":false,"degree":{"from":1,"to":1},"algorithm":"hierarchical","hideColor":"rgba(200,200,200,0.5)","labelOnly":true},"collapse":{"enabled":true,"fit":false,"resetHighlight":true,"clusterOptions":null,"keepCoord":true,"labelSuffix":"(cluster)"},"legend":{"width":0.2,"useGroups":false,"position":"right","ncol":1,"stepX":100,"stepY":100,"zoom":true,"nodes":{"label":["Outdated","Up to date","Stem","Function"],"color":["#78B7C5","#354823","#899DA4","#899DA4"],"shape":["dot","dot","dot","triangle"]},"nodesToDataframe":true},"tooltipStay":300,"tooltipStyle":"position: fixed;visibility:hidden;padding: 5px;white-space: nowrap;font-family: verdana;font-size:14px;font-color:#000000;background-color: #f5f4ed;-moz-border-radius: 3px;-webkit-border-radius: 3px;border-radius: 3px;border: 1px solid #808074;box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);"},"evals":[],"jsHooks":[]}</script>
+<script type="application/json" data-for="htmlwidget-26b22985179f0d812c91">{"x":{"nodes":{"name":["dice_dat","dice_pic","input","scholastic_clus","scholastic_dat","scholastic_pic","spells","scholastic_data","scholastic_plot","dice_data","scholastic_clusters","dice_plot"],"type":["stem","stem","stem","stem","stem","stem","stem","function","function","function","function","function"],"description":[null,null,null,null,null,null,null,null,null,null,null,null],"status":["outdated","outdated","uptodate","uptodate","uptodate","outdated","uptodate","uptodate","outdated","outdated","uptodate","uptodate"],"seconds":[0.024,0.908,0.314,0.014,0.016,0.229,0.111,null,null,null,null,null],"bytes":[33486,65,302514,634,401,71,73966,null,null,null,null,null],"branches":[null,null,null,null,null,null,null,null,null,null,null,null],"label":["dice_dat","dice_pic","input","scholastic_clus","scholastic_dat","scholastic_pic","spells","scholastic_data","scholastic_plot","dice_data","scholastic_clusters","dice_plot"],"color":["#78B7C5","#78B7C5","#354823","#354823","#354823","#78B7C5","#354823","#354823","#78B7C5","#78B7C5","#354823","#354823"],"id":["dice_dat","dice_pic","input","scholastic_clus","scholastic_dat","scholastic_pic","spells","scholastic_data","scholastic_plot","dice_data","scholastic_clusters","dice_plot"],"level":[3,4,1,4,3,5,2,1,1,1,1,1],"shape":["dot","dot","dot","dot","dot","dot","dot","triangle","triangle","triangle","triangle","triangle"]},"edges":{"from":["scholastic_clusters","scholastic_dat","scholastic_data","spells","input","scholastic_clus","scholastic_dat","scholastic_plot","dice_dat","dice_plot","dice_data","spells"],"to":["scholastic_clus","scholastic_clus","scholastic_dat","scholastic_dat","spells","scholastic_pic","scholastic_pic","scholastic_pic","dice_pic","dice_pic","dice_dat","dice_dat"],"arrows":["to","to","to","to","to","to","to","to","to","to","to","to"]},"nodesToDataframe":true,"edgesToDataframe":true,"options":{"width":"100%","height":"100%","nodes":{"shape":"dot","physics":false},"manipulation":{"enabled":false},"edges":{"smooth":{"type":"cubicBezier","forceDirection":"horizontal"}},"physics":{"stabilization":false},"interaction":{"zoomSpeed":1},"layout":{"hierarchical":{"enabled":true,"direction":"LR"}}},"groups":null,"width":null,"height":null,"idselection":{"enabled":false,"style":"width: 150px; height: 26px","useLabels":true,"main":"Select by id"},"byselection":{"enabled":false,"style":"width: 150px; height: 26px","multiple":false,"hideColor":"rgba(200,200,200,0.5)","highlight":false},"main":{"text":"","style":"font-family:Georgia, Times New Roman, Times, serif;font-weight:bold;font-size:20px;text-align:center;"},"submain":null,"footer":null,"background":"rgba(0, 0, 0, 0)","highlight":{"enabled":true,"hoverNearest":false,"degree":{"from":1,"to":1},"algorithm":"hierarchical","hideColor":"rgba(200,200,200,0.5)","labelOnly":true},"collapse":{"enabled":true,"fit":false,"resetHighlight":true,"clusterOptions":null,"keepCoord":true,"labelSuffix":"(cluster)"},"legend":{"width":0.2,"useGroups":false,"position":"right","ncol":1,"stepX":100,"stepY":100,"zoom":true,"nodes":{"label":["Outdated","Up to date","Stem","Function"],"color":["#78B7C5","#354823","#899DA4","#899DA4"],"shape":["dot","dot","dot","triangle"]},"nodesToDataframe":true},"tooltipStay":300,"tooltipStyle":"position: fixed;visibility:hidden;padding: 5px;white-space: nowrap;font-family: verdana;font-size:14px;font-color:#000000;background-color: #f5f4ed;-moz-border-radius: 3px;-webkit-border-radius: 3px;border-radius: 3px;border: 1px solid #808074;box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);"},"evals":[],"jsHooks":[]}</script>
 </div>
 </div>
 <p>That makes sense too: the <code>dice_data()</code> function affects the <code>dice_dat</code> target, but that also has implications for the <code>dice_pic</code> target because it depends on <code>dice_dat</code>. So now our list of outdated targets looks like this:</p>
@@ -791,13 +791,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 ✔ skipped target spells
 ✔ skipped target scholastic_dat
 ▶ dispatched target dice_dat
-● completed target dice_dat [0.034 seconds, 35.004 kilobytes]
+● completed target dice_dat [0.03 seconds, 35.004 kilobytes]
 ✔ skipped target scholastic_clus
 ▶ dispatched target dice_pic
-● completed target dice_pic [1.007 seconds, 65 bytes]
+● completed target dice_pic [0.989 seconds, 65 bytes]
 ▶ dispatched target scholastic_pic
-● completed target scholastic_pic [0.236 seconds, 71 bytes]
-▶ ended pipeline [1.642 seconds]</code></pre>
+● completed target scholastic_pic [0.219 seconds, 71 bytes]
+▶ ended pipeline [1.584 seconds]</code></pre>
 </div>
 </div>
 <p>This, as you might imagine, is extremely useful in situations where you have a project that involves hundreds of analyses and figures that take a really long time to execute if you re-run everything from the beginning… but all you actually want to do is change the fontsize on figure 312.</p>
@@ -849,11 +849,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>       step user.self sys.self elapsed
-1 construct     0.020    0.000   0.021
-2     build     0.038    0.002   0.040
-3    render     0.048    0.000   0.045
-4      draw     0.030    0.000   0.031
-5     TOTAL     0.136    0.002   0.137</code></pre>
+1 construct     0.018    0.001   0.018
+2     build     0.037    0.000   0.038
+3    render     0.047    0.002   0.046
+4      draw     0.028    0.000   0.028
+5     TOTAL     0.130    0.003   0.130</code></pre>
 </div>
 </div>
 <p>Even in this example, where there isn’t very much that needs to be drawn to the graphics device, constructing the plot isn’t the step that takes the most time. So it makes very little sense to treat the plot specification (i.e., the <code>gg</code> plot object) as the terminal target of a plotting pipeline, because 90% of the compute time takes place <em>after</em> the <code>gg</code> object is specified (this is even more obvious when you have a scatterplot that needs to draw millions of dots to the canvas).</p>
@@ -1166,38 +1166,38 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 ▶ dispatched target blog_ftr
 ● completed target blog_ftr [0 seconds, 115 bytes]
 ▶ dispatched target blog_hdr
-● completed target blog_hdr [0.001 seconds, 271 bytes]
+● completed target blog_hdr [0 seconds, 271 bytes]
 ▶ dispatched target static_paths
-● completed target static_paths [0.035 seconds, 140 bytes]
+● completed target static_paths [0.032 seconds, 140 bytes]
 ▶ dispatched target post_paths
 ● completed target post_paths [0 seconds, 186 bytes]
 ▶ dispatched target blog_rds
 ● completed target blog_rds [0.003 seconds, 0 bytes]
 ▶ dispatched branch static_files_1725c3c24144eb91
-● completed branch static_files_1725c3c24144eb91 [0 seconds, 0 bytes]
+● completed branch static_files_1725c3c24144eb91 [0.001 seconds, 0 bytes]
 ● completed pattern static_files 
 ▶ dispatched branch post_files_9bbb5ae3d1d3f95b
 ● completed branch post_files_9bbb5ae3d1d3f95b [0 seconds, 320 bytes]
 ▶ dispatched branch post_files_0a8225f176a1d698
-● completed branch post_files_0a8225f176a1d698 [0.001 seconds, 4.667 kilobytes]
+● completed branch post_files_0a8225f176a1d698 [0 seconds, 4.667 kilobytes]
 ▶ dispatched branch post_files_2ed928ff2eafb31e
 ● completed branch post_files_2ed928ff2eafb31e [0 seconds, 2.451 kilobytes]
 ▶ dispatched branch post_files_b12b144c84b5b3a0
 ● completed branch post_files_b12b144c84b5b3a0 [0 seconds, 1.777 kilobytes]
 ● completed pattern post_files 
 ▶ dispatched branch static_copy_dfa803e4dbdaa48f
-● completed branch static_copy_dfa803e4dbdaa48f [0.017 seconds, 173 bytes]
+● completed branch static_copy_dfa803e4dbdaa48f [0.023 seconds, 173 bytes]
 ● completed pattern static_copy 
 ▶ dispatched branch post_fuse_c2dd6a62cc9d9565
-● completed branch post_fuse_c2dd6a62cc9d9565 [0.67 seconds, 171 bytes]
+● completed branch post_fuse_c2dd6a62cc9d9565 [0.62 seconds, 171 bytes]
 ▶ dispatched branch post_fuse_bb77d7e34f5b9d8d
-● completed branch post_fuse_bb77d7e34f5b9d8d [0.358 seconds, 187 bytes]
+● completed branch post_fuse_bb77d7e34f5b9d8d [0.654 seconds, 187 bytes]
 ▶ dispatched branch post_fuse_bb123c5d7a5d991e
-● completed branch post_fuse_bb123c5d7a5d991e [0.101 seconds, 182 bytes]
+● completed branch post_fuse_bb123c5d7a5d991e [0.092 seconds, 182 bytes]
 ▶ dispatched branch post_fuse_b2591b053d5431f7
-● completed branch post_fuse_b2591b053d5431f7 [0.051 seconds, 173 bytes]
+● completed branch post_fuse_b2591b053d5431f7 [0.044 seconds, 173 bytes]
 ● completed pattern post_fuse 
-▶ ended pipeline [1.442 seconds]</code></pre>
+▶ ended pipeline [1.663 seconds]</code></pre>
 </div>
 </div>
 <p>Setting aside obvious questions like “what’s going on with all those weirdly named ‘branch’ targets like <code>post_files_bfe2f528519c0ff0</code>???”, the gist of this is pretty clear: everything has run smoothly and the blog has been built. In fact, you can see a live version of the blog, built from the source as it exists up to this point: it’s <a href="./site-1/index.html">here</a>). The project folder now looks like this:</p>
@@ -1273,7 +1273,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tar_visnetwork</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div class="visNetwork html-widget html-fill-item" id="htmlwidget-af58166d53661c8cfb95" style="width:100%;height:464px;"></div>
-<script type="application/json" data-for="htmlwidget-af58166d53661c8cfb95">{"x":{"nodes":{"name":["blog","blog_css","blog_ftr","blog_hdr","blog_rds","post_files","post_fuse","post_paths","static_copy","static_files","static_paths","Liteblog"],"type":["stem","stem","stem","stem","stem","pattern","pattern","stem","pattern","pattern","stem","object"],"description":[null,null,null,null,null,null,null,null,null,null,null,null],"status":["uptodate","uptodate","uptodate","uptodate","uptodate","outdated","outdated","outdated","outdated","outdated","outdated","uptodate"],"seconds":[0.003,0,0,0.001,0.003,0.001,1.18,0,0.017,0,0.035,null],"bytes":[9905,3759,115,271,0,9215,713,186,173,0,140,null],"branches":[null,null,null,null,null,4,4,null,1,1,null,null],"label":["blog","blog_css","blog_ftr","blog_hdr","blog_rds","post_files","post_fuse","post_paths","static_copy","static_files","static_paths","Liteblog"],"color":["#354823","#354823","#354823","#354823","#354823","#78B7C5","#78B7C5","#78B7C5","#78B7C5","#78B7C5","#78B7C5","#354823"],"id":["blog","blog_css","blog_ftr","blog_hdr","blog_rds","post_files","post_fuse","post_paths","static_copy","static_files","static_paths","Liteblog"],"level":[2,1,1,1,3,4,5,3,5,4,3,1],"shape":["dot","dot","dot","dot","dot","square","square","dot","square","square","dot","triangleDown"]},"edges":{"from":["blog","blog","blog_css","blog_ftr","blog_hdr","post_files","static_paths","post_paths","blog","static_files","blog","Liteblog","blog"],"to":["static_paths","post_fuse","post_fuse","post_fuse","post_fuse","post_fuse","static_files","post_files","static_copy","static_copy","blog_rds","blog","post_paths"],"arrows":["to","to","to","to","to","to","to","to","to","to","to","to","to"]},"nodesToDataframe":true,"edgesToDataframe":true,"options":{"width":"100%","height":"100%","nodes":{"shape":"dot","physics":false},"manipulation":{"enabled":false},"edges":{"smooth":{"type":"cubicBezier","forceDirection":"horizontal"}},"physics":{"stabilization":false},"interaction":{"zoomSpeed":1},"layout":{"hierarchical":{"enabled":true,"direction":"LR"}}},"groups":null,"width":null,"height":null,"idselection":{"enabled":false,"style":"width: 150px; height: 26px","useLabels":true,"main":"Select by id"},"byselection":{"enabled":false,"style":"width: 150px; height: 26px","multiple":false,"hideColor":"rgba(200,200,200,0.5)","highlight":false},"main":{"text":"","style":"font-family:Georgia, Times New Roman, Times, serif;font-weight:bold;font-size:20px;text-align:center;"},"submain":null,"footer":null,"background":"rgba(0, 0, 0, 0)","highlight":{"enabled":true,"hoverNearest":false,"degree":{"from":1,"to":1},"algorithm":"hierarchical","hideColor":"rgba(200,200,200,0.5)","labelOnly":true},"collapse":{"enabled":true,"fit":false,"resetHighlight":true,"clusterOptions":null,"keepCoord":true,"labelSuffix":"(cluster)"},"legend":{"width":0.2,"useGroups":false,"position":"right","ncol":1,"stepX":100,"stepY":100,"zoom":true,"nodes":{"label":["Up to date","Outdated","Stem","Pattern","Object"],"color":["#354823","#78B7C5","#899DA4","#899DA4","#899DA4"],"shape":["dot","dot","dot","square","triangleDown"]},"nodesToDataframe":true},"tooltipStay":300,"tooltipStyle":"position: fixed;visibility:hidden;padding: 5px;white-space: nowrap;font-family: verdana;font-size:14px;font-color:#000000;background-color: #f5f4ed;-moz-border-radius: 3px;-webkit-border-radius: 3px;border-radius: 3px;border: 1px solid #808074;box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);"},"evals":[],"jsHooks":[]}</script>
+<script type="application/json" data-for="htmlwidget-af58166d53661c8cfb95">{"x":{"nodes":{"name":["blog","blog_css","blog_ftr","blog_hdr","blog_rds","post_files","post_fuse","post_paths","static_copy","static_files","static_paths","Liteblog"],"type":["stem","stem","stem","stem","stem","pattern","pattern","stem","pattern","pattern","stem","object"],"description":[null,null,null,null,null,null,null,null,null,null,null,null],"status":["uptodate","uptodate","uptodate","uptodate","uptodate","outdated","outdated","outdated","outdated","outdated","outdated","uptodate"],"seconds":[0.003,0,0,0,0.003,0,1.41,0,0.023,0.001,0.032,null],"bytes":[9905,3759,115,271,0,9215,713,186,173,0,140,null],"branches":[null,null,null,null,null,4,4,null,1,1,null,null],"label":["blog","blog_css","blog_ftr","blog_hdr","blog_rds","post_files","post_fuse","post_paths","static_copy","static_files","static_paths","Liteblog"],"color":["#354823","#354823","#354823","#354823","#354823","#78B7C5","#78B7C5","#78B7C5","#78B7C5","#78B7C5","#78B7C5","#354823"],"id":["blog","blog_css","blog_ftr","blog_hdr","blog_rds","post_files","post_fuse","post_paths","static_copy","static_files","static_paths","Liteblog"],"level":[2,1,1,1,3,4,5,3,5,4,3,1],"shape":["dot","dot","dot","dot","dot","square","square","dot","square","square","dot","triangleDown"]},"edges":{"from":["blog","blog","blog_css","blog_ftr","blog_hdr","post_files","static_paths","post_paths","blog","static_files","blog","Liteblog","blog"],"to":["static_paths","post_fuse","post_fuse","post_fuse","post_fuse","post_fuse","static_files","post_files","static_copy","static_copy","blog_rds","blog","post_paths"],"arrows":["to","to","to","to","to","to","to","to","to","to","to","to","to"]},"nodesToDataframe":true,"edgesToDataframe":true,"options":{"width":"100%","height":"100%","nodes":{"shape":"dot","physics":false},"manipulation":{"enabled":false},"edges":{"smooth":{"type":"cubicBezier","forceDirection":"horizontal"}},"physics":{"stabilization":false},"interaction":{"zoomSpeed":1},"layout":{"hierarchical":{"enabled":true,"direction":"LR"}}},"groups":null,"width":null,"height":null,"idselection":{"enabled":false,"style":"width: 150px; height: 26px","useLabels":true,"main":"Select by id"},"byselection":{"enabled":false,"style":"width: 150px; height: 26px","multiple":false,"hideColor":"rgba(200,200,200,0.5)","highlight":false},"main":{"text":"","style":"font-family:Georgia, Times New Roman, Times, serif;font-weight:bold;font-size:20px;text-align:center;"},"submain":null,"footer":null,"background":"rgba(0, 0, 0, 0)","highlight":{"enabled":true,"hoverNearest":false,"degree":{"from":1,"to":1},"algorithm":"hierarchical","hideColor":"rgba(200,200,200,0.5)","labelOnly":true},"collapse":{"enabled":true,"fit":false,"resetHighlight":true,"clusterOptions":null,"keepCoord":true,"labelSuffix":"(cluster)"},"legend":{"width":0.2,"useGroups":false,"position":"right","ncol":1,"stepX":100,"stepY":100,"zoom":true,"nodes":{"label":["Up to date","Outdated","Stem","Pattern","Object"],"color":["#354823","#78B7C5","#899DA4","#899DA4","#899DA4"],"shape":["dot","dot","dot","square","triangleDown"]},"nodesToDataframe":true},"tooltipStay":300,"tooltipStyle":"position: fixed;visibility:hidden;padding: 5px;white-space: nowrap;font-family: verdana;font-size:14px;font-color:#000000;background-color: #f5f4ed;-moz-border-radius: 3px;-webkit-border-radius: 3px;border-radius: 3px;border: 1px solid #808074;box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);"},"evals":[],"jsHooks":[]}</script>
 </div>
 </div>
 <p>As expected, <code>static_paths</code> and <code>post_paths</code> both show up as outdated targets, and so does everything downstream of those two. Again, this makes sense: until those two targets are re-run, the targets package has no way to know if the downstream targets will also need to be rebuilt. Consequently, calling <code>tar_outdated()</code> gives us this:</p>
@@ -1293,7 +1293,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 ✔ skipped target blog_ftr
 ✔ skipped target blog_hdr
 ▶ dispatched target static_paths
-● completed target static_paths [0.033 seconds, 140 bytes]
+● completed target static_paths [0.032 seconds, 140 bytes]
 ▶ dispatched target post_paths
 ● completed target post_paths [0 seconds, 186 bytes]
 ✔ skipped target blog_rds
@@ -1311,7 +1311,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 ✔ skipped branch post_fuse_bb123c5d7a5d991e
 ✔ skipped branch post_fuse_b2591b053d5431f7
 ✔ skipped pattern post_fuse
-▶ ended pipeline [0.121 seconds]</code></pre>
+▶ ended pipeline [0.114 seconds]</code></pre>
 </div>
 </div>
 <p>As expected, the <code>static_paths</code> and <code>post_paths</code> targets are both re-run, as instructed by <code>tar_cue("always")</code>. However, once those targets are completed, the targets package is smart enough to detect that nothing has actually changed. The <code>static_paths</code> and <code>post_paths</code> objects are exactly the same as they were previously, so there is no need to execute any of the downstream targets. In other words, at build time the blog will always check to see if the content in the source folder has changed, but if nothing has changed the fuse and copy targets are skipped.</p>
@@ -1362,14 +1362,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell-output cell-output-stdout">
 <pre><code>✔ skipped target blog
 ▶ dispatched target post_paths
-● completed target post_paths [0.035 seconds, 186 bytes]
+● completed target post_paths [0.033 seconds, 186 bytes]
 ▶ dispatched branch post_files_9bbb5ae3d1d3f95b
 ● completed branch post_files_9bbb5ae3d1d3f95b [0 seconds, 335 bytes]
 ✔ skipped branch post_files_0a8225f176a1d698
 ✔ skipped branch post_files_2ed928ff2eafb31e
 ✔ skipped branch post_files_b12b144c84b5b3a0
 ● completed pattern post_files 
-▶ ended pipeline [0.112 seconds]</code></pre>
+▶ ended pipeline [0.101 seconds]</code></pre>
 </div>
 </div>
 <p>As we hoped, we see that one (and only one) of the <code>post_files</code> branches has been rebuilt, specifically the one corresponding to the <code>404.rmd</code> file that I just edited. So far so good. Next, let’s see what happens when <code>post_fuse</code> is rebuilt:</p>
@@ -1381,19 +1381,19 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 ✔ skipped target blog_ftr
 ✔ skipped target blog_hdr
 ▶ dispatched target post_paths
-● completed target post_paths [0.036 seconds, 186 bytes]
+● completed target post_paths [0.033 seconds, 186 bytes]
 ✔ skipped branch post_files_9bbb5ae3d1d3f95b
 ✔ skipped branch post_files_0a8225f176a1d698
 ✔ skipped branch post_files_2ed928ff2eafb31e
 ✔ skipped branch post_files_b12b144c84b5b3a0
 ✔ skipped pattern post_files
 ▶ dispatched branch post_fuse_c2dd6a62cc9d9565
-● completed branch post_fuse_c2dd6a62cc9d9565 [0.49 seconds, 171 bytes]
+● completed branch post_fuse_c2dd6a62cc9d9565 [0.12 seconds, 171 bytes]
 ✔ skipped branch post_fuse_bb77d7e34f5b9d8d
 ✔ skipped branch post_fuse_bb123c5d7a5d991e
 ✔ skipped branch post_fuse_b2591b053d5431f7
 ● completed pattern post_fuse 
-▶ ended pipeline [0.619 seconds]</code></pre>
+▶ ended pipeline [0.242 seconds]</code></pre>
 </div>
 </div>
 <p>Again, notice all the skipped targets. The only targets that are dispatched are <code>post_paths</code> (because we instructed that one to always run), and one branch of <code>post_fuse</code>. In other words, the only thing that happens here is that the outdated post gets rebuilt.</p>
@@ -1421,17 +1421,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell-output cell-output-stdout">
 <pre><code>✔ skipped target blog
 ▶ dispatched target post_paths
-● completed target post_paths [0.034 seconds, 218 bytes]
+● completed target post_paths [0.037 seconds, 218 bytes]
 ✔ skipped branch post_files_9bbb5ae3d1d3f95b
 ✔ skipped branch post_files_0a8225f176a1d698
 ✔ skipped branch post_files_2ed928ff2eafb31e
 ▶ dispatched branch post_files_454f9b18b99302f6
 ● completed branch post_files_454f9b18b99302f6 [0 seconds, 11.136 kilobytes]
 ▶ dispatched branch post_files_b77b5ec03a0b7e01
-● completed branch post_files_b77b5ec03a0b7e01 [0 seconds, 3.631 kilobytes]
+● completed branch post_files_b77b5ec03a0b7e01 [0.001 seconds, 3.631 kilobytes]
 ✔ skipped branch post_files_b12b144c84b5b3a0
 ● completed pattern post_files 
-▶ ended pipeline [0.116 seconds]</code></pre>
+▶ ended pipeline [0.117 seconds]</code></pre>
 </div>
 </div>
 <p>The four existing R markdown files are skipped, as they are already being tracked and none of them have changed. The two new R markdown files are added, and we can see that the corresponding <code>post_files</code> branches have both been updated. We are now tracking these files.</p>
@@ -1444,7 +1444,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 ✔ skipped target blog_ftr
 ✔ skipped target blog_hdr
 ▶ dispatched target post_paths
-● completed target post_paths [0.037 seconds, 218 bytes]
+● completed target post_paths [0.034 seconds, 218 bytes]
 ✔ skipped branch post_files_9bbb5ae3d1d3f95b
 ✔ skipped branch post_files_0a8225f176a1d698
 ✔ skipped branch post_files_2ed928ff2eafb31e
@@ -1456,12 +1456,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 ✔ skipped branch post_fuse_bb77d7e34f5b9d8d
 ✔ skipped branch post_fuse_bb123c5d7a5d991e
 ▶ dispatched branch post_fuse_f59600e87d9d07da
-● completed branch post_fuse_f59600e87d9d07da [1.441 seconds, 185 bytes]
+● completed branch post_fuse_f59600e87d9d07da [1.1 seconds, 185 bytes]
 ▶ dispatched branch post_fuse_a98becd61e7088dd
-● completed branch post_fuse_a98becd61e7088dd [1.108 seconds, 183 bytes]
+● completed branch post_fuse_a98becd61e7088dd [1.015 seconds, 183 bytes]
 ✔ skipped branch post_fuse_b2591b053d5431f7
 ● completed pattern post_fuse 
-▶ ended pipeline [2.688 seconds]</code></pre>
+▶ ended pipeline [2.239 seconds]</code></pre>
 </div>
 </div>
 <p>Again, works as expected. Most targets get skipped, and only the two new posts are built to HTML pages.</p>
@@ -1474,7 +1474,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 ✔ skipped target blog_ftr
 ✔ skipped target blog_hdr
 ▶ dispatched target static_paths
-● completed target static_paths [0.034 seconds, 159 bytes]
+● completed target static_paths [0.032 seconds, 159 bytes]
 ▶ dispatched target post_paths
 ● completed target post_paths [0 seconds, 218 bytes]
 ✔ skipped target blog_rds
@@ -1500,7 +1500,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 ✔ skipped branch post_fuse_a98becd61e7088dd
 ✔ skipped branch post_fuse_b2591b053d5431f7
 ✔ skipped pattern post_fuse
-▶ ended pipeline [0.15 seconds]</code></pre>
+▶ ended pipeline [0.144 seconds]</code></pre>
 </div>
 </div>
 <p>You can browse the built website, as it appears at this stage in the process, at the cached location <a href="./site-2/index.html">here</a>.</p>
@@ -1513,7 +1513,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="sourceCode cell-code" id="cb73"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb73-1"><a href="#cb73-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tar_visnetwork</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div class="visNetwork html-widget html-fill-item" id="htmlwidget-dc9b6b2f202c941e6590" style="width:100%;height:464px;"></div>
-<script type="application/json" data-for="htmlwidget-dc9b6b2f202c941e6590">{"x":{"nodes":{"name":["blog","blog_css","blog_ftr","blog_hdr","blog_rds","post_files","post_fuse","post_paths","static_copy","static_files","static_paths","Liteblog"],"type":["stem","stem","stem","stem","stem","pattern","pattern","stem","pattern","pattern","stem","object"],"description":[null,null,null,null,null,null,null,null,null,null,null,null],"status":["uptodate","outdated","uptodate","uptodate","uptodate","outdated","outdated","outdated","outdated","outdated","outdated","uptodate"],"seconds":[0.003,0,0,0.001,0.003,0,2.549,0,0.015,0,0.034,null],"bytes":[9905,3759,115,271,0,14767,368,218,173,302514,159,null],"branches":[null,null,null,null,null,6,6,null,2,2,null,null],"label":["blog","blog_css","blog_ftr","blog_hdr","blog_rds","post_files","post_fuse","post_paths","static_copy","static_files","static_paths","Liteblog"],"color":["#354823","#78B7C5","#354823","#354823","#354823","#78B7C5","#78B7C5","#78B7C5","#78B7C5","#78B7C5","#78B7C5","#354823"],"id":["blog","blog_css","blog_ftr","blog_hdr","blog_rds","post_files","post_fuse","post_paths","static_copy","static_files","static_paths","Liteblog"],"level":[2,1,1,1,3,4,5,3,5,4,3,1],"shape":["dot","dot","dot","dot","dot","square","square","dot","square","square","dot","triangleDown"]},"edges":{"from":["blog","blog","blog_css","blog_ftr","blog_hdr","post_files","static_paths","post_paths","blog","static_files","blog","Liteblog","blog"],"to":["static_paths","post_fuse","post_fuse","post_fuse","post_fuse","post_fuse","static_files","post_files","static_copy","static_copy","blog_rds","blog","post_paths"],"arrows":["to","to","to","to","to","to","to","to","to","to","to","to","to"]},"nodesToDataframe":true,"edgesToDataframe":true,"options":{"width":"100%","height":"100%","nodes":{"shape":"dot","physics":false},"manipulation":{"enabled":false},"edges":{"smooth":{"type":"cubicBezier","forceDirection":"horizontal"}},"physics":{"stabilization":false},"interaction":{"zoomSpeed":1},"layout":{"hierarchical":{"enabled":true,"direction":"LR"}}},"groups":null,"width":null,"height":null,"idselection":{"enabled":false,"style":"width: 150px; height: 26px","useLabels":true,"main":"Select by id"},"byselection":{"enabled":false,"style":"width: 150px; height: 26px","multiple":false,"hideColor":"rgba(200,200,200,0.5)","highlight":false},"main":{"text":"","style":"font-family:Georgia, Times New Roman, Times, serif;font-weight:bold;font-size:20px;text-align:center;"},"submain":null,"footer":null,"background":"rgba(0, 0, 0, 0)","highlight":{"enabled":true,"hoverNearest":false,"degree":{"from":1,"to":1},"algorithm":"hierarchical","hideColor":"rgba(200,200,200,0.5)","labelOnly":true},"collapse":{"enabled":true,"fit":false,"resetHighlight":true,"clusterOptions":null,"keepCoord":true,"labelSuffix":"(cluster)"},"legend":{"width":0.2,"useGroups":false,"position":"right","ncol":1,"stepX":100,"stepY":100,"zoom":true,"nodes":{"label":["Up to date","Outdated","Stem","Pattern","Object"],"color":["#354823","#78B7C5","#899DA4","#899DA4","#899DA4"],"shape":["dot","dot","dot","square","triangleDown"]},"nodesToDataframe":true},"tooltipStay":300,"tooltipStyle":"position: fixed;visibility:hidden;padding: 5px;white-space: nowrap;font-family: verdana;font-size:14px;font-color:#000000;background-color: #f5f4ed;-moz-border-radius: 3px;-webkit-border-radius: 3px;border-radius: 3px;border: 1px solid #808074;box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);"},"evals":[],"jsHooks":[]}</script>
+<script type="application/json" data-for="htmlwidget-dc9b6b2f202c941e6590">{"x":{"nodes":{"name":["blog","blog_css","blog_ftr","blog_hdr","blog_rds","post_files","post_fuse","post_paths","static_copy","static_files","static_paths","Liteblog"],"type":["stem","stem","stem","stem","stem","pattern","pattern","stem","pattern","pattern","stem","object"],"description":[null,null,null,null,null,null,null,null,null,null,null,null],"status":["uptodate","outdated","uptodate","uptodate","uptodate","outdated","outdated","outdated","outdated","outdated","outdated","uptodate"],"seconds":[0.003,0,0,0,0.003,0.001,2.115,0,0.015,0,0.032,null],"bytes":[9905,3759,115,271,0,14767,368,218,173,302514,159,null],"branches":[null,null,null,null,null,6,6,null,2,2,null,null],"label":["blog","blog_css","blog_ftr","blog_hdr","blog_rds","post_files","post_fuse","post_paths","static_copy","static_files","static_paths","Liteblog"],"color":["#354823","#78B7C5","#354823","#354823","#354823","#78B7C5","#78B7C5","#78B7C5","#78B7C5","#78B7C5","#78B7C5","#354823"],"id":["blog","blog_css","blog_ftr","blog_hdr","blog_rds","post_files","post_fuse","post_paths","static_copy","static_files","static_paths","Liteblog"],"level":[2,1,1,1,3,4,5,3,5,4,3,1],"shape":["dot","dot","dot","dot","dot","square","square","dot","square","square","dot","triangleDown"]},"edges":{"from":["blog","blog","blog_css","blog_ftr","blog_hdr","post_files","static_paths","post_paths","blog","static_files","blog","Liteblog","blog"],"to":["static_paths","post_fuse","post_fuse","post_fuse","post_fuse","post_fuse","static_files","post_files","static_copy","static_copy","blog_rds","blog","post_paths"],"arrows":["to","to","to","to","to","to","to","to","to","to","to","to","to"]},"nodesToDataframe":true,"edgesToDataframe":true,"options":{"width":"100%","height":"100%","nodes":{"shape":"dot","physics":false},"manipulation":{"enabled":false},"edges":{"smooth":{"type":"cubicBezier","forceDirection":"horizontal"}},"physics":{"stabilization":false},"interaction":{"zoomSpeed":1},"layout":{"hierarchical":{"enabled":true,"direction":"LR"}}},"groups":null,"width":null,"height":null,"idselection":{"enabled":false,"style":"width: 150px; height: 26px","useLabels":true,"main":"Select by id"},"byselection":{"enabled":false,"style":"width: 150px; height: 26px","multiple":false,"hideColor":"rgba(200,200,200,0.5)","highlight":false},"main":{"text":"","style":"font-family:Georgia, Times New Roman, Times, serif;font-weight:bold;font-size:20px;text-align:center;"},"submain":null,"footer":null,"background":"rgba(0, 0, 0, 0)","highlight":{"enabled":true,"hoverNearest":false,"degree":{"from":1,"to":1},"algorithm":"hierarchical","hideColor":"rgba(200,200,200,0.5)","labelOnly":true},"collapse":{"enabled":true,"fit":false,"resetHighlight":true,"clusterOptions":null,"keepCoord":true,"labelSuffix":"(cluster)"},"legend":{"width":0.2,"useGroups":false,"position":"right","ncol":1,"stepX":100,"stepY":100,"zoom":true,"nodes":{"label":["Up to date","Outdated","Stem","Pattern","Object"],"color":["#354823","#78B7C5","#899DA4","#899DA4","#899DA4"],"shape":["dot","dot","dot","square","triangleDown"]},"nodesToDataframe":true},"tooltipStay":300,"tooltipStyle":"position: fixed;visibility:hidden;padding: 5px;white-space: nowrap;font-family: verdana;font-size:14px;font-color:#000000;background-color: #f5f4ed;-moz-border-radius: 3px;-webkit-border-radius: 3px;border-radius: 3px;border: 1px solid #808074;box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);"},"evals":[],"jsHooks":[]}</script>
 </div>
 </div>
 <p>Targets has detected the edit, but notice that there is a dependency between <code>blog_css</code> and <code>fuse_post</code>. This dependency is added because for this blog the CSS is embedded<a href="#fn9" class="footnote-ref" id="fnref9" role="doc-noteref"><sup>9</sup></a> within the HTML file at build time: as a consequence, editing the CSS means that <em>all</em> pages will need to be rebuilt. And indeed…</p>
@@ -1522,13 +1522,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell-output cell-output-stdout">
 <pre><code>✔ skipped target blog
 ▶ dispatched target blog_css
-● completed target blog_css [0.001 seconds, 3.759 kilobytes]
+● completed target blog_css [0 seconds, 3.759 kilobytes]
 ✔ skipped target blog_ftr
 ✔ skipped target blog_hdr
 ▶ dispatched target static_paths
-● completed target static_paths [0.036 seconds, 159 bytes]
+● completed target static_paths [0.032 seconds, 159 bytes]
 ▶ dispatched target post_paths
-● completed target post_paths [0.001 seconds, 218 bytes]
+● completed target post_paths [0 seconds, 218 bytes]
 ✔ skipped target blog_rds
 ✔ skipped branch static_files_1725c3c24144eb91
 ✔ skipped branch static_files_cfb2777954f617d0
@@ -1544,19 +1544,19 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 ✔ skipped branch static_copy_501faf107279df5b
 ✔ skipped pattern static_copy
 ▶ dispatched branch post_fuse_c2dd6a62cc9d9565
-● completed branch post_fuse_c2dd6a62cc9d9565 [0.567 seconds, 171 bytes]
+● completed branch post_fuse_c2dd6a62cc9d9565 [0.229 seconds, 171 bytes]
 ▶ dispatched branch post_fuse_bb77d7e34f5b9d8d
-● completed branch post_fuse_bb77d7e34f5b9d8d [0.385 seconds, 187 bytes]
+● completed branch post_fuse_bb77d7e34f5b9d8d [0.761 seconds, 187 bytes]
 ▶ dispatched branch post_fuse_bb123c5d7a5d991e
-● completed branch post_fuse_bb123c5d7a5d991e [0.152 seconds, 182 bytes]
+● completed branch post_fuse_bb123c5d7a5d991e [0.149 seconds, 182 bytes]
 ▶ dispatched branch post_fuse_f59600e87d9d07da
-● completed branch post_fuse_f59600e87d9d07da [0.707 seconds, 185 bytes]
+● completed branch post_fuse_f59600e87d9d07da [0.674 seconds, 185 bytes]
 ▶ dispatched branch post_fuse_a98becd61e7088dd
-● completed branch post_fuse_a98becd61e7088dd [1.099 seconds, 183 bytes]
+● completed branch post_fuse_a98becd61e7088dd [1.053 seconds, 183 bytes]
 ▶ dispatched branch post_fuse_b2591b053d5431f7
-● completed branch post_fuse_b2591b053d5431f7 [0.051 seconds, 173 bytes]
+● completed branch post_fuse_b2591b053d5431f7 [0.044 seconds, 173 bytes]
 ● completed pattern post_fuse 
-▶ ended pipeline [3.114 seconds]</code></pre>
+▶ ended pipeline [3.052 seconds]</code></pre>
 </div>
 </div>
 <p>…that’s exactly what happens. Again, you can browse the built website, horrible CSS failures and all, at the cached location <a href="./site-3/index.html">here</a>.</p>
@@ -1619,10 +1619,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 ▶ dispatched target wait3
 ● completed target wait1 [1.015 seconds, 44 bytes]
 ▶ dispatched target wait4
-● completed target wait2 [2.015 seconds, 44 bytes]
-● completed target wait3 [3.013 seconds, 44 bytes]
-● completed target wait4 [4.005 seconds, 44 bytes]
-▶ ended pipeline [6.94 seconds]</code></pre>
+● completed target wait2 [2.01 seconds, 44 bytes]
+● completed target wait3 [3.011 seconds, 44 bytes]
+● completed target wait4 [4.004 seconds, 44 bytes]
+▶ ended pipeline [6.962 seconds]</code></pre>
 </div>
 </div>
 <p>Upon starting the job, the first three targets (<code>wait1</code>, <code>wait2</code>, and <code>wait3</code>) are dispatched to the three workers and they all start running concurrently. The fourth job (<code>wait4</code>) is placed on hold, and doesn’t start until the first of the three jobs finishes (<code>wait1</code>). Only then does the fourth job start. As the remaining jobs complete, the user is notified, and once they are all finalised targets reports that the pipeline is complete. You can get a high-level summary of the allocation of tasks across workers by calling <a href="https://docs.ropensci.org/targets/reference/tar_crew.html"><code>tar_crew()</code></a>:</p>
@@ -1632,9 +1632,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <pre><code># A tibble: 3 × 4
   controller               worker seconds targets
   &lt;chr&gt;                    &lt;chr&gt;    &lt;dbl&gt;   &lt;int&gt;
-1 59acc4a1b3515135ec3c1478 1         5.11       2
-2 59acc4a1b3515135ec3c1478 2         2.10       1
-3 59acc4a1b3515135ec3c1478 3         3.10       1</code></pre>
+1 e0ea4b4586b1458cc4d537c3 1         5.11       2
+2 e0ea4b4586b1458cc4d537c3 2         2.10       1
+3 e0ea4b4586b1458cc4d537c3 3         3.10       1</code></pre>
 </div>
 </div>
 <p>As expected based on the intuitive description above, this output confirms that there’s one worker process that handled two of the targets, and one each handled by the other two.</p>
@@ -1730,18 +1730,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="sourceCode cell-code" id="cb85"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb85-1"><a href="#cb85-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tar_make</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>▶ dispatched target start
-● completed target start [0.01 seconds, 274 bytes]
+● completed target start [0.009 seconds, 274 bytes]
 ▶ dispatched target wait1
 ▶ dispatched target wait2
 ▶ dispatched target wait3
 ● completed target wait1 [1.003 seconds, 281 bytes]
 ▶ dispatched target wait4
-● completed target wait2 [2.017 seconds, 284 bytes]
-● completed target wait3 [3.005 seconds, 283 bytes]
-● completed target wait4 [4.013 seconds, 283 bytes]
+● completed target wait2 [2.015 seconds, 284 bytes]
+● completed target wait3 [3.005 seconds, 284 bytes]
+● completed target wait4 [4.022 seconds, 284 bytes]
 ▶ dispatched target trace
-● completed target trace [0.01 seconds, 355 bytes]
-▶ ended pipeline [7.104 seconds]</code></pre>
+● completed target trace [0.021 seconds, 343 bytes]
+▶ ended pipeline [7.136 seconds]</code></pre>
 </div>
 </div>
 <p>Okay yes this makes sense. Every other target is dependent on <code>start</code>, and by design this target is <em>always</em> treated as outdated. So when the pipeline begins, the first thing that happens is that the <code>start</code> target is dispatched to a worker; the other two workers do nothing. Once <code>start</code> completes, all four wait targets are eligible for dispatch, but we only have three workers and so <code>wait1</code>, <code>wait2</code>, and <code>wait4</code> are farmed out to workers while <code>wait4</code> remains in the queue. When <code>wait1</code> completes, one of the workers is freed up, thereby allowing <code>wait4</code> to be dispatched. Once all four of the wait targets are completed, the final <code>trace</code> target is built.</p>
@@ -1753,9 +1753,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <pre><code># A tibble: 3 × 4
   controller               worker seconds targets
   &lt;chr&gt;                    &lt;chr&gt;    &lt;dbl&gt;   &lt;int&gt;
-1 1185ab4d5ad0496d1d9d26dd 1         4.11       4
-2 1185ab4d5ad0496d1d9d26dd 2         4.09       1
-3 1185ab4d5ad0496d1d9d26dd 3         2.11       1</code></pre>
+1 ee4c5b3554e06b8b84c75f3a 1         4.12       4
+2 ee4c5b3554e06b8b84c75f3a 2         4.11       1
+3 ee4c5b3554e06b8b84c75f3a 3         2.1        1</code></pre>
 </div>
 </div>
 <p>However, this time around we also have access to the <code>trace</code> target that provides a more detailed summary of which R process excecuted each target, and at what time that execution started and stopped:</p>
@@ -1766,16 +1766,16 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <pre><code># A tibble: 6 × 5
   name  worker_pid begins_at finishes_at duration
   &lt;chr&gt;      &lt;int&gt;     &lt;dbl&gt;       &lt;dbl&gt;    &lt;dbl&gt;
-1 start    1202556     0            0       0    
-2 wait1    1202556     0.038        1.04    1.00 
-3 wait2    1202622     1.30         3.30    2.00 
-4 wait3    1202556     1.04         4.05    3.00 
-5 wait4    1202612     1.26         5.26    4.00 
-6 trace    1202556     5.28         5.29    0.002</code></pre>
+1 start    1227869     0            0       0    
+2 wait1    1227869     0.038        1.04    1.00 
+3 wait2    1227931     1.28         3.28    2.00 
+4 wait3    1227869     1.04         4.05    3.00 
+5 wait4    1227925     1.27         5.27    4.00 
+6 trace    1227869     5.32         5.32    0.004</code></pre>
 </div>
 </div>
 <p>In this data frame, the <code>begins_at</code> column records the amount of time that has passed between the time at which the pipeline started, and the time at which the current target begins execution. Similarly <code>finishes_at</code> records the time from pipeline start to the current target finishing. The <code>duration</code> column is the difference between the two. That being said, if you look at the code I used to calculate these, it’s clearly an approximation. But it will suffice.</p>
-<p>The nice thing about the <code>trace</code> data is that the <code>worker_pid</code> column associates each target with a specific pid for the R process used to build that target. This is slightly finer-grained information than what we got by calling <code>tar_crew()</code>. For example, I now know that <code>start</code> and <code>wait1</code> were both executed by the same R process (i.e., pid 1202556). Admittedly this is not much of a revelation: I could have guessed that just by looking at the logs when I called <code>tar_make()</code> and a few reasonable assumptions about how the scheduler<a href="#fn11" class="footnote-ref" id="fnref11" role="doc-noteref"><sup>11</sup></a> works.</p>
+<p>The nice thing about the <code>trace</code> data is that the <code>worker_pid</code> column associates each target with a specific pid for the R process used to build that target. This is slightly finer-grained information than what we got by calling <code>tar_crew()</code>. For example, I now know that <code>start</code> and <code>wait1</code> were both executed by the same R process (i.e., pid 1227869). Admittedly this is not much of a revelation: I could have guessed that just by looking at the logs when I called <code>tar_make()</code> and a few reasonable assumptions about how the scheduler<a href="#fn11" class="footnote-ref" id="fnref11" role="doc-noteref"><sup>11</sup></a> works.</p>
 <p>One minor irritation I have with the <code>trace</code> output is that it doesn’t directly allow me to match the <code>worker_pid</code> column against the <code>worker</code> column produced by <code>tar_crew()</code>. You can see the issue most cleanly if I aggregate the <code>trace</code> data frame by <code>worker_pid</code> like so:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb91"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb91-1"><a href="#cb91-1" aria-hidden="true" tabindex="-1"></a>trace_sum <span class="ot">&lt;-</span> trace <span class="sc">|&gt;</span> </span>
@@ -1790,12 +1790,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <pre><code># A tibble: 3 × 3
   worker_pid seconds targets
        &lt;int&gt;   &lt;dbl&gt;   &lt;int&gt;
-1    1202556    4.01       4
-2    1202622    2.00       1
-3    1202612    4.00       1</code></pre>
+1    1227869    4.01       4
+2    1227931    2.00       1
+3    1227925    4.00       1</code></pre>
 </div>
 </div>
-<p>Looking at this it’s immediately apparent that worker 1 must corresponded to the R process with pid 1202556, since <code>trace</code> and <code>crew</code> both agree that this is the only worker that executed four distinct targets. However, workers 2 and 3 both executed a single target, so we’ll have to resolve the ambiguity by looking at the <code>seconds</code> column. This is a little awkward because <code>trace_sum$seconds</code> will necessarily be slightly lower than <code>crew$seconds</code> because the time estimate in the <code>trace</code> data is constructed from <em>within</em> the R process that builds the target, but <code>tar_crew()</code> would (I assume) estimate the time from outside that process. The differences will be small, but noticeable. So I’ll use a rolling join:</p>
+<p>Looking at this it’s immediately apparent that worker 1 must corresponded to the R process with pid 1227869, since <code>trace</code> and <code>crew</code> both agree that this is the only worker that executed four distinct targets. However, workers 2 and 3 both executed a single target, so we’ll have to resolve the ambiguity by looking at the <code>seconds</code> column. This is a little awkward because <code>trace_sum$seconds</code> will necessarily be slightly lower than <code>crew$seconds</code> because the time estimate in the <code>trace</code> data is constructed from <em>within</em> the R process that builds the target, but <code>tar_crew()</code> would (I assume) estimate the time from outside that process. The differences will be small, but noticeable. So I’ll use a rolling join:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb93"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb93-1"><a href="#cb93-1" aria-hidden="true" tabindex="-1"></a>worker_lookup <span class="ot">&lt;-</span> crew <span class="sc">|&gt;</span> </span>
 <span id="cb93-2"><a href="#cb93-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(</span>
@@ -1808,9 +1808,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <pre><code># A tibble: 3 × 2
   worker worker_pid
   &lt;chr&gt;       &lt;int&gt;
-1 1         1202556
-2 2         1202612
-3 3         1202622</code></pre>
+1 1         1227869
+2 2         1227925
+3 3         1227931</code></pre>
 </div>
 </div>
 <p>It’s not ideal but it works: we now have a mapping between the numeric <code>worker</code> value returned by <code>tar_crew()</code> and the <code>worker_pid</code> value returned when <code>Sys.getpid()</code> is called from within the target function. Joining this gives us the following table:</p>
@@ -1824,12 +1824,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <pre><code># A tibble: 6 × 7
   name  worker worker_pid begins_at finishes_at duration    id
   &lt;chr&gt; &lt;chr&gt;       &lt;int&gt;     &lt;dbl&gt;       &lt;dbl&gt;    &lt;dbl&gt; &lt;int&gt;
-1 start 1         1202556     0            0       0         1
-2 wait1 1         1202556     0.038        1.04    1.00      2
-3 wait2 3         1202622     1.30         3.30    2.00      3
-4 wait3 1         1202556     1.04         4.05    3.00      4
-5 wait4 2         1202612     1.26         5.26    4.00      5
-6 trace 1         1202556     5.28         5.29    0.002     6</code></pre>
+1 start 1         1227869     0            0       0         1
+2 wait1 1         1227869     0.038        1.04    1.00      2
+3 wait2 3         1227931     1.28         3.28    2.00      3
+4 wait3 1         1227869     1.04         4.05    3.00      4
+5 wait4 2         1227925     1.27         5.27    4.00      5
+6 trace 1         1227869     5.32         5.32    0.004     6</code></pre>
 </div>
 </div>
 <p>Or, to adopt a slightly nicer way of looking at it, we can draw a picture:</p>
@@ -1862,16 +1862,16 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <pre><code># A tibble: 10 × 18
    name         type     data             command          depend                  seed path      time                size             bytes format repository iteration parent children  seconds warnings error
    &lt;chr&gt;        &lt;chr&gt;    &lt;chr&gt;            &lt;chr&gt;            &lt;chr&gt;                  &lt;int&gt; &lt;list&gt;    &lt;dttm&gt;              &lt;chr&gt;            &lt;dbl&gt; &lt;chr&gt;  &lt;chr&gt;      &lt;chr&gt;     &lt;chr&gt;  &lt;list&gt;      &lt;dbl&gt; &lt;chr&gt;    &lt;chr&gt;
- 1 startup      function 050b477467191bc8 &lt;NA&gt;             &lt;NA&gt;                      NA &lt;chr [1]&gt; NA                  &lt;NA&gt;                NA &lt;NA&gt;   &lt;NA&gt;       &lt;NA&gt;      &lt;NA&gt;   &lt;chr [1]&gt;   NA    &lt;NA&gt;     &lt;NA&gt; 
- 2 collate      function e1dc164dfb76a1e6 &lt;NA&gt;             &lt;NA&gt;                      NA &lt;chr [1]&gt; NA                  &lt;NA&gt;                NA &lt;NA&gt;   &lt;NA&gt;       &lt;NA&gt;      &lt;NA&gt;   &lt;chr [1]&gt;   NA    &lt;NA&gt;     &lt;NA&gt; 
- 3 .Random.seed object   2972f998a0dffd17 &lt;NA&gt;             &lt;NA&gt;                      NA &lt;chr [1]&gt; NA                  &lt;NA&gt;                NA &lt;NA&gt;   &lt;NA&gt;       &lt;NA&gt;      &lt;NA&gt;   &lt;chr [1]&gt;   NA    &lt;NA&gt;     &lt;NA&gt; 
- 4 sleeper      function 5ead800f7ec58068 &lt;NA&gt;             &lt;NA&gt;                      NA &lt;chr [1]&gt; NA                  &lt;NA&gt;                NA &lt;NA&gt;   &lt;NA&gt;       &lt;NA&gt;      &lt;NA&gt;   &lt;chr [1]&gt;   NA    &lt;NA&gt;     &lt;NA&gt; 
- 5 start        stem     bc030b19dcc8d05c 2098fa32bc94d489 b151447ecf216509 -1013159115 &lt;chr [1]&gt; 2025-01-08 13:43:35 7588b18ac8276279   274 rds    local      vector    &lt;NA&gt;   &lt;chr [1]&gt;    0.01 &lt;NA&gt;     &lt;NA&gt; 
- 6 wait1        stem     7d70e7969b8b40fd 8900681d4f1181ad f0aa4f875b245efb  1208061404 &lt;chr [1]&gt; 2025-01-08 13:43:36 1945721079faa963   281 rds    local      vector    &lt;NA&gt;   &lt;chr [1]&gt;    1.00 &lt;NA&gt;     &lt;NA&gt; 
- 7 wait2        stem     2a9881811027da34 adfb6c7b6993720a f0aa4f875b245efb -2106940369 &lt;chr [1]&gt; 2025-01-08 13:43:38 38b61ce0f7e2cdb4   284 rds    local      vector    &lt;NA&gt;   &lt;chr [1]&gt;    2.02 &lt;NA&gt;     &lt;NA&gt; 
- 8 wait3        stem     8dee766f314b4ed0 71bbae8135d59048 f0aa4f875b245efb   216419040 &lt;chr [1]&gt; 2025-01-08 13:43:39 c93e8ca8fd5bc737   283 rds    local      vector    &lt;NA&gt;   &lt;chr [1]&gt;    3.00 &lt;NA&gt;     &lt;NA&gt; 
- 9 wait4        stem     b86f674901b70325 709dbf0fe45e36da f0aa4f875b245efb -1433985599 &lt;chr [1]&gt; 2025-01-08 13:43:40 c93e8ca8fd5bc737   283 rds    local      vector    &lt;NA&gt;   &lt;chr [1]&gt;    4.01 &lt;NA&gt;     &lt;NA&gt; 
-10 trace        stem     48ac84951180ac2c e0601f48904584d2 3642021a7a699dc5   -31475585 &lt;chr [1]&gt; 2025-01-08 13:43:40 cfeff01d1edd45fa   355 rds    local      vector    &lt;NA&gt;   &lt;chr [1]&gt;    0.01 &lt;NA&gt;     &lt;NA&gt; </code></pre>
+ 1 startup      function 050b477467191bc8 &lt;NA&gt;             &lt;NA&gt;                      NA &lt;chr [1]&gt; NA                  &lt;NA&gt;                NA &lt;NA&gt;   &lt;NA&gt;       &lt;NA&gt;      &lt;NA&gt;   &lt;chr [1]&gt;  NA     &lt;NA&gt;     &lt;NA&gt; 
+ 2 collate      function e1dc164dfb76a1e6 &lt;NA&gt;             &lt;NA&gt;                      NA &lt;chr [1]&gt; NA                  &lt;NA&gt;                NA &lt;NA&gt;   &lt;NA&gt;       &lt;NA&gt;      &lt;NA&gt;   &lt;chr [1]&gt;  NA     &lt;NA&gt;     &lt;NA&gt; 
+ 3 .Random.seed object   28950222af780342 &lt;NA&gt;             &lt;NA&gt;                      NA &lt;chr [1]&gt; NA                  &lt;NA&gt;                NA &lt;NA&gt;   &lt;NA&gt;       &lt;NA&gt;      &lt;NA&gt;   &lt;chr [1]&gt;  NA     &lt;NA&gt;     &lt;NA&gt; 
+ 4 sleeper      function 5ead800f7ec58068 &lt;NA&gt;             &lt;NA&gt;                      NA &lt;chr [1]&gt; NA                  &lt;NA&gt;                NA &lt;NA&gt;   &lt;NA&gt;       &lt;NA&gt;      &lt;NA&gt;   &lt;chr [1]&gt;  NA     &lt;NA&gt;     &lt;NA&gt; 
+ 5 start        stem     0c77f67e87bc43d2 2098fa32bc94d489 b151447ecf216509 -1013159115 &lt;chr [1]&gt; 2025-01-10 11:37:51 7588b18ac8276279   274 rds    local      vector    &lt;NA&gt;   &lt;chr [1]&gt;   0.009 &lt;NA&gt;     &lt;NA&gt; 
+ 6 wait1        stem     00f655abfa250dcd 8900681d4f1181ad ca20d184fd39fc55  1208061404 &lt;chr [1]&gt; 2025-01-10 11:37:52 1945721079faa963   281 rds    local      vector    &lt;NA&gt;   &lt;chr [1]&gt;   1.00  &lt;NA&gt;     &lt;NA&gt; 
+ 7 wait2        stem     ec6076acf46bb83c adfb6c7b6993720a ca20d184fd39fc55 -2106940369 &lt;chr [1]&gt; 2025-01-10 11:37:54 38b61ce0f7e2cdb4   284 rds    local      vector    &lt;NA&gt;   &lt;chr [1]&gt;   2.02  &lt;NA&gt;     &lt;NA&gt; 
+ 8 wait3        stem     ca7bfe83a30cc415 71bbae8135d59048 ca20d184fd39fc55   216419040 &lt;chr [1]&gt; 2025-01-10 11:37:55 38b61ce0f7e2cdb4   284 rds    local      vector    &lt;NA&gt;   &lt;chr [1]&gt;   3.00  &lt;NA&gt;     &lt;NA&gt; 
+ 9 wait4        stem     2d48f39a97604a5e 709dbf0fe45e36da ca20d184fd39fc55 -1433985599 &lt;chr [1]&gt; 2025-01-10 11:37:56 38b61ce0f7e2cdb4   284 rds    local      vector    &lt;NA&gt;   &lt;chr [1]&gt;   4.02  &lt;NA&gt;     &lt;NA&gt; 
+10 trace        stem     62abcec67fd170f4 e0601f48904584d2 75a31c5a5fd79694   -31475585 &lt;chr [1]&gt; 2025-01-10 11:37:56 c206c709607ca69c   343 rds    local      vector    &lt;NA&gt;   &lt;chr [1]&gt;   0.021 &lt;NA&gt;     &lt;NA&gt; </code></pre>
 </div>
 </div>
 <p>True, it doesn’t contain information about the system pid that executes the target, so I’d still have some work to do, but at least now I have the correct timing information for each target.</p>
