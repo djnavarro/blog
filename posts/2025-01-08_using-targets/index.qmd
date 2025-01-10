@@ -45,7 +45,7 @@ library(fs)
 
 ![Pipelines, of course](./img/chuttersnap-_EFvjSgbw1c-unsplash.jpg)
 
-<br>
+<br> 
 
 ## Story 1: An analysis pipeline
 
@@ -417,7 +417,7 @@ Notice the similarity to line 20 of the `run_analysis.R` script:
 dice_dat <- dice_data(spells)
 ```
 
-In essence, that's what I'm doing with the call to `tar_target()`. I'm specifying that the command `set_output_dir()` is to be executed, and the results should be stored as the variable `output`. However, instead of immediately executing this code in the current R environment, what `tar_target()` does is create the infrastructure so that this command can be incorporated into the pipeline when it actually gets built. With one exception, this is the recipe I followed for constructing all the targeta in my `_targets.R` script.
+In essence, that's what I'm doing with the call to `tar_target()`. I'm specifying that the command `dice_data(spells)` is to be executed, and the results should be stored as the variable `dice_dat`. However, instead of immediately executing this code in the current R environment, what `tar_target()` does is create the infrastructure so that this command can be incorporated into the pipeline when it actually gets built. With one exception, this is the recipe I followed for constructing all the targets in my `_targets.R` script.
 
 The one exception to this pattern occurs on line 14 of `_targets.R`, where my target is defined by this call to `tar_target()`:
 
