@@ -19,15 +19,173 @@ set.seed(1)
 
 <!--------------- post begins here ----------------->
 
+
+
 ```{r}
 #| label: packages
 #| message: false
 library(brms)
 library(dplyr)
+library(tidyr)
 library(tibble)
 library(ggplot2)
 library(tidybayes)
 ```
+
+Letting $x_i$ denote the observed exposure for the $i$-th subject, and letting $y_i$ denote the observed response, the form of the Emax model for a continuous-valued response is typically written as the following nonlinear regression model:
+
+$$
+y_i = E_0 + E_{max} \frac{x_i^\gamma}{EC_{50}^\gamma + x_i^\gamma} + \epsilon_i 
+$$
+
+where we typically assume iid normal residual error, $\epsilon_i \sim \mbox{Normal}(0, \sigma^2)$. This model has five parameters that need to be estimated:
+
+- $E_0$ is an intercept term and represents the baseline response when drug exposure is zero
+- $E_{max}$ is an asymptote term and defines the maximum change from baseline as the drug exposure becomes arbitrarily large
+- $EC_{50}$ is a location parameter, and defines the exposure level at which the change from baseline is 50% of the maximum possible change
+- $\gamma$ is the "Hill coefficient" that describes the steepness of the response curve. It is not uncommon to fix $\gamma = 1$ in Emax modelling, and I'll start by doing that
+- $\sigma^2$ is the residual variance used to describe the level of measurement error in the data
+
+```{r}
+emax_fn <- function(exposure, emax, ec50, e0, gamma = 1, ...) {
+  e0 + emax * (exposure ^ gamma) / (ec50 ^ gamma + exposure ^ gamma)
+}
+```
+
+## Continuous response
+
+```{r}
+#| label: continuous-data
+generate_exposure <- function(dose, n, meanlog = 4, sdlog = 0.5) {
+  dose * qlnorm(
+    p = runif(n, min = .01, max = .99), 
+    meanlog = meanlog,
+    sdlog = sdlog
+  )
+}
+
+generate_covariate <- function(n) {
+  rbeta(n, 2, 2) * 10
+}
+
+make_data <- function(dose, n, par) {
+  tibble(
+    dose = dose, 
+    exposure = generate_exposure(max(dose, .01), n = n), 
+    cov_a = generate_covariate(n = n),
+    cov_b = generate_covariate(n = n),
+    cov_c = generate_covariate(n = n),
+    response = emax_fn(
+      exposure,
+      emax = par$emax, 
+      ec50 = par$ec50, 
+      e0 = par$e0, 
+      gamma = par$gamma
+    ) + 
+      par$coef_a * cov_a + 
+      par$coef_b * cov_b + 
+      par$coef_c * cov_c + 
+      rnorm(n, 0, par$sigma)
+  )
+}
+
+par <- list(
+  emax   = 10, 
+  ec50   = 4000, 
+  e0     = 5,
+  gamma  = 1,
+  sigma  = .6,
+  coef_a = .3,
+  coef_b = .2,
+  coef_c = 0
+)
+
+dat <- bind_rows(
+  make_data(dose = 100, n = 100, par = par),  
+  make_data(dose = 200, n = 100, par = par),
+  make_data(dose = 300, n = 100, par = par)
+) 
+```
+
+The data frame for our continuous response scenario looks like this:
+
+```{r}
+dat
+```
+
+```{r}
+#| fig-height: 8
+#| fig-width: 8
+dat |> 
+  pivot_longer(
+    cols = c(exposure, cov_a, cov_b, cov_c), 
+    names_to = "variable",
+    values_to = "value"
+  ) |> 
+  ggplot(aes(value, response)) + 
+  geom_point() + 
+  geom_smooth(formula = y ~ x, method = "loess") + 
+  facet_wrap(~ variable, scales = "free_x") + 
+  theme_bw()
+```
+
+### Simple Emax regression
+
+```{r}
+#| label: simple-continuous-emax-model
+#| cache: true
+#| message: false
+#| results: hide
+mod <- brm(
+  formula = brmsformula(
+    response ~ e0 + emax * exposure / (ec50 + exposure),
+    e0 + emax + ec50 ~ 1,
+    nl = TRUE
+  ),
+  family = gaussian(),
+  data = dat,
+  prior = c(
+    prior(normal(0, 5), nlpar = "e0"),
+    prior(normal(0, 5), nlpar = "emax"),
+    prior(normal(2000, 500), nlpar = "ec50", lb = 0)
+  )
+)
+```
+
+Print the model object:
+
+```{r}
+mod
+```
+
+```{r}
+epred_mod <- mod |> 
+  epred_draws(newdata = tibble(exposure = seq(0, 50000, 1000))) |> 
+  ungroup() |> 
+  summarize(response = mean(.epred), .by = exposure)
+
+epred_mod
+```
+
+```{r}
+ggplot(mapping = aes(exposure, response)) + 
+  geom_path(data = epred_mod) + 
+  geom_point(data = dat) + 
+  theme_bw()
+```
+
+But notice, we are missing the effect of covariates. If we colour the data points by the value of `cov_a`, we can see this very clearly:
+
+```{r}
+ggplot(mapping = aes(exposure, response)) + 
+  geom_path(data = epred_mod) + 
+  geom_point(mapping = aes(color = cov_a), data = dat) + 
+  scale_color_distiller(palette = "PuOr", limits = c(0, 10)) + 
+  theme_bw()
+```
+
+
+## old
 
 ```{r}
 #| label: binary-data
