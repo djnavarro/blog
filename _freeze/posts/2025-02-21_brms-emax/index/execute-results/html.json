@@ -1,0 +1,15 @@
+{
+  "hash": "67aaae309e52552c0fa73e43d32adf15",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Bayesian Emax regression using brms\"\ndescription: \"This is a subtitle\"\ndate: \"2025-02-21\"\n--- \n\n\n\n<!--------------- my typical setup ----------------->\n\n\n\n\n\n\n\n<!--------------- post begins here ----------------->\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nlibrary(brms)\nlibrary(dplyr)\nlibrary(tibble)\nlibrary(ggplot2)\nlibrary(tidybayes)\n```\n:::\n\n::: {.cell}\n\n```{.r .cell-code}\ndat <- BayesERtools::d_sim_binom_cov_hgly2\n```\n:::\n\n::: {.cell}\n\n```{.r .cell-code}\nmod <- brm(\n  formula = brmsformula(\n    AEFLAG ~ e0 + emax * AUCss / (ec50 + AUCss),\n    e0 + emax + ec50 ~ 1,\n    nl = TRUE\n  ),\n  family = bernoulli(),\n  data = dat,\n  prior = c(\n    prior(normal(0, 5), nlpar = \"e0\"),\n    prior(normal(0, 5), nlpar = \"emax\"),\n    prior(normal(2000, 500), nlpar = \"ec50\", lb = 0)\n  )\n)\n```\n:::\n\n::: {.cell}\n\n```{.r .cell-code}\nmod |>\n  epred_draws(newdata = tibble(AUCss = seq(0, 10000, 100))) |>\n  ungroup() |>\n  summarise(AEPROB = mean(.epred), .by = AUCss) |> \n  ggplot(aes(AUCss, AEPROB)) + \n  geom_path() + \n  geom_jitter(\n    mapping = aes(AUCss, AEFLAG), \n    data = dat |> mutate(AEFLAG = ifelse(AEFLAG == 1, 1.125, -0.125)), \n    height = 0.075, \n    width = 0\n  ) +\n  scale_y_continuous(breaks = seq(0, 1, 0.2), limits = c(-0.2, 1.2)) + \n  theme_bw()\n```\n\n::: {.cell-output-display}\n![](index_files/figure-html/plot-1.png){width=672}\n:::\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}
