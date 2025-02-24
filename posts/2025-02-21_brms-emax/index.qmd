@@ -1,6 +1,6 @@
 ---
 title: "Bayesian Emax regression using brms"
-description: "This is a subtitle"
+description: "This is a draft post, please do not cite or share yet"
 date: "2025-02-21"
 --- 
 
@@ -54,64 +54,91 @@ emax_fn <- function(exposure, emax, ec50, e0, gamma = 1, ...) {
 
 ## Continuous response
 
+First we need a data set. Simulating semi-plausible data sets for exposure-response analysis isn't easy when you don't have a fully specified pharmacokinetic model under the hood, but with a few simplifying assumptions it's not terrible. Luckily I talked about this in [an earlier blog post about emax regression](/posts/2024-11-11_emax-parameters/) so I won't repeat myself. Instead, I'll just wrap everything in a `generate_data()` function, and hide the code here:
+
+::: {.callout-caution collapse="true" appearance="minimal" title="Click to see the code"}
+
 ```{r}
 #| label: continuous-data
-generate_exposure <- function(dose, n, meanlog = 4, sdlog = 0.5) {
-  dose * qlnorm(
-    p = runif(n, min = .01, max = .99), 
-    meanlog = meanlog,
-    sdlog = sdlog
+generate_data <- function(seed = 123) {
+  
+  set.seed(seed)
+  
+  # exposures are assumed to be slightly-truncated log-normal distributed
+  # variates, and scale linearly with dose
+  generate_exposure <- function(dose, n, meanlog = 4, sdlog = 0.5) {
+    dose * qlnorm(
+      p = runif(n, min = .01, max = .99), 
+      meanlog = meanlog,
+      sdlog = sdlog
+    )
+  }
+  
+  # for simplicity, continuous covariates presumed to be 
+  generate_covariate <- function(n) {
+    rbeta(n, 2, 2) * 10
+  }
+  
+  make_data <- function(dose, n, par) {
+    tibble(
+      
+      # exposure depends on dose, of course
+      dose = dose, 
+      exposure = generate_exposure(max(dose, .01), n = n), 
+      
+      # covariates
+      cov_a = generate_covariate(n = n),
+      cov_b = generate_covariate(n = n),
+      cov_c = generate_covariate(n = n),
+      
+      # response is an emax function of exposure plus covariate model
+      response = emax_fn(
+        exposure,
+        emax = par$emax, 
+        ec50 = par$ec50, 
+        e0 = par$e0, 
+        gamma = par$gamma
+      ) + 
+        par$coef_a * cov_a + 
+        par$coef_b * cov_b + 
+        par$coef_c * cov_c + 
+        rnorm(n, 0, par$sigma)
+    )
+  }
+  
+  # parameters governing the whole thing
+  par <- list(
+    emax   = 10, 
+    ec50   = 4000, 
+    e0     = 5,
+    gamma  = 1,
+    sigma  = .6,
+    coef_a = .3,
+    coef_b = .2,
+    coef_c = 0
   )
+  
+  # simulate a simple experiment with three dose groups
+  dat <- bind_rows(
+    make_data(dose = 100, n = 100, par = par),  
+    make_data(dose = 200, n = 100, par = par),
+    make_data(dose = 300, n = 100, par = par)
+  ) 
+  
+  return(dat)
 }
-
-generate_covariate <- function(n) {
-  rbeta(n, 2, 2) * 10
-}
-
-make_data <- function(dose, n, par) {
-  tibble(
-    dose = dose, 
-    exposure = generate_exposure(max(dose, .01), n = n), 
-    cov_a = generate_covariate(n = n),
-    cov_b = generate_covariate(n = n),
-    cov_c = generate_covariate(n = n),
-    response = emax_fn(
-      exposure,
-      emax = par$emax, 
-      ec50 = par$ec50, 
-      e0 = par$e0, 
-      gamma = par$gamma
-    ) + 
-      par$coef_a * cov_a + 
-      par$coef_b * cov_b + 
-      par$coef_c * cov_c + 
-      rnorm(n, 0, par$sigma)
-  )
-}
-
-par <- list(
-  emax   = 10, 
-  ec50   = 4000, 
-  e0     = 5,
-  gamma  = 1,
-  sigma  = .6,
-  coef_a = .3,
-  coef_b = .2,
-  coef_c = 0
-)
-
-dat <- bind_rows(
-  make_data(dose = 100, n = 100, par = par),  
-  make_data(dose = 200, n = 100, par = par),
-  make_data(dose = 300, n = 100, par = par)
-) 
 ```
 
-The data frame for our continuous response scenario looks like this:
+:::
+
+Without further ado, here's a data set we can use for Emax regression with a continuous response variable, and three continuous covariates:
 
 ```{r}
+dat <- generate_data()
 dat
 ```
+
+The easiest way to see what's going on in this data set is to plot `response` as a function of `exposure`, as well as the three covariates `cov_a`, `cov_b`, and `cov_c`:
 
 ```{r}
 #| fig-height: 8
@@ -129,60 +156,205 @@ dat |>
   theme_bw()
 ```
 
+At a quick glance it's clear that `exposure` is related to `response` (as one would hope), but there's also a fairly obvious that the response is related to `cov_a` and possibly also `cov_b`
+
 ### Simple Emax regression
+
+Specify the model. The first step is describing the nonlinear predictor function using `brmsformula()`, or just `bf()` if we want to use the shorthand:
 
 ```{r}
 #| label: simple-continuous-emax-model
-#| cache: true
-#| message: false
-#| results: hide
-mod <- brm(
-  formula = brmsformula(
-    response ~ e0 + emax * exposure / (ec50 + exposure),
-    e0 + emax + ec50 ~ 1,
-    nl = TRUE
-  ),
-  family = gaussian(),
-  data = dat,
-  prior = c(
-    prior(normal(0, 5), nlpar = "e0"),
-    prior(normal(0, 5), nlpar = "emax"),
-    prior(normal(2000, 500), nlpar = "ec50", lb = 0)
-  )
+base_model <- brmsformula(
+  response ~ e0 + emax * exposure / (ec50 + exposure),
+  e0 ~ 1,
+  emax ~ 1,
+  ec50 ~ 1,
+  nl = TRUE
+) 
+```
+
+There are a few important things to note here. 
+
+- First, notice that we've set `nl = TRUE`. This is important because the syntax for a nonlinear model formula is qualitatively different to the syntax for a linear model formula. For linear models, we use the compact syntax where the model parameters (i.e., the regression coefficients) are *implicit*, like `y ~ x1 + x2` corresponds to the regression model $y_i = b_0 + b_1 x_1 + b_2 x_2$. For nonlinear models, this approach won't work because brms has no way to know the form of the model. So we have to be *explicit* and include the parameters (in this case `e0`, `emax`, and `ec50`) in the model formula.
+
+- Second, note that I explicitly included formulas `e0 ~ 1`, `emax ~ 1`, and `ec50 ~ 1` in the model specification. This serves two purposes. First, it tells brms that `e0`, `emax` and `ec50` should be interpreted as model parameters (and brms will expect a prior for these parameters), whereas `exposure` should be treated as a predictor (brms will look for it in the data set).
+
+- Third, be aware that the formula notation like `e0 ~ 1` is not arbitrary. In this particular model, `e0` will be treated like an "intercept" parameter: it's a single parameter and doesn't have a covariate model or any random effects attached to it. I'll come back to this later, but for now let's just be aware of this because you'll see this pop up in the output later.
+
+Okay, let's get back on track. 
+
+The second step is specifying the error model and link function. In an Emax regression with continuous response variables, we typically adopt the same approach we would do in an ordinary linear regression, and assume that measurement errors are normally distributed with an identity link:
+
+```{r}
+#| label: gaussian-error-model
+measurement_model <- brmsfamily(
+  family = "gaussian", 
+  link = "identity"
 )
 ```
 
-Print the model object:
+Finally we need to specify priors. By default brms uses an improper flat prior for regression terms, but that's not usually the best approach and (at least in my experience) can misbehave when you have a nonlinear model such as Emax. In addition, since the `e0` and `emax` variables are interpreted on the same scale as `response`, and `ec50` is interpreted on the same scale as `exposure`, it's usually possible to set informed priors that make sense for the experimental design (e.g., if you've already built a PK model you have a good sense of the range of possible exposures, and that in turn tells you something about the plausible range for your EC50 parameter). Anyway, here's a prior that is pretty conservative but not unreasonable for this design (e.g., I'm allowing for an exposure-response relationship but not specifying the direction in advance), but rules out nonsense parameters (e.g., you really shouldn't have negative EC50 values):^[Okay yes, I have not manually specified the prior for the error variance $\sigma$. Feel free to inspect the Stan code to see how brms handles that.]
 
 ```{r}
-mod
+base_prior <- c(
+  prior(normal(0, 5), nlpar = "e0"),
+  prior(normal(0, 5), nlpar = "emax"),
+  prior(normal(2000, 500), nlpar = "ec50", lb = 0)
+)
 ```
 
+Now that we have all three components we are ready to go. It's possible to use `make_stancode()` to inspect the Stan code that brms generates, and you can take a look at it here if you want to get a sense of what the "brms to stan" translation does, but I'll admit it's not always very pretty:
+
+::: {.callout-caution collapse="true" appearance="minimal" title="Click to see the Stan code"}
+
 ```{r}
-epred_mod <- mod |> 
+#| label: stancode-continuous-emax-model
+make_stancode(
+  formula = base_model, 
+  family = measurement_model, 
+  data = dat, 
+  prior = base_prior
+)
+```
+
+:::
+
+More important for our current purposes we can fit the model by calling `brm()`:
+
+```{r}
+#| label: run-continuous-emax-model
+#| cache: true
+#| message: false
+#| results: hide
+base_fit <- brm(
+  formula = base_model, 
+  family = measurement_model, 
+  data = dat, 
+  prior = base_prior
+) 
+```
+
+Print the output:
+
+```{r}
+base_fit
+```
+
+Extract model predictions:
+
+```{r}
+base_epred <- base_fit |> 
   epred_draws(newdata = tibble(exposure = seq(0, 50000, 1000))) |> 
   ungroup() |> 
   summarize(response = mean(.epred), .by = exposure)
 
-epred_mod
+base_epred
 ```
+
+Plot:
 
 ```{r}
 ggplot(mapping = aes(exposure, response)) + 
-  geom_path(data = epred_mod) + 
+  geom_path(data = base_epred) + 
   geom_point(data = dat) + 
   theme_bw()
 ```
 
-But notice, we are missing the effect of covariates. If we colour the data points by the value of `cov_a`, we can see this very clearly:
+### Including covariates
+
+We can adapt the exposure-response curve in the last example to illustrate why the simple emax regression model `base_model` is insufficient to handle our problem. Shading the data points by the value of `cov_a` makes it obvious:
 
 ```{r}
 ggplot(mapping = aes(exposure, response)) + 
-  geom_path(data = epred_mod) + 
+  geom_path(data = base_epred) + 
   geom_point(mapping = aes(color = cov_a), data = dat) + 
   scale_color_distiller(palette = "PuOr", limits = c(0, 10)) + 
   theme_bw()
 ```
+
+So we need an extended model:
+
+```{r}
+full_model <- brmsformula(
+  response ~ e0 + emax * exposure / (ec50 + exposure) + 
+    a * cov_a + b * cov_b + c * cov_c,
+  e0 ~ 1,
+  emax ~ 1,
+  ec50 ~ 1,
+  a ~ 1, 
+  b ~ 1,
+  c ~ 1,
+  nl = TRUE
+)
+
+full_prior <- c(
+  prior(normal(0, 5), nlpar = "e0"),
+  prior(normal(0, 5), nlpar = "emax"),
+  prior(normal(2000, 500), nlpar = "ec50", lb = 0),
+  prior(normal(0, 5), nlpar = "a"),
+  prior(normal(0, 5), nlpar = "b"),
+  prior(normal(0, 5), nlpar = "c")
+)
+```
+
+```{r}
+#| label: run-continuous-emax-model-with-covariates
+#| cache: true
+#| message: false
+#| results: hide
+full_fit <- brm(
+  formula = full_model, 
+  family = measurement_model, 
+  data = dat, 
+  prior = full_prior
+) 
+```
+
+Let's take a look: 
+
+```{r}
+full_fit
+```
+
+
+ALTERNATIVELY
+
+```{r}
+full_model_2 <- brmsformula(
+  response ~ e0 + emax * exposure / (ec50 + exposure),
+  e0 ~ 1 + cov_a + cov_b + cov_c,
+  emax ~ 1,
+  ec50 ~ 1,
+  nl = TRUE
+)
+
+full_prior_2 <- c(
+  prior(normal(0, 5), nlpar = "e0"),
+  prior(normal(0, 5), nlpar = "emax"),
+  prior(normal(2000, 500), nlpar = "ec50", lb = 0)
+)
+```
+
+```{r}
+#| label: run-continuous-emax-model-with-covariates-2
+#| cache: true
+#| message: false
+#| results: hide
+full_fit_2 <- brm(
+  formula = full_model_2, 
+  family = measurement_model, 
+  data = dat, 
+  prior = full_prior_2
+) 
+```
+
+Let's take a look: 
+
+```{r}
+full_fit_2
+```
+
+
 
 
 ## old
