@@ -2,6 +2,8 @@
 title: "Bayesian Emax regression using brms"
 description: "This is a draft post, please do not cite or share yet"
 date: "2025-02-21"
+draft: true
+draft-mode: unlinked
 --- 
 
 <!--------------- my typical setup ----------------->
@@ -19,8 +21,6 @@ set.seed(1)
 
 <!--------------- post begins here ----------------->
 
-
-
 ```{r}
 #| label: packages
 #| message: false
@@ -34,34 +34,32 @@ library(tidybayes)
 
 ## Continuous response
 
-Letting $\phi_i$ denote^[Using $\phi$ here is not standard notation, and insofar as exposure is treated as a predictor for the response you can think of it as "just another covariate", which would suggest that $x_i$ would be a natural choice, but exposure-response modelling almost always treats exposure as a qualitatively different predictor to other covariates, and indeed within the Emax regression framework it is structurally different to other covariates, so I'm giving it a distinct symbol. Later in the post the logic for this will be clearer.] the observed exposure for the $i$-th subject, and letting $y_i$ denote the observed response, the form of the Emax model for a continuous-valued response is typically written as the following nonlinear regression model:
+Letting $\phi_i$ denote^[Using $\phi_i$ here is not standard notation, and insofar as exposure is treated as a predictor for the response (as it is in the logistic regression context) you can think of it statistically in the same way you would a covariate. That would suggest that $x_i$ would be a sensible notation choice, but it is a little misleading. From a scientific perspective exposure-response modelling treats exposure as a qualitatively different entity to the covariates, and within the Emax regression framework in particular exposure is structurally different to other covariates. As such it seems sensible to use a distinct symbol.] the observed exposure for the $i$-th subject, and letting $y_i$ denote the observed response, the Emax model for a continuous response is written as follows:
 
 $$
 y_i = E_0 + E_{max} \frac{\phi_i^\gamma}{EC_{50}^\gamma + \phi_i^\gamma} + \epsilon_i 
 $$
 
-where we typically assume iid normal residual error, $\epsilon_i \sim \mbox{Normal}(0, \sigma^2)$. This model has five parameters that need to be estimated:
+where $\epsilon_i \sim \mbox{Normal}(0, \sigma^2)$ is the measurement model. The model has five parameters:
 
-- $E_0$ is an intercept term and represents the baseline response when drug exposure is zero
-- $E_{max}$ is an asymptote term and defines the maximum change from baseline as the drug exposure becomes arbitrarily large
-- $EC_{50}$ is a location parameter, and defines the exposure level at which the change from baseline is 50% of the maximum possible change
-- $\gamma$ is the "Hill coefficient" that describes the steepness of the response curve. It is not uncommon to fix $\gamma = 1$ in Emax modelling, and I'll start by doing that
-- $\sigma^2$ is the residual variance used to describe the level of measurement error in the data
-
-```{r}
-emax_fn <- function(exposure, emax, ec50, e0, gamma = 1, ...) {
-  e0 + emax * (exposure ^ gamma) / (ec50 ^ gamma + exposure ^ gamma)
-}
-```
+- $E_0$ is represents the baseline response when drug exposure is zero
+- $E_{max}$ defines the maximum change from baseline as the drug exposure increases
+- $EC_{50}$ defines the exposure at which the change from baseline is 50% of the maximum
+- $\gamma$ is the Hill coefficient, and describes the steepness of the response curve. It is not uncommon to fix $\gamma = 1$ in Emax modelling, and I'll start by doing that
+- $\sigma^2$ is the residual variance that describes the amount of measurement error in the data
 
 ### Simulated data
 
-First we need a data set. Simulating semi-plausible data sets for exposure-response analysis isn't easy when you don't have a fully specified pharmacokinetic model under the hood, but with a few simplifying assumptions it's not terrible. Luckily I talked about this in [an earlier blog post about emax regression](/posts/2024-11-11_emax-parameters/) so I won't repeat myself. Instead, I'll just wrap everything in a `make_continuous_data()` function, and hide the code here:
+Simulating semi-plausible data sets for exposure-response analysis isn't easy when you don't have a fully specified pharmacokinetic (PK) model under the hood, but with a few simplifying assumptions it's not too difficult. I talked about this in [an earlier blog post about Emax regression](/posts/2024-11-11_emax-parameters/), so I won't repeat myself here. Instead, I'll wrap everything in a `make_continuous_data()` function here:
 
 ::: {.callout-caution collapse="true" appearance="minimal" title="Click to see the code"}
 
 ```{r}
 #| label: continuous-data
+emax_fn <- function(exposure, emax, ec50, e0, gamma = 1, ...) {
+  e0 + emax * (exposure ^ gamma) / (ec50 ^ gamma + exposure ^ gamma)
+}
+
 make_continuous_data <- function(seed = 123) {
   
   set.seed(seed)
@@ -133,7 +131,7 @@ make_continuous_data <- function(seed = 123) {
 
 :::
 
-Without further ado, here's a data set we can use for Emax regression with a continuous response variable, and three continuous covariates:
+Using this function we can simulate a data set suitable for Emax regression with a continuous response. In addition to the continuous `exposure` and `response` variables, the data set contains three three continuous covariates that could potentially be related to the response:
 
 ```{r}
 dat <- make_continuous_data()
@@ -158,7 +156,7 @@ dat |>
   theme_bw()
 ```
 
-At a quick glance it's clear that `exposure` is related to `response` (as one would hope), but there's also a fairly obvious that the response is related to `cov_a` and possibly also `cov_b`
+At a quick glance it's clear that `exposure` is related to `response` (as one would hope), but it also seems clear that the response is related to `cov_a` and possibly also `cov_b`. Some modelling will be required to disentangle these effects.
 
 ### Simple Emax regression
 
@@ -195,7 +193,7 @@ measurement_model <- brmsfamily(
 )
 ```
 
-Finally we need to specify priors. By default brms uses an improper flat prior for regression terms, but that's not usually the best approach and (at least in my experience) can misbehave when you have a nonlinear model such as Emax. In addition, since the `e0` and `emax` variables are interpreted on the same scale as `response`, and `ec50` is interpreted on the same scale as `exposure`, it's usually possible to set informed priors that make sense for the experimental design (e.g., if you've already built a PK model you have a good sense of the range of possible exposures, and that in turn tells you something about the plausible range for your EC50 parameter). Anyway, here's a prior that is pretty conservative but not unreasonable for this design (e.g., I'm allowing for an exposure-response relationship but not specifying the direction in advance), but rules out nonsense parameters (e.g., you really shouldn't have negative EC50 values):^[Okay yes, I have not manually specified the prior for the error variance $\sigma$. Feel free to inspect the Stan code to see how brms handles that.]
+Finally we need to specify priors. By default brms uses an improper flat prior for regression terms, but that's not usually the best approach and (at least in my experience) can misbehave when you have a nonlinear model such as Emax. In addition, since the `e0` and `emax` variables are interpreted on the same scale as `response`, and `ec50` is interpreted on the same scale as `exposure`, it's usually possible to set informed priors that make sense for the experimental design (e.g., if you've already built a PK model you have a good sense of the range of possible exposures, and that in turn tells you something about the plausible range for your EC50 parameter). Anyway, here's a prior that is pretty conservative but not unreasonable for this design (e.g., I'm allowing for an exposure-response relationship but not specifying the direction in advance), but rules out nonsense parameters (e.g., you really shouldn't have negative EC50 values):^[Okay yes, I have not manually specified the prior for the error variance $\sigma^2$. Feel free to inspect the Stan code to see how brms handles that.]
 
 ```{r}
 base_prior <- c(
@@ -401,7 +399,7 @@ full_fit
 loo(full_fit, base_fit)
 ```
 
-## Binary outcomes
+## Binary response
 
 The emax regression framework also supports binary response data (e.g., adverse events in an exposure-safety analysis). Letting $p_i = Pr(y_i = 1)$ be the probability of an event,
 
