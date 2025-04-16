@@ -96,61 +96,89 @@ It was never posted with an explicit title, and at the time I posted it I was fo
 
 > sigh. okay look, this is another one of the "slightly menacing hearts" pieces i've been posting lately. and yes, it is generative art, the saccharine and bland stuff everyone on here loves to hate and deride. of course, the system is written entirely by myself in R and C++ as usual, and is not "trained" on anything at all, much less the work of other artists. because my work is of course utter garbage, the colour palette is very bright bloody pink and deep green, watermelon colours. see, red heart against green? so pretty, so nice... except the red heart has black rot in the middle, the colour is leeching into the surrounding canvas, and there are ugly slash marks marring the nice pretty background, as if something had corrupted something that should have been beautiful. perhaps the artist, quite publicly a repeated survivor of rape, is expressing a very human emotion through her machine-generated work? nope, can't be that, because all generative art is inherently soulless, lacking in artistic value, and we should never draw distinctions of any kind when making broad sweeping generalisations is so easy? 
 
-The rape *is* present in this piece, just not as overtly as it was in the previous one. In the end I decided to call it **saccharine, sweet, and devoid of value** with two different intended interpretations: on the one hand it's a reference to what people wrongly think generative art is, but on the other hand it's also a nasty reference to how I'm supposed to think of myself as a trans woman. I am supposed to be sweet and nice, just like one of the "good women", but nevertheless I am one of the "disposable women". In the language of the [Madonna/Whore complex](https://en.wikipedia.org/wiki/Madonna%E2%80%93whore_complex), trans women are *always* the whore. We exist to be sexually degraded, and can never aspire to be a high-status woman. 
+The rape *is* present in this piece, just not as overtly as it was in the previous one. In the end I decided to call it **saccharine, sweet, and devoid of value** with two different intended interpretations: on the one hand it's a reference to what people wrongly think generative art is, but on the other hand it's also a nasty reference to how I'm supposed to think of myself as a trans woman. I am supposed to be sweet and nice just like one of the "good women", but nevertheless I am one of the "disposable women". In the language of the [Madonna/Whore complex](https://en.wikipedia.org/wiki/Madonna%E2%80%93whore_complex), trans women are *always* the whore. We exist to be sexually degraded, and can never aspire to be a high-status woman. 
 
 ## III. Shame
 
-![degradation part 1](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_30_3075.jpg)	
+Given where my mood had taken me, is it any real surprise that feelings of shame and humiliation start to appear in the series? I posted these two pieces together with the caption **degradation**:
 
-![degradation part 2](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_30_3056.jpg)
+::: {layout-ncol=2}
 
-![wants me to tell him something pretty](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_31_3119.jpg)
+![**degradation part 1** (version 30, seed 3075)](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_30_3075.jpg)	
 
-![her mere presence is a blight on the natural order, part 1](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_34_3421.jpg)
+![**degradation part 2** (version 30, seed 3056)](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_30_3056.jpg)
 
-![her mere presence is a blight on the natural order, part 2](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_34_3440.jpg)
+::: 
 
-![her mere presence is a blight on the natural order, part 3](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_30_3049.jpg)
+I suppose the intention here was to contrast the different feel that inverting the palette has in this version of the system. The white pieces on black background tended to be delicate and lovely, the black pieces on white background have a bleaker, coarser feel. It's not an inherent feature of white/black palettes of course, just something that emerged from the dynamics of this particular system variant, and it felt striking to me. 
+
+Why call the joint piece **degradation** though? Only one of the two pieces feels degraded. My introspection fails me a little here: maybe it's a before the rape / after the rape distinction, or maybe it's another reference to the Madonna/Whore dynamic. I don't know for sure. One way or another though it is referring to sexual degradation. It does reference the way men treat me during sex, and how that treatment has trained me to confuse abuse with affection, and conflate desire with degradation. Above all else I have been taught to be ashamed of myself. In a moral universe shame should attach to the rapist; but we don't live in that universe. Shame is for the victims. 
+
+The next piece I shared was this one:
+
+![**wants me to tell him something pretty** (version 31, seed 3119)](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_31_3119.jpg)
+
+Once again, the title **wants me to tell him something pretty** provides interpretation. This piece completely obscures the heart motif, focusing instead on the black shapes blotting it out against the blood red background. It abandons the pretense that any of this is gentle or kind or loving. In artistic terms it is a deliberate repudiation of the same thing that **saccharine, sweet, and devoid of value** criticises. Art isn't always nice. It isn't always pretty. And the real world stories behind the art aren't always pretty either. Again, the "something pretty" aspect to the title partly references the expectation men have that women should make ourselves pretty for them, and rejects that too.
+
+The specific phrasing is also a cultural reference. It is the final line spoken in the TV series [Deadwood](https://en.wikipedia.org/wiki/Deadwood_(TV_series)), delivered by Al Swearengen as he cleans up the blood of yet another murder, sourly commenting on the fact that after all the horrors, people still want to be told a pretty story.
+
+Next came the triptych, **her presence is a blight on the natural order**:
+
+::: {layout-ncol=3}
+
+![**her presence is a blight on the natural order, part 1** (version 34, seed 3421)](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_34_3421.jpg)
+
+![**her presence is a blight on the natural order, part 2** (version 34, seed 3440)](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_34_3440.jpg)
+
+![**her presence is a blight on the natural order, part 3** (version 30, seed 3049)](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_30_3049.jpg)
+
+:::
+
+It's not subtle. One of these pieces is not like the others. Two of them are beautiful, delicate, lovely pieces to be cherished and admired. The third is a degraded, bleak, ugly thing. Guess which one is me? Guess which one is the trans woman, the one whose mere presence is a blight upon the natural order? If images could feel shame, we all know which one should feel shame.
 
 ## IV. Dread
 
-![dreamless eternal night awaited her, for she had no soul and had not been able to win one](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_37_3702.jpg)	
+![**dreamless eternal night awaited her, for she had no soul and had not been able to win one** (version 37, seed 3702)](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_37_3702.jpg)	
 
-![corrosion](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_37_3738.jpg)
+![**corrosion** (version 37, seed 3738)](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_37_3738.jpg)
 
-![unmedicated anxiety, a portrait](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_45_4526.jpg)
+![**unmedicated anxiety, a portrait** (version 45, seed 4526)](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_45_4526.jpg)
 
-![nicotine withdrawal](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_45_4452.jpg)
+![**nicotine withdrawal** (version 45, seed 4452)](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_45_4452.jpg)
 
-![and she put a wreath of white lilies round her hair,](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_47_4709.jpg)	
+![**and she put a wreath of white lilies round her hair,** (version 47, seed 4709)](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_47_4709.jpg)	
 
-![little death at tamarama beach](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_37_3772.jpg)
+![**little death at tamarama beach** (version 37, seed 3772)](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_37_3772.jpg)
 
 ## V. Hope
 
-![isolated motel room on a wintry night](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_40_4015.jpg)
+![**isolated motel room on a wintry night** (version 40, seed 4015)](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_40_4015.jpg)
 
-![he doesn't send me roses](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_44_4472.jpg)	
+::: {layout-ncol=2}
+
+![**he doesn't give me roses** (version 44, seed 4472)](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_44_4472.jpg)	
 	
-![he gives me thorns](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_44_4458.jpg)
+![**he gives me thorns** (version 44, seed 4458)](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_44_4458.jpg)
 
-![and so she returns to her art because everything is burning](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_45_4558.jpg)
+:::
+
+![**and so she returns to her art because everything is burning** (version 45, seed 4558)](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_45_4558.jpg)
 
 ## VI. Terror
 
-![she should have learned by now to keep her fucking mouth shut and her opinions to herself](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_48_4860.jpg)
+![**she should have learned by now to keep her fucking mouth shut and her opinions to herself** (version 48, seed 4860)](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_48_4860.jpg)
 
-![demure](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_48_4855.jpg)	
+![**demure** (version 48, seed 4855)](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_48_4855.jpg)	
 
-![bruises mark his hands at her throat...](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_49_4910.jpg)
+![**bruises mark his hands at her throat...** (version 49, seed 4910)](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_49_4910.jpg)
 	
-![good night princess, sweet dreams, lie still, don't resist](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_50_5093.jpg)
+![**good night princess, sweet dreams, lie still, don't resist** (version 50, seed 5093)](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_50_5093.jpg)
 
-![he says he'll be gentle](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_51_5142.jpg)
+![**he says he'll be gentle** (version 51, seed 5142)](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_51_5142.jpg)
 
-![side effects include numbness and disorientation](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_51_5108.jpg)	
+![**side effects include numbness and disorientation** (version 51, seed 5108)](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_51_5108.jpg)	
 
-![the bar is crowded but it's mardi gras, so no-one but her will mind if he slides his hand under her skirt and grabs her by the](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_52_5207.jpg)
+![**the bar is crowded but it's mardi gras, so no-one but her will mind if he slides his hand under her skirt and grabs her by the** (version 52, seed 5207)](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_52_5207.jpg)
 	
-![she tries to leave](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_52_5237.jpg)
+![**she tries to leave** (version 52, seed 5237)](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_52_5237.jpg)
 
