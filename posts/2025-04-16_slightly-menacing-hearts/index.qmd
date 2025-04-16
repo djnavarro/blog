@@ -32,25 +32,73 @@ Maybe that doesn't matter. Barthes wasn't wrong when he wrote [the death of the 
 
 Nevertheless, I'm still going to say something about what the art means to me. So... here goes. 
 
+## I. Desire
 
+The series started with a sense of joy and success. The mood partly captured my sense of accomplishment that I'd finally found a way to render the heart motif within this system in a way I found personally satisfying. It's something I'd tried to do in two previous systems ([here](https://art.djnavarro.net/gallery/heart-samples/) and [here](https://art.djnavarro.net/gallery/love-in-the-lightning/)) but with less success than I would have liked. So I was cautiously hopeful when the sixth version of the code started producing pieces I liked. Not quite convinced it was going to work out, I posted this one to social media with the caption **"maybe"**:
 
-![maybe](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_06_1504.jpg)
+![**maybe** (version 06, seed 1504)](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_06_1504.jpg)
 
-![something](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_06_1505.jpg)
+Admittedly, my cautious optimism about the system wasn't the only reason for picking this title. I hadn't chosen the heart motif by accident, after all. I wrote this into the code because I was distracted thinking about love, sex, and men. The sexual undercurrent, which became darker and more overt later in the series, was there from the outset. 
 
-![he loves me, he loves me not](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_07_1674.jpg)
+The next piece I shared was literally the next image that the system created. The **maybe** piece was generated using the sixth version of the system, and like most of my systems the only input argument is the RNG seed. **maybe** sets the seed to 1504, and the next piece **something** comes from seed 1505. I honestly don't know if the pairing of titles was intentional, but it does occur to me that "maybe [this is] something..." speaks more directly to the feeling I had at the time:
 
-![languid in the afterglow](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_07_1686.jpg)
+![**something** (version 06, seed 1505)](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_06_1505.jpg)
 
-![raw, exposed](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_09_1869.jpg)
+Like **maybe**, there is something delicate about **something**, but this time there is more energy. The white in the centre of the heart feels like it's glowing to me. It feels joyful to me, slightly dreamy. There is love in the art, and -- not entirely coincidentally -- I was thinking about a man, so when the next iteration of the code produced the image below, it's hardly a surprise that the accompanying caption turned the subtext into the text. This one is **he loves me, he loves me not**:
 
-![making my stupid art as if somehow it will make me feel better about fascism](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_18_2762.jpg)
+![**he loves me, he loves me not** (version 07, seed 1674)](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_07_1674.jpg)
 
-![waving tiny rainbow flags as the gender traitors are herded toward the gallows](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_20_2909.jpg)
+I adore this piece. The balance between the orange tones and the blue tones appeals to me, and this was one of the first pieces that made me think about the structural relationship between the "glow" in these images and the boundary defined by the heart motif itself. The way the blue seems to grow outwards from the heart, but then cling to the vertical streaks that run through the piece feels very organic to me. It makes me happy every time I revisit it.
 
-![her rapist got her pronouns right this time](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_14_2374.jpg)
+The piece that followed has a slightly different vibe. The red glow in this piece extends further than earlier ones, and the warmth of the red tones is a stark contrast against the dull flat grey background. So when I called it **languid in the afterglow**, yes, it's about sex. Or the bit after sex when you're still happy and warm and safe even if the rest of the world is none of those things. The afterglow that never lasts as long as you want it to. 
 
-![saccharine, sweet, and devoid of value](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_13_2214.jpg)	
+![**languid in the afterglow** (version 07, seed 1686)](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_07_1686.jpg)
+
+Sigh. 
+
+In any case, the next piece I shared on social media didn't have an explicit title. The accompanying text wasn't really intended to be a title. All I wrote was "this one has such a raw, exposed feel to me that fits my mood of late" and I later decided that **raw, exposed** made a good title for this one.
+
+![**raw, exposed** (version 09, seed 1869)](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_09_1869.jpg)
+
+The mood is obvious, to me at least. Compared to previous pieces the heart is so much larger, giving this feeling like the viewer is zooming in. Juxtaposed with those pieces it feels like the audience is encroaching on the subject. It feels like an invasion of personal space, and the bright bursts feel too bright, too much, and to my mind this one marks the end of a "phase" within the series. It's the point at which the soft, gentle feeling starts to go away. The love and warmth seems to be gone, stripped away leaving something else exposed. It feels uncomfortable.
+
+## II. Rage
+
+In the days that followed, my mood declined. Partly it was a reaction to the state of the world, but it was partly caused by nicotine withdrawal (that comes up again later). In truth, I'd stopped smoking six months ago, but because I'd given myself permission to use nicotine gum as much as I needed to, I hadn't actually made much progress on breaking the physiological addiction: all I'd been doing was getting the smoke out of my lungs and transferring the psychological cravings from the cigarettes to the gum. Worthy accomplishments, of course, but once I switched over to patches the amount of nicotine in my system started to plummet and withdrawal symptoms hit me really, really hard. I was tired all the time, I had trouble concentrating, and most of all I was having difficulty managing my emotions.
+
+I felt angry, and I felt hopeless. When I shared this piece, I didn't post it directly. I'd sent it to a friend of mine via chat and bitterly remarked to her that I was **making my stupid art as if somehow it will make me feel better about fascism**. I know, I know, I'm not supposed to feel like that about my art. People tell me over and over that art matters even more in dark times, and that the art I share helps them cope with the feeling of dread they feel when yet another horrible news story breaks. That's lovely, but it doesn't help  me cope with my feelings of dread. That bitterness is what came through when messaging my friend, and when I shared the piece on social media the thing I shared was a screenshot of my message to her and not the piece itself.
+
+![**making my stupid art as if somehow it will make me feel better about fascism** (version 18, seed 2762)](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_18_2762.jpg)
+
+As far as I can tell, this was the first time I shared one of these pieces that obscured the heart motif. It's there -- every piece generated by these systems contains the heart motif in some sense -- but the black smudges blot it out. It gets bleaker in the next piece, **waving tiny rainbow flags as the gender traitors are herded toward the gallows**. The intention behind the caption here isn't subtle. It is my bitterness about people who love to think they are allies to the LGBT community, but who remain deathly silent as our rights are eroded all over the world. 
+
+![**waving tiny rainbow flags as the gender traitors are herded toward the gallows** (version 20, seed 2909)](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_20_2909.jpg)
+
+Neither of these two pieces feel emotionally connected to the earlier ones (not to me, at least). They're part of the same artistic series but the anger in these two pieces doesn't tie in with the themes of sex and love that were present there.
+
+The next piece I shared, on the other hand...
+
+![**her rapist got her pronouns right this time** (version 14, seed 2374)](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_14_2374.jpg)
+
+This one hurt. Visually, the red/green/black palette is intense but it's dark. The black stain in the middle blots out most of the heart, and the streaks feel more like slashes and cuts through the heart. The piece is striking, but it's not pleasant to me. 
+
+I posted it with the caption **her rapist got her pronouns right this time**. 
+
+I am still not sure why I did that. It's unfortunately autobiographical, and yes it bitterly references something that happened. Why I chose this moment and this piece to pivot into a darker and more personal place, I don't really know. But I did. Earlier in the series there was a sexual undertone that was joyful; now the art is speaking to rape. 
+
+The reference to pronouns in the title isn't arbitrary either. One of the horrifying messages that trans women get sent by society is that we are "disposable women". We aren't "good women", we're the other kind. The ones that men are allowed to rape. More than that, we're taught to perceive our own rape as gender affirming: a man has validated my gender by treating me like a woman. Being raped is supposed to be a compliment, of sorts: it's proof that I'm enough of a woman that a man would want to rape me. These messages reverberate through my head every time I revisit my experiences with rape, and the rage I feel when these thoughts intrude upon my life is overwhelming.
+
+With that as context, the superficial lightness of the next piece is a little jarring:
+
+![**saccharine, sweet, and devoid of value** (version 13, seed 2214)](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_13_2214.jpg)	
+
+It was never posted with an explicit title, and at the time I posted it I was focused on this peculiar criticism that I see a lot online, namely that generative art can never really be art because it is machine generated. I don't agree with that claim at all, and when I posted this piece I did so with this as the alt text:
+
+> sigh. okay look, this is another one of the "slightly menacing hearts" pieces i've been posting lately. and yes, it is generative art, the saccharine and bland stuff everyone on here loves to hate and deride. of course, the system is written entirely by myself in R and C++ as usual, and is not "trained" on anything at all, much less the work of other artists. because my work is of course utter garbage, the colour palette is very bright bloody pink and deep green, watermelon colours. see, red heart against green? so pretty, so nice... except the red heart has black rot in the middle, the colour is leeching into the surrounding canvas, and there are ugly slash marks marring the nice pretty background, as if something had corrupted something that should have been beautiful. perhaps the artist, quite publicly a repeated survivor of rape, is expressing a very human emotion through her machine-generated work? nope, can't be that, because all generative art is inherently soulless, lacking in artistic value, and we should never draw distinctions of any kind when making broad sweeping generalisations is so easy? 
+
+The rape *is* present in this piece, just not as overtly as it was in the previous one. In the end I decided to call it **saccharine, sweet, and devoid of value** with two different intended interpretations: on the one hand it's a reference to what people wrongly think generative art is, but on the other hand it's also a nasty reference to how I'm supposed to think of myself as a trans woman. I am supposed to be sweet and nice, just like one of the "good women", but nevertheless I am one of the "disposable women". In the language of the [Madonna/Whore complex](https://en.wikipedia.org/wiki/Madonna%E2%80%93whore_complex), trans women are *always* the whore. We exist to be sexually degraded, and can never aspire to be a high-status woman. 
+
+## III. Shame
 
 ![degradation part 1](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_30_3075.jpg)	
 
@@ -64,6 +112,8 @@ Nevertheless, I'm still going to say something about what the art means to me. S
 
 ![her mere presence is a blight on the natural order, part 3](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_30_3049.jpg)
 
+## IV. Dread
+
 ![dreamless eternal night awaited her, for she had no soul and had not been able to win one](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_37_3702.jpg)	
 
 ![corrosion](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_37_3738.jpg)
@@ -76,6 +126,8 @@ Nevertheless, I'm still going to say something about what the art means to me. S
 
 ![little death at tamarama beach](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_37_3772.jpg)
 
+## V. Hope
+
 ![isolated motel room on a wintry night](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_40_4015.jpg)
 
 ![he doesn't send me roses](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_44_4472.jpg)	
@@ -84,9 +136,12 @@ Nevertheless, I'm still going to say something about what the art means to me. S
 
 ![and so she returns to her art because everything is burning](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_45_4558.jpg)
 
+## VI. Terror
+
 ![she should have learned by now to keep her fucking mouth shut and her opinions to herself](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_48_4860.jpg)
+
 ![demure](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_48_4855.jpg)	
-	
+
 ![bruises mark his hands at her throat...](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_49_4910.jpg)
 	
 ![good night princess, sweet dreams, lie still, don't resist](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_50_5093.jpg)
