@@ -1,0 +1,101 @@
+---
+title: "Making menacing hearts"
+description: "This is a subtitle"
+date: "2025-04-16"
+categories: "Art"
+--- 
+
+<!--------------- my typical setup ----------------->
+
+```{r}
+#| label: setup
+#| include: false
+very_wide <- 500
+wide <- 136
+narrow <- 76
+options(width = narrow)
+cache_images <- TRUE
+set.seed(1)
+```
+
+<!--------------- post begins here ----------------->
+
+Over the last month or so, while the world burned and my emotions went entirely haywire thanks to the painful process of nicotine withdrawal, I've been posting artwork on social media that eventually became the [slightly menacing hearts](https://art.djnavarro.net/gallery/menacing-hearts/) series. Like most of my generative art series, I made the source code [available on github](https://github.com/djnavarro/series-menacing-hearts), and released a curated set of pieces on my art website. In the past when releasing a series that I particularly like, I've written technical posts on this blog that show how the system is designed (examples [here](/posts/2024-01-26_splatter/), [here](/posts/2023-03-13_shattered-landscapes/), and [here](/posts/2021-09-07_water-colours/)). I thought about doing that again, but honestly I don't think there's much value to it this time because the implementation of the menacing hearts system isn't that much different to the [tutorial on iterated function systems](/posts/2024-12-22_art-from-code-5/) that I wrote a few years ago. From a technical standpoint there's really nothing new to say. 
+
+From an artistic perspective though, there is something missing. For as long as I've been making generative art I've consistently talked about the fact that my creative process is driven by  emotions. Here's [something I wrote](/posts/2021-07-08_generative-art-in-r/) back in 2021:
+
+> Most of the time the starting point for my art is an emotion. I might be angry or lonely or tired, or just in need of something to occupy my mind and distract me from something else. When I start implementing a new system it’s often (though not always) a modification of a previous one. In principle this modification process could go in any direction, but my aesthetic sensibilities depend a lot on my state of mind, and that imposes a bias. I tweak the code one way, and see what it produces. If I like it, I keep the change, if I don’t I reject it. It’s a lot like a Metropolis-Hastings sampler that way, but my mood strongly shapes the accept/reject decision, so the same starting point can lead to different outcomes.
+
+As I wrap the slightly menacing hearts series up, it strikes me that this has been one of the most deeply personal things I've ever done with my art. The emotions that drove this series are tied to trauma, and when I posted individual pieces to mastodon or bluesky I tended to provide captions or titles for the pieces. The captions were often sinister, and those don't appear in the [gallery](https://art.djnavarro.net/gallery/menacing-hearts/). The gallery is just 200 images displayed in a random order. The context is missing, and the audience can't see the progression over time as the series was being developed.
+
+Maybe that doesn't matter. Barthes wasn't wrong when he wrote [the death of the author](https://en.wikipedia.org/wiki/The_Death_of_the_Author). Yes, I created the pieces. And yes, my emotions and experiences shape how and why I did that. But those experiences aren't dispositive when interpreting the artwork. I have an interpretation of my work. Others are free to perceive and interpret the same pieces in a different way.
+
+Nevertheless, I'm still going to say something about what the art means to me. So... here goes. 
+
+
+
+![maybe](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_06_1504.jpg)
+
+![something](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_06_1505.jpg)
+
+![he loves me, he loves me not](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_07_1674.jpg)
+
+![languid in the afterglow](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_07_1686.jpg)
+
+![raw, exposed](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_09_1869.jpg)
+
+![making my stupid art as if somehow it will make me feel better about fascism](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_18_2762.jpg)
+
+![waving tiny rainbow flags as the gender traitors are herded toward the gallows](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_20_2909.jpg)
+
+![her rapist got her pronouns right this time](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_14_2374.jpg)
+
+![saccharine, sweet, and devoid of value](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_13_2214.jpg)	
+
+![degradation part 1](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_30_3075.jpg)	
+
+![degradation part 2](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_30_3056.jpg)
+
+![wants me to tell him something pretty](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_31_3119.jpg)
+
+![her mere presence is a blight on the natural order, part 1](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_34_3421.jpg)
+
+![her mere presence is a blight on the natural order, part 2](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_34_3440.jpg)
+
+![her mere presence is a blight on the natural order, part 3](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_30_3049.jpg)
+
+![dreamless eternal night awaited her, for she had no soul and had not been able to win one](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_37_3702.jpg)	
+
+![corrosion](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_37_3738.jpg)
+
+![unmedicated anxiety, a portrait](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_45_4526.jpg)
+
+![nicotine withdrawal](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_45_4452.jpg)
+
+![and she put a wreath of white lilies round her hair,](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_47_4709.jpg)	
+
+![little death at tamarama beach](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_37_3772.jpg)
+
+![isolated motel room on a wintry night](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_40_4015.jpg)
+
+![he doesn't send me roses](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_44_4472.jpg)	
+	
+![he gives me thorns](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_44_4458.jpg)
+
+![and so she returns to her art because everything is burning](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_45_4558.jpg)
+
+![she should have learned by now to keep her fucking mouth shut and her opinions to herself](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_48_4860.jpg)
+![demure](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_48_4855.jpg)	
+	
+![bruises mark his hands at her throat...](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_49_4910.jpg)
+	
+![good night princess, sweet dreams, lie still, don't resist](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_50_5093.jpg)
+
+![he says he'll be gentle](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_51_5142.jpg)
+
+![side effects include numbness and disorientation](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_51_5108.jpg)	
+
+![the bar is crowded but it's mardi gras, so no-one but her will mind if he slides his hand under her skirt and grabs her by the](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_52_5207.jpg)
+	
+![she tries to leave](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_52_5237.jpg)
+
