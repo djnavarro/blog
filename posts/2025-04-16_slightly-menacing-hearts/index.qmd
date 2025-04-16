@@ -138,13 +138,20 @@ It's not subtle. One of these pieces is not like the others. Two of them are bea
 
 ## IV. Dread
 
-![**dreamless eternal night awaited her, for she had no soul and had not been able to win one** (version 37, seed 3702)](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_37_3702.jpg)	
+At this point I am going to slightly reorder the sequence of pieces from how I shared them on social media. There are two pieces I posted with captions that refer directly to the physiological experiences I was having at the time, **unmedicated anxiety** and **nicotine withdrawal**. I didn't post them explicitly as a pair, but it feels like they go naturally together:
+
+::: {layout-ncol=2}
+
+![**unmedicated anxiety** (version 45, seed 4526)](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_45_4526.jpg)
+
+![**nicotine withdrawal** (version 45, seed 4452)](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_45_4452.jpg)
+
+:::
 
 ![**corrosion** (version 37, seed 3738)](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_37_3738.jpg)
 
-![**unmedicated anxiety, a portrait** (version 45, seed 4526)](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_45_4526.jpg)
 
-![**nicotine withdrawal** (version 45, seed 4452)](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_45_4452.jpg)
+![**dreamless eternal night awaited her, for she had no soul and had not been able to win one** (version 37, seed 3702)](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_37_3702.jpg)	
 
 ![**and she put a wreath of white lilies round her hair,** (version 47, seed 4709)](https://storage.googleapis.com/djnavarro-art/series-menacing-hearts/image/languid_47_4709.jpg)	
 
