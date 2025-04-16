@@ -581,7 +581,6 @@ In truth, the measurement model is the only thing I've changed when switching fr
 
 ```{r}
 #| label: run-binary-emax-model
-#| cache: true
 #| message: false
 #| results: hide
 binary_base_fit <- brm(
@@ -624,7 +623,6 @@ At this point you're hardly going to be shocked to discover that the model formu
 
 ```{r}
 #| label: run-binary-emax-model-with-covariates
-#| cache: true
 #| message: false
 #| results: hide
 binary_full_fit <- brm(
