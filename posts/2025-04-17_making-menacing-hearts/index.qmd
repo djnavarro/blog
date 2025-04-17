@@ -3,6 +3,8 @@ title: "Making menacing hearts"
 description: "In which the author calls the little mermaid a whore"
 date: "2025-04-17"
 categories: "Art"
+image: "languid_13_2214.jpg"
+image-alt: "Red heart against a green background"
 --- 
 
 <!--------------- my typical setup ----------------->
@@ -19,7 +21,6 @@ set.seed(1)
 ```
 
 <!--------------- post begins here ----------------->
-
 
 > Emma's in a part of town <br>
 > where she doesn't recognize the streets <br>
