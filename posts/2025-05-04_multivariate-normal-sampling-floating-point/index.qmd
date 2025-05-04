@@ -1,0 +1,156 @@
+---
+title: "Multivariate normal sampling in a floating point world"
+description: "This is a subtitle"
+date: "2025-05-04"
+--- 
+<!--------------- my typical setup ----------------->
+
+```{r}
+#| label: setup
+#| include: false
+very_wide <- 500
+wide <- 136
+narrow <- 76
+options(width = narrow)
+cache_images <- TRUE
+set.seed(1)
+```
+
+<!--------------- post begins here ----------------->
+
+At work last week some colleagues mentioned a reproducibility issue they'd been having with some R code. They'd been running simulations that rely on generating samples from a multivariate normal distribution, and despite doing the prudent thing and using `set.seed()` to control the state of the random number generator (RNG), the results were not computationally reproducible. The same code, executed on different machines, would produce *different* random numbers. 
+
+That's not supposed to happen, and in most situations it doesn't happen. Usually, the `set.seed()` method works just fine:
+
+```{r}
+# original 
+set.seed(1)
+sample(letters)
+
+# replication
+set.seed(1)
+sample(letters)
+```
+
+Because the original code and the replication code both use `set.seed(1)` before calling `sample()` to shuffle the letters of the alphabet into a random order, we get the *same* random permutation in both cases. And although I'm exectuing this code twice on the same machine, there's no reason to expect that it would make a difference if I ran the original code on my ubuntu laptop running R 4.4.3 or on a window machine running R 4.3.1. It should be the same result either way. 
+
+Yet that's not what my colleagues experienced with their code. Different machines produced different random samples even though the code used `set.seed()` to prevent that from happening. Their first thought was they must have done something wrong with their code that caused the simulations to break. It wasn't that. Their second thought was that something was wrong with R, or more precisely with `MASS::mvrnorm()`, since this is the function that was causing all the difficulty. They couldn't see anything wrong with the function though, so they asked me to look into it. It turns out that wasn't the problem either, not really. 
+
+The problem turned out to be floating point errors. I should have known. In hindsight it was so obviously going to be floating point issues that I shouldn't have spent hours looking into it. As I said on mastodon at the time:
+
+> in future whenever i'm asked "why is [thing] not reproducible even though i set the RNG seed?" i'm not even going to bother looking into the specifics i'm just going to reply "floating point arithmetic" and just wait until i am inevitably proven correct
+
+## The puzzle
+
+It's not easy to replicate the precise issue that my colleagues encountered using a single machine, but I can approximate the issue. Consider these two covariance matrices, `cov1` and `cov2`. When printed out, they look identical:
+
+```{r}
+#| include: false
+cov1 <- matrix(
+  c(
+    4.58, -1.07,  2.53,  0.14, 
+    -1.07, 5.83,  1.15, -1.45, 
+    2.53,  1.15,  2.26, -0.79, 
+    0.14, -1.45, -0.79,  4.93
+  ), 4, 4)
+
+set.seed(1)
+tol <- 10^-13
+eps <- matrix(rnorm(16) * tol, 4, 4)
+eps <- eps + t(eps)
+
+cov2 <- cov1 + eps
+```
+
+```{r}
+cov1
+cov2
+```
+
+In fact, however, they are *very* slightly different to one another. The differences are extremely small, almost at the machine precision level on this laptop:^[Almost, but not quite. I'll talk about this a little later.]
+
+```{r}
+cov1 - cov2
+```
+
+Tiny differences like this are what we encounter when floating point truncation errors occur. To use the classic example, the result of this sum should be zero, but it's not because the binary representation of 0.1 is infinitely long and cannot be exactly represented by a double precision floating point number (which is of course how R represents numeric values)
+
+```{r}
+0.1 + 0.2 - 0.3
+```
+
+Even worse, the *precise* result of a computation to which floating point truncation error applies is not necessarily invariant across systems. Operating system differences, compiler settings, and a host of other factors can influence the outcome. The details don't matter for this post, and frankly I don't understand all of them myself. For all I know the colour of the laptop case might be relevant, or the name of the programmer's cat. Weirdness abounds once your calculations start to run up against the limits of floating point precision. 
+
+Just for the sake of argument then, let's imagine that during the course of some fancy simulation, you and I compute a covariance matrix on different machines. It's supposed to be the same covariance matrix, but thanks to the weirdness of floating point your machine computes `cov1` and mine computes `cov2`. The differences are very small, but they're large enough that this happens:
+
+```{r}
+set.seed(1)
+mvr1 <- MASS::mvrnorm(n = 1, mu = rep(0, 4), Sigma = cov1)
+mvr1
+
+set.seed(1)
+mvr2 <- MASS::mvrnorm(n = 1, mu = rep(0, 4), Sigma = cov2)
+mvr2
+
+mvr2 - mvr1
+```
+
+The moment we attempt to generate random vectors with a multivariate normal distribution, very small differences between `cov1` and `cov2` lead to big differences in the numbers that get generated even though the RNG seed is the same. 
+
+That's a little puzzling. Other kinds of calculation aren't affected the same way. Intuitively, we expect that tiny differences in the parameters should lead to tiny differences in sampled values. In fact, that's exactly what happens if we generate random samples from a *univariate* normal distribution with slightly different standard deviations:
+
+```{r}
+s1 <- sqrt(cov1[1, 1])
+s2 <- sqrt(cov2[1, 1])
+
+set.seed(1)
+r1 <- rnorm(n = 1, mean = 0, sd = s1)
+r1
+
+set.seed(1)
+r2 <- rnorm(n = 1, mean = 0, sd = s2)
+r2
+```
+
+These numbers look identical, but since `s1` and `s2` are slightly different, there are slight differences between `r1` and `r2`:
+
+```{r}
+r2 - r1
+```
+
+## The problem is not `mvrnorm()`
+
+So why are these two cases so different?
+
+
+## CACHE
+
+```{r}
+# cholesky decomposition approach
+L1 <- chol(cov1)
+L2 <- chol(cov2)
+
+# spectral decomposition approach
+e1 <- eigen(cov1)
+e2 <- eigen(cov2)
+A1 <- e1$vectors %*% diag(sqrt(pmax(e1$values, 0)), 4)
+A2 <- e2$vectors %*% diag(sqrt(pmax(e2$values, 0)), 4)
+
+# use the same univariate normal variates
+set.seed(1)
+x <- matrix(rnorm(4), 1)
+
+# results
+eigen_out1 <- as.vector(A1 %*% t(x))
+eigen_out2 <- as.vector(A2 %*% t(x))
+
+eigen_out1
+eigen_out2
+
+chol_out1 <- as.vector(L1 %*% t(x))
+chol_out2 <- as.vector(L2 %*% t(x))
+
+chol_out1
+chol_out2
+```
+
