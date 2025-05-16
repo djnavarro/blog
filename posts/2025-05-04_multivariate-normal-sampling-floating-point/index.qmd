@@ -1,7 +1,10 @@
 ---
-title: "Multivariate normal sampling in a floating point world"
-description: "This is a subtitle"
+title: "When good random numbers go bad"
+description: "Multivariate normal sampling can be wildly irreproducible if you're not careful. With the benefit of hindsight, teaching sand to do linear algebra was a mistake"
 date: "2025-05-04"
+image: "unravel_17_1769.jpg"
+image-alt: "A pair of squares being affine transformed so often that wildness ensues"
+categories: ["R", "Reproducibility", "Statistics"]
 --- 
 <!--------------- my typical setup ----------------->
 
@@ -18,17 +21,21 @@ set.seed(1)
 
 <!--------------- post begins here ----------------->
 
-At work last week some colleagues mentioned a reproducibility issue they'd been having with some R code. They'd been running simulations that rely on generating samples from a multivariate normal distribution, and despite doing the prudent thing and using `set.seed()` to control the state of the random number generator (RNG), the results were not computationally reproducible. The same code, executed on different machines, would produce *different* random numbers. 
+> Computing the eigendecomposition of a matrix is subject to errors on a real-world computer: the definitive analysis is Wilkinson (1965). All you can hope for is a solution to a problem suitably close to x. So even though a real asymmetric x may have an algebraic solution with repeated real eigenvalues, the computed solution may be of a similar matrix with complex conjugate pairs of eigenvalues. <br> &nbsp;&nbsp; -- `help("eigen")`
+
+
+
+At work last week some colleagues^[For the pharmacometricians: Yes, Steve Duffull was involved in this landing on my desk. If I have learned nothing else in my brief tenure in this field it is that every one of these "Danielle gets dragged into the pits of hell" style R questions is *always* Steve's fault. Somehow.] mentioned a reproducibility issue they'd been having with some R code. They'd been running simulations that rely on generating samples from a multivariate normal distribution, and despite doing the prudent thing and using `set.seed()` to control the state of the random number generator (RNG), the results were not computationally reproducible. The same code, executed on different machines, would produce *different* random numbers. 
 
 That's not supposed to happen, and in most situations it doesn't happen. Usually, the `set.seed()` method works just fine:
 
 ```{r}
 # original 
-set.seed(1)
+set.seed(1L)
 sample(letters)
 
 # replication
-set.seed(1)
+set.seed(1L)
 sample(letters)
 ```
 
@@ -36,44 +43,50 @@ Because the original code and the replication code both use `set.seed(1)` before
 
 Yet that's not what my colleagues experienced with their code. Different machines produced different random samples even though the code used `set.seed()` to prevent that from happening. Their first thought was they must have done something wrong with their code that caused the simulations to break. It wasn't that. Their second thought was that something was wrong with R, or more precisely with `MASS::mvrnorm()`, since this is the function that was causing all the difficulty. They couldn't see anything wrong with the function though, so they asked me to look into it. It turns out that wasn't the problem either, not really. 
 
-The problem turned out to be floating point errors. I should have known. In hindsight it was so obviously going to be floating point issues that I shouldn't have spent hours looking into it. As I said on mastodon at the time:
+The problem turned out to be the inconvenient fact that [floating point arithmetic](https://en.wikipedia.org/wiki/Floating-point_arithmetic) does not behave like real arithmetic, with the teeny tiny side effect that computers very often don't do what people expect them to do. I should have known. In hindsight it was so obviously going to be floating point issues^[I only say this because the context tells me in advance that it was probably not going to be a date/time computation problem, a map projection, or a fucking geodetic datum issue. There are exactly 24 hours in a day, timezones do not exist, and the Earth is a perfect sphere. Possibly a cube. I will hear no further discussions.] that I shouldn't have spent hours looking into it. As I said on Mastodon at the time:
 
-> in future whenever i'm asked "why is [thing] not reproducible even though i set the RNG seed?" i'm not even going to bother looking into the specifics i'm just going to reply "floating point arithmetic" and just wait until i am inevitably proven correct
+> In future, whenever I'm asked "why is [thing] not reproducible even though I set the RNG seed?" I'm not even going to bother looking into the specifics: I'm just going to reply "floating point arithmetic" and wait until I am inevitably proven correct.
+
+People will be amazed at my precognitive powers and my apparently-encyclopedic knowledge of all the things. 
 
 ## The puzzle
 
-It's not easy to replicate the precise issue that my colleagues encountered using a single machine, but I can approximate the issue. Consider these two covariance matrices, `cov1` and `cov2`. When printed out, they look identical:
+It's not easy to replicate the precise issue that my colleagues encountered using a single machine, but I can approximate the issue. Consider these two covariance matrices, `cov1` and `cov2`. Here's the code that generates them:
 
 ```{r}
-#| include: false
 cov1 <- matrix(
-  c(
+  data = c(
     4.58, -1.07,  2.53,  0.14, 
     -1.07, 5.83,  1.15, -1.45, 
     2.53,  1.15,  2.26, -0.79, 
     0.14, -1.45, -0.79,  4.93
-  ), 4, 4)
+  ), 
+  nrow = 4L, 
+  ncol = 4L
+)
 
-set.seed(1)
-tol <- 10^-13
-eps <- matrix(rnorm(16) * tol, 4, 4)
+set.seed(1L)
+tol <- 10e-13
+eps <- matrix(rnorm(16L) * tol, 4L, 4L)
 eps <- eps + t(eps)
 
 cov2 <- cov1 + eps
 ```
+
+When printed out, they look identical:
 
 ```{r}
 cov1
 cov2
 ```
 
-In fact, however, they are *very* slightly different to one another. The differences are extremely small, almost at the machine precision level on this laptop:^[Almost, but not quite. I'll talk about this a little later.]
+But of course, since you've already seen the code you will be entirely unsurprised to discover that `cov2` is in fact a very slightly perturbed version of `cov1`:
 
 ```{r}
 cov1 - cov2
 ```
 
-Tiny differences like this are what we encounter when floating point truncation errors occur. To use the classic example, the result of this sum should be zero, but it's not because the binary representation of 0.1 is infinitely long and cannot be exactly represented by a double precision floating point number (which is of course how R represents numeric values)
+Tiny differences like this are what we encounter when floating point truncation errors occur.^[Well, I should be a bit careful here. These differences are a few orders of magnitude higher than the rounding error you'd expect by truncating one real number to a floating point number on this machine, since `.Machine$double.eps` is approximately $2.2 \times 10^{-16}$, but rounding errors have a nasty tendency to propagate, and anyway I haven't gotten to the bit of the post where I talk about numerical stability so... hush.] To use the classic example, the result of this sum should be zero, but it's not because the binary representation of 0.1 is infinitely long and cannot be exactly represented by a double precision floating point number (which is of course how R represents numeric values)
 
 ```{r}
 0.1 + 0.2 - 0.3
@@ -84,31 +97,31 @@ Even worse, the *precise* result of a computation to which floating point trunca
 Just for the sake of argument then, let's imagine that during the course of some fancy simulation, you and I compute a covariance matrix on different machines. It's supposed to be the same covariance matrix, but thanks to the weirdness of floating point your machine computes `cov1` and mine computes `cov2`. The differences are very small, but they're large enough that this happens:
 
 ```{r}
-set.seed(1)
-mvr1 <- MASS::mvrnorm(n = 1, mu = rep(0, 4), Sigma = cov1)
+set.seed(1L)
+mvr1 <- MASS::mvrnorm(n = 1L, mu = rep(0L, 4L), Sigma = cov1)
 mvr1
 
-set.seed(1)
-mvr2 <- MASS::mvrnorm(n = 1, mu = rep(0, 4), Sigma = cov2)
+set.seed(1L)
+mvr2 <- MASS::mvrnorm(n = 1L, mu = rep(0L, 4L), Sigma = cov2)
 mvr2
-
-mvr2 - mvr1
 ```
+
+At this point in the post, you will probably have one of two reactions depending on your background. If you have had the traumatising experience of reading a numerical linear algebra textbook and have somehow survived, you will be sighing wearily and going "yes Danielle, that's what happens when you try to do mathematics with sand". But if you live in the somewhat kinder lands of everyday applied science where the sun still shines and your gods were not brutally murdered by [IEEE-754](https://en.wikipedia.org/wiki/IEEE_754), you are probably thinking something more along the lines of **"WHAT THE FUCK IS THIS INSANITY DANIELLE????????"** 
 
 The moment we attempt to generate random vectors with a multivariate normal distribution, very small differences between `cov1` and `cov2` lead to big differences in the numbers that get generated even though the RNG seed is the same. 
 
 That's a little puzzling. Other kinds of calculation aren't affected the same way. Intuitively, we expect that tiny differences in the parameters should lead to tiny differences in sampled values. In fact, that's exactly what happens if we generate random samples from a *univariate* normal distribution with slightly different standard deviations:
 
 ```{r}
-s1 <- sqrt(cov1[1, 1])
-s2 <- sqrt(cov2[1, 1])
+s1 <- sqrt(cov1[1L, 1L])
+s2 <- sqrt(cov2[1L, 1L])
 
-set.seed(1)
-r1 <- rnorm(n = 1, mean = 0, sd = s1)
+set.seed(1L)
+r1 <- rnorm(n = 1L, mean = 0L, sd = s1)
 r1
 
-set.seed(1)
-r2 <- rnorm(n = 1, mean = 0, sd = s2)
+set.seed(1L)
+r2 <- rnorm(n = 1L, mean = 0L, sd = s2)
 r2
 ```
 
@@ -118,39 +131,230 @@ These numbers look identical, but since `s1` and `s2` are slightly different, th
 r2 - r1
 ```
 
-## The problem is not `mvrnorm()`
+The intuition that you might have, then, is that if `rnorm()` works and `mvrnorm()` doesn't, there must be something broken within the implementation of `mvrnorm()`. It's a reasonable intuition, but like so many reasonable intuitions, it is wrong. The problem is not `mvrnorm()`. The problem is that floating point numbers suck.
 
-So why are these two cases so different?
+## How are multivariate normal samples generated?
+
+To understand why this problem arises, it's important to understand that [sampling from a multivariate normal](https://en.wikipedia.org/wiki/Multivariate_normal_distribution#Drawing_values_from_the_distribution) is a somewhat different kettle of fish to drawing from a univariate normal distribution, and computationally trickier. In the univariate case, let's say we're using the polar form of the [Box-Muller method](https://en.wikipedia.org/wiki/Box%E2%80%93Muller_transform). To transform two uniform variates into two normal variates requires three multiplications, one logarithm, one square root, and one division. Yes, floating point truncation error can creep in there^[I mean, I'm not really a specialist in this so my default is to assume that truncation errors insert themselves into every calculation that requires real numbers but is nevertheless performed with floating point numbers.] but there just aren't that many computations involved. With so few computations involved you aren't very likely^[Not a guarantee.] to encounter the "everything goes to shit" problem when runaway truncation error takes hold.
+
+Sampling from a multivariate normal, on the other hand, requires a matrix decomposition. There are many different ways you can choose to do this decomposition and still end up with suitable samples, but no matter which method you choose you will be on the hook for a *lot* more computations than in the univariate case, and to put it crudely, more computations means more opportunities for floating point arithmetic to fuck you over. To set the stage for how this can all go horribly wrong, let's do a quick refresher on the multivariate normal distribution, because who doesn't love the opportunity to break out a mathematical statistics textbook?
+
+Let $\mathbf{x} = (x_1, \ldots, x_k)$ be a $k$-dimensional random vector that is distributed according to a multivariate normal with mean vector $\mathbf{\mu} = (\mu_1, \ldots, \mu_k)$ and positive definite^[Okay fine you can get away with positive semidefinite covariance matrices but in such cases the density is undefined and anyway is not the point of any of this.] covariance matrix $\mathbf{\Sigma} = [\sigma_{ij}]$. The probability density function looks like this:
+
+$$
+p(\mathbf{x} | \mathbf{\mu}, \mathbf{\Sigma}) = (2\pi)^{-k/2} \det(\mathbf{\Sigma})^{-1/2} \exp \left(-\frac{1}{2} (\mathbf{x} - \mathbf{\mu})^T \mathbf{\Sigma}^{-1} (\mathbf{x} - \mathbf{\mu}) \right) 
+$$
 
 
-## CACHE
+A key property of the multivariate normal is this: a linear transformation of a multivariate normal random vector is itself distributed according to a multivariate normal. More precisely, if $\mathbf{z} \sim \mathcal{N}(\mathbf{\mu}, \mathbf{\Sigma})$ and $\mathbf{x} = \mathbf{Az} + \mathbf{b}$, then $\mathbf{x} \sim \mathcal{N}(\mathbf{A\mu} + \mathbf{b}, \mathbf{A \Sigma A^T})$. It's something I recite to myself as an axiom on a weekly basis, but for the purposes of this post I decided to dig out one of my old mathematical statistics textbooks and revisited the proof. It wasn't very interesting. As a corollary, we can assert that if $\mathbf{z} \sim \mathcal{N}(\mathbf{0}, \mathbf{I})$ and $\mathbf{x} = \mathbf{Az} + \mathbf{b}$, then $\mathbf{x} \sim \mathcal{N}(\mathbf{b}, \mathbf{AA^T})$. This gives us a convenient way to sample from a multivariate normal distribution. Without loss of generality^[I love pretending to be a real mathematician and using those words. Like, it's true here: the mean vector isn't really relevant to the discussion here, it's all about the covariance matrix, so I can just fix it at the origin and nothing changes. But it's more fun to be a pretentious twat, so I'll use the conventional language here.] I'll fix $\mathbf{b} = \mathbf{0}$ and note that if we have numbers $\mathbf{z}$ that follow independent standard normal distributions, and some matrix $\mathbf{A}$ such that $\mathbf{\Sigma} = \mathbf{A A}^T$, then the transformed variates $\mathbf{x} = \mathbf{Az}$ are multivariate normally distributed with covariance matrix $\mathbf{\Sigma}$. Thrilling stuff, I think we can all agree.
+
+The key thing in here is that the linear transformation property gives us a simple algorithm for sampling multivariate normal variates:
+
+1. Sample a vector of (pseudo-)random numbers $\mathbf{z} = (z_1, \ldots, z_k)$ independently from a standard normal distribution with mean 0 and standard deviation 1. In R that's usually as simple as calling `rnorm()`, but if all you have is uniformly distributed random numbers you can use the Box-Muller method to transform them appropriately.
+2. Using whatever fancy matrix decomposition trick is still capable of bringing love into in your withered heart, find yourself a matrix $\mathbf{A}$ such that $\mathbf{\Sigma} = \mathbf{A A}^T$.
+3. Calculate the vector $\mathbf{x} = (x_1, \ldots, x_k)$ where $\mathbf{x} = \mathbf{Az}$. The resulting values are multivariate normal distributed with mean $\mathbf{0}$ and covariance matrix $\mathbf{\Sigma}$. 
+4. Celebrate. Eat cake.
+
+## Hell is matrix decomposition
+
+At this point you might be thinking, "but Danielle, matrix decomposition has never brought love into my life no matter how much I talk up the size of my eigenvalues on grindr, what do I do????" and okay yeah fair point.
+
+To understand exactly where things went wrong, let's demystify what `MASS::mvrnorm()` does by implementing a slightly simplified version of what was going on under the hood. But before we start, let's make a copy of the hidden variable `.Random.seed` so that we're able to detect whenever something advances the state of the random number generator. 
 
 ```{r}
-# cholesky decomposition approach
-L1 <- chol(cov1)
-L2 <- chol(cov2)
-
-# spectral decomposition approach
-e1 <- eigen(cov1)
-e2 <- eigen(cov2)
-A1 <- e1$vectors %*% diag(sqrt(pmax(e1$values, 0)), 4)
-A2 <- e2$vectors %*% diag(sqrt(pmax(e2$values, 0)), 4)
-
-# use the same univariate normal variates
-set.seed(1)
-x <- matrix(rnorm(4), 1)
-
-# results
-eigen_out1 <- as.vector(A1 %*% t(x))
-eigen_out2 <- as.vector(A2 %*% t(x))
-
-eigen_out1
-eigen_out2
-
-chol_out1 <- as.vector(L1 %*% t(x))
-chol_out2 <- as.vector(L2 %*% t(x))
-
-chol_out1
-chol_out2
+seed_state <- .Random.seed
 ```
+
+Now let's get started on the random sampling itself. To mirror what `MASS::mvrnorm()` does, I'll call the `eigen()` function from base R to compute eigenvalues and eigenvectors. This actually the point at which everything goes awry for us, but to some extent you can't blame R for this, because what's actually happening here is that R passes all the work off to [LAPACK](https://en.wikipedia.org/wiki/LAPACK), and it's at that level that our problem arises:
+
+```{r}
+eig1 <- eigen(cov1)
+eig2 <- eigen(cov2)
+```
+
+Just in case you happen to have "forgotten", the eigendecomposition of a real symmetric matrix $\mathbf{\Sigma}$ can be expressed as 
+
+$$
+\mathbf{\Sigma} = \mathbf{Q} \mathbf{\Lambda} \mathbf{Q}^\prime
+$$
+
+where $\mathbf{\Lambda}$ is a diagonal matrix containing the eigenvalues of $\mathbf{\Sigma}$ and $\mathbf{Q}$ is an orthogonal matrix whose columns are the real, orthonormal eigenvectors of $\mathbf{\Sigma}$. It says so in the [wikipedia entry](https://en.wikipedia.org/wiki/Eigendecomposition_of_a_matrix#Real_symmetric_matrices) so it must be true.^[I mean, it is true of course, but also this is a special case of the more general eigendecomposition for a square matrix $\mathbf{M} = \mathbf{Q} \mathbf{\Lambda} \mathbf{Q}^{-1}$. But whatever.] When calling `eigen()` in R, the return value is a list that contains a vector of eigenvalues, and a matrix of eigenvectors. To keep things consistent with the notation in the equation above, let's pull those out:
+
+```{r}
+# matrices of eigenvectors
+Q1 <- eig1$vectors
+Q2 <- eig2$vectors
+
+# diagonal matrices of eigenvalues
+L1 <- diag(eig1$values, 4L)
+L2 <- diag(eig2$values, 4L)
+```
+
+
+Now that we have these two matrices, we can construct a matrix $\mathbf{A} = \mathbf{Q} \mathbf{\Lambda}^{1/2}$ where $\mathbf{\Lambda}^{1/2}$ is a diagonal matrix that contains the square root of the eigenvalues as its diagonal elements. This matrix has the desired property $\mathbf{A} \mathbf{A}^\prime = \mathbf{\Sigma}$, so we can use it as the transformation matrix to sample multivariate normal variates with the desired correlational structure. So let's do that:
+
+```{r}
+# compute the linear transformation matrices
+A1 <- Q1 %*% sqrt(L1)
+A2 <- Q2 %*% sqrt(L2)
+```
+
+At this point let's check the state of the random number generator. Has it changed as a result of any of these procedures?
+
+```{r}
+identical(seed_state, .Random.seed)
+```
+
+No. No it has not. Nothing that we have done so far has invoked the random number generator in R. Nor should it: constructing the matrix $\mathbf{A}$ isn't supposed to be a stochastic process. We should not expect R to have invoked the random number generator up to this point, and indeed it has not. However, we're now at the point where we *do* need to produce some random numbers, because we need a vector $\mathbf{z}$ of independent normally distributed variates with mean zero and standard deviation one. When I called `MASS::mvrnorm()` earlier, I used `set.seed(1L)` to fix the state of the random number generator beforehand, and I'll do so again:
+
+```{r}
+set.seed(1L)
+z <- matrix(rnorm(4L), 4L)
+```
+
+For simplicity I've explicitly formatted the output as a matrix so that R will treat it as a column vector, and now all I have to do to construct my correlated random variates is to compute $\mathbf{Az}$:
+
+```{r}
+r1 <- as.vector(A1 %*% z)
+r2 <- as.vector(A2 %*% z)
+```
+
+Et voila, we are done. We have now generated random vectors that are *identical* to those produced by `MASS::mvrnorm()`. Let's just confirm this:
+
+```{r}
+#| results: hold
+identical(r1, mvr1)
+identical(r2, mvr2)
+```
+
+Nevertheless as we've already seen, `mvr1` and `mvr2` are massively different to each other. They're not a teeny tiny bit different in the same way that `cov1` and `cov2` are a tiny bit different, the differences here are huge. 
+
+So... where did things go wrong? Okay that's a silly question because I already said that the call to `eigen()` is what created the problem. A better question would be to ask *what* exactly when wrong when I called `eigen()`, and since I've dragged this out long enough already let's just jump to the correct answer and take a look at the matrix of eigenvectors $\mathbf{Q}$ that is computed in both cases, paying particular attention to the last column:
+
+```{r}
+Q1
+Q2
+```
+
+Okay yeah... the sign on the last eigenvector has been reversed. We can see this more clearly by doing a scalar division of these two matrices:
+
+```{r}
+Q1 / Q2
+```
+
+As a consequence, here's what the transformation matrix $\mathbf{A}$ looks like in both cases:
+
+```{r}
+A1
+A2
+```
+
+Yeah... those are not the same at all. They're both perfectly acceptable decompositions, in the sense that $\mathbf{A} \mathbf{A}^\prime = \mathbf{\Sigma}$ for both `A1` and `A2`, and will therefore produce multivariate normal distributed variates with the appropriate covariance structure when used, but they are not the *same* decomposition. 
+
+Ultimately, it is this phenomenon that breaks reproducibility with `MASS::mvrnorm()`. Tiny quantitative changes in the covariance matrix that we pass as input can sometimes produce large *qualitative* changes in the eigendecomposition returned by LAPACK. `MASS::mvrnorm()` makes no attempt to protect the user from these effects, so when LAPACK creates this problem MASS does not try to fix it.^[Sometimes I wonder what comments this would receive from CRAN maintainers if MASS were a new package submitted by a new developer, but perhaps its better not to speculate.] 
+
+## Safe passage through hell is notoriously expensive
+
+The first thought you might have is "well, Danielle, could we maybe do something about these indeterminacies? Does floating point arithmetic have to be this unpredictable?" It's an enticing thought, right? I mean, if we could guarantee that every machine produced the same answer whenever asked to perform a simple arithmetic calculation, we wouldn't be in this mess. Problem solved. Rainbows. Unicorns. Sunshine. Fully automated gay space luxury communism.
+
+Yeah, well. About that. Look, I am not an expert in this area at all, but just take a look at this page on [conditional numerical reproducibility](https://www.intel.com/content/www/us/en/developer/articles/technical/introduction-to-the-conditional-numerical-reproducibility-cnr.html) on Intel CPUs and GPUs. This is *hard*. If you want to make absolutely certain that two machines perform the exact same arithmetic operations in the exact same order so that you can guarantee that the exact collection of bits in the output is fully reproducible, you are going to have to make a lot of sacrifices and your computer will slow to a crawl trying to make it happen. We are almost never willing to pay the real costs that computational reproducibility imposes, if only because most of us would like to have our matrix decomposition complete sometime within the same century that it started. As Dan Simpson phrased it on [bluesky](https://bsky.app/profile/danpsimpson.bsky.social/post/3lp2a7on3ps2y):
+
+> It is possible to make code [bit] reproducible. Waiting for it to run becomes reminiscent of the tar drop experiment. But it is possible.
+
+It is an uncomfortable truth for a scientist to accept, but it is a truth nonetheless: the actual reason we don't have reproducible code is that we don't want it enough to pay for it. And we never will. Life is short, and computational reproducibility is slow.
+
+When faced with the cruel truths of material reality, one has a choice to make. We can either choose to live in a pure world of conceptual abstractions, floating above the mess and chaos of the world as it exists on the ground, or we can accept that -- in this instance -- we are engaged in the absurd exercise of trying to make a block of sand do linear algebra good and of course that is going to be ugly. We are trying to force reality to bend to our mathematical whims and unfortunately reality is only partially willing to comply. 
+
+So let us accept a core truth: for any realistic level of time and money that a human is willing to spend performing an automated computation, there is always some probability that the machine will fuck it up. We cannot eradicate this risk in real life, and we must always act on the assumption that the computational machinery underneath our code might occasionally do some batshit things.
+
+## Living in a material world, and I am a material girl
+
+There are a few ways of dealing with this problem. If you want to stay within the world of eigendecompositions (which actually you probably don't want to do, but we'll get to that later...) there is a "simple" trick that is adopted by `mvtnorm::rmvnorm()`. In `MASS::mvrnorm()` the transformation matrix computed is defined as $\mathbf{A} := \mathbf{Q} \mathbf{\Lambda}^{1/2}$, but that's not the only way to use the eigendecomposition to find an admissable matrix $\mathbf{A}$. I haven't been able to find an explicit statement of this in the documentation, but if you look at the source code it's not too hard to see that if you're calling `mvtnorm::rmvnorm()` with `method = "eigen"`, the actual transformation matrix it uses is this one:
+
+$$
+\mathbf{A} := \mathbf{Q} \mathbf{\Lambda}^{1/2}\mathbf{Q}^\prime 
+$$ 
+For the purpose of multivariate normal sampling this is a perfectly admissable choice of transformation matrix, which we can demonstrate with a few incredibly boring lines of matrix algebra:
+
+$$
+\begin{array}{rcl}
+\mathbf{A} \mathbf{A}^\prime 
+&=& (\mathbf{Q} \mathbf{\Lambda}^{1/2}\mathbf{Q}^\prime) (\mathbf{Q} \mathbf{\Lambda}^{1/2}\mathbf{Q}^\prime)^\prime \\ 
+&=& \mathbf{Q} \mathbf{\Lambda}^{1/2}\mathbf{Q}^\prime \mathbf{Q} \mathbf{\Lambda}^{1/2}\mathbf{Q}^\prime \\
+&=& \mathbf{Q} \mathbf{\Lambda} \mathbf{Q}^\prime \\
+&=& \mathbf{\Sigma}
+\end{array}
+$$
+
+Somewhat to my horror, this trick actually fixes the problem. Remember, the nightmarish thing that we are trying to protect against is not "trivial" floating point errors where a few of the numeric values are perturbed by some small amount: we are applied scientists and we simply do not care about what is happening in the 16th digit of the decimal expansion of blah blah blah. That's not our problem. In the real world our problem is the catastrophic failure case in which those tiny perturbations cause LAPACK to flip the sign of an eigenvector. *That's* the thing that fucks us.^[In the bad way. Normally a girl doesn't mind that kind of thing.]
+
+Formally, we can describe this "eigenvalue flip" operation by considering the possibility that LAPACK -- for whatever reason -- decides to return the matrix $\mathbf{QF}$ instead of $\mathbf{Q}$, where the "flip matrix" $\mathbf{F}$ is a diagonal matrix whose diagonal elements are either 1 or -1. We need a definition for our transformation matrix $\mathbf{A}$ that is robust in the face of this kind of floating point nonsense. It is very clear that the MASS method is not invariant when this happens, since in the flipped case case it will use the transformation matrix
+
+$$
+\mathbf{A} = \mathbf{QF} \mathbf{\Lambda}^{1/2}
+$$
+
+which is clearly not the same matrix it would have returned if that pesky flip matrix $\mathbf{F}$ had not been inserted. In contrast, take a look at what happens to the transformation matrix used by mvtnorm when a flip matrix is inserted by LAPACK and/or the capricious gods of floating point numbers. Turns out the effect is...
+
+$$
+\begin{array}{rcl}
+\mathbf{A} &=& \mathbf{QF} \mathbf{\Lambda}^{1/2} \mathbf{(QF)}^\prime\\
+&=& \mathbf{Q} \mathbf{F} \mathbf{\Lambda}^{1/2} \mathbf{F}^\prime \mathbf{Q}^\prime \\
+&=& \mathbf{Q} \mathbf{\Lambda}^{1/2} \mathbf{Q}^\prime \\
+\end{array}
+$$
+
+...absolutely nothing. Using `mvtnorm::rmvnorm()` instead of `MASS::rmvnorm()` won't do a damn thing to protect you from floating point errors, but it will protect you against a particular kind of catastrophic reproducibility failure caused by those floating point errors, and which MASS has no defence against. So that's nice. 
+
+## I compute his Cholesky till he decompose
+
+In one sense, the problem that my colleagues brought to me is already solved. A switch from `MASS::mvrnorm()` to `mvtnorm::rmvnorm()` will be sufficient to guard against the kind of catastrophic irreproducibility they encountered. So yeah I could stop here. But I've spent so many hours already wrapping my head around the problem that it almost seems a shame not to see it through to the bitter end. 
+
+Let's take a step back. Yes, it's nice that we have a safer way to sample from a multivariate normal using the eigendecomposition of the covariance matrix but... why are we doing an eigenanything here? In this particular context we have no inherent interest in the eigenvectors or the eigenvalues: our primary goal is to construct *some* matrix $\mathbf{A}$ that has the desired property $\mathbf{AA}^\prime = \mathbf{\Sigma}$, and our secondary goal is to do this using a method that is robust in the face of floating point madness. Characteristic polynomials be damned. 
+
+With that in mind, it's useful to remember that the [Cholesky decomposition](https://en.wikipedia.org/wiki/Cholesky_decomposition) is a thing that exists. For symmetric positive definite covariance matrix $\mathbf{\Sigma}$, the Cholesky decomposition gives us a lower triangular matrix $\mathbf{L}$ with positive valued diagonal elements such that $\mathbf{LL}^\prime = \mathbf{\Sigma}$.
+
+```{r}
+L1 <- t(chol(cov1))
+L2 <- t(chol(cov2))
+
+L1
+L2
+```
+
+
+```{r}
+#| results: hold
+r1 <- as.vector(L1 %*% z)
+r2 <- as.vector(L2 %*% z)
+
+r1
+r2
+```
+
+## Numerical stability
+
+Since the dawn of time, humanity has yearned to destroy linear algebra. It was never necessary. Linear algebra was perfectly willing to destroy itself. All we ever needed to do is give it an ill-conditioned matrix and wait. 
+
+The time has come to talk about [numerical stability](https://en.wikipedia.org/wiki/Numerical_stability). Nobody really wants to, but we're all trapped here in the same asylum and it passes the time. 
+
+```{r}
+kappa(cov1)
+```
+
+## Recommendations
+
+Siiiiiiiiiiiiiiiigh. Once upon a time I was an academic, and a weirdly successful one at that. One of the things I used to see happen on a regular basis is people with expertise in Field X learning exactly one fact about Field Y, writing entire papers filled with sweeping claims about what constitutes best practice for Field Y, and getting things catastrophically, dangerously wrong.^[See for example, psychologists talking about statistics, or physicists talking about anything that isn't physics.] It is a *thing*. As such, I am wary of issuing recommendations. I'm basically an amateur in this area, and you should take my thoughts with a massive grain of salt. Nevertheless, I'm also aware that some folks with even less expertise than me would perhaps like some suggestions for how to avoid this particular nightmare in their own work. So, here goes...
+
+[MISSING]
+
+## Further reading
+
+- *Introduction to mathematical statistics* by Hogg, McKean, and Craig. Or, alternatively, any decent mathematical statistics textbook that you have lying around. I happened to have the 6th edition of this one by my bed (it's a sex thing, don't ask) and they're up to the 8th edition now, but really it doesn't matter. My actual point here is that most mathematical statistics textbooks will spend a bit of time walking you through the multivariate normal distribution, and you quite quickly get a feel for why matrix decomposition lies at the heart of anything you do with correlated normal variates.
+
+- [The algebraic eigenvalue problem](https://archive.org/details/algebraiceigenva0000wilk_c5b6). Written in 1965 by James Wilkinson, this book is the primary reference discussed in the R documentation to `eigen()` and is very much the definitive source on the topic. It's also, thanks to the magic of the Internet Archive, quite easy to borrow online if you're so inclined. 
+
+- [What every computer scientist should know about floating-point arithmetic](https://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html), by David Goldberg, published in the March 1991 edition of "Computing Surveys". Kind of a classic article, and one that I have found myself accidentally rediscovering over and over whenever I make the mistake of assuming that floating point numbers aren't going to break my code.
+
+- [On sampling from the multivariate t distribution](https://journal.r-project.org/archive/2013-2/hofert.pdf), by Marius Hofert, published by the R Journal in December 2013. As the title suggests, the focus is on the multivariate t distribution rather than the multivariate normal, but a lot of the lessons are relevant to both, and the article doubles as documentation of some key features of the mvtnorm R package.
 
