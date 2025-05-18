@@ -1,7 +1,7 @@
 ---
 title: "When good pseudorandom numbers go bad"
 description: "Multivariate normal sampling can be wildly irreproducible if you're not careful. Sometimes more than others. There are eldritch horrors, ill-conditioned matrices, and floating point nightmares in here. Teaching sand to do linear algebra was a mistake"
-date: "2025-05-04"
+date: "2025-05-18"
 image: "unravel_17_1769.jpg"
 image-alt: "A pair of squares being affine transformed so often that wildness ensues"
 categories: ["R", "Reproducibility", "Statistics"]
