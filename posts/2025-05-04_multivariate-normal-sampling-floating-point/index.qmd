@@ -261,9 +261,9 @@ Yeah, well. About that. Look, I am not an expert in this area at all, but just t
 
 > It is possible to make code [bit] reproducible. Waiting for it to run becomes reminiscent of the tar drop experiment. But it is possible.
 
-It is an uncomfortable truth for a scientist to accept, but it is a truth nonetheless: the actual reason we don't have reproducible code is that we don't want it enough to wait for it, and we never will. Life is short, and computational reproducibility is slow.
+It is an uncomfortable truth for a scientist to accept, but it is a truth nonetheless: the actual reason we don't have reproducible code is that we don't want it enough, and we never will. Life is short, and computational reproducibility is slow.
 
-When faced with the cruel truths of material reality, one has a choice to make. We can either choose to live in a pure world of conceptual abstractions, floating above the mess and chaos of the world as it exists on the ground, or we can accept that -- in this instance -- we are engaged in the absurd exercise of trying to make a block of sand do linear algebra good and of course that is going to be ugly. We are trying to force reality to bend to our mathematical whims and unfortunately reality is only partially willing to comply. 
+When faced with the cruel truths of material reality, one has a choice to make. We can either choose to live in a pure world of conceptual abstractions, floating above the mess and chaos of the world as it exists on the ground, or we can accept that -- in this instance -- we are engaged in the absurd exercise of trying to make a block of sand do linear algebra and of course that is going to be ugly. We are trying to force reality to bend to our mathematical whims and unfortunately reality is only partially willing to comply. 
 
 So let us accept a core truth: for any realistic level of time and money that a human is willing to spend performing an automated computation, there is always some probability that the machine will fuck it up. We cannot eradicate this risk in real life, and we must always act on the assumption that the computational machinery underneath our code might occasionally do some batshit things.
 
@@ -475,6 +475,109 @@ Okay great. Whatever. What does it actually *mean* in practice?
 [more stuff in the chapter... starts to go on about pivots etc, and I think that's probably relevant to understanding some of the choices in mvtnorm]
 
 
+## Pivot 
+
+There's one last feature in `mvtnorm::rmvnorm()` that I was uncertain about, and required a painful dive into the darkness of chapter 4 in Wilkinson (1965), and then a further skim through chapter 8. In chapter 4 of the book, he focuses solutions to systems of linear equations, which is why that's the part of the book where he ends up talking about condition numbers for matrix inversions. But there's a lot more in that chapter, and quite frankly I did not understand all of it. I cried a few times.
+
+However.
+
+One of the key things that the chapter dives into is what actually happens on a computer when you ask it to do a Gaussian elimination procedure (remember those from undergrad... yeah, unfortunately they're hard to forget). At each step in the elimination process you have to divide one thing by another thing and blah blah blah you end up needing to divide one row by some multiplier of another row and oh dear lord i am trapped in 1994 again at the back row of that cursed lecture theatre and I DO NOT CARE...
+
+Um.
+
+Okay, let's simplify. There's one key idea here: if the divisor on one of these steps turns out to be very very small, the computation error due to floating point nonsense can be very large. So there's a trick where you interchange some of the rows to avoid running into the trap. This interchange tends to stabilise the procedure.^[Actually, there's a long discussion in the book where he basically admits this is not guaranteed.] Then, when you get to the very end of this section and are wondering whether you have made terrible life choices, there's a bit where he "reminds" you that Gaussian elimination and triangular decomposition (a la Cholesky) are more or less the same thing so the same logic applies: speaking quite generally, and noting that it's not always true, allowing row interchanges gives you more stable decompositions. 
+
+Aaaaanyway, when we drag ourselves back to what `mvtnorm::rmvnorm()` does when `method = "chol"`, we notice internally that when it calls `chol()`, it sets `pivot = TRUE`. That's what this is about: pivoting makes it possible for the Cholesky decomposition to be computed for a positive semi-definite matrix (not just positive definite matrices), and more generally provides the stability that Wilkinson is banging on about. That being said, it should be noted that this appears to be mostly in relation to ill-conditioned matrices, and/or postive semi-definite matrices. As noted later in the chapter by Wilkinson, Gaussian elimination for symmetric positive definite matrices is quite stable without any pivoting strategy applied. In reference to Cholesky decompositions, we use pivoting only to handle those cases where the matrix is not positive definite (e.g., due to floating point problem or whatevs). Thankfully for my sanity the book doesn't supply the proof of this, but... it's Wilkinson, and at this point in my descent into madness I'm willing to trust him.^[Honestly, by the time the book got into discussions of LR and QR algorithms in chapter XX, and in which there's a lengthy commentary on Cholesky decomposition, my brain was already a molten mess.]
+
+However, as the documentation to `chol()` points out:
+
+> If `pivot = TRUE`, then the Cholesky decomposition of a positive semi-definite `x` can be computed. The rank of `x` is returned as `attr(Q, "rank")`, subject to numerical errors. The pivot is returned as `attr(Q, "pivot")`. It is no longer the case that `t(Q) %*% Q` equals `x`. However, setting `pivot <- attr(Q, "pivot")` and `oo <- order(pivot)`, it is true that `t(Q[, oo]) %*% Q[, oo]` equals `x`, or, alternatively, `t(Q) %*% Q` equals `x[pivot, pivot]`. 
+
+Ah. That's what's going on with `rmvnorm()` code: because for our purposes it is critical that $\mathbf{Q}^\prime \mathbf{Q} = \mathbf{\Sigma}$, that's the whole bloody point. So if we allow pivoting for numerical stability reasons, it is critical that we reorder the matrix appropriately. 
+
+## Some simulations
+
+At this point we've sort of covered everything, and we can write our own code to implement multivariate normal sampling in three different ways:
+
+- Using `eigen()` MASS-style
+- Using `eigen()` mvtnorm-style
+- Using `chol()` mvtnorm-style
+
+These are of course not the only ways to do it but this post is already giving me body horror nightmares so I refuse to implement the matrix square root method. Not going to happen. 
+
+```{r}
+sampler <- function(n, sigma, method, seed = NULL) {
+  
+  # size of the matrix
+  k <- nrow(sigma)
+  
+  # extract necessary quantities from eigendecomposition 
+  if (method %in% c("eigen-mass", "eigen-mvtnorm")) {
+    eig <- eigen(sigma)
+    Q <- eig$vectors               # matrix of eigenvectors
+    L <- diag(sqrt(eig$values), k) # diagonal matrix of sqrt eigenvalues
+  }
+  
+  # compute the transformation matrix A for eigendecomposition
+  if (method == "eigen-mass") A <- Q %*% L              # MASS-style
+  if (method == "eigen-mvtnorm") A <- Q %*% L %*% t(Q)  # mvtnorm-style
+  
+  # compute the transformation matrix A for cholesky with pivoting
+  if (method == "chol-mvtnorm") {
+    U <- chol(sigma, pivot = TRUE) # upper triangular matrix 
+    ord <- order(attr(U, "pivot")) # reordering required due to pivot
+    A <- U[, ord]
+  }
+  
+  # set seed if requested
+  if (!is.null(seed)) set.seed(seed)
+  
+  # construct samples mvtnorm-style
+  if (method %in% c("eigen-mvtnorm", "chol-mvtnorm")) {
+    Z <- matrix(rnorm(k * n), n, k, byrow = TRUE)
+    X <- Z %*% A   
+  }
+  
+  # construct samples mass-style
+  if (method == "eigen-mass") {
+    Z <- matrix(rnorm(k * n), n, k)
+    X <- t(A %*% t(Z))
+  }
+  
+  return(X)
+}
+```
+
+Do a quick sanity check:
+
+```{r}
+#| error: true
+library(testthat)
+library(withr)
+
+test_that("smol test", {
+  
+  for (n in 3:6) {
+    for (s in 1:3) {
+      
+      obj <- sampler(n, sigma = cov1, method = "eigen-mass", seed = s)
+      ref <- with_seed(s, MASS::mvrnorm(n, mu = rep(0, 4), Sigma = cov1))
+      attr(ref, "dimnames") <- NULL
+      expect_equal(obj, ref)
+      
+      obj <- sampler(n, sigma = cov1, method = "eigen-mvtnorm", seed = s)
+      ref <- with_seed(s, mvtnorm::rmvnorm(n, sigma = cov1, method = "eigen"))
+      expect_equal(obj, ref)
+      
+      obj <- sampler(n, sigma = cov1, method = "chol-mvtnorm", seed = s)
+      ref <- with_seed(s, mvtnorm::rmvnorm(n, sigma = cov1, method = "chol"))
+      expect_equal(obj, ref)
+      
+    }
+  }
+})
+```
+
 ## Recommendations
 
 Siiiiiiiiiiiiiiiigh. Once upon a time I was an academic, and a weirdly successful one at that. One of the things I used to see happen on a regular basis is people with expertise in Field X learning exactly one fact about Field Y, writing entire papers filled with sweeping claims about what constitutes best practice for Field Y, and getting things catastrophically, dangerously wrong.^[See for example, psychologists talking about statistics, or physicists talking about anything that isn't physics.] It is a *thing*. As such, I am wary of issuing recommendations. I'm basically an amateur in this area, and you should take my thoughts with a massive grain of salt. Nevertheless, I'm also aware that some R users with even less expertise than me would perhaps like some suggestions for how to avoid this particular nightmare in their own work. So, here goes. My recommendations. In their entirety:
@@ -493,7 +596,7 @@ Siiiiiiiiiiiiiiiigh. Once upon a time I was an academic, and a weirdly successfu
 
 - [What every computer scientist should know about floating-point arithmetic](https://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html), by David Goldberg, published in the March 1991 edition of "Computing Surveys". Kind of a classic article, and one that I have found myself accidentally rediscovering over and over whenever I make the mistake of assuming that floating point numbers aren't going to break my code.
 
-- [LAPACK users guide](https://www.netlib.org/lapack/lug/lapack_lug.html). As a general life rule I have tried to learn as little as possible about BLAS and LAPACK: I'm not that kind of masochist. However, I will concede that sometimes it's a necessary evil, and the LAPACK users guide and various other resources at [netlib.org/lapack](https://www.netlib.org/lapack/) can be helpful whenever you find yourself in that terrible situation.
+- [LAPACK users guide](https://www.netlib.org/lapack/lug/lapack_lug.html). As a general life rule I have tried to learn as little as possible about BLAS and LAPACK: I'm not that kind of masochist. However, I will concede that sometimes it's a necessary evil, and the LAPACK users guide and various other resources at [netlib.org/lapack](https://www.netlib.org/lapack/) can be helpful whenever you find yourself in that terrible situation. Oh and naturally it's on [github](https://github.com/Reference-LAPACK/lapack) also.
 
 - [On sampling from the multivariate t distribution](https://journal.r-project.org/archive/2013-2/hofert.pdf), by Marius Hofert, published by the R Journal in December 2013. As the title suggests, the focus is on the multivariate t distribution rather than the multivariate normal, but a lot of the lessons are relevant to both, and the article doubles as documentation of some key features of the mvtnorm R package. I didn't really understand a lot of the nuances at first, but the further I got into the Wilkinson book the more I realised that mvtnorm tries pretty hard to do the right thing.
 
