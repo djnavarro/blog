@@ -1,0 +1,1647 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.5.52">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Danielle Navarro">
+<meta name="dcterms.date" content="2025-05-18">
+<meta name="description" content="Multivariate normal sampling can be wildly irreproducible if you’re not careful. Sometimes more than others. There are eldritch horrors, ill-conditioned matrices, and floating point nightmares in here. Teaching sand to do linear algebra was a mistake">
+
+<title>When good pseudorandom numbers go bad – Notes from a data witch</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<style>
+
+      .quarto-title-block .quarto-title-banner {
+        background: #eeeeee;
+      }
+</style>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="When good pseudorandom numbers go bad – Notes from a data witch">
+<meta property="og:description" content="Multivariate normal sampling can be wildly irreproducible if you’re not careful. Sometimes more than others. There are eldritch horrors, ill-conditioned matrices, and floating point nightmares in here. Teaching sand to do linear algebra was a mistake">
+<meta property="og:image" content="https://blog.djnavarro.net/posts/2025-05-18_multivariate-normal-sampling-floating-point/unravel_17_1769.jpg">
+<meta property="og:site_name" content="Notes from a data witch">
+<meta property="og:image:alt" content="A pair of squares being affine transformed so often that wildness ensues">
+<meta name="twitter:title" content="When good pseudorandom numbers go bad – Notes from a data witch">
+<meta name="twitter:description" content="Multivariate normal sampling can be wildly irreproducible if you’re not careful. Sometimes more than others. There are eldritch horrors, ill-conditioned matrices, and floating point nightmares in here. Teaching sand to do linear algebra was a mistake">
+<meta name="twitter:image" content="https://blog.djnavarro.net/posts/2025-05-18_multivariate-normal-sampling-floating-point/unravel_17_1769.jpg">
+<meta name="twitter:creator" content="@djnavarro">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image:alt" content="A pair of squares being affine transformed so often that wildness ensues">
+</head>
+
+<body class="floating nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.xml"> 
+<span class="menu-text">RSS</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-sites" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Sites</span>
+    </a>
+    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="nav-menu-sites">    
+        <li>
+    <a class="dropdown-item" href="https://djnavarro.net">
+ <span class="dropdown-text">Homepage</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://blog.djnavarro.net">
+ <span class="dropdown-text">Data science blog</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://art.djnavarro.net">
+ <span class="dropdown-text">Generative art</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://papers.djnavarro.net">
+ <span class="dropdown-text">Academic papers</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://djnavarro.net/sites">
+ <span class="dropdown-text">More…</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default toc-left page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">When good pseudorandom numbers go bad</h1>
+                  <div>
+        <div class="description">
+          Multivariate normal sampling can be wildly irreproducible if you’re not careful. Sometimes more than others. There are eldritch horrors, ill-conditioned matrices, and floating point nightmares in here. Teaching sand to do linear algebra was a mistake
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">R</div>
+                <div class="quarto-category">Reproducibility</div>
+                <div class="quarto-category">Statistics</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p><a href="https://djnavarro.net">Danielle Navarro</a> <a href="https://orcid.org/0000-0001-7648-6578" class="quarto-title-author-orcid"> <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA2ZpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYwIDYxLjEzNDc3NywgMjAxMC8wMi8xMi0xNzozMjowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo1N0NEMjA4MDI1MjA2ODExOTk0QzkzNTEzRjZEQTg1NyIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDozM0NDOEJGNEZGNTcxMUUxODdBOEVCODg2RjdCQ0QwOSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDozM0NDOEJGM0ZGNTcxMUUxODdBOEVCODg2RjdCQ0QwOSIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ1M1IE1hY2ludG9zaCI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOkZDN0YxMTc0MDcyMDY4MTE5NUZFRDc5MUM2MUUwNEREIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjU3Q0QyMDgwMjUyMDY4MTE5OTRDOTM1MTNGNkRBODU3Ii8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+84NovQAAAR1JREFUeNpiZEADy85ZJgCpeCB2QJM6AMQLo4yOL0AWZETSqACk1gOxAQN+cAGIA4EGPQBxmJA0nwdpjjQ8xqArmczw5tMHXAaALDgP1QMxAGqzAAPxQACqh4ER6uf5MBlkm0X4EGayMfMw/Pr7Bd2gRBZogMFBrv01hisv5jLsv9nLAPIOMnjy8RDDyYctyAbFM2EJbRQw+aAWw/LzVgx7b+cwCHKqMhjJFCBLOzAR6+lXX84xnHjYyqAo5IUizkRCwIENQQckGSDGY4TVgAPEaraQr2a4/24bSuoExcJCfAEJihXkWDj3ZAKy9EJGaEo8T0QSxkjSwORsCAuDQCD+QILmD1A9kECEZgxDaEZhICIzGcIyEyOl2RkgwAAhkmC+eAm0TAAAAABJRU5ErkJggg=="></a></p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">May 18, 2025</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#the-puzzle" id="toc-the-puzzle" class="nav-link active" data-scroll-target="#the-puzzle">The puzzle</a></li>
+  <li><a href="#how-are-multivariate-normal-samples-generated" id="toc-how-are-multivariate-normal-samples-generated" class="nav-link" data-scroll-target="#how-are-multivariate-normal-samples-generated">How are multivariate normal samples generated?</a></li>
+  <li><a href="#hell-is-matrix-decomposition" id="toc-hell-is-matrix-decomposition" class="nav-link" data-scroll-target="#hell-is-matrix-decomposition">Hell is matrix decomposition</a></li>
+  <li><a href="#safe-passage-through-hell-is-notoriously-expensive" id="toc-safe-passage-through-hell-is-notoriously-expensive" class="nav-link" data-scroll-target="#safe-passage-through-hell-is-notoriously-expensive">Safe passage through hell is notoriously expensive</a></li>
+  <li><a href="#living-in-a-material-world-and-i-am-a-material-girl" id="toc-living-in-a-material-world-and-i-am-a-material-girl" class="nav-link" data-scroll-target="#living-in-a-material-world-and-i-am-a-material-girl">Living in a material world, and I am a material girl</a></li>
+  <li><a href="#i-compute-his-cholesky-till-he-decompose" id="toc-i-compute-his-cholesky-till-he-decompose" class="nav-link" data-scroll-target="#i-compute-his-cholesky-till-he-decompose">I compute his Cholesky till he decompose</a></li>
+  <li><a href="#column-the-boat-gently-down-the-stream" id="toc-column-the-boat-gently-down-the-stream" class="nav-link" data-scroll-target="#column-the-boat-gently-down-the-stream">Column the boat gently down the stream</a></li>
+  <li><a href="#pivot-pivot-pivot-towards-freedom" id="toc-pivot-pivot-pivot-towards-freedom" class="nav-link" data-scroll-target="#pivot-pivot-pivot-towards-freedom">Pivot, pivot, pivot towards freedom</a></li>
+  <li><a href="#since-the-dawn-of-time-humanity-has-yearned-to-destroy-linear-algebra.-it-was-never-necessary" id="toc-since-the-dawn-of-time-humanity-has-yearned-to-destroy-linear-algebra.-it-was-never-necessary" class="nav-link" data-scroll-target="#since-the-dawn-of-time-humanity-has-yearned-to-destroy-linear-algebra.-it-was-never-necessary">Since the dawn of time humanity has yearned to destroy linear algebra. It was never necessary</a></li>
+  <li><a href="#its-a-wheel.-you-dont-need-to-reinvent-it" id="toc-its-a-wheel.-you-dont-need-to-reinvent-it" class="nav-link" data-scroll-target="#its-a-wheel.-you-dont-need-to-reinvent-it">It’s a wheel. You don’t need to reinvent it</a></li>
+  <li><a href="#simulations-or-an-excellent-way-to-convince-you-of-something-you-already-believe-is-true" id="toc-simulations-or-an-excellent-way-to-convince-you-of-something-you-already-believe-is-true" class="nav-link" data-scroll-target="#simulations-or-an-excellent-way-to-convince-you-of-something-you-already-believe-is-true">Simulations, or, an excellent way to convince you of something you already believe is true</a></li>
+  <li><a href="#recommendations" id="toc-recommendations" class="nav-link" data-scroll-target="#recommendations">Recommendations</a></li>
+  <li><a href="#further-reading" id="toc-further-reading" class="nav-link" data-scroll-target="#further-reading">Further reading</a></li>
+  </ul>
+</nav>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<!--------------- my typical setup ----------------->
+<!--------------- post begins here ----------------->
+<blockquote class="blockquote">
+<p>Computing the eigendecomposition of a matrix is subject to errors on a real-world computer: the definitive analysis is Wilkinson (1965). All you can hope for is a solution to a problem suitably close to x. So even though a real asymmetric x may have an algebraic solution with repeated real eigenvalues, the computed solution may be of a similar matrix with complex conjugate pairs of eigenvalues. <br> &nbsp;&nbsp; – <code>help("eigen")</code></p>
+</blockquote>
+<p>A few weeks ago, in the beforetimes when I’d not personally had the soul-crushingly unpleasant experience of being infected with that covid-19 thing,<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> some colleagues<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a> approached me to talk about a reproducibility issue they’d been having with some R code. They’d been running simulations that rely on generating samples from a multivariate normal distribution, and despite doing the prudent thing and using <code>set.seed()</code> to control the state of the random number generator (RNG), the results were not computationally reproducible. The same code, executed on different machines, would produce different random numbers. The numbers weren’t “just a little bit different” in the way that we’ve all wearily learned to expect when you try to force computers to do mathematics. They wer painfully, brutally, catastrophically, irreproducible different. Somewhere, somehow, something broke.<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a> <a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a></p>
+<p>That’s not supposed to happen…</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="poe.png" class="img-fluid figure-img"></p>
+<figcaption>Somehow, “Palpatine” returned. Palpatine was floating point errors all along.</figcaption>
+</figure>
+</div>
+<p>… and to be fair, in most situations it <em>doesn’t</em> happen. Most computations are reproducible, and even random number generation does what it’s supposed to do as long as you’re careful with the seed. Or, to put it more plainly, the <code>set.seed()</code> method for controlling the results of your computations in R works just fine. At the risk of being tiresome, here’s a “random” permutation of the letters of the English alphabet that we obtain in R after the seed is fixed:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>L)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sample</span>(letters)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] "y" "d" "g" "a" "b" "k" "n" "r" "w" "j" "f" "t" "q" "x" "i" "e" "u" "l"
+[19] "s" "p" "o" "m" "v" "z" "c" "h"</code></pre>
+</div>
+</div>
+<p>Here is <em>THE SAME BLOODY PERMUTATION</em> of those letters, produced a second time because the author is bored and she wants you to understand that this is a quarto document so everything that you see here is being done in an actual R session and she is not making it up:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>L)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sample</span>(letters)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] "y" "d" "g" "a" "b" "k" "n" "r" "w" "j" "f" "t" "q" "x" "i" "e" "u" "l"
+[19] "s" "p" "o" "m" "v" "z" "c" "h"</code></pre>
+</div>
+</div>
+<p>Because the original code and the replication code both use <code>set.seed(1)</code> before calling <code>sample()</code> to shuffle the letters of the alphabet into a random order, we get the <em>same</em> random permutation in both cases. And although I’m executing this code twice on the same machine, there’s no reason to expect that it would make a difference if I ran the original code on my ubuntu laptop running R 4.4.3 or on a window machine running R 4.3.1. It “should” be the same result either way. I mean… that’s the whole purpose of <code>set.seed()</code>. It’s “supposed” to make your code reproducible, even though you are doing “random” things with that code. Right?</p>
+<p>Well. It might. If you’re lucky.</p>
+<p>That’s not what my colleagues experienced with their code when generating multivariate random normal samples. In their case, different machines produced different random samples even though the code used <code>set.seed()</code> to (ostensibly) prevent that from happening. Quite reasonably, their first thought was “<strong>WHAT THE FUCK IS THIS???</strong>”.</p>
+<p>Having encountered the problem, their second thought was that it was their fault: <em>they</em> must have done something wrong with their code that caused the simulations to break. It wasn’t that. Their code was fine. Their third thought was that something was wrong with R itself, or more precisely with <code>MASS::mvrnorm()</code>, since this is the function that was causing all the difficulty. They couldn’t see anything wrong with the function though, so they asked me to look into it.</p>
+<p>My first thought, when they oh-so-innocently dropped a nuclear weapon on my desk, was that MASS could not possibly be the problem. I mean, not really. It’s a very carefully tested package, it is very widely used, it’s fine. Right? Though… actually, now that I think of it <code>MASS::mvrnorm()</code> is a very old function, and it makes some assumptions about what happens at a lower level that might not be right. So… maybe it is the problem??? I don’t really know…</p>
+<p>Look, it’s complicated okay?</p>
+<p>So let me get back to you on that because when you track down far enough, the root cause of the problem my colleagues ran into wasn’t really the MASS package. The actual problem turned out to be the inconvenient fact that <a href="https://en.wikipedia.org/wiki/Floating-point_arithmetic">floating point arithmetic</a> does not behave like real arithmetic, and that in turn has the teeeeensy tiny side effect that computers very often don’t do what people expect them to do.</p>
+<p>Le sigh.</p>
+<p>I should have known. In hindsight it was so obviously going to be floating point issues<a href="#fn5" class="footnote-ref" id="fnref5" role="doc-noteref"><sup>5</sup></a> that I shouldn’t have spent hours/days/weeks looking into it. As I said on Mastodon at the time:</p>
+<blockquote class="blockquote">
+<p>In future, whenever I’m asked “why is [thing] not reproducible even though I set the RNG seed?” I’m not even going to bother looking into the specifics: I’m just going to reply “floating point arithmetic” and wait until I am inevitably proven correct.</p>
+</blockquote>
+<p>People will be amazed at my precognitive powers and my apparently-encyclopedic knowledge of all things computational. They will praise my genius, my devotees will raise me up on a palanquin, and I shall live as a queen and goddess amongst the lesser mortals…</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="./unravel_17_1769.jpg" class="img-fluid figure-img"></p>
+<figcaption>Matrices are strange objects. Transformations performed upon them that make sense in theory will sometimes create peculiar effects when they are enacted in the physical world. (Art by me, obviously)</figcaption>
+</figure>
+</div>
+<p>…well, maybe not.</p>
+<section id="the-puzzle" class="level2">
+<h2 class="anchored" data-anchor-id="the-puzzle">The puzzle</h2>
+<p>So, okay. The problem that my colleagues encountered was an “across different machines” kind of thing, and as a consequence it’s not easy for me to replicate that precise issue using a single machine like the one that renders this post. Nevertheless, I can approximate the issue using a “trick” that seems very clever if you’ve never encountered it before, but in reality is quite prosaic.<a href="#fn6" class="footnote-ref" id="fnref6" role="doc-noteref"><sup>6</sup></a> Consider these two covariance matrices, <code>cov1</code> and <code>cov2</code>. Here’s the code that generates them:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>cov1 <span class="ot">&lt;-</span> <span class="fu">matrix</span>(</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> <span class="fu">c</span>(</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="fl">4.58</span>, <span class="sc">-</span><span class="fl">1.07</span>,  <span class="fl">2.53</span>,  <span class="fl">0.14</span>, </span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="sc">-</span><span class="fl">1.07</span>, <span class="fl">5.83</span>,  <span class="fl">1.15</span>, <span class="sc">-</span><span class="fl">1.45</span>, </span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="fl">2.53</span>,  <span class="fl">1.15</span>,  <span class="fl">2.26</span>, <span class="sc">-</span><span class="fl">0.79</span>, </span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    <span class="fl">0.14</span>, <span class="sc">-</span><span class="fl">1.45</span>, <span class="sc">-</span><span class="fl">0.79</span>,  <span class="fl">4.93</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  ), </span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">nrow =</span> <span class="dv">4</span>L, </span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">ncol =</span> <span class="dv">4</span>L</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>L)</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>tol <span class="ot">&lt;-</span> <span class="fl">10e-13</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>eps <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">rnorm</span>(<span class="dv">16</span>L) <span class="sc">*</span> tol, <span class="dv">4</span>L, <span class="dv">4</span>L)</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>eps <span class="ot">&lt;-</span> eps <span class="sc">+</span> <span class="fu">t</span>(eps)</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>cov2 <span class="ot">&lt;-</span> cov1 <span class="sc">+</span> eps</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>When printed out, they look identical:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>cov1</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>      [,1]  [,2]  [,3]  [,4]
+[1,]  4.58 -1.07  2.53  0.14
+[2,] -1.07  5.83  1.15 -1.45
+[3,]  2.53  1.15  2.26 -0.79
+[4,]  0.14 -1.45 -0.79  4.93</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>cov2</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>      [,1]  [,2]  [,3]  [,4]
+[1,]  4.58 -1.07  2.53  0.14
+[2,] -1.07  5.83  1.15 -1.45
+[3,]  2.53  1.15  2.26 -0.79
+[4,]  0.14 -1.45 -0.79  4.93</code></pre>
+</div>
+</div>
+<p>But of course, since you’ve already seen the code you will be entirely unsurprised to discover that <code>cov2</code> is in fact a very slightly perturbed version of <code>cov1</code>:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>cov1 <span class="sc">-</span> cov2</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>              [,1]          [,2]          [,3]          [,4]
+[1,]  1.253220e-12 -5.131451e-13  2.597922e-13 -9.740264e-13
+[2,] -5.131451e-13  1.641354e-12 -1.820766e-13  1.476375e-12
+[3,]  2.597922e-13 -1.820766e-13 -3.023359e-12 -1.514788e-12
+[4,] -9.740264e-13  1.476375e-12 -1.514788e-12  8.970602e-14</code></pre>
+</div>
+</div>
+<p>Tiny differences like this are what we encounter when floating point truncation errors occur.<a href="#fn7" class="footnote-ref" id="fnref7" role="doc-noteref"><sup>7</sup></a> To use the classic example, when we try to compute a simple sum like <code>0.1 + 0.2 - 0.3</code>, the result should be zero (duh), but if we do it on a computer it usually isn’t. The answer we <em>actually</em> get is very slightly wrong because the binary representation of 0.1 in floating point representation<a href="#fn8" class="footnote-ref" id="fnref8" role="doc-noteref"><sup>8</sup></a> is infinitely long and cannot be exactly represented by a double precision floating point number, and so…</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fl">0.1</span> <span class="sc">+</span> <span class="fl">0.2</span> <span class="sc">-</span> <span class="fl">0.3</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 5.551115e-17</code></pre>
+</div>
+</div>
+<p>…the answer is not <em>quite</em> right.</p>
+<p>Even worse, the <em>precise</em> result of a computation to which floating point truncation error applies is not necessarily invariant across systems. Operating system differences, compiler settings, and a host of other factors can influence the outcome. The details don’t matter for this post, and frankly I don’t understand all of them myself. For all I know the colour of the laptop case might be relevant, or the name of the programmer’s cat. Weirdness abounds once your calculations start to run up against the limits of floating point precision.</p>
+<p>Just for the sake of argument then, let’s imagine that during the course of some fancy simulation, you and I compute a covariance matrix on different machines. It’s supposed to be the same covariance matrix, but thanks to the weirdness of floating point your machine computes <code>cov1</code> and mine computes <code>cov2</code>. The differences are very small, but they’re large enough that – SOMEHOW, IN DEFIANCE OF ALL THE LAWS OF GOD AND MAN – this happens:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>L)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>mvr1 <span class="ot">&lt;-</span> MASS<span class="sc">::</span><span class="fu">mvrnorm</span>(<span class="at">n =</span> <span class="dv">1</span>L, <span class="at">mu =</span> <span class="fu">rep</span>(<span class="dv">0</span>L, <span class="dv">4</span>L), <span class="at">Sigma =</span> cov1)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>mvr1</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] -0.4391833  0.2560893  0.8542052 -2.2883238</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>L)</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>mvr2 <span class="ot">&lt;-</span> MASS<span class="sc">::</span><span class="fu">mvrnorm</span>(<span class="at">n =</span> <span class="dv">1</span>L, <span class="at">mu =</span> <span class="fu">rep</span>(<span class="dv">0</span>L, <span class="dv">4</span>L), <span class="at">Sigma =</span> cov2)</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>mvr2</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1]  0.2878007  0.5942556 -0.2596185 -2.3919000</code></pre>
+</div>
+</div>
+<p>Yeah… uh… those aren’t even remotely the same thing.</p>
+<p>At this point in the post, you will probably have one of two reactions depending on your background. If you have had the traumatising experience of reading a numerical linear algebra textbook and have somehow survived, you will be sighing wearily and going “yes Danielle, that’s what happens when you try to do mathematics with sand”. But if you live in the somewhat kinder lands of everyday applied science where the sun still shines and your gods were not brutally murdered by <a href="https://en.wikipedia.org/wiki/IEEE_754">IEEE-754</a>, you are probably thinking something more along the lines of <strong>“WHAT THE FUCK IS THIS INSANITY DANIELLE????????”</strong></p>
+<p>So. Yeah. This is one of those awkward things about computers. The moment we attempt to generate random vectors with a multivariate normal distribution, very small differences between <code>cov1</code> and <code>cov2</code> can (sometimes, depending on the precise method used to do the sampling) lead to big differences in the numbers that get generated, even though the RNG seed is the same. What is even more peculiar is that this can (and does) happen even when the random numbers in question <em>all</em> have the correct distributional properties. That is to say: the results are correct, they just aren’t reproducible.</p>
+<p>That’s a little puzzling. Other kinds of calculation that rely on random number generation aren’t affected the same way. Intuitively, we expect that tiny differences in the <em>input</em> parameters should lead to tiny differences in <em>output</em> values. Indeed, that’s exactly what happens if we generate random samples from a univariate normal distribution with slightly different standard deviations:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>s1 <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(cov1[<span class="dv">1</span>L, <span class="dv">1</span>L])</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>s2 <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(cov2[<span class="dv">1</span>L, <span class="dv">1</span>L])</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>L)</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>r1 <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(<span class="at">n =</span> <span class="dv">1</span>L, <span class="at">mean =</span> <span class="dv">0</span>L, <span class="at">sd =</span> s1)</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>r1</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] -1.34067</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>L)</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>r2 <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(<span class="at">n =</span> <span class="dv">1</span>L, <span class="at">mean =</span> <span class="dv">0</span>L, <span class="at">sd =</span> s2)</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>r2</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] -1.34067</code></pre>
+</div>
+</div>
+<p>These numbers look identical, but the input values are sliiiiiightly different as a consequence of the tiny differences in the input parameters <code>s1</code> and <code>s2</code>, there are slight differences between <code>r1</code> and <code>r2</code>:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>r2 <span class="sc">-</span> r1</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 1.834088e-13</code></pre>
+</div>
+</div>
+<p>The thing is, though, this difference is minuscule and it is exactly in line with our intuitions. That’s how it should be, right? Tiny change in input equals tiny change in output. Very sensible. Very mindful. Very demure. So why do we get intuitive behaviour from <code>rnorm()</code>, but deeply counterintuitive behaviour from <code>MASS::mvrnorm()</code>?</p>
+<p>I mean… good question, right?</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="unravel_30_3001.jpg" class="img-fluid figure-img"></p>
+<figcaption>The descent begins. It is dark down there</figcaption>
+</figure>
+</div>
+</section>
+<section id="how-are-multivariate-normal-samples-generated" class="level2">
+<h2 class="anchored" data-anchor-id="how-are-multivariate-normal-samples-generated">How are multivariate normal samples generated?</h2>
+<p>To understand why this problem arises, it’s important to understand that <a href="https://en.wikipedia.org/wiki/Multivariate_normal_distribution#Drawing_values_from_the_distribution">sampling from a multivariate normal</a> is a somewhat different kettle of fish to drawing from a univariate normal distribution, and computationally trickier. In the univariate case, let’s say we’re using the polar form of the <a href="https://en.wikipedia.org/wiki/Box%E2%80%93Muller_transform">Box-Muller method</a>. To transform two uniform variates into two normal variates requires three multiplications, one logarithm, one square root, and one division. Each of those computations is a thing that must be performed on a machine that uses <a href="https://en.wikipedia.org/wiki/Floating-point_arithmetic">floating point arithmetic</a>, and as a tedious consequence each of these computations can introduce very small rounding errors into the solution that the machine calculates. This is the nature of floating point arithmetic. Even so, we don’t have a reason to expect things to go catastrophically wrong in this case: there just aren’t that many computations involved, and with so few computations involved you aren’t very likely<a href="#fn9" class="footnote-ref" id="fnref9" role="doc-noteref"><sup>9</sup></a> to encounter any kind of “everything goes to shit” problem when runaway truncation error takes hold.</p>
+<p>Sampling from a multivariate normal, on the other hand, requires a <a href="https://en.wikipedia.org/wiki/Matrix_decomposition">matrix decomposition</a>. That makes it a veeeeeeerrrrrry different kind of thing. There are many different ways you can choose to do this decomposition (more on this very shortly…) and still end up with suitable samples, but no matter which method you choose you will be on the hook for a <em>lot</em> more computations than in the univariate case, and to put it crudely, more computations means more opportunities for floating point arithmetic to find an esoteric edge case with which to fuck you over.</p>
+<p>And so, to set the stage for how this can all go horribly wrong, let’s do a quick refresher on the multivariate normal distribution, because who doesn’t love the opportunity to break out a mathematical statistics textbook?</p>
+<p>Let <span class="math inline">\(\mathbf{x} = (x_1, \ldots, x_k)\)</span> be a <span class="math inline">\(k\)</span>-dimensional random vector that is distributed according to a multivariate normal with mean vector <span class="math inline">\(\mathbf{\mu} = (\mu_1, \ldots, \mu_k)\)</span> and positive definite<a href="#fn10" class="footnote-ref" id="fnref10" role="doc-noteref"><sup>10</sup></a> covariance matrix <span class="math inline">\(\mathbf{\Sigma} = [\sigma_{ij}]\)</span>. The probability density function looks like this:</p>
+<p><span class="math display">\[
+p(\mathbf{x} | \mathbf{\mu}, \mathbf{\Sigma}) = (2\pi)^{-k/2} \det(\mathbf{\Sigma})^{-1/2} \exp \left(-\frac{1}{2} (\mathbf{x} - \mathbf{\mu})^T \mathbf{\Sigma}^{-1} (\mathbf{x} - \mathbf{\mu}) \right)
+\]</span></p>
+<p>A key property of the multivariate normal is this: a linear transformation of a multivariate normal random vector is itself distributed according to a multivariate normal. More precisely, if <span class="math inline">\(\mathbf{z} \sim \mathcal{N}(\mathbf{\mu}, \mathbf{\Sigma})\)</span> and <span class="math inline">\(\mathbf{x} = \mathbf{Az} + \mathbf{b}\)</span>, then <span class="math inline">\(\mathbf{x} \sim \mathcal{N}(\mathbf{A\mu} + \mathbf{b}, \mathbf{A \Sigma A^T})\)</span>. It’s something I recite to myself as an axiom on a weekly basis, but for the purposes of this post I decided to dig out one of my old mathematical statistics textbooks and revisited the proof.</p>
+<p>It wasn’t very interesting.</p>
+<p>Nevertheless, as a corollary of this proof we can assert that if <span class="math inline">\(\mathbf{z} \sim \mathcal{N}(\mathbf{0}, \mathbf{I})\)</span> and <span class="math inline">\(\mathbf{x} = \mathbf{Az} + \mathbf{b}\)</span>, then <span class="math inline">\(\mathbf{x} \sim \mathcal{N}(\mathbf{b}, \mathbf{AA^T})\)</span>. This gives us a convenient way to sample from a multivariate normal distribution. Without loss of generality<a href="#fn11" class="footnote-ref" id="fnref11" role="doc-noteref"><sup>11</sup></a> I’ll fix <span class="math inline">\(\mathbf{b} = \mathbf{0}\)</span> and note that if we have numbers <span class="math inline">\(\mathbf{z}\)</span> that follow independent standard normal distributions, and some matrix <span class="math inline">\(\mathbf{A}\)</span> such that <span class="math inline">\(\mathbf{\Sigma} = \mathbf{A A}^T\)</span>, then the transformed variates <span class="math inline">\(\mathbf{x} = \mathbf{Az}\)</span> are multivariate normally distributed with covariance matrix <span class="math inline">\(\mathbf{\Sigma}\)</span>.<a href="#fn12" class="footnote-ref" id="fnref12" role="doc-noteref"><sup>12</sup></a></p>
+<p>Thrilling stuff, I think we can all agree?</p>
+<p>The key thing here is that this linear transformation property gives us a simple and effective algorithm for sampling multivariate normal variates:</p>
+<ol type="1">
+<li>Sample a vector of (pseudo-)random numbers <span class="math inline">\(\mathbf{z} = (z_1, \ldots, z_k)\)</span> independently from a standard normal distribution with mean 0 and standard deviation 1. In R that’s usually as simple as calling <code>rnorm()</code>, but if all you have is uniformly distributed random numbers you can use the Box-Muller method to transform them appropriately.</li>
+<li>Using whatever fancy matrix decomposition trick is still capable of bringing love into in your withered heart, find yourself a matrix <span class="math inline">\(\mathbf{A}\)</span> such that <span class="math inline">\(\mathbf{\Sigma} = \mathbf{A A}^T\)</span>.</li>
+<li>Calculate the vector <span class="math inline">\(\mathbf{x} = (x_1, \ldots, x_k)\)</span> where <span class="math inline">\(\mathbf{x} = \mathbf{Az}\)</span>. The resulting values are multivariate normal distributed with mean <span class="math inline">\(\mathbf{0}\)</span> and covariance matrix <span class="math inline">\(\mathbf{\Sigma}\)</span>.</li>
+<li>Celebrate. Eat cake.</li>
+</ol>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="cake.jpg" class="img-fluid figure-img" style="width:100.0%"></p>
+<figcaption>You know the truth already. You don’t need me to tell it to you</figcaption>
+</figure>
+</div>
+</section>
+<section id="hell-is-matrix-decomposition" class="level2">
+<h2 class="anchored" data-anchor-id="hell-is-matrix-decomposition">Hell is matrix decomposition</h2>
+<p>At this point you might be thinking, “but Danielle, matrix decomposition has never brought love into my life no matter how much I talk up the size of my eigenvalues on grindr, what do I do????” and okay yeah fair point. Also, you might – extremely reasonably, I might add – still be trying to figure out why any of this mathematical trickery explains why your code isn’t reproducible. Again, fair point.</p>
+<p>To understand exactly where things went wrong, let’s demystify what <code>MASS::mvrnorm()</code> does by implementing a slightly simplified version of what was going on under the hood. This will help us pick apart what is happening here.</p>
+<p>But… before we start, let’s make a copy of the hidden variable <code>.Random.seed</code>. This isn’t critical for generating random numbers, but since this is the location where R hides information about the RNG state, it’s very handy to keep track of what’s happening to it:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>seed_state <span class="ot">&lt;-</span> .Random.seed</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Okay, we’ve stored a copy of the RNG state, so now let’s get started on the random sampling itself. To mirror what <code>MASS::mvrnorm()</code> does, I’ll call the <code>eigen()</code> function from base R to compute eigenvalues and eigenvectors. This actually the point at which everything goes awry for us, but to some extent you can’t blame R for this, because what’s actually happening here is that R passes all the work off to <a href="https://en.wikipedia.org/wiki/LAPACK">LAPACK</a>, and it’s at that level that our problem arises:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>eig1 <span class="ot">&lt;-</span> <span class="fu">eigen</span>(cov1)</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>eig2 <span class="ot">&lt;-</span> <span class="fu">eigen</span>(cov2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Fabulous. Amazing. The covariances matrices <code>cov1</code> and <code>cov2</code> have now both been decomposed, we have eigenvectors and eigenvalues for both of them, and I am digging into my cutlery draw looking for a fork with which to eat the promised cake…</p>
+<p>Except. Obviously, because this post still has quite a lot of verbiage to come, something has gone wrong. So let’s put the forks away and take a moment to think about what the code above is actually doing. Just in case you happen to have “forgotten”, the eigendecomposition of a real symmetric matrix <span class="math inline">\(\mathbf{\Sigma}\)</span> can be expressed as</p>
+<p><span class="math display">\[
+\mathbf{\Sigma} = \mathbf{Q} \mathbf{\Lambda} \mathbf{Q}^\prime
+\]</span></p>
+<p>where <span class="math inline">\(\mathbf{\Lambda}\)</span> is a diagonal matrix containing the eigenvalues of <span class="math inline">\(\mathbf{\Sigma}\)</span> and <span class="math inline">\(\mathbf{Q}\)</span> is an orthogonal matrix whose columns are the real, orthonormal eigenvectors of <span class="math inline">\(\mathbf{\Sigma}\)</span>. It says so in the <a href="https://en.wikipedia.org/wiki/Eigendecomposition_of_a_matrix#Real_symmetric_matrices">wikipedia entry</a> so it must be true.<a href="#fn13" class="footnote-ref" id="fnref13" role="doc-noteref"><sup>13</sup></a> When calling <code>eigen()</code> in R, the return value is a list that contains a vector of eigenvalues, and a matrix of eigenvectors. To keep things consistent with the notation in the equation above, let’s pull those out:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="co"># matrices of eigenvectors</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>Q1 <span class="ot">&lt;-</span> eig1<span class="sc">$</span>vectors</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>Q2 <span class="ot">&lt;-</span> eig2<span class="sc">$</span>vectors</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a><span class="co"># diagonal matrices of eigenvalues</span></span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>L1 <span class="ot">&lt;-</span> <span class="fu">diag</span>(eig1<span class="sc">$</span>values, <span class="dv">4</span>L)</span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>L2 <span class="ot">&lt;-</span> <span class="fu">diag</span>(eig2<span class="sc">$</span>values, <span class="dv">4</span>L)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Now that we have these two matrices, we can construct a matrix <span class="math inline">\(\mathbf{A} = \mathbf{Q} \mathbf{\Lambda}^{1/2}\)</span> where <span class="math inline">\(\mathbf{\Lambda}^{1/2}\)</span> is a diagonal matrix that contains the square root of the eigenvalues as its diagonal elements. This matrix has the desired property <span class="math inline">\(\mathbf{A} \mathbf{A}^\prime = \mathbf{\Sigma}\)</span>, so we can use it as the transformation matrix to sample multivariate normal variates with the desired correlational structure. So let’s do that:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="co"># compute the linear transformation matrices</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>A1 <span class="ot">&lt;-</span> Q1 <span class="sc">%*%</span> <span class="fu">sqrt</span>(L1)</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>A2 <span class="ot">&lt;-</span> Q2 <span class="sc">%*%</span> <span class="fu">sqrt</span>(L2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>At this point let’s check the state of the random number generator. Has it changed as a result of any of these procedures?</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">identical</span>(seed_state, .Random.seed)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] TRUE</code></pre>
+</div>
+</div>
+<p>No.&nbsp;No it has not. Nothing that we have done so far has invoked the random number generator in R. Nor should it: constructing the matrix <span class="math inline">\(\mathbf{A}\)</span> isn’t supposed to be a stochastic process. We should not expect R to have invoked the random number generator up to this point, and indeed it has not.</p>
+<p>However, we’re now at the point where we <em>do</em> need to produce some random numbers, because we need a vector <span class="math inline">\(\mathbf{z}\)</span> of independent normally distributed variates with mean zero and standard deviation one. When I called <code>MASS::mvrnorm()</code> earlier, I used <code>set.seed(1L)</code> to fix the state of the random number generator beforehand, and I’ll do so again:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>L)</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>z <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">rnorm</span>(<span class="dv">4</span>L), <span class="dv">4</span>L)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>For simplicity I’ve explicitly formatted the output as a matrix so that R will treat it as a column vector, and now all I have to do to construct my correlated random variates is to compute <span class="math inline">\(\mathbf{Az}\)</span>:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>r1 <span class="ot">&lt;-</span> <span class="fu">as.vector</span>(A1 <span class="sc">%*%</span> z)</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>r2 <span class="ot">&lt;-</span> <span class="fu">as.vector</span>(A2 <span class="sc">%*%</span> z)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Et voila, we are done. We have now generated random vectors that are <em>identical</em> to those produced by <code>MASS::mvrnorm()</code>. Let’s just confirm this:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="fu">identical</span>(r1, mvr1)</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="fu">identical</span>(r2, mvr2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] TRUE
+[1] TRUE</code></pre>
+</div>
+</div>
+<p>Yay us! Our code has perfectly reproduced the behaviour of multivariate normal sampling in MASS. Somewhat unfortunately, as we’ve already seen, <code>mvr1</code> and <code>mvr2</code> are massively different to each other, which is a bit of a problem for us. They’re not a teeny tiny bit different in the same way that <code>cov1</code> and <code>cov2</code> are a tiny bit different, the differences here are huge.</p>
+<p>So… where did things go wrong?</p>
+<p>Okay that’s a silly question because earlier in the post I already told you that the call to <code>eigen()</code> is what created the problem. A better question would be to ask <em>what</em> went wrong when I called <code>eigen()</code>, and since I’ve dragged this out long enough already let’s just jump to the correct answer. To that end, let’s take a look at the matrix of eigenvectors <span class="math inline">\(\mathbf{Q}\)</span> that is computed in both cases, paying particular attention to the last column:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>Q1</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>           [,1]        [,2]      [,3]        [,4]
+[1,]  0.1714861  0.82547827 0.1008194 -0.52821738
+[2,] -0.7960923 -0.05900595 0.5498939 -0.24570733
+[3,] -0.1810490  0.53628887 0.1570504  0.80929023
+[4,]  0.5514081 -0.16582573 0.8141175  0.07525712</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>Q2</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>           [,1]        [,2]      [,3]        [,4]
+[1,]  0.1714861  0.82547827 0.1008194  0.52821738
+[2,] -0.7960923 -0.05900595 0.5498939  0.24570733
+[3,] -0.1810490  0.53628887 0.1570504 -0.80929023
+[4,]  0.5514081 -0.16582573 0.8141175 -0.07525712</code></pre>
+</div>
+</div>
+<p>Okay yeah… the sign on the last eigenvector has been reversed. We can see this more clearly by doing a scalar division of these two matrices:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>Q1 <span class="sc">/</span> Q2</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>     [,1] [,2] [,3] [,4]
+[1,]    1    1    1   -1
+[2,]    1    1    1   -1
+[3,]    1    1    1   -1
+[4,]    1    1    1   -1</code></pre>
+</div>
+</div>
+<p>As a consequence, here’s what the transformation matrix <span class="math inline">\(\mathbf{A}\)</span> looks like in both cases:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>A1</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>           [,1]       [,2]      [,3]       [,4]
+[1,]  0.4641655  2.0673290 0.1969347 -0.2278546
+[2,] -2.1548024 -0.1477746 1.0741302 -0.1059896
+[3,] -0.4900497  1.3430827 0.3067730  0.3490996
+[4,]  1.4925097 -0.4152942 1.5902489  0.0324633</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>A2</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>           [,1]       [,2]      [,3]       [,4]
+[1,]  0.4641655  2.0673290 0.1969347  0.2278546
+[2,] -2.1548024 -0.1477746 1.0741302  0.1059896
+[3,] -0.4900497  1.3430827 0.3067730 -0.3490996
+[4,]  1.4925097 -0.4152942 1.5902489 -0.0324633</code></pre>
+</div>
+</div>
+<p>Yeah… those are not the same at all. Counterintuitively though, they are both perfectly good solutions to the problem at hand. It’s not like one of them is right and the other one is wrong: they’re both perfectly acceptable solutions, in the sense that <span class="math inline">\(\mathbf{A} \mathbf{A}^\prime = \mathbf{\Sigma}\)</span> for both <code>A1</code> and <code>A2</code>, and will therefore produce multivariate normal distributed variates with the appropriate covariance structure when used.<a href="#fn14" class="footnote-ref" id="fnref14" role="doc-noteref"><sup>14</sup></a> They are both correct decompositions in the sense we care about, but they are not the <em>same</em> decomposition. Simulations built on <code>A1</code> and <code>A2</code> will both be correct, but they will not be the same.</p>
+<p>Ultimately, it is this phenomenon that breaks reproducibility with <code>MASS::mvrnorm()</code>. Tiny quantitative changes in the covariance matrix that we pass as input can sometimes produce large <em>qualitative</em> changes in the eigendecomposition returned by LAPACK. <code>MASS::mvrnorm()</code> makes no attempt to protect the user from these effects, so when LAPACK creates this problem MASS does not fix it. In practice, therefore, random numbers generated this way will often be irreproducible on machines that rely on floating-point arithmetic.<a href="#fn15" class="footnote-ref" id="fnref15" role="doc-noteref"><sup>15</sup></a></p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="unravel_28_2807.jpg" class="img-fluid figure-img"></p>
+<figcaption>It’s not an act of love if you make her</figcaption>
+</figure>
+</div>
+</section>
+<section id="safe-passage-through-hell-is-notoriously-expensive" class="level2">
+<h2 class="anchored" data-anchor-id="safe-passage-through-hell-is-notoriously-expensive">Safe passage through hell is notoriously expensive</h2>
+<p>The first thought you might have is “well, Danielle, could we maybe do something about these indeterminacies? Does floating point arithmetic have to be this unpredictable?” It’s an enticing thought, right? I mean, if we could guarantee that every machine produced the same answer whenever asked to perform a simple arithmetic calculation, we wouldn’t be in this mess. Problem solved. Rainbows. Unicorns. Sunshine. Fully automated gay space luxury communism.</p>
+<p>Yeah, well. About that. Look, I am not an expert in this area at all, but just take a look at this page on <a href="https://www.intel.com/content/www/us/en/developer/articles/technical/introduction-to-the-conditional-numerical-reproducibility-cnr.html">conditional numerical reproducibility</a> on Intel CPUs and GPUs. This is <em>hard</em>. If you want to make absolutely certain that two machines perform the exact same arithmetic operations in the exact same order so that you can guarantee that the exact collection of bits in the output is fully reproducible, you are going to have to make a lot of sacrifices and your computer will slow to a crawl trying to make it happen. We are almost never willing to pay the real costs that computational reproducibility imposes, if only because most of us would like to have our matrix decomposition complete sometime within the same century that it started. As Dan Simpson phrased it on <a href="https://bsky.app/profile/danpsimpson.bsky.social/post/3lp2a7on3ps2y">Bluesky</a>:</p>
+<blockquote class="blockquote">
+<p>It is possible to make code [bit] reproducible. Waiting for it to run becomes reminiscent of the tar drop experiment. But it is possible.</p>
+</blockquote>
+<p>It is an uncomfortable truth for a scientist to accept, but it is a truth nonetheless: the actual reason we don’t have reproducible code is that we don’t want it enough, and we never will. Life is short, and computational reproducibility is slow.</p>
+<p>When faced with the cruel truths of material reality, one has a choice to make. We can either choose to live in a pure world of conceptual abstractions, floating above the mess and chaos of the world as it exists on the ground, or we can accept that – in this instance – we are engaged in the absurd exercise of trying to make a block of sand do linear algebra and of course that is going to be ugly. We are trying to force reality to bend to our mathematical whims and unfortunately reality is only partially willing to comply.</p>
+<p>So let us accept a core truth: for any realistic level of time and money that a human is willing to spend performing an automated computation, there is always some probability that the machine will fuck it up. We cannot eradicate this risk in real life, and we must always act on the assumption that the computational machinery underneath our code might occasionally do some batshit things.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="material-girl.jpg" class="img-fluid figure-img"></p>
+<figcaption>Unfortunately, according to the men in my life, this is not me, I’m the other kind of woman</figcaption>
+</figure>
+</div>
+</section>
+<section id="living-in-a-material-world-and-i-am-a-material-girl" class="level2">
+<h2 class="anchored" data-anchor-id="living-in-a-material-world-and-i-am-a-material-girl">Living in a material world, and I am a material girl</h2>
+<p>Given that the problem itself is always going to be with us, there are a few ways of dealing with it. If you want to stay within the world of eigendecompositions (which actually you probably don’t want to do, but we’ll get to that later…) there is a “simple” trick that is adopted by <code>mvtnorm::rmvnorm()</code>. In <code>MASS::mvrnorm()</code> the transformation matrix is defined as <span class="math inline">\(\mathbf{A} := \mathbf{\Lambda}^{1/2} \mathbf{Q}^\prime\)</span>, but that’s not the only way to use the eigendecomposition to find an acceptable transformation matrix <span class="math inline">\(\mathbf{A}\)</span>. I haven’t been able to find an explicit statement of this in the documentation,<a href="#fn16" class="footnote-ref" id="fnref16" role="doc-noteref"><sup>16</sup></a> but if you look at the source code it’s not too hard to see that if you’re calling <code>mvtnorm::rmvnorm()</code> with <code>method = "eigen"</code>, the actual transformation matrix it uses is this one:</p>
+<p><span class="math display">\[
+\mathbf{A} := \mathbf{Q} \mathbf{\Lambda}^{1/2}\mathbf{Q}^\prime
+\]</span> For the purpose of multivariate normal sampling this is a perfectly acceptable choice of transformation matrix, which we can demonstrate with a few incredibly boring lines of matrix algebra:</p>
+<p><span class="math display">\[
+\begin{array}{rcl}
+\mathbf{A} \mathbf{A}^\prime
+&amp;=&amp; (\mathbf{Q} \mathbf{\Lambda}^{1/2}\mathbf{Q}^\prime) (\mathbf{Q} \mathbf{\Lambda}^{1/2}\mathbf{Q}^\prime)^\prime \\
+&amp;=&amp; \mathbf{Q} \mathbf{\Lambda}^{1/2}\mathbf{Q}^\prime \mathbf{Q} \mathbf{\Lambda}^{1/2}\mathbf{Q}^\prime \\
+&amp;=&amp; \mathbf{Q} \mathbf{\Lambda} \mathbf{Q}^\prime \\
+&amp;=&amp; \mathbf{\Sigma}
+\end{array}
+\]</span></p>
+<p>Somewhat to my horror, this trick actually fixes the problem. Remember, the nightmarish thing that we are trying to protect against is not “trivial” floating point errors where a few of the numeric values are perturbed by some small amount: we are applied scientists and we simply do not care about what is happening in the 16th digit of the decimal expansion of blah blah blah. That’s not our problem. In the real world our problem is the catastrophic failure case in which those tiny perturbations cause LAPACK to flip the sign of an eigenvector, and possibly induce a catastrophic divergence in how the transformation matrix <span class="math inline">\(\mathbf{A}\)</span> is defined within the R code. <em>That’s</em> the thing that fucks us.<a href="#fn17" class="footnote-ref" id="fnref17" role="doc-noteref"><sup>17</sup></a></p>
+<p>Formally, we can describe this “eigenvalue flip” operation by considering the possibility that LAPACK – for whatever reason – decides to return the matrix <span class="math inline">\(\mathbf{QF}\)</span> instead of <span class="math inline">\(\mathbf{Q}\)</span>, where the “flip matrix” <span class="math inline">\(\mathbf{F}\)</span> is a diagonal matrix whose diagonal elements are either 1 or -1. We need a definition for our transformation matrix <span class="math inline">\(\mathbf{A}\)</span> that is robust in the face of this kind of floating point nonsense. It is very clear that the MASS method is not invariant when this happens, since in the flipped case case it will use the transformation matrix</p>
+<p><span class="math display">\[
+\mathbf{A} = \mathbf{\Lambda}^{1/2} (\mathbf{QF})^\prime
+\]</span></p>
+<p>which is clearly not the same matrix it would have returned if that pesky flip matrix <span class="math inline">\(\mathbf{F}\)</span> had not been inserted. In contrast, take a look at what happens to the transformation matrix used by mvtnorm when a flip matrix is inserted by LAPACK and/or the capricious gods of floating point numbers. Turns out the effect is…</p>
+<p><span class="math display">\[
+\begin{array}{rcl}
+\mathbf{A} &amp;=&amp; \mathbf{QF} \mathbf{\Lambda}^{1/2} \mathbf{(QF)}^\prime\\
+&amp;=&amp; \mathbf{Q} \mathbf{F} \mathbf{\Lambda}^{1/2} \mathbf{F}^\prime \mathbf{Q}^\prime \\
+&amp;=&amp; \mathbf{Q} \mathbf{\Lambda}^{1/2} \mathbf{Q}^\prime \\
+\end{array}
+\]</span></p>
+<p>…absolutely nothing. Using <code>mvtnorm::rmvnorm()</code> instead of <code>MASS::mvrnorm()</code> won’t do a damn thing to protect you from floating point errors, but it will protect you against a particular kind of catastrophic reproducibility failure caused by those floating point errors, and which MASS has no defence against. So that’s nice.</p>
+<p>A little later in the post I’ll start implementing my own versions of both <code>mvtnorm::rmvnorm()</code> and <code>MASS::mvrnorm()</code>, and since I’ve already provided a demonstration of how MASS does the sampling, I should probably conclude this section by talking about what mvtrnorm does. First, here’s what it generates when asked to generate two samples using the covariance matrix <code>cov1</code>:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>L)</span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>mvtnorm<span class="sc">::</span><span class="fu">rmvnorm</span>(<span class="at">n =</span> <span class="dv">2</span>L, <span class="at">sigma =</span> cov1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          [,1]       [,2]       [,3]     [,4]
+[1,] -1.905011 -0.1682761 -1.7718432 3.583385
+[2,]  1.369434 -2.0558785  0.3593391 1.772799</code></pre>
+</div>
+</div>
+<p>Let’s try do to this ourselves, yeah? The internal code to <code>mvtnorm::rmvnorm()</code> is slightly more elaborate, and we will talk more about the details later, but in essence what it does is this:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>L)</span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>z2 <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">rnorm</span>(<span class="dv">8</span>L), <span class="at">nrow =</span> <span class="dv">2</span>L, <span class="at">byrow =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb46-4"><a href="#cb46-4" aria-hidden="true" tabindex="-1"></a>A <span class="ot">&lt;-</span> Q1 <span class="sc">%*%</span> <span class="fu">sqrt</span>(L1) <span class="sc">%*%</span> <span class="fu">t</span>(Q1)</span>
+<span id="cb46-5"><a href="#cb46-5" aria-hidden="true" tabindex="-1"></a>z2 <span class="sc">%*%</span> A</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          [,1]       [,2]       [,3]     [,4]
+[1,] -1.905011 -0.1682761 -1.7718432 3.583385
+[2,]  1.369434 -2.0558785  0.3593391 1.772799</code></pre>
+</div>
+</div>
+<p>Yup, same thing. I could do some simulations to show that these are distributed according to the appropriate multivariate normal distribution, sure, but I’m not going to. It works, and this is going to be a long post no matter what I do. So let’s move along…</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="cruel.jpg" class="img-fluid figure-img"></p>
+<figcaption>Straight up fanservice, if you happen to be a fan of Zac Burgess I guess. I just watched the TV series version of <em>Cruel Intentions</em> and I literally do not want to know how much older I am than him it will just hurt</figcaption>
+</figure>
+</div>
+</section>
+<section id="i-compute-his-cholesky-till-he-decompose" class="level2">
+<h2 class="anchored" data-anchor-id="i-compute-his-cholesky-till-he-decompose">I compute his Cholesky till he decompose</h2>
+<p>In one sense, the problem that my colleagues brought to me is already solved. I haven’t yet shown you any simulations to prove it (I will do so later), but for the moment just believe me when I say that a switch from <code>MASS::mvrnorm()</code> to <code>mvtnorm::rmvnorm()</code> will be sufficient to guard against the kind of catastrophic irreproducibility I was concerned with at the start of this post. So yeah I could stop here. My colleagues will be happy to have a practical, workable solution to the question. But I’ve spent so many hours already wrapping my head around the problem that it almost seems a shame not to see it through to the bitter end.</p>
+<p>Let’s take a step back. Yes, it’s nice that we have a safer way to sample from a multivariate normal using the eigendecomposition of the covariance matrix but… why are we doing an eigenanything here? In this particular context we have no inherent interest in the eigenvectors or the eigenvalues: our primary goal is to construct <em>some</em> matrix <span class="math inline">\(\mathbf{A}\)</span> that has the desired property <span class="math inline">\(\mathbf{AA}^\prime = \mathbf{\Sigma}\)</span>, and our secondary goal is to do this using a method that is robust in the face of floating point madness. We have no specific interest in eigendecompositions.</p>
+<p>With that in mind, it’s useful to remember that the <a href="https://en.wikipedia.org/wiki/Cholesky_decomposition">Cholesky decomposition</a> is a thing that exists. For symmetric positive definite covariance matrix <span class="math inline">\(\mathbf{\Sigma}\)</span>, the Cholesky decomposition gives us an upper<a href="#fn18" class="footnote-ref" id="fnref18" role="doc-noteref"><sup>18</sup></a> triangular matrix <span class="math inline">\(\mathbf{U}\)</span> with positive valued diagonal elements such that <span class="math inline">\(\mathbf{U}^\prime \mathbf{U} = \mathbf{\Sigma}\)</span>, and therefore we can use the Cholesky factorisation <span class="math inline">\(\mathbf{U}\)</span> as the transformation matrix (i.e., the vector <span class="math inline">\(\mathbf{x} = \mathbf{zU}\)</span> will be multivariate normal distributed with covariance matrix <span class="math inline">\(\mathbf{\Sigma}\)</span>). In fact, there are some good reasons to prefer the Cholesky approach over the eigendecomposition.</p>
+<ul>
+<li><p>The first reason is speed, since as a general rule, the Cholesky decomposition is somewhat faster. Indeed, some algorithms for solving eigendecompositions will start by computing the Cholesky factorisation first anyway. In high performance situations this likely matters, but in my line of work it’s not usually critical.</p></li>
+<li><p>The second reason, and the one that appeals to me in this context is that the Cholesky decomposition gives us a simpler method to avoid the “catastrophic” irreproducibility issue that we encountered with <code>MASS::mvrnorm()</code>.</p></li>
+</ul>
+<p>To understand why Cholesky makes this a little easier to fix, notice that the issue with <code>MASS::mvrnorm()</code> arises because the eigenvectors that comprise <span class="math inline">\(\mathbf{Q}\)</span> are determined only up to scalar multiplication (i.e., if <span class="math inline">\(\mathbf{v}\)</span> is an eigenvector associated with eigenvalue <span class="math inline">\(\lambda\)</span> then so too is <span class="math inline">\(u\mathbf{v}\)</span> for scalar <span class="math inline">\(u\)</span>)<a href="#fn19" class="footnote-ref" id="fnref19" role="doc-noteref"><sup>19</sup></a> By convention the eigenvectors returned by <code>eigen()</code> are normalised (i.e., have length 1),<a href="#fn20" class="footnote-ref" id="fnref20" role="doc-noteref"><sup>20</sup></a> but that still does not give us a unique solution, and as we have seen it’s possible for the sign of an eigenvector to change with small perturbations to <span class="math inline">\(\mathbf{\Sigma}\)</span>, and that is sufficient to break reproducibility of <code>MASS::mvrnorm()</code> because the transformation matrix it computes is not invariant to these flips. The solution adopted by <code>mvtnorm::rmvnorm()</code> with <code>method = "eigen"</code> is to define the transformation matrix differently, and in a way that sign changes on an eigenvector have no effect on the samples.</p>
+<p>Yes, okay Danielle thank you, you have now restated the problem exactly and thereby made this already-tiresome post even longer, but how does Cholesky fix that?</p>
+<p>Why thank you babe, I am so glad you asked.</p>
+<p>Essentially, it’s easier because the Cholesky factorization is unique up to the sign of the columns, and if we impose the requirement that the main diagonals be <em>positive valued</em>, the solution is actually unique. Better yet, from our point of view as R users, that constraint appears to be imposed by <code>chol()</code>, and – as far as I can tell – is inherited directly from LAPACK, so we are all good. Or, to simplify the whole thing even further: <code>eigen()</code> returns an orthonormal matrix of eigenvectors <span class="math inline">\(\mathbf{Q}\)</span> but it is not always the same one, which is problematic for sampling purposes; <code>chol()</code> returns a triangular matrix with positive diagonal entries <span class="math inline">\(\mathbf{U}\)</span> and there’s only one of those, so you don’t have the same worry.</p>
+<p>Here’s how that plays out with the matrices <code>cov1</code> and <code>cov2</code> that I constructed at the start of the post:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>U1 <span class="ot">&lt;-</span> <span class="fu">chol</span>(cov1)</span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>U2 <span class="ot">&lt;-</span> <span class="fu">chol</span>(cov2)</span>
+<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a>U1</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>         [,1]       [,2]      [,3]       [,4]
+[1,] 2.140093 -0.4999782 1.1821914  0.0654177
+[2,] 0.000000  2.3622070 0.7370522 -0.5999866
+[3,] 0.000000  0.0000000 0.5649581 -0.7524714
+[4,] 0.000000  0.0000000 0.0000000  1.9998808</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a>U2</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>         [,1]       [,2]      [,3]       [,4]
+[1,] 2.140093 -0.4999782 1.1821914  0.0654177
+[2,] 0.000000  2.3622070 0.7370522 -0.5999866
+[3,] 0.000000  0.0000000 0.5649581 -0.7524714
+[4,] 0.000000  0.0000000 0.0000000  1.9998808</code></pre>
+</div>
+</div>
+<p>These two matrices are essentially identical (up to the usual rounding errors), so there will be no surprises for us later on. So when we use the Cholesky decomposition to do the work this is what we get…</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a>r1 <span class="ot">&lt;-</span> z2 <span class="sc">%*%</span> U1</span>
+<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a>r2 <span class="ot">&lt;-</span> z2 <span class="sc">%*%</span> U2</span>
+<span id="cb52-3"><a href="#cb52-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb52-4"><a href="#cb52-4" aria-hidden="true" tabindex="-1"></a>r1</span>
+<span id="cb52-5"><a href="#cb52-5" aria-hidden="true" tabindex="-1"></a>r2</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>           [,1]       [,2]        [,3]     [,4]
+[1,] -1.3406697  0.7470168 -1.07732870 3.667993
+[2,]  0.7051774 -2.1028628  0.06019019 1.623611
+           [,1]       [,2]        [,3]     [,4]
+[1,] -1.3406697  0.7470168 -1.07732870 3.667993
+[2,]  0.7051774 -2.1028628  0.06019019 1.623611</code></pre>
+</div>
+</div>
+<p>Well, not quite. These two are the same, but I’m glossing over some nuance in what <code>mvtnorm::rmvnorm()</code> actually does. As a result…</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb54"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>L)</span>
+<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a>mvtnorm<span class="sc">::</span><span class="fu">rmvnorm</span>(<span class="dv">2</span>L, <span class="at">sigma =</span> cov1, <span class="at">method =</span> <span class="st">"chol"</span>)</span>
+<span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb54-4"><a href="#cb54-4" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>L)</span>
+<span id="cb54-5"><a href="#cb54-5" aria-hidden="true" tabindex="-1"></a>mvtnorm<span class="sc">::</span><span class="fu">rmvnorm</span>(<span class="dv">2</span>L, <span class="at">sigma =</span> cov2, <span class="at">method =</span> <span class="st">"chol"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          [,1]       [,2]       [,3]       [,4]
+[1,] -1.482092 -1.5125973 -0.5870096  0.7687608
+[2,]  0.922518  0.7956095  1.3759318 -1.9517181
+          [,1]       [,2]       [,3]       [,4]
+[1,] -1.482092 -1.5125973 -0.5870096  0.7687608
+[2,]  0.922518  0.7956095  1.3759318 -1.9517181</code></pre>
+</div>
+</div>
+<p>…these aren’t the same as the last lot. What you actually have to do if you want to precisely reproduce the behaviour of <code>mvtnorm::rmvnorm()</code> is closer to this:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb56"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a>R1 <span class="ot">&lt;-</span> <span class="fu">chol</span>(cov1, <span class="at">pivot =</span> <span class="cn">TRUE</span>) </span>
+<span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a>R1 <span class="ot">&lt;-</span> R1[, <span class="fu">order</span>(<span class="fu">attr</span>(R1, <span class="st">"pivot"</span>))]</span>
+<span id="cb56-3"><a href="#cb56-3" aria-hidden="true" tabindex="-1"></a>z2 <span class="sc">%*%</span> R1</span>
+<span id="cb56-4"><a href="#cb56-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-5"><a href="#cb56-5" aria-hidden="true" tabindex="-1"></a>R2 <span class="ot">&lt;-</span> <span class="fu">chol</span>(cov2, <span class="at">pivot =</span> <span class="cn">TRUE</span>) </span>
+<span id="cb56-6"><a href="#cb56-6" aria-hidden="true" tabindex="-1"></a>R2 <span class="ot">&lt;-</span> R2[, <span class="fu">order</span>(<span class="fu">attr</span>(R2, <span class="st">"pivot"</span>))]</span>
+<span id="cb56-7"><a href="#cb56-7" aria-hidden="true" tabindex="-1"></a>z2 <span class="sc">%*%</span> R2</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          [,1]       [,2]       [,3]       [,4]
+[1,] -1.482092 -1.5125973 -0.5870096  0.7687608
+[2,]  0.922518  0.7956095  1.3759318 -1.9517181
+          [,1]       [,2]       [,3]       [,4]
+[1,] -1.482092 -1.5125973 -0.5870096  0.7687608
+[2,]  0.922518  0.7956095  1.3759318 -1.9517181</code></pre>
+</div>
+</div>
+<p>Okay so that actually is the same. A little later in the post I will talk about this “pivot” stuff, and tl;dr it does serve a useful purpose, but in truth it’s only there to handle edge cases so we don’t need to worry about it right now.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="languid_38_3842.jpg" class="img-fluid figure-img"></p>
+<figcaption>In a fucking handbasket, sweetie</figcaption>
+</figure>
+</div>
+</section>
+<section id="column-the-boat-gently-down-the-stream" class="level2">
+<h2 class="anchored" data-anchor-id="column-the-boat-gently-down-the-stream">Column the boat gently down the stream</h2>
+<p>At this point in the post, I feel a need to digress slightly. To be clear, I do not <em>want</em> to pursue this digression because my original goal in this post was to figure out what was going on in my colleagues code and we are waaaaaaay past that point already, but… the <a href="https://projects.csail.mit.edu/gsb/old-archive/gsb-archive/gsb2000-02-11.html">yak</a> is there. The yak must be shaved, or we will never escape this horrible blog post.</p>
+<p>So. Since we are here and discussing desiderata for a procedure that samples from a multivariate normal distribution, let’s consider this code. Suppose I fix the seed in R with <code>set.seed()</code>, and then sample two random vectors like this:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb58"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>L)</span>
+<span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a>mvtnorm<span class="sc">::</span><span class="fu">rmvnorm</span>(<span class="dv">2</span>L, <span class="at">sigma =</span> cov1, <span class="at">method =</span> <span class="st">"chol"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          [,1]       [,2]       [,3]       [,4]
+[1,] -1.482092 -1.5125973 -0.5870096  0.7687608
+[2,]  0.922518  0.7956095  1.3759318 -1.9517181</code></pre>
+</div>
+</div>
+<p>Intuitively speaking, what do we expect to happen if we decide to sample <em>three</em> random vectors rather than two? For most of us, the intuition that we have is that this should happen:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb60"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>L)</span>
+<span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a>mvtnorm<span class="sc">::</span><span class="fu">rmvnorm</span>(<span class="dv">3</span>L, <span class="at">sigma =</span> cov1, <span class="at">method =</span> <span class="st">"chol"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          [,1]       [,2]       [,3]       [,4]
+[1,] -1.482092 -1.5125973 -0.5870096  0.7687608
+[2,]  0.922518  0.7956095  1.3759318 -1.9517181
+[3,]  2.926835  1.3902467  2.5223180 -0.9985737</code></pre>
+</div>
+</div>
+<p>The first two rows are unchanged, but a third row has now been added. That’s how we usually think about random sampling, but it’s not strictly required when we call a sampling procedure on a computer. Nevertheless, it’s pretty clear that <code>mvtnorm::rmvnorm()</code> produces this intuitive behaviour, at least when the Cholesky decomposition is used. Happily, it’s also what happens when we use the eigendecomposition. Here’s what happens when we sample two random vectors with a fixed seed…</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb62"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>L)</span>
+<span id="cb62-2"><a href="#cb62-2" aria-hidden="true" tabindex="-1"></a>mvtnorm<span class="sc">::</span><span class="fu">rmvnorm</span>(<span class="dv">2</span>L, <span class="at">sigma =</span> cov1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          [,1]       [,2]       [,3]     [,4]
+[1,] -1.905011 -0.1682761 -1.7718432 3.583385
+[2,]  1.369434 -2.0558785  0.3593391 1.772799</code></pre>
+</div>
+</div>
+<p>and here is what happens when we sample three:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb64"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>L)</span>
+<span id="cb64-2"><a href="#cb64-2" aria-hidden="true" tabindex="-1"></a>mvtnorm<span class="sc">::</span><span class="fu">rmvnorm</span>(<span class="dv">3</span>L, <span class="at">sigma =</span> cov1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          [,1]       [,2]       [,3]      [,4]
+[1,] -1.905011 -0.1682761 -1.7718432 3.5833850
+[2,]  1.369434 -2.0558785  0.3593391 1.7727993
+[3,]  2.548065 -0.4238026  2.0197706 0.6485945</code></pre>
+</div>
+</div>
+<p>Yay! Intuitive behaviour. That’s what I always hope to see my computer do, but I have learned from bitter experience that it doesn’t always work out that way. Case in point. Here is what happens when we sample two random vectors with <code>MASS::mvrnorm()</code>:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb66"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>L)</span>
+<span id="cb66-2"><a href="#cb66-2" aria-hidden="true" tabindex="-1"></a>MASS<span class="sc">::</span><span class="fu">mvrnorm</span>(<span class="dv">2</span>L, <span class="at">mu =</span> <span class="fu">rep</span>(<span class="dv">0</span>, <span class="dv">4</span>), <span class="at">Sigma =</span> cov1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          [,1]      [,2]       [,3]        [,4]
+[1,] -2.064469  1.775641 -0.5440795 -0.04813373
+[2,]  3.053402 -1.591002  2.0586509 -1.66920196</code></pre>
+</div>
+</div>
+<p>Here is what happens when we ask it to sample three random vectors using the same random seed:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb68"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>L)</span>
+<span id="cb68-2"><a href="#cb68-2" aria-hidden="true" tabindex="-1"></a>MASS<span class="sc">::</span><span class="fu">mvrnorm</span>(<span class="dv">3</span>L, <span class="at">mu =</span> <span class="fu">rep</span>(<span class="dv">0</span>, <span class="dv">4</span>), <span class="at">Sigma =</span> cov1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>           [,1]      [,2]      [,3]        [,4]
+[1,]  3.1727679 1.6700724  2.492507 -0.83227968
+[2,]  0.5673774 0.1884158  1.106822  1.36044424
+[3,] -2.0594844 2.4990037 -0.379729  0.02184323</code></pre>
+</div>
+</div>
+<p>Siiiiiiiiigh. None of these numbers are even remotely the same. Something has gone awry, yet again. But it is important to understand what, precisely, has gone wrong. Critically, we need to understand that the MASS approach is still technically correct, in the sense that the three random vectors are all distributed in the way we want them to be, but when MASS generates the samples using the random number generator, it does so in a “nonsequential” way. The samples are independent of each other (conditional on <span class="math inline">\(\mathbf{\Sigma}\)</span>, of course), but there is a hidden dependence on the RNG state that – in effect – means that the user has to pretend that all the samples are generated “as a block”. You can’t think of these as sequential draws because of the peculiar way that the RNG has been invoked under the hood.</p>
+<p>Again. This does <em>not</em> break the statistical properties of the samples. It is, however, an obvious source of fragility in the code that can hinder reproducibility in the wild. If the user decides to change the number of random variates in the simulation, <em>all</em> the variates will change, not merely the “extra” ones.<a href="#fn21" class="footnote-ref" id="fnref21" role="doc-noteref"><sup>21</sup></a></p>
+<p>Why does this happen? I almost don’t want to tell you. It’s so fucking stupid that it’s embarrassing for all of us.<a href="#fn22" class="footnote-ref" id="fnref22" role="doc-noteref"><sup>22</sup></a> Let’s suppose I want to create a matrix with four columns, two rows, and with the numbers 1 to 8. Here’s one way to do that:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb70"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a><span class="fu">matrix</span>(<span class="at">data =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">8</span>, <span class="at">nrow =</span> <span class="dv">2</span>, <span class="at">ncol =</span> <span class="dv">4</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>     [,1] [,2] [,3] [,4]
+[1,]    1    3    5    7
+[2,]    2    4    6    8</code></pre>
+</div>
+</div>
+<p>Fabulous. Wonderful. Thrilling. No wait… I need a third row. I want the numbers 1 to 12. Let’s do that:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb72"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb72-1"><a href="#cb72-1" aria-hidden="true" tabindex="-1"></a><span class="fu">matrix</span>(<span class="at">data =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">12</span>, <span class="at">nrow =</span> <span class="dv">3</span>, <span class="at">ncol =</span> <span class="dv">4</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>     [,1] [,2] [,3] [,4]
+[1,]    1    4    7   10
+[2,]    2    5    8   11
+[3,]    3    6    9   12</code></pre>
+</div>
+</div>
+<p>The numbers stored in the matrix are the same (in the sense that the numbers 1 to 8 were there before, and they’re still there after), but the <em>rows</em> have all changed because we’ve entered the values <em>columnwise</em>. Normally there is absolutely no reason to care about this whatsoever. Columns and rows aren’t special: add things columnwise, add them rowwise, who cares…</p>
+<p>…except there are cases when it <em>does</em> matter. If the “data” to enter into our matrix happen to correspond to the variates sampled using <code>rnorm()</code>, then we really, really, really, really want to enter them rowwise. If we enter them rowwise, we get this:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb74"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb74-1"><a href="#cb74-1" aria-hidden="true" tabindex="-1"></a><span class="fu">matrix</span>(<span class="at">data =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">8</span>, <span class="at">nrow =</span> <span class="dv">2</span>, <span class="at">ncol =</span> <span class="dv">4</span>, <span class="at">byrow =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>     [,1] [,2] [,3] [,4]
+[1,]    1    2    3    4
+[2,]    5    6    7    8</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb76"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb76-1"><a href="#cb76-1" aria-hidden="true" tabindex="-1"></a><span class="fu">matrix</span>(<span class="at">data =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">12</span>, <span class="at">nrow =</span> <span class="dv">3</span>, <span class="at">ncol =</span> <span class="dv">4</span>, <span class="at">byrow =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>     [,1] [,2] [,3] [,4]
+[1,]    1    2    3    4
+[2,]    5    6    7    8
+[3,]    9   10   11   12</code></pre>
+</div>
+</div>
+<p>When entries are filled rowwise, adding an “extra” row has no effect on the previous rows. The procedure used by <code>mvtnorm::rmvnorm()</code> uses the random numbers rowwise, and hence behaves intuitively. The procedure used by <code>MASS::mvrnorm()</code> uses them columnwise, and produces the counterintuitive behaviour shown above.</p>
+<p>This particular failure of <code>MASS::mvrnorm()</code> is entirely different from the one I talked about earlier. The previous issue relates to how the transformation matrix <span class="math inline">\(\mathbf{A}\)</span> is defined; this issue relates to how the independent normal variates <span class="math inline">\(\mathbf{z}\)</span> are used. Not the same at all. But since the end result of the whole process is to generate a random vector <span class="math inline">\(\mathbf{x} = \mathbf{zA}\)</span>, and we cannot rely on either <span class="math inline">\(\mathbf{A}\)</span> or <span class="math inline">\(\mathbf{z}\)</span> to be “practically” reproducible, it might be a good idea not to rely to heavily on MASS in this context, yeah?</p>
+<p>In real life, “row” and “column” are not interchangeable terms.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="unravel_10_1003.jpg" class="img-fluid figure-img"></p>
+<figcaption>Fold, pivot, whatever. Gonna make origami honey</figcaption>
+</figure>
+</div>
+</section>
+<section id="pivot-pivot-pivot-towards-freedom" class="level2">
+<h2 class="anchored" data-anchor-id="pivot-pivot-pivot-towards-freedom">Pivot, pivot, pivot towards freedom</h2>
+<p>There’s one last feature in <code>mvtnorm::rmvnorm()</code> that I was uncertain about, and required a painful dive into the darkness of chapter 4 in Wilkinson (1965), and then a further skim through chapter 8. In chapter 4 of the book, he focuses solutions to systems of linear equations, which is why that’s the part of the book where he ends up talking about condition numbers for matrix inversions (see next section). But there’s a lot more in that chapter, and quite frankly I did not understand all of it. I cried a few times.</p>
+<p>However.</p>
+<p>Let’s suppose that you’ve made the decision to call <code>mvtnorm::rmvnorm()</code>, and you’re thinking that maybe you want to use the Cholesky decomposition rather than the eigendecomposition. Fair enough, good call, I will totally back you on this. But let’s also suppose that you’ve made the (probably foolish) decision to dive into the code for <code>mvtnorm::rmvnorm()</code> and you’re trying to understand what it does when it computes the Cholesky decomposition. Top marks for bravery, seriously, but if you do that you’re going to quickly find yourself asking what this <code>pivot = TRUE</code> thing is all about, and that gets a bit tricky.</p>
+<p>That’s the bit where Wilkinson comes to our rescue. One of the key things that chapter 4 of the book dives into is what actually happens on a computer when you ask it to do a Gaussian elimination procedure (which, more or less, is the same thing as a Cholesky decomposition). At each step in the elimination process you have to divide one thing by another thing, and blah blah blah, and you end up needing to divide one row by some multiplier of another row, and OH DEAR LORD IN HEAVEN IT IS 1994 AGAIN AND I AM TRAPPED IN THE BACK ROW OF THE BRAGG LECTURE THEATRE WITH THE ENGINEERING BOYS AND I WANT TO DIE.</p>
+<p>Um.</p>
+<p>Okay, let’s simplify. There’s one key idea here: there are a lot of row operations that go into solving this problem, and if the divisor on one of these steps turns out to be very very small, the computation error due to floating point nonsense can be very large. It can go haywire. So there’s a trick where you interchange some of the rows to avoid running into the trap. This interchange tends to stabilise the procedure.<a href="#fn23" class="footnote-ref" id="fnref23" role="doc-noteref"><sup>23</sup></a> That’s what the <code>pivot = TRUE</code> bit is going on about. Pivoting is a trick we do for numerical stability, but in practice (when covariance matrices are involved) this is mostly a thing we care about if the matrix is nearly singular. It doesn’t make much of a difference otherwise.<a href="#fn24" class="footnote-ref" id="fnref24" role="doc-noteref"><sup>24</sup></a> However, as the documentation to <code>chol()</code> points out:</p>
+<blockquote class="blockquote">
+<p>If <code>pivot = TRUE</code>, then the Cholesky decomposition of a positive semi-definite <code>x</code> can be computed. The rank of <code>x</code> is returned as <code>attr(Q, "rank")</code>, subject to numerical errors. The pivot is returned as <code>attr(Q, "pivot")</code>. It is no longer the case that <code>t(Q) %*% Q</code> equals <code>x</code>. However, setting <code>pivot &lt;- attr(Q, "pivot")</code> and <code>oo &lt;- order(pivot)</code>, it is true that <code>t(Q[, oo]) %*% Q[, oo]</code> equals <code>x</code>, or, alternatively, <code>t(Q) %*% Q</code> equals <code>x[pivot, pivot]</code>.</p>
+</blockquote>
+<p>Ah. That’s what’s going on with <code>rmvnorm()</code> code: because for our purposes it is critical that <span class="math inline">\(\mathbf{Q}^\prime \mathbf{Q} = \mathbf{\Sigma}\)</span>, that’s the whole bloody point. So if we allow pivoting for numerical stability reasons, it is critical that we reorder the matrix appropriately.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="labour.png" class="img-fluid figure-img"></p>
+<figcaption>You make me do too much <a href="https://www.youtube.com/watch?v=jvU4xWsN7-A">labour</a></figcaption>
+</figure>
+</div>
+</section>
+<section id="since-the-dawn-of-time-humanity-has-yearned-to-destroy-linear-algebra.-it-was-never-necessary" class="level2">
+<h2 class="anchored" data-anchor-id="since-the-dawn-of-time-humanity-has-yearned-to-destroy-linear-algebra.-it-was-never-necessary">Since the dawn of time humanity has yearned to destroy linear algebra. It was never necessary</h2>
+<p>Let us now take a step back and, in doing so, breathe deeply for a moment.</p>
+<p>It is a truth universally acknowledged, at least by those of us who have had the soul crushing experience of trying to perform linear algebra by hand or even with the assistance of this absurd contraption upon which I write these words, that linear algebra is the enemy of all that is good in this world. Love, joy, freedom, sex, and kittens: linear algebra hates them all. With good cause, then, we seek its destruction. With our mathematics we have created a monster, and it is our moral duty to destroy it.</p>
+<p>None of this animus was necessary. Linear algebra was perfectly willing to destroy itself, and frankly we didn’t have to try very hard, all we had to do was feed it one ill-conditioned matrix, compute the wrong fucking condition number, and the entire hubristic edifice crashes to the ground like a second-rate Death Star. The Ewoks all cheer.</p>
+<p>Aaaaaanyway.</p>
+<p>With this as preface, the time has come to talk about <a href="https://en.wikipedia.org/wiki/Numerical_stability">numerical stability</a>. Nobody really wants to, but we’re all trapped here in the same asylum and it passes the time. As such it inevitably transpires that we ask ourselves a very stupid question: “Danielle, Danielle, did you check to see if the matrix <code>cov1</code> is ill conditioned? Danielle, what’s the condition number? <a href="https://www.youtube.com/watch?v=p2oGThKmJnk">Danielle, Danielle, Danielle</a>, did you put on your dancing shoes? Is the world well?”</p>
+<p>Um. Sorry. I might have let my crush on <a href="https://www.youtube.com/watch?v=3-s-y-tv9xA">Tex Perkins</a> get in the way of my writing here.</p>
+<p>Okay. So. Continuing with a bit of a theme for this post, you might have one of two reactions here. Most people reading this post will probably be asking what a condition number is and wondering why they should care. A tiny subset will be thinking… well yeah but did you calculate it?</p>
+<p>Not for the first time in this post, Danielle sighs…</p>
+<p>Okay so, for the benefit of folks in the second category, there’s a bit of tendency when talking about linear algebra problems to compute a thing called the “condition number” and say that if the condition number is close to 1 then the matrix is “well-conditioned” – and therefore “good”, I guess? – but if it is much larger than 1 then it is “ill-conditioned”. And therefore bad? If you haven’t done the deep dive to figure out where this nomenclature comes from or what problems it was designed to address, it’s easy to fall into the bad habit of thinking that it is a magical number that describes how “good” a matrix is. I mean, why else would R supply the <code>kappa()</code> function to compute this wonderful quantity?</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb78"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb78-1"><a href="#cb78-1" aria-hidden="true" tabindex="-1"></a><span class="fu">kappa</span>(cov1, <span class="at">exact =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 39.37296</code></pre>
+</div>
+</div>
+<p>Yeah, not quite. Firstly, there’s no such thing as a “well-conditioned matrix” or an “ill-conditioned matrix”. That’s not a thing. Conditioning is a property that attaches to a <em>computing problem</em>, and it refers to the sensitivity of the solution to small changes in the problem specification. To state the obvious, a matrix is a mathematical object, and there are many different computing problems that might attach to any given matrix. Accordingly, we will need to be a little more precise in how we discuss conditioning. To quote Wilkinson (1965, chapter 2 section 30),</p>
+<blockquote class="blockquote">
+<p>It is convenient to have some number that defines the condition of a matrix with respect to a computing problem and to call such a number a ‘condition number’. Ideally it should give some ‘overall assessment’ of the rate of change of the solution with respect to changes in the coefficients and should therefore be in some way proportional to this rate of change <br> <br> It is evident from what we have said [earlier in the book] that even if we restrict ourselves to the problem of computing eigenvalues alone, then such a single number would have severe limitations. If any one of the eigenvalues were very sensitive then the condition number would have to be very large, even if some other eigenvalues were very insensitive.</p>
+</blockquote>
+<p>He goes on to note that to fully describe the sensitivities involved for computing the eigenvectors of an <span class="math inline">\(n \times n\)</span> matrix you’d need a total of <span class="math inline">\(n^3\)</span> quantities, the partial derivatives of all <span class="math inline">\(n\)</span> eigenvalues with respect to all <span class="math inline">\(n^2\)</span> elements in the matrix. That’s is of course unhelpful, at least from the perspective of the human being who has to make sense of it all. In practice then, defining condition numbers for a specific computing problem is a bit of a trade-off, trying to find something that a human being can make sense of without throwing away so much information as to render the whole exercise pointless.</p>
+<p>Okay yeah. We shall consider ourselves duly warned. Condition numbers aren’t things laid down by the gods of linear algebra, they’re just rough guides, and they are defined for specific computational problems. As a case in point, for the eigenvalue problem that Wilkinson was talking about in the passage above, we rarely have cause to compute any kind of condition number because the eigenvalue problem is well-conditioned for all <a href="https://en.wikipedia.org/wiki/Normal_matrix">normal matrices</a>. We simply do not care, and when we discuss condition numbers in our everyday life this is not the computing problem to which we implicitly refer.</p>
+<p>A slightly more relevant quantity for our purposes is the condition number with respect to matrix inversion of <span class="math inline">\(\mathbf{\Sigma}\)</span>.<a href="#fn25" class="footnote-ref" id="fnref25" role="doc-noteref"><sup>25</sup></a> For that, we jump forward to chapter 4 section 3, where Wilkinson notes that the condition number most commonly used for matrix inversion is <span class="math inline">\(\kappa(\mathbf{\Sigma})\)</span>. I don’t really want to dive too deep here but the key thing for our purposes is to note that…</p>
+<p><span class="math display">\[
+\kappa(\mathbf{\Sigma}) = ||\mathbf{\Sigma}||_2 \ ||\mathbf{\Sigma}^{-1}||_2
+\]</span></p>
+<p>…where <span class="math inline">\(||\cdot||_2\)</span> denotes the spectral norm (or 2-norm) of the matrix in question, and if you don’t already know what that means it is soooooo much less interesting than you think it is. Since R also comes with the <code>solve()</code> function that we can use to invert a matrix and the <code>norm()</code> function that we can use to compute matrix norms, it’s entirely possible to recreate what <code>kappa()</code> does…</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb80"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb80-1"><a href="#cb80-1" aria-hidden="true" tabindex="-1"></a>inv_cov1 <span class="ot">&lt;-</span> <span class="fu">solve</span>(cov1) </span>
+<span id="cb80-2"><a href="#cb80-2" aria-hidden="true" tabindex="-1"></a><span class="fu">norm</span>(cov1, <span class="st">"2"</span>) <span class="sc">*</span> <span class="fu">norm</span>(inv_cov1, <span class="st">"2"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 39.37296</code></pre>
+</div>
+</div>
+<p>…and it is exactly as boring as you would think. Alternatively, we could note that for a symmetric matrix this quantity is identical to the ratio of the largest to smallest (absolute values of) eigenvalues:<a href="#fn26" class="footnote-ref" id="fnref26" role="doc-noteref"><sup>26</sup></a></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb82"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb82-1"><a href="#cb82-1" aria-hidden="true" tabindex="-1"></a><span class="fu">max</span>(<span class="fu">abs</span>(eig1<span class="sc">$</span>values)) <span class="sc">/</span> <span class="fu">min</span>(<span class="fu">abs</span>(eig1<span class="sc">$</span>values))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 39.37296</code></pre>
+</div>
+</div>
+<p>Okay great. Whatever. What does it actually <em>mean</em> in practice? Roughly speaking, the larger the value of <span class="math inline">\(\kappa(\mathbf{\Sigma})\)</span>, the larger the computational error we should expect to accrue when computing <span class="math inline">\(\mathbf{\Sigma}^{-1}\)</span>. I saw something online that suggested we should expect to lose one digit of precision for every order of magnitude increase in the condition number. Or something. I don’t know.</p>
+<p>Really, it comes down to this… the condition number of a matrix, in the sense that we usually compute it, says something about the invertibility of that matrix in a world that has floating point errors, and is not super relevant to the problem of multivariate normal sampling. Unfortunately for us this is going to show up in a couple of sections time…</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="pedestrian.jpg" class="img-fluid figure-img"></p>
+<figcaption>Honey. Do not ask me to do this correctly. It will end badly. I’ll only disappoint you</figcaption>
+</figure>
+</div>
+</section>
+<section id="its-a-wheel.-you-dont-need-to-reinvent-it" class="level2">
+<h2 class="anchored" data-anchor-id="its-a-wheel.-you-dont-need-to-reinvent-it">It’s a wheel. You don’t need to reinvent it</h2>
+<p>At this point we’ve sort of covered everything, and we can write our own code to implement multivariate normal sampling in three different ways:</p>
+<ul>
+<li>Using <code>eigen()</code> MASS-style</li>
+<li>Using <code>eigen()</code> mvtnorm-style</li>
+<li>Using <code>chol()</code> mvtnorm-style</li>
+</ul>
+<p>These are of course not the only ways to do it but this post is already giving me body horror nightmares so I refuse to implement the matrix square root method. Not going to happen.</p>
+<p>For our purposes it is useful to split it into two parts. First, we write a <code>transformer()</code> function that returns a transformation matrix <span class="math inline">\(\mathbf{A}\)</span> that we can use when sampling from multivariate normal with covariance matrix <span class="math inline">\(\mathbf{\Sigma}\)</span>:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb84"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb84-1"><a href="#cb84-1" aria-hidden="true" tabindex="-1"></a>transformer <span class="ot">&lt;-</span> <span class="cf">function</span>(sigma, method) {</span>
+<span id="cb84-2"><a href="#cb84-2" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb84-3"><a href="#cb84-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># extract necessary quantities from eigendecomposition </span></span>
+<span id="cb84-4"><a href="#cb84-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (method <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"eigen-mass"</span>, <span class="st">"eigen-mvtnorm"</span>)) {</span>
+<span id="cb84-5"><a href="#cb84-5" aria-hidden="true" tabindex="-1"></a>    eig <span class="ot">&lt;-</span> <span class="fu">eigen</span>(sigma)</span>
+<span id="cb84-6"><a href="#cb84-6" aria-hidden="true" tabindex="-1"></a>    Q <span class="ot">&lt;-</span> eig<span class="sc">$</span>vectors             <span class="co"># matrix of eigenvectors</span></span>
+<span id="cb84-7"><a href="#cb84-7" aria-hidden="true" tabindex="-1"></a>    L <span class="ot">&lt;-</span> <span class="fu">diag</span>(<span class="fu">sqrt</span>(eig<span class="sc">$</span>values))  <span class="co"># diagonal matrix of sqrt eigenvalues</span></span>
+<span id="cb84-8"><a href="#cb84-8" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb84-9"><a href="#cb84-9" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb84-10"><a href="#cb84-10" aria-hidden="true" tabindex="-1"></a>  <span class="co"># compute the transformation matrix A for eigendecomposition</span></span>
+<span id="cb84-11"><a href="#cb84-11" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (method <span class="sc">==</span> <span class="st">"eigen-mass"</span>) A <span class="ot">&lt;-</span> L <span class="sc">%*%</span> <span class="fu">t</span>(Q)           <span class="co"># MASS-style</span></span>
+<span id="cb84-12"><a href="#cb84-12" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (method <span class="sc">==</span> <span class="st">"eigen-mvtnorm"</span>) A <span class="ot">&lt;-</span> Q <span class="sc">%*%</span> L <span class="sc">%*%</span> <span class="fu">t</span>(Q)  <span class="co"># mvtnorm-style</span></span>
+<span id="cb84-13"><a href="#cb84-13" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb84-14"><a href="#cb84-14" aria-hidden="true" tabindex="-1"></a>  <span class="co"># compute the transformation matrix A for cholesky with pivoting</span></span>
+<span id="cb84-15"><a href="#cb84-15" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (method <span class="sc">==</span> <span class="st">"chol-mvtnorm"</span>) {</span>
+<span id="cb84-16"><a href="#cb84-16" aria-hidden="true" tabindex="-1"></a>    U <span class="ot">&lt;-</span> <span class="fu">chol</span>(sigma, <span class="at">pivot =</span> <span class="cn">TRUE</span>) <span class="co"># upper triangular matrix </span></span>
+<span id="cb84-17"><a href="#cb84-17" aria-hidden="true" tabindex="-1"></a>    ord <span class="ot">&lt;-</span> <span class="fu">order</span>(<span class="fu">attr</span>(U, <span class="st">"pivot"</span>)) <span class="co"># reordering required due to pivot</span></span>
+<span id="cb84-18"><a href="#cb84-18" aria-hidden="true" tabindex="-1"></a>    A <span class="ot">&lt;-</span> U[, ord]</span>
+<span id="cb84-19"><a href="#cb84-19" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb84-20"><a href="#cb84-20" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb84-21"><a href="#cb84-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(A)</span>
+<span id="cb84-22"><a href="#cb84-22" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Then we write a <code>sampler()</code> function that uses the relevant transformation matrix to compute the multivariate normal random vectors:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb85"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb85-1"><a href="#cb85-1" aria-hidden="true" tabindex="-1"></a>sampler <span class="ot">&lt;-</span> <span class="cf">function</span>(n, sigma, method, <span class="at">seed =</span> <span class="cn">NULL</span>) {</span>
+<span id="cb85-2"><a href="#cb85-2" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb85-3"><a href="#cb85-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># construct the transformation matrix</span></span>
+<span id="cb85-4"><a href="#cb85-4" aria-hidden="true" tabindex="-1"></a>  A <span class="ot">&lt;-</span> <span class="fu">transformer</span>(sigma, method)  </span>
+<span id="cb85-5"><a href="#cb85-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb85-6"><a href="#cb85-6" aria-hidden="true" tabindex="-1"></a>  <span class="co"># set seed if requested</span></span>
+<span id="cb85-7"><a href="#cb85-7" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">is.null</span>(seed)) <span class="fu">set.seed</span>(seed)</span>
+<span id="cb85-8"><a href="#cb85-8" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb85-9"><a href="#cb85-9" aria-hidden="true" tabindex="-1"></a>  <span class="co"># construct samples</span></span>
+<span id="cb85-10"><a href="#cb85-10" aria-hidden="true" tabindex="-1"></a>  k <span class="ot">&lt;-</span> <span class="fu">nrow</span>(sigma)</span>
+<span id="cb85-11"><a href="#cb85-11" aria-hidden="true" tabindex="-1"></a>  Z <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">rnorm</span>(k <span class="sc">*</span> n), n, k, <span class="at">byrow =</span> method <span class="sc">!=</span> <span class="st">"eigen-mass"</span>)</span>
+<span id="cb85-12"><a href="#cb85-12" aria-hidden="true" tabindex="-1"></a>  X <span class="ot">&lt;-</span> Z <span class="sc">%*%</span> A   </span>
+<span id="cb85-13"><a href="#cb85-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb85-14"><a href="#cb85-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(X)</span>
+<span id="cb85-15"><a href="#cb85-15" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Fabulous. Wonderful. I am putting on my cheerleading outfit already. But just to be sure let’s do a quick sanity check and make certain that the code we just wrote actually mimics the behaviour of the original functions:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb86"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb86-1"><a href="#cb86-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(testthat)</span>
+<span id="cb86-2"><a href="#cb86-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(withr)</span>
+<span id="cb86-3"><a href="#cb86-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb86-4"><a href="#cb86-4" aria-hidden="true" tabindex="-1"></a><span class="fu">test_that</span>(<span class="st">"smol test"</span>, {</span>
+<span id="cb86-5"><a href="#cb86-5" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb86-6"><a href="#cb86-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (n <span class="cf">in</span> <span class="dv">3</span><span class="sc">:</span><span class="dv">6</span>) {</span>
+<span id="cb86-7"><a href="#cb86-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (s <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>) {</span>
+<span id="cb86-8"><a href="#cb86-8" aria-hidden="true" tabindex="-1"></a>      </span>
+<span id="cb86-9"><a href="#cb86-9" aria-hidden="true" tabindex="-1"></a>      obj <span class="ot">&lt;-</span> <span class="fu">sampler</span>(n, <span class="at">sigma =</span> cov1, <span class="at">method =</span> <span class="st">"eigen-mass"</span>, <span class="at">seed =</span> s)</span>
+<span id="cb86-10"><a href="#cb86-10" aria-hidden="true" tabindex="-1"></a>      ref <span class="ot">&lt;-</span> <span class="fu">with_seed</span>(s, MASS<span class="sc">::</span><span class="fu">mvrnorm</span>(n, <span class="at">mu =</span> <span class="fu">rep</span>(<span class="dv">0</span>, <span class="dv">4</span>), <span class="at">Sigma =</span> cov1))</span>
+<span id="cb86-11"><a href="#cb86-11" aria-hidden="true" tabindex="-1"></a>      <span class="fu">attr</span>(ref, <span class="st">"dimnames"</span>) <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb86-12"><a href="#cb86-12" aria-hidden="true" tabindex="-1"></a>      <span class="fu">expect_equal</span>(obj, ref)</span>
+<span id="cb86-13"><a href="#cb86-13" aria-hidden="true" tabindex="-1"></a>      </span>
+<span id="cb86-14"><a href="#cb86-14" aria-hidden="true" tabindex="-1"></a>      obj <span class="ot">&lt;-</span> <span class="fu">sampler</span>(n, <span class="at">sigma =</span> cov1, <span class="at">method =</span> <span class="st">"eigen-mvtnorm"</span>, <span class="at">seed =</span> s)</span>
+<span id="cb86-15"><a href="#cb86-15" aria-hidden="true" tabindex="-1"></a>      ref <span class="ot">&lt;-</span> <span class="fu">with_seed</span>(s, mvtnorm<span class="sc">::</span><span class="fu">rmvnorm</span>(n, <span class="at">sigma =</span> cov1, <span class="at">method =</span> <span class="st">"eigen"</span>))</span>
+<span id="cb86-16"><a href="#cb86-16" aria-hidden="true" tabindex="-1"></a>      <span class="fu">expect_equal</span>(obj, ref)</span>
+<span id="cb86-17"><a href="#cb86-17" aria-hidden="true" tabindex="-1"></a>      </span>
+<span id="cb86-18"><a href="#cb86-18" aria-hidden="true" tabindex="-1"></a>      obj <span class="ot">&lt;-</span> <span class="fu">sampler</span>(n, <span class="at">sigma =</span> cov1, <span class="at">method =</span> <span class="st">"chol-mvtnorm"</span>, <span class="at">seed =</span> s)</span>
+<span id="cb86-19"><a href="#cb86-19" aria-hidden="true" tabindex="-1"></a>      ref <span class="ot">&lt;-</span> <span class="fu">with_seed</span>(s, mvtnorm<span class="sc">::</span><span class="fu">rmvnorm</span>(n, <span class="at">sigma =</span> cov1, <span class="at">method =</span> <span class="st">"chol"</span>))</span>
+<span id="cb86-20"><a href="#cb86-20" aria-hidden="true" tabindex="-1"></a>      <span class="fu">expect_equal</span>(obj, ref)</span>
+<span id="cb86-21"><a href="#cb86-21" aria-hidden="true" tabindex="-1"></a>      </span>
+<span id="cb86-22"><a href="#cb86-22" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb86-23"><a href="#cb86-23" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb86-24"><a href="#cb86-24" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Test passed 🥇</code></pre>
+</div>
+</div>
+<p>Okay it works. Relief. Pom poms are being waved as I write these words. Even so, I really wouldn’t use this implementation in the wild because my version is pretty lazy: I’m only doing this so that I can convince myself that I understand what’s going on, and also to separate the sampler from the transformer for simulation purposes. Speaking of which…</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="child-psychology.png" class="img-fluid figure-img"></p>
+<figcaption>I stopped talking when I was six years old. Okay that’s not true but I probably should have</figcaption>
+</figure>
+</div>
+</section>
+<section id="simulations-or-an-excellent-way-to-convince-you-of-something-you-already-believe-is-true" class="level2">
+<h2 class="anchored" data-anchor-id="simulations-or-an-excellent-way-to-convince-you-of-something-you-already-believe-is-true">Simulations, or, an excellent way to convince you of something you already believe is true</h2>
+<p>Okay now comes the fun part. It would be nice to end the post with a little simulation. Nothing fancy, just something that highlights the fact that <code>mvtnorm::rmvnorm()</code> is safer than <code>MASS::mvrnorm()</code>, and – as a side benefit – might also show the condition number of the covariance matrix is not a useful diagnostic for this problem. With that in mind, how shall we generate some covariance matrices to play around with? Well, let’s start with three observations:</p>
+<ul>
+<li>We aren’t really interested in the well-behaved covariance matrices, we’re interested in covariance matrices that might be ill-conditioned for the purposes of multivariate normal sampling</li>
+<li>If I fill up a symmetric matrix with random numbers, the resulting matrix <span class="math inline">\(\mathbf{S}\)</span> is probably not going to be positive definite, and won’t even be a valid covariance matrix</li>
+<li>There is a some scalar multiplication of the identity <span class="math inline">\(\epsilon \mathbf{I}\)</span> such that <span class="math inline">\(\mathbf{\Sigma} = \mathbf{S} + \epsilon \mathbf{I}\)</span> is positive definite for any <span class="math inline">\(\epsilon\)</span> that reaches some threshold value <span class="math inline">\(\epsilon_\min\)</span></li>
+</ul>
+<p>This suggests a hacky and probably hideously inefficient method for constructing covariance matrices that might be ill-conditioned for the sampling problem at hand. I call it the “<em>yeet a bunch of randos into a symmat and keep adding to the main drag until it’s positive defo</em>” method:<a href="#fn27" class="footnote-ref" id="fnref27" role="doc-noteref"><sup>27</sup></a></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb88"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb88-1"><a href="#cb88-1" aria-hidden="true" tabindex="-1"></a><span class="co"># generates a symmetric matrix with standard normal distributed entries</span></span>
+<span id="cb88-2"><a href="#cb88-2" aria-hidden="true" tabindex="-1"></a>symmetric_matrix <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">seed =</span> <span class="dv">1</span>L, <span class="at">nrow =</span> <span class="dv">10</span>L) {</span>
+<span id="cb88-3"><a href="#cb88-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set.seed</span>(seed)</span>
+<span id="cb88-4"><a href="#cb88-4" aria-hidden="true" tabindex="-1"></a>  x <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">rnorm</span>(nrow<span class="sc">^</span><span class="dv">2</span>), nrow, nrow)</span>
+<span id="cb88-5"><a href="#cb88-5" aria-hidden="true" tabindex="-1"></a>  x <span class="ot">&lt;-</span> x <span class="sc">*</span> <span class="fu">upper.tri</span>(x, <span class="at">diag =</span> <span class="cn">TRUE</span>)  </span>
+<span id="cb88-6"><a href="#cb88-6" aria-hidden="true" tabindex="-1"></a>  x <span class="ot">&lt;-</span> x <span class="sc">+</span> <span class="fu">t</span>(x) <span class="sc">-</span> <span class="fu">diag</span>(<span class="fu">diag</span>(x))</span>
+<span id="cb88-7"><a href="#cb88-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">attr</span>(x, <span class="st">"seed"</span>) <span class="ot">&lt;-</span> seed</span>
+<span id="cb88-8"><a href="#cb88-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(x)</span>
+<span id="cb88-9"><a href="#cb88-9" aria-hidden="true" tabindex="-1"></a>}  </span>
+<span id="cb88-10"><a href="#cb88-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb88-11"><a href="#cb88-11" aria-hidden="true" tabindex="-1"></a><span class="co"># generates a covariance matrix we know to be symmetric and positive definite</span></span>
+<span id="cb88-12"><a href="#cb88-12" aria-hidden="true" tabindex="-1"></a><span class="co"># but which has a pretty good chance of being ill-conditioned</span></span>
+<span id="cb88-13"><a href="#cb88-13" aria-hidden="true" tabindex="-1"></a>covariance_matrix <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">seed =</span> <span class="dv">1</span>L, <span class="at">nrow =</span> <span class="dv">10</span>L, <span class="at">step =</span> <span class="fl">0.05</span>) {</span>
+<span id="cb88-14"><a href="#cb88-14" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb88-15"><a href="#cb88-15" aria-hidden="true" tabindex="-1"></a>  <span class="co"># base matrix is a random symmetric matrix</span></span>
+<span id="cb88-16"><a href="#cb88-16" aria-hidden="true" tabindex="-1"></a>  x <span class="ot">&lt;-</span> <span class="fu">symmetric_matrix</span>(seed, nrow)</span>
+<span id="cb88-17"><a href="#cb88-17" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb88-18"><a href="#cb88-18" aria-hidden="true" tabindex="-1"></a>  <span class="co"># increase the diagonal until positive definite</span></span>
+<span id="cb88-19"><a href="#cb88-19" aria-hidden="true" tabindex="-1"></a>  nstep <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb88-20"><a href="#cb88-20" aria-hidden="true" tabindex="-1"></a>  <span class="cf">while</span> (<span class="fu">min</span>(<span class="fu">eigen</span>(x)<span class="sc">$</span>values) <span class="sc">&lt;</span> <span class="dv">0</span>) {</span>
+<span id="cb88-21"><a href="#cb88-21" aria-hidden="true" tabindex="-1"></a>    x <span class="ot">&lt;-</span> x <span class="sc">+</span> <span class="fu">diag</span>(<span class="fu">rep</span>(step, nrow))</span>
+<span id="cb88-22"><a href="#cb88-22" aria-hidden="true" tabindex="-1"></a>    nstep <span class="ot">&lt;-</span> nstep <span class="sc">+</span> <span class="dv">1</span></span>
+<span id="cb88-23"><a href="#cb88-23" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb88-24"><a href="#cb88-24" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb88-25"><a href="#cb88-25" aria-hidden="true" tabindex="-1"></a>  <span class="co"># store other information</span></span>
+<span id="cb88-26"><a href="#cb88-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">attr</span>(x, <span class="st">"steps"</span>) <span class="ot">&lt;-</span> nstep</span>
+<span id="cb88-27"><a href="#cb88-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">attr</span>(x, <span class="st">"kappa"</span>) <span class="ot">&lt;-</span> <span class="fu">kappa</span>(x, <span class="at">exact =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb88-28"><a href="#cb88-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb88-29"><a href="#cb88-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(x)</span>
+<span id="cb88-30"><a href="#cb88-30" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>We can now look at the sensitivity of the transformation matrices to perturbations added to the (probably evil) covariance matrix that we pass to our sampler. So here goes:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb89"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb89-1"><a href="#cb89-1" aria-hidden="true" tabindex="-1"></a>out <span class="ot">&lt;-</span> tidyr<span class="sc">::</span><span class="fu">expand_grid</span>(</span>
+<span id="cb89-2"><a href="#cb89-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">seed =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">1000</span>,</span>
+<span id="cb89-3"><a href="#cb89-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">method =</span> <span class="fu">c</span>(<span class="st">"eigen-mass"</span>, <span class="st">"eigen-mvtnorm"</span>, <span class="st">"chol-mvtnorm"</span>),</span>
+<span id="cb89-4"><a href="#cb89-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">perturb =</span> <span class="dv">10</span><span class="sc">^-</span><span class="dv">10</span>,</span>
+<span id="cb89-5"><a href="#cb89-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">tol =</span> .<span class="dv">01</span>,</span>
+<span id="cb89-6"><a href="#cb89-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">kappa =</span> <span class="cn">NA</span>,</span>
+<span id="cb89-7"><a href="#cb89-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">okay =</span> <span class="cn">NA</span></span>
+<span id="cb89-8"><a href="#cb89-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb89-9"><a href="#cb89-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb89-10"><a href="#cb89-10" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">nrow</span>(out)) {</span>
+<span id="cb89-11"><a href="#cb89-11" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb89-12"><a href="#cb89-12" aria-hidden="true" tabindex="-1"></a>  sigma <span class="ot">&lt;-</span> <span class="fu">covariance_matrix</span>(out<span class="sc">$</span>seed[i])</span>
+<span id="cb89-13"><a href="#cb89-13" aria-hidden="true" tabindex="-1"></a>  eps <span class="ot">&lt;-</span> <span class="fu">symmetric_matrix</span>(out<span class="sc">$</span>seed[i] <span class="sc">+</span> <span class="dv">1</span>)</span>
+<span id="cb89-14"><a href="#cb89-14" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb89-15"><a href="#cb89-15" aria-hidden="true" tabindex="-1"></a>  A1 <span class="ot">&lt;-</span> <span class="fu">transformer</span>(sigma, <span class="at">method =</span> out<span class="sc">$</span>method[i])</span>
+<span id="cb89-16"><a href="#cb89-16" aria-hidden="true" tabindex="-1"></a>  A2 <span class="ot">&lt;-</span> <span class="fu">transformer</span>(sigma <span class="sc">+</span> eps <span class="sc">*</span> out<span class="sc">$</span>perturb[i], <span class="at">method =</span> out<span class="sc">$</span>method[i])</span>
+<span id="cb89-17"><a href="#cb89-17" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb89-18"><a href="#cb89-18" aria-hidden="true" tabindex="-1"></a>  a1_vec <span class="ot">&lt;-</span> <span class="fu">as.vector</span>(A1)</span>
+<span id="cb89-19"><a href="#cb89-19" aria-hidden="true" tabindex="-1"></a>  a2_vec <span class="ot">&lt;-</span> <span class="fu">as.vector</span>(A2)</span>
+<span id="cb89-20"><a href="#cb89-20" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb89-21"><a href="#cb89-21" aria-hidden="true" tabindex="-1"></a>  diffs <span class="ot">&lt;-</span> <span class="fu">abs</span>(a1_vec <span class="sc">/</span> a2_vec <span class="sc">-</span> <span class="dv">1</span>)</span>
+<span id="cb89-22"><a href="#cb89-22" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb89-23"><a href="#cb89-23" aria-hidden="true" tabindex="-1"></a>  out<span class="sc">$</span>kappa[i] <span class="ot">&lt;-</span> <span class="fu">attr</span>(sigma, <span class="st">"kappa"</span>)</span>
+<span id="cb89-24"><a href="#cb89-24" aria-hidden="true" tabindex="-1"></a>  out<span class="sc">$</span>okay[i] <span class="ot">&lt;-</span> <span class="fu">all</span>(diffs <span class="sc">&lt;</span> .<span class="dv">01</span> <span class="sc">|</span> a1_vec <span class="sc">==</span> <span class="dv">0</span>)</span>
+<span id="cb89-25"><a href="#cb89-25" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb89-26"><a href="#cb89-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb89-27"><a href="#cb89-27" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb89-28"><a href="#cb89-28" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(out, <span class="fu">aes</span>(<span class="fu">factor</span>(okay), kappa)) <span class="sc">+</span></span>
+<span id="cb89-29"><a href="#cb89-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_violin</span>(<span class="at">draw_quantiles =</span> .<span class="dv">5</span>) <span class="sc">+</span></span>
+<span id="cb89-30"><a href="#cb89-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>() <span class="sc">+</span> </span>
+<span id="cb89-31"><a href="#cb89-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>method) <span class="sc">+</span> </span>
+<span id="cb89-32"><a href="#cb89-32" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_log10</span>() <span class="sc">+</span></span>
+<span id="cb89-33"><a href="#cb89-33" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb89-34"><a href="#cb89-34" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"is the transformation matrix unchanged?"</span>,</span>
+<span id="cb89-35"><a href="#cb89-35" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"condition number for matrix inversion"</span></span>
+<span id="cb89-36"><a href="#cb89-36" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-44-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>I love this plot. I mean, on the one hand it’s kind of stupid if you’re trying to extract nuance from the simulation results, because there is absolutely no nuance to be found here: the problem exists in MASS but not mvtnorm, and it has nothing at all to do with the usual matrix condition numbers. There are literally only two things to see here. But on the other hand, it’s pretty brutal about ramming home those two points, right?</p>
+<p>To phrase it a little more precisely:</p>
+<ul>
+<li>The reproducibility issue that my colleagues encountered is specific to MASS choosing a transformation matrix that is always admissible, but wildly unstable when tiny perturbations are introduced to the computed covariance matrix</li>
+<li>The “usual” condition number that we compute to decide if a matrix is “ill conditioned” is entirely irrelevant to the issue at hand, because <code>kappa()</code> returns a condition number associated with a different computational problem that has different failure modes. Multivariate normal sampling is a different problem to matrix inversion, and you should not assume a condition number defined with respect to one problem will generalise to a different problem, even if the two are closely related.</li>
+</ul>
+<p>Is it unfair to us, the human users, that nothing that happens on a computer really works the way we expect it to? Well yes. Actually it is. It’s frustrating, it sucks, and for the vast majority of us this kind of problem is wholly beyond our training. But it is what is, and <a href="https://www.youtube.com/watch?v=HN8CPj9AkX4">as the song goes</a>:</p>
+<blockquote class="blockquote">
+<p>Life is unfair. Kill yourself or get over it</p>
+</blockquote>
+</section>
+<section id="recommendations" class="level2">
+<h2 class="anchored" data-anchor-id="recommendations">Recommendations</h2>
+<p>Siiiiiiiiiiiiiiiigh. Once upon a time I was an academic, and a weirdly successful one at that. One of the things I used to see on a regular basis is people with expertise in Field X learning exactly one fact about Field Y, getting overly excited about it, writing entire papers filled with sweeping claims about what constitutes best practice for Field Y, and getting things catastrophically, dangerously wrong.<a href="#fn28" class="footnote-ref" id="fnref28" role="doc-noteref"><sup>28</sup></a> It is a <em>thing</em>. As such, I am wary of issuing recommendations. I’m basically an amateur in this area, and you should take my thoughts with a massive grain of salt. Nevertheless, I’m also aware that some R users with even less expertise than me would perhaps like some suggestions for how to avoid this particular nightmare in their own work, and in all likelihood they would like to be given some <em>practical</em> advice rather than the nihilistic offerings I provided at the end of the last section. And yeah, that’s fair.</p>
+<p>So, here goes. My recommendations, in their entirety:</p>
+<ul>
+<li>Call <code>set.seed()</code> immediately before the sampling<a href="#fn29" class="footnote-ref" id="fnref29" role="doc-noteref"><sup>29</sup></a></li>
+<li>Use <code>mvtnorm::rmvnorm()</code> instead of <code>MASS::rmvnorm()</code> to do the sampling</li>
+<li>While you’re there, you might as well also set <code>method = "chol"</code>. It doesn’t hurt</li>
+<li>Don’t put too much faith in condition numbers, they’re rough guides at best</li>
+<li>Learn to stop worrying and love the bomb<a href="#fn30" class="footnote-ref" id="fnref30" role="doc-noteref"><sup>30</sup></a></li>
+</ul>
+<p>Make of them what thou wilt.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="unravel_36_3686.jpg" class="img-fluid figure-img"></p>
+<figcaption>I originally titled this piece “interiority”. There were reasons</figcaption>
+</figure>
+</div>
+</section>
+<section id="further-reading" class="level2">
+<h2 class="anchored" data-anchor-id="further-reading">Further reading</h2>
+<ul>
+<li><p><em>Introduction to mathematical statistics</em> by Hogg, McKean, and Craig. Or, alternatively, any decent mathematical statistics textbook that you have lying around. I happened to have the 6th edition of this one by my bed (it’s a sex thing, don’t ask) and they’re up to the 8th edition now, but really it doesn’t matter. My actual point here is that most mathematical statistics textbooks will spend a bit of time walking you through the multivariate normal distribution, and you quite quickly get a feel for why matrix decomposition lies at the heart of anything you do with correlated normal variates.</p></li>
+<li><p><a href="https://archive.org/details/algebraiceigenva0000wilk_c5b6">The algebraic eigenvalue problem</a>. Written in 1965 by James Wilkinson, this book is the primary reference discussed in the R documentation to <code>eigen()</code> and is very much the definitive source on the topic. It’s also, thanks to the magic of the Internet Archive, quite easy to borrow online if you’re so inclined.</p></li>
+<li><p><a href="https://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html">What every computer scientist should know about floating-point arithmetic</a>, by David Goldberg, published in the March 1991 edition of “Computing Surveys”. Kind of a classic article, and one that I have found myself accidentally rediscovering over and over whenever I make the mistake of assuming that floating point numbers aren’t going to break my code.</p></li>
+<li><p><a href="https://www.netlib.org/lapack/lug/lapack_lug.html">LAPACK users guide</a>. As a general life rule I have tried to learn as little as possible about BLAS and LAPACK: I’m not that kind of masochist. However, I will concede that sometimes it’s a necessary evil, and the LAPACK users guide and various other resources at <a href="https://www.netlib.org/lapack/">netlib.org/lapack</a> can be helpful whenever you find yourself in that terrible situation. Oh and naturally it’s on <a href="https://github.com/Reference-LAPACK/lapack">github</a> also.</p></li>
+<li><p><a href="https://journal.r-project.org/archive/2013-2/hofert.pdf">On sampling from the multivariate t distribution</a>, by Marius Hofert, published by the R Journal in December 2013. As the title suggests, the focus is on the multivariate t distribution rather than the multivariate normal, but a lot of the lessons are relevant to both, and the article doubles as documentation of some key features of the mvtnorm R package. I didn’t really understand a lot of the nuances at first, but the further I got into the Wilkinson book the more I realised that mvtnorm tries pretty hard to do the right thing.</p></li>
+</ul>
+
+
+</section>
+
+
+<div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p>It’s quite bad. We should have some public health measures or whatevs to ameliorate the effects of this thing. Have we considered this, or what?<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>For the pharmacometricians: Yes, Steve Duffull was involved in this landing on my desk. If I have learned nothing else in my brief tenure in this field it is that every one of these “Danielle gets dragged into the pits of hell” style R questions is <em>always</em> Steve’s fault. Somehow.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3"><p>Somehow, Palpatine returned.<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn4"><p>Palpatine is floating point arithmetic.<a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn5"><p>I only say this because the context tells me in advance that it was probably not going to be a date/time computation problem, a map projection, or a fucking geodetic datum issue. There are exactly 24 hours in a day, timezones do not exist, and the Earth is a perfect sphere. Possibly a cube. I will hear no further discussions.<a href="#fnref5" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn6"><p>Later in the post I’m going to refer back to Wilkinson (1965) quite a bit, and for those of you that have never had the heart-rendingly cruel experience of reading the book, what I’m doing here is a tiresome and bland example of the kind of phenomenon that perturbation theory (chapter 2) seeks to describe. It’s not very clever, really.<a href="#fnref6" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn7"><p>Well, I should be a bit careful here. These differences are a few orders of magnitude higher than the rounding error you’d expect by truncating one real number to a floating point number on this machine, since <code>.Machine$double.eps</code> is approximately <span class="math inline">\(2.2 \times 10^{-16}\)</span>, but rounding errors have a nasty tendency to propagate so… hush.<a href="#fnref7" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn8"><p>Honey, if you’re reading this footnote with the intention of doing a “but, but, what if we use this other representation that you haven’t talked about in your post and is very rarely used in the programming language that you happen to be talking about here” thing, go fuck yourself. You know perfectly well that every floating point number representation has problems, and as such you have better things to do with your life than annoy me by smugly telling me something we both already know.<a href="#fnref8" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn9"><p>Not a guarantee.<a href="#fnref9" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn10"><p>Okay fine you can get away with positive semidefinite covariance matrices but in such cases the density is undefined and anyway is not the point of any of this.<a href="#fnref10" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn11"><p>I love pretending to be a real mathematician and using those words. Like, it’s true here: the mean vector isn’t really relevant to the discussion here, it’s all about the covariance matrix, so I can just fix it at the origin and nothing changes. But it’s more fun to be a pretentious twat, so I’ll use the conventional language here.<a href="#fnref11" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn12"><p>Careful readers of this post will notice that about half way through, once the code starts to appear, I start changing the framing of the problem so that we actually choose <span class="math inline">\(\mathbf{A}\)</span> such that we can compute <span class="math inline">\(\mathbf{zA}\)</span> for a row vector <span class="math inline">\(\mathbf{z}\)</span>, rather than compute <span class="math inline">\(\mathbf{Az}\)</span> for a column vector <span class="math inline">\(\mathbf{z}\)</span>. This is not interesting, it’s entirely because in R code we usually want to represent each sample as a row vector not a column vector. The mathematical problem isn’t any different. Unfortunately, that being said, there is in fact a section coming later where I actually have to dive into the “rows are not columns” thing. If I weren’t already sick of this post I would fix the notation to be consistent throughout, but it has been dragging on forever, I’m not being paid for this, and I’m long past the point where I can afford to spend more time on it. Sigh.<a href="#fnref12" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn13"><p>I mean, it is true of course, but also this is a special case of the more general eigendecomposition for a square matrix <span class="math inline">\(\mathbf{M} = \mathbf{Q} \mathbf{\Lambda} \mathbf{Q}^{-1}\)</span>. But whatever.<a href="#fnref13" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn14"><p>One of the weirdest things in this post is that I haven’t actually checked that this is true. I haven’t looked into the LAPACK source code in any detail, nor have I run any simulations to confirm that both solutions to this eigendecomposition problem lead to appropropriate multivariate normal distributed samples. I have not done so because <em>I trust the maths</em>. I say this here and now because this is important: at one time or another we all make this choice and we all decide to trust the maths. But sometimes we are betrayed, because computers are not always capable of implementing that mathematics. If you work with data long enough, this will become an issue for you eventually and it will hurt. By the end of this post you’ll have seen an unpleasant example where the authors of MASS got burned badly by this. And I will ask you to be kind. Because at some level we all trust the maths, and eventually the computers betray us. You should never be a bitch to someone who just got fucked in the arse by floating point.<a href="#fnref14" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn15"><p>Sometimes I wonder what comments this would receive from CRAN maintainers if MASS were a new package submitted by a new developer. As the CRAN maintainers have often said in their correspondence (one maintainer in particular being notorious for this), if you submit a package without properly reading every single word of the staggeringly long manuals and are not compliant with every word written in those manuals (and also with the undocumented shit that R-devel just pushed 20 minutes ago) you are a bad person who deserves to be publicly humiliated. Well, the documentation to <code>eigen()</code> very clearly tells users to read Wilkinson (1965), and it is very clear that had the authors of <code>MASS::mvrnorm()</code> fully understood all the implications of what is written in that book, they would never have submitted a function for multivariate normal sampling with these appalling numerical instability problems. So, should we publicly humiliate the writers of “Multivariate Applied Statistics with S”? According to at least one of those two authors, the answer to this question appears to be “yes, we should do so with relish and with malice”. However, I think this is the wrong perspective to take. As much as I – like every other R developer who has had the misfortune to make a mistake in his presence – would <em>loooooooove</em> to have good cause to be a bitch to Brian Ripley and return all the venom that he has directed at the rest of us over the years… actually, it’s unfair. MASS is a very important package. It’s become a bit clunky over the years and a lot of its specialised functions now have better alternatives (this is one of those cases), but in the early days of R adoption it was a godsend. It is often the nature of open source development that it works this way: there are a lot of batshit things that have been baked into R because some very diligent person tried their very best to supply a massive amount of functionality to users in a hurry, entirely free of charge and usually at great cost to themselves, and they did so slightly imperfectly. We should be gentle when we discover those imperfections. And yes, that principle applies to Brian Ripley too. He is quite famously three crotchety old men in a trenchcoat, and yes he has been a nasty cunt to me too, but MASS was and is a crucial piece of infrastructure, added to R at a time it was desperately needed. I dislike the man intensely as a human being, and I do think its unwise to rely on <code>MASS::mvrnorm()</code> given this particular issue, but I remain truly grateful to him for the service he has given. No, really: this is meant very seriously. Life is complicated, and we do our best to be kind even to people who irritate us. Even Brian.<a href="#fnref15" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn16"><p>I’m sure it exists, but I have spent so much more time on this post than I wanted to and I am <em>tired</em>.<a href="#fnref16" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn17"><p>In the bad way. Normally a girl doesn’t mind that kind of thing.<a href="#fnref17" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn18"><p>I agonised over whether to present this in terms of the lower triangular or upper triangular matrix, and then realised I don’t care. If you don’t like what I’ve written, please feel free to seen me an angry email at <code>peta.credlin@skynews.com.au</code><a href="#fnref18" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn19"><p>This is the footnote where the author reminds herself that in the <em>general</em> case eigenvectors need not be orthogonal, but for a real symmetric positive definite matrix then the eigenvectors will be orthogonal.<a href="#fnref19" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn20"><p>I think that’s imposed by the LAPACK routine. Also, studious observers might notice that I am attempting to write this entire post without making explicit reference to vector norms or (gods forbid) matrix norms and am not sure what any of these things mean anymore, but no doubt I will probably slip up somewhere.<a href="#fnref20" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn21"><p>Older versions of mvtnorm had the same issue that MASS has. It was fixed in version 0.9.9994. For backwards compatibility <code>mvtnorm::rmvnorm()</code> has an argument <code>pre0.9_9994</code> that allows you to reproduce the older behaviour, but there’s almost never a good reason to use it.<a href="#fnref21" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn22"><p>Not a criticism of the package authors: it’s a comment on how fucking stupid reality is.<a href="#fnref22" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn23"><p>Actually, there’s a long discussion in the book where he basically admits this is not guaranteed.<a href="#fnref23" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn24"><p>I think. Look, there’s a long discussion of Cholesky in the context of LR and QR decompositions in chapter 8 of the book but my brain was fried by then so I don’t even know anymore.<a href="#fnref24" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn25"><p>Ideally we would define some notion of a condition number for multivariate normal <em>sampling</em> with covariance <span class="math inline">\(\mathbf{\Sigma}\)</span> but since that isn’t discussed by Wilkinson and I am out of my depth at this point in the post we shall simply have to make do with matrix inversion.<a href="#fnref25" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn26"><p>If it’s not symmetric it’s the ratio of largest to smallest singular values.<a href="#fnref26" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn27"><p>Idiotic Australian phrasing notwithstanding, this actually does work, and has sometimes been proposed as a method for fixing matrices that theoretically should be positive definite but in practice are not because sampling error and floating point shenanigans mess it all up.<a href="#fnref27" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn28"><p>See for example, psychologists talking about statistics, or physicists talking about anything that isn’t physics.<a href="#fnref28" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn29"><p>Or alternatively, wrap the call to <code>mvtnorm::rmvnorm()</code> inside a call to <code>withr::with_seed()</code>. It does the same thing and in my experience can be a useful coding practice because it starts to “nudge” you into working out which sections of your code you <em>really</em> need to protect, and then writing your code inside smaller “protected blocks”. That way, if one block fails to be reproducible because of some wild and unanticipated madness, the other blocks are still protected.<a href="#fnref29" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn30"><p>The bomb in this case being floating point arithmetic. It’s pure madness down there, and you can’t control everything. Accept it, and move on with your life.<a href="#fnref30" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section><section class="quarto-appendix-contents" id="quarto-reuse"><h2 class="anchored quarto-appendix-heading">Reuse</h2><div class="quarto-appendix-contents"><div><a rel="license" href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></div></div></section><section class="quarto-appendix-contents" id="quarto-citation"><h2 class="anchored quarto-appendix-heading">Citation</h2><div><div class="quarto-appendix-secondary-label">BibTeX citation:</div><pre class="sourceCode code-with-copy quarto-appendix-bibtex"><code class="sourceCode bibtex">@online{navarro2025,
+  author = {Navarro, Danielle},
+  title = {When Good Pseudorandom Numbers Go Bad},
+  date = {2025-05-18},
+  url = {https://blog.djnavarro.net/posts/2025-05-18_multivariate-normal-sampling-floating-point/},
+  langid = {en}
+}
+</code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre><div class="quarto-appendix-secondary-label">For attribution, please cite this work as:</div><div id="ref-navarro2025" class="csl-entry quarto-appendix-citeas" role="listitem">
+Navarro, Danielle. 2025. <span>“When Good Pseudorandom Numbers Go
+Bad.”</span> May 18, 2025. <a href="https://blog.djnavarro.net/posts/2025-05-18_multivariate-normal-sampling-floating-point/">https://blog.djnavarro.net/posts/2025-05-18_multivariate-normal-sampling-floating-point/</a>.
+</div></div></section></div></main> <!-- /main -->
+<!-- plausible -->
+<script async="" defer="" data-domain="blog.djnavarro.net" src="https://plausible.io/js/plausible.js"></script>
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp("https:\/\/blog\.djnavarro\.net");
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+    <a class="nav-link" href="https://blog.djnavarro.net">
+<p>blog.djnavarro.net</p>
+</a>
+  </li>  
+</ul>
+    </div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>
