@@ -27,7 +27,7 @@ A few weeks ago, in the beforetimes when I'd not personally had the soul-crushin
 
 That's not supposed to happen...
 
-![Somehow, "Palpatine" returned.](poe.png)
+![Somehow, "Palpatine" returned. Palpatine was floating point errors all along.](poe.png)
 
 ... and to be fair, in most situations it *doesn't* happen. Most computations are reproducible, and even random number generation does what it's supposed to do as long as you're careful with the seed. Or, to put it more plainly, the `set.seed()` method for controlling the results of your computations in R works just fine. At the risk of being tiresome, here's a "random" permutation of the letters of the English alphabet that we obtain in R after the seed is fixed:
 
@@ -159,6 +159,8 @@ The thing is, though, this difference is minuscule. That's how it should be, rig
 
 I mean... good question, right?
 
+![The descent begins. It is dark down there](unravel_30_3001.jpg)
+
 ## How are multivariate normal samples generated?
 
 To understand why this problem arises, it's important to understand that [sampling from a multivariate normal](https://en.wikipedia.org/wiki/Multivariate_normal_distribution#Drawing_values_from_the_distribution) is a somewhat different kettle of fish to drawing from a univariate normal distribution, and computationally trickier. In the univariate case, let's say we're using the polar form of the [Box-Muller method](https://en.wikipedia.org/wiki/Box%E2%80%93Muller_transform). To transform two uniform variates into two normal variates requires three multiplications, one logarithm, one square root, and one division. Each of those computations is a thing that must be performed on a machine that uses [floating point arithmetic](https://en.wikipedia.org/wiki/Floating-point_arithmetic), and as a tedious consequence each of these computations can introduce very small rounding errors into the solution that the machine calculates. This is the nature of floating point arithmetic. Even so, we don't have a reason to expect things to go catastrophically wrong in this case: there just aren't that many computations involved, and with so few computations involved you aren't very likely^[Not a guarantee.] to encounter any kind of "everything goes to shit" problem when runaway truncation error takes hold.
@@ -188,6 +190,8 @@ The key thing here is that this linear transformation property gives us a simple
 2. Using whatever fancy matrix decomposition trick is still capable of bringing love into in your withered heart, find yourself a matrix $\mathbf{A}$ such that $\mathbf{\Sigma} = \mathbf{A A}^T$.
 3. Calculate the vector $\mathbf{x} = (x_1, \ldots, x_k)$ where $\mathbf{x} = \mathbf{Az}$. The resulting values are multivariate normal distributed with mean $\mathbf{0}$ and covariance matrix $\mathbf{\Sigma}$. 
 4. Celebrate. Eat cake.
+
+![You know the truth already. You don't need me to tell it to you](cake.jpg){width=100%}
 
 ## Hell is matrix decomposition
 
@@ -295,6 +299,8 @@ Yeah... those are not the same at all. Counterintuitively, these are both perfec
 
 Ultimately, it is this phenomenon that breaks reproducibility with `MASS::mvrnorm()`. Tiny quantitative changes in the covariance matrix that we pass as input can sometimes produce large *qualitative* changes in the eigendecomposition returned by LAPACK. `MASS::mvrnorm()` makes no attempt to protect the user from these effects, so when LAPACK creates this problem MASS does not fix it. In practice, therefore, random numbers generated this way will often be irreproducible on machines that rely on floating-point arithmetic.^[Sometimes I wonder what comments this would receive from CRAN maintainers if MASS were a new package submitted by a new developer. As the CRAN maintainers have often said in their correspondence (one maintainer in particular being notorious for this), if you submit a package without properly reading every single word of the staggeringly long manuals and are not compliant with every word written in those manuals (and also with the undocumented shit that R-devel just pushed 20 minutes ago) you are a bad person who deserves to be publicly humiliated. Well, the documentation to `eigen()` very clearly tells users to read Wilkinson (1965), and it is very clear that had the authors of `MASS::mvrnorm()` fully understood all the implications of what is written in that book, they would never have submitted a function for multivariate normal sampling with these appalling numerical instability problems. So, should we publicly humiliate the writers of "Multivariate Applied Statistics with S"? According to at least one of those two authors, the answer to this question appears to be "yes, we should do so with relish and with malice". However, I think this is the wrong perspective to take. As much as I -- like every other R developer who has had the misfortune to make a mistake in his presence -- would *loooooooove* to have good cause to be a bitch to Brian Ripley and return all the venom that he has directed at the rest of us over the years... actually, it's unfair. MASS is a very important package. It's become a bit clunky over the years and a lot of its specialised functions now have better alternatives (this is one of those cases), but in the early days of R adoption it was a godsend. It is often the nature of open source development that it works this way: there are a lot of batshit things that have been baked into R because some very diligent person tried their very best to supply a massive amount of functionality to users in a hurry, entirely free of charge and usually at great cost to themselves, and they did so slightly imperfectly. We should be gentle when we discover those imperfections. And yes, that principle applies to Brian Ripley too. He is quite famously three crotchety old men in a trenchcoat, and yes he has been a nasty cunt to me too, but MASS was and is a crucial piece of infrastructure, added to R at a time it was desperately needed. I dislike the man intensely as a human being, and I do think its unwise to rely on `MASS::mvrnorm()` given this particular issue, but I remain truly grateful to him for the service he has given. No, really: this is meant very seriously. Life is complicated, and we do our best to be kind even to people who irritate us. Even Brian.] 
 
+![It's not an act of love if you make her](unravel_28_2807.jpg)
+
 ## Safe passage through hell is notoriously expensive
 
 The first thought you might have is "well, Danielle, could we maybe do something about these indeterminacies? Does floating point arithmetic have to be this unpredictable?" It's an enticing thought, right? I mean, if we could guarantee that every machine produced the same answer whenever asked to perform a simple arithmetic calculation, we wouldn't be in this mess. Problem solved. Rainbows. Unicorns. Sunshine. Fully automated gay space luxury communism.
@@ -308,6 +314,8 @@ It is an uncomfortable truth for a scientist to accept, but it is a truth noneth
 When faced with the cruel truths of material reality, one has a choice to make. We can either choose to live in a pure world of conceptual abstractions, floating above the mess and chaos of the world as it exists on the ground, or we can accept that -- in this instance -- we are engaged in the absurd exercise of trying to make a block of sand do linear algebra and of course that is going to be ugly. We are trying to force reality to bend to our mathematical whims and unfortunately reality is only partially willing to comply. 
 
 So let us accept a core truth: for any realistic level of time and money that a human is willing to spend performing an automated computation, there is always some probability that the machine will fuck it up. We cannot eradicate this risk in real life, and we must always act on the assumption that the computational machinery underneath our code might occasionally do some batshit things.
+
+![Unfortunately, according to the men in my life, this is not me, I'm the other kind of woman](material-girl.jpg)
 
 ## Living in a material world, and I am a material girl
 
@@ -366,6 +374,8 @@ z2 %*% A
 ```
 
 Yup, same thing. I could do some simulations to show that these are distributed according to the appropriate multivariate normal distribution, sure, but I'm not going to. It works, and this is going to be a long post no matter what I do. So let's move along...
+
+![Straight up fanservice, if you happen to be a fan of Zac Burgess I guess. I just watched the TV series version of *Cruel Intentions* and I literally do not want to know how much older I am than him it will just hurt](cruel.jpg)
 
 ## I compute his Cholesky till he decompose
 
@@ -434,6 +444,8 @@ z2 %*% R2
 
 Okay so that actually is the same. A little later in the post I will talk about this "pivot" stuff, and tl;dr it does serve a useful purpose, but in truth it's only there to handle edge cases so we don't need to worry about it right now. 
 
+![In a fucking handbasket, sweetie](languid_38_3842.jpg)
+
 ## Column the boat gently down the stream
 
 At this point in the post, I feel a need to digress slightly. To be clear, I do not *want* to pursue this digression because my original goal in this post was to figure out what was going on in my colleagues code and we are waaaaaaay past that point already, but... the [yak](https://projects.csail.mit.edu/gsb/old-archive/gsb-archive/gsb2000-02-11.html) is there. The yak must be shaved, or we will never escape this horrible blog post. 
@@ -482,7 +494,7 @@ MASS::mvrnorm(3L, mu = rep(0, 4), Sigma = cov1)
 
 Siiiiiiiiigh. None of these numbers are even remotely the same. Something has gone awry, yet again. But it is important to understand what, precisely, has gone wrong. Critically, we need to understand that the MASS approach is still technically correct, in the sense that the three random vectors are all distributed in the way we want them to be, but when MASS generates the samples using the random number generator, it does so in a "nonsequential" way. The samples are independent of each other (conditional on $\mathbf{\Sigma}$, of course), but there is a hidden dependence on the RNG state that -- in effect -- means that the user has to pretend that all the samples are generated "as a block". You can't think of these as sequential draws because of the peculiar way that the RNG has been invoked under the hood. 
 
-Again. This does *not* break the statistical properties of the samples. It is, however, and obvious source of fragility in the code that can hinder reproducibility in the wild. If the user decides to change the number of random variates in the simulation, *all* the variates will change, not merely the "extra" ones.^[Older versions of mvtnorm had the same issue that MASS has. It was fixed in version 0.9.9994. For backwards compatibility `mvtnorm::rmvnorm()` has an argument `pre0.9_9994` that allows you to reproduce the older behaviour, but there's almost never a good reason to use it.]
+Again. This does *not* break the statistical properties of the samples. It is, however, an obvious source of fragility in the code that can hinder reproducibility in the wild. If the user decides to change the number of random variates in the simulation, *all* the variates will change, not merely the "extra" ones.^[Older versions of mvtnorm had the same issue that MASS has. It was fixed in version 0.9.9994. For backwards compatibility `mvtnorm::rmvnorm()` has an argument `pre0.9_9994` that allows you to reproduce the older behaviour, but there's almost never a good reason to use it.]
 
 Why does this happen? I almost don't want to tell you. It's so fucking stupid that it's embarrassing for all of us.^[Not a criticism of the package authors: it's a comment on how fucking stupid reality is.] Let's suppose I want to create a matrix with four columns, two rows, and with the numbers 1 to 8. Here's one way to do that:
 
@@ -511,6 +523,8 @@ This particular failure of `MASS::mvrnorm()` is entirely different from the one 
 
 In real life, "row" and "column" are not interchangeable terms.
 
+![Fold, pivot, whatever. Gonna make origami honey](unravel_10_1003.jpg)
+
 ## Pivot, pivot, pivot towards freedom
 
 There's one last feature in `mvtnorm::rmvnorm()` that I was uncertain about, and required a painful dive into the darkness of chapter 4 in Wilkinson (1965), and then a further skim through chapter 8. In chapter 4 of the book, he focuses solutions to systems of linear equations, which is why that's the part of the book where he ends up talking about condition numbers for matrix inversions (see next section). But there's a lot more in that chapter, and quite frankly I did not understand all of it. I cried a few times.
@@ -529,6 +543,7 @@ Okay, let's simplify. There's one key idea here: there are a lot of row operatio
 
 Ah. That's what's going on with `rmvnorm()` code: because for our purposes it is critical that $\mathbf{Q}^\prime \mathbf{Q} = \mathbf{\Sigma}$, that's the whole bloody point. So if we allow pivoting for numerical stability reasons, it is critical that we reorder the matrix appropriately. 
 
+![You make me do too much [labour](https://www.youtube.com/watch?v=jvU4xWsN7-A)](labour.png)
 
 ## Since the dawn of time humanity has yearned to destroy linear algebra. It was never necessary
 
@@ -554,7 +569,7 @@ Okay so, for the benefit of folks in the second category, there's a bit of tende
 kappa(cov1, exact = TRUE)
 ```
 
-Yeah, not quite. Firstly, there's no such thing as a "well-conditioned matrix" or an "ill-conditioned matrix". That's not a thing. Conditioning is a property that attaches to a *computing problem*, and it refers to the sensitivty of the solution to small changes in the problem specification. To state the obvious, a matrix is a mathematical object, and there are many different computing problems that might attach to any different matrix. Accordingly, we will need to be a little more precise in how we discuss conditioning. To quote Wilkinson (1965, chapter 2 section 30), 
+Yeah, not quite. Firstly, there's no such thing as a "well-conditioned matrix" or an "ill-conditioned matrix". That's not a thing. Conditioning is a property that attaches to a *computing problem*, and it refers to the sensitivity of the solution to small changes in the problem specification. To state the obvious, a matrix is a mathematical object, and there are many different computing problems that might attach to any given matrix. Accordingly, we will need to be a little more precise in how we discuss conditioning. To quote Wilkinson (1965, chapter 2 section 30), 
 
 > It is convenient to have some number that defines the condition of a matrix with respect to a computing problem and to call such a number a 'condition number'. Ideally it should give some 'overall assessment' of the rate of change of the solution with respect to changes in the coefficients and should therefore be in some way proportional to this rate of change <br>
 > <br>
@@ -587,7 +602,9 @@ Okay great. Whatever. What does it actually *mean* in practice? Roughly speaking
 
 Really, it comes down to this... the condition number of a matrix, in the sense that we usually compute it, says something about the invertibility of that matrix in a world that has floating point errors, and is not super relevant to the problem of multivariate normal sampling. Unfortunately for us this is going to show up in a couple of sections time...
 
-## Reimplementing it badly
+![Honey. Do not ask me to do this correctly. It will end badly. I'll only disappoint you](pedestrian.jpg)
+
+## It's a wheel. You don't need to reinvent it
 
 At this point we've sort of covered everything, and we can write our own code to implement multivariate normal sampling in three different ways:
 
@@ -676,7 +693,9 @@ test_that("smol test", {
 
 Okay it works. Relief. Pom poms are being waved as I write these words. Even so, I really wouldn't use this implementation in the wild because my version is pretty lazy: I'm only doing this so that I can convince myself that I understand what's going on, and also to separate the sampler from the transformer for simulation purposes. Speaking of which...
 
-## Simulations
+![I stopped talking when I was six years old. Okay that's not true but I probably should have](child-psychology.png)
+
+## Simulations, or, an excellent way to convince you of something you already believe is true
 
 Okay now comes the fun part. It would be nice to end the post with a little simulation. Nothing fancy, just something that highlights the fact that `mvtnorm::rmvnorm()` is safer than `MASS::mvrnorm()`, and -- as a side benefit -- might also show the condition number of the covariance matrix is not a useful diagnostic for this problem. With that in mind, how shall we generate some covariance matrices to play around with? Well, let's start with three observations: 
 
@@ -786,6 +805,8 @@ So, here goes. My recommendations, in their entirety:
 - Learn to stop worrying and love the bomb^[The bomb in this case being floating point arithmetic. It's pure madness down there, and you can't control everything. Accept it, and move on with your life.]
 
 Make of them what thou wilt.
+
+![I originally titled this piece "interiority". There were reasons](unravel_36_3686.jpg)
 
 ## Further reading
 
