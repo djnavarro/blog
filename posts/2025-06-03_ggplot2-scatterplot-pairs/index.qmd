@@ -1,0 +1,167 @@
+---
+title: "ggplot2-scatterplot-pairs"
+description: "This is a subtitle"
+date: "2025-06-03"
+--- 
+
+<!--------------- my typical setup ----------------->
+
+```{r}
+#| label: setup
+#| include: false
+very_wide <- 500
+wide <- 136
+narrow <- 76
+options(width = narrow)
+cache_images <- TRUE
+set.seed(1)
+```
+
+<!--------------- post begins here ----------------->
+
+```{r}
+#| label: pairwise-pivot-data
+pairwise_pivot <- function(data, 
+                           pivot_cols, 
+                           other_cols = !pivot_cols,
+                           names_to = "name",
+                           values_to = "value",
+                           pair_label = c("x", "y"),
+                           pair_label_sep = "_",
+                           row_id = "row_id") {
+
+    x_value <- paste(pair_label[1], values_to, sep = pair_label_sep)
+    y_value <- paste(pair_label[2], values_to, sep = pair_label_sep)
+    x_name  <- paste(pair_label[1], names_to, sep = pair_label_sep)
+    y_name  <- paste(pair_label[2], names_to, sep = pair_label_sep)
+
+    base <- data |> 
+        dplyr::mutate({{row_id}} := dplyr::row_number())
+  
+    fixed_data <- base |> 
+        dplyr::select(
+            {{other_cols}}, 
+            tidyselect::all_of(row_id)
+        )
+    
+    long_x <- base |>
+        dplyr::select(
+            {{pivot_cols}},            
+            tidyselect::all_of(row_id)
+        ) |>
+        tidyr::pivot_longer(
+            cols = {{pivot_cols}},
+            names_to = {{x_name}},
+            values_to = {{x_value}}
+        )
+
+    long_y <- long_x |> 
+        dplyr::rename(
+            {{y_name}} := {{x_name}}, 
+            {{y_value}} := {{x_value}}
+        )
+
+    pairs <- dplyr::full_join(
+        x = long_x,
+        y = long_y,
+        by = row_id,
+        relationship = "many-to-many"
+    ) |>
+    dplyr::relocate({{y_name}}, .after = {{x_name}}) |>
+    dplyr::left_join(fixed_data, by = row_id)
+    
+    pairs
+}
+
+penguin_paired_measurements <- penguins |>
+    tibble::as_tibble() |>
+    pairwise_pivot(
+        pivot_cols = bill_len:body_mass,
+        other_cols = species,
+        row_id = "penguin",
+        names_to = "var",
+        values_to = "val"
+    )
+
+penguin_paired_measurements
+```
+
+Plot
+
+```{r}
+#| label: paired-plot-all-facets
+#| warning: false
+
+base_plot <- function(data) {
+    data |>
+        ggplot2::ggplot(ggplot2::aes(
+            x = x_val, 
+            y = y_val,
+            colour = species
+        )) +
+        ggplot2::geom_point() +
+        ggplot2::theme_bw() +
+        ggplot2::labs(
+            x = NULL,
+            y = NULL
+        )
+}
+
+
+penguin_paired_measurements |>
+    base_plot() +
+    ggplot2::facet_grid(y_var ~ x_var, scales = "free")
+
+```
+
+Plot after filtering identity cases:
+
+```{r}
+#| label: paired-plot-drop-diagonal
+#| warning: false
+penguin_paired_measurements |>
+    dplyr::filter(y_var != x_var) |>
+    base_plot() +
+    ggh4x::facet_grid2(
+        y_var ~ x_var,
+        scales = "free",
+        render_empty = FALSE
+    )
+
+```
+
+
+Plot after filtering to upper triangular cases:
+
+```{r}
+#| label: paired-plot-upper-triangular
+#| warning: false
+penguin_paired_measurements |>
+    dplyr::filter(x_var > y_var) |>
+    base_plot() +
+    ggh4x::facet_grid2(
+        y_var ~ x_var,
+        scales = "free",
+        render_empty = FALSE
+    ) + 
+    ggplot2::scale_x_continuous(position = "top") + 
+    ggplot2::scale_y_continuous(position = "right")
+```
+
+
+Plot after filtering to lower triangular cases:
+
+```{r}
+#| label: paired-plot-lower-triangular
+#| warning: false
+penguin_paired_measurements |>
+    dplyr::filter(y_var > x_var) |>
+    base_plot() +
+    ggh4x::facet_grid2(
+        y_var ~ x_var,
+        scales = "free",
+        switch = "both",
+        render_empty = FALSE
+    )
+```
+
