@@ -1,9 +1,9 @@
 ---
 title: "Bayesian Emax regression using brms"
-description: "This is a draft post, please do not cite or share yet"
+description: "A little bit like the book chapters, except with fewer details about things you care about, and several weird digressions that nobody will love"
 date: "2025-06-14"
-image: "./img/june_02_0205.jpg"
-image-alt: "Abstract generative art in a red and orange palette"
+image: "./img/june_12_1236.jpg"
+image-alt: "Abstract generative art in a blue, red, orange and purple palette"
 categories: ["R", "Pharmacometrics", "Statistics", "Bayes", "Stan"]
 --- 
 
@@ -151,7 +151,7 @@ There are a few important things to note here.
 
 - Third, be aware that the formula notation like `e0 ~ 1` is not arbitrary. In this particular model, `e0` will be treated like an "intercept" parameter: it's a single parameter and doesn't have a covariate model or any random effects attached to it. I'll come back to this later, but for now let's just be aware of this because you'll see this pop up in the output later.
 
-Okay, let's get back on track. 
+Exciting, no?
 
 ### Measurement model
 
@@ -176,9 +176,11 @@ bernoulli_measurement <- brmsfamily(
 )
 ```
 
+More generally, the measurement model is where we make some assumptions about error distributions, and so it is here that we end up making different choices for continuous and binary outcomes. The two measurement models I've listed here are the most common ones I've seen in use, but other choices are possible and indeed can sometimes be better than these two "default" models.
+
 ### Parameter priors
 
-Finally we need to specify priors. By default brms places an improper flat prior over regression parameters, but that's not usually the best approach and (at least in my experience) can misbehave when you have a nonlinear model such as Emax.^[I discussed this in an [earlier blog post](/posts/2024-11-11_emax-parameters/). The structure of an Emax model more or less guarantees that if you don't have strong information provided either by the data or the priors, you'll run into some unpleasant model identifability issues. For this post I'll be supplying mildly informative priors and using data sets that are moderately informative, so we won't run into the pathological cases I constructed in that post, but it is still important to be mindful of this as an issue.] In addition, since the `e0` and `emax` variables are interpreted on the same scale as `response_1`, and `ec50` is interpreted on the same scale as `exposure`, it's usually possible to set informed priors that make sense for the experimental design (e.g., if you've already built a PK model you have a good sense of the range of possible exposures, and that in turn tells you something about the plausible range for your EC50 parameter). Anyway, here's a prior that is pretty conservative but not unreasonable for this design (e.g., I'm allowing for an exposure-response relationship but not specifying the direction in advance), but rules out nonsense parameters (e.g., you really shouldn't have negative EC50 values):^[Okay yes, I have not manually specified the prior for the error variance $\sigma^2$. Feel free to inspect the Stan code to see how brms handles that.]
+Finally we need to specify the priors. By default brms places an improper flat prior over regression parameters, but that's not usually the best approach and (at least in my experience) can misbehave when you have a nonlinear model such as Emax.^[I discussed this in an [earlier blog post](/posts/2024-11-11_emax-parameters/). The structure of an Emax model more or less guarantees that if you don't have strong information provided either by the data or the priors, you'll run into some unpleasant model identifability issues. For this post I'll be supplying mildly informative priors and using data sets that are moderately informative, so we won't run into the pathological cases I constructed in that post, but it is still important to be mindful of this as an issue.] In addition, since the `e0` and `emax` variables are interpreted on the same scale as `response_1`, and `ec50` is interpreted on the same scale as `exposure`, it's usually possible to set informed priors that make sense for the experimental design (e.g., if you've already built a PK model you have a good sense of the range of possible exposures, and that in turn tells you something about the plausible range for your EC50 parameter). Anyway, here's a prior that is pretty conservative but not unreasonable for this design (e.g., I'm allowing for an exposure-response relationship but not specifying the direction in advance), but rules out nonsense parameters (e.g., you really shouldn't have negative EC50 values):^[Okay yes, I have not manually specified the prior for the error variance $\sigma^2$. Feel free to inspect the Stan code to see how brms handles that.]
 
 ```{r}
 #| label: define-parameter-prior
@@ -222,47 +224,56 @@ continuous_base_fit <- brm(
 ) 
 ```
 
-Print the output:
+In this code we pass the model specification as the `formula` argument, the measurement model as the `family` argument, and the parameter priors as the `prior` argument. To the surprise of nobody, we pass the data via the `data` argument. When this code is executed, the brms model is translated to stan code, which in turn compiles to a binary executable that does all that fancy Hamiltonian Monte Carlo sampling. For the sake of my sanity, in this post I've suppressed all the output that you'd see when this happens, and -- also for the sake of my sanity -- I'm not going to talk much about the statistical meaning of the output except in the shallowest possible way. With that in mind, let's print the fitted brms model object:
+
 
 ```{r}
 #| label: print-continuous-emax-model
 continuous_base_fit
 ```
 
-Extract model predictions:
+
+So, yeah, there's a lot of output here and the details do matter in real life. But for the purposes of this post I'll focus on the table of regression coefficients. The estimated value for E0 is 5.02, with a 95% credible interval of [2.28, 7.11]. In other words, there's some uncertainty about the baseline response, but not too much. For the Emax parameter itself, the point estimate is 11.92 and the 95% credible interval is [9.79, 14.54]. For EC50 we estimate that 50% of the maximum effect occurs at exposure 2398, and again we have a 95% interval for that, namely [1662, 3202]. 
+
+To extract model predictions and make a nice plot, we can use some of the tools from Matthew Kay's lovely [tidybayes](https://mjskay.github.io/tidybayes/) package to extract the predictions...
 
 ```{r}
 #| label: extract-continuous-emax-model-predictions
 continuous_base_epred <- continuous_base_fit |> 
   epred_draws(newdata = tibble(exposure = seq(0, 50000, 1000))) |> 
-  ungroup() |> 
-  summarize(response_1 = mean(.epred), .by = exposure)
+  median_qi()
 
 continuous_base_epred
 ```
 
-Plot:
+... and as usual we use ggplot2 to visualise them.
 
 ```{r}
 #| label: plot-continuous-emax-model-predictions
-ggplot(mapping = aes(exposure, response_1)) + 
-  geom_path(data = continuous_base_epred) + 
-  geom_point(data = d_sim_emax) + 
+continuous_base_epred |>
+  ggplot(mapping = aes(exposure, .epred)) + 
+  geom_path() + 
+  geom_ribbon(aes(ymin = .lower, ymax = .upper), alpha = 0.3) +
+  geom_point(data = d_sim_emax, mapping = aes(y = response_1)) +
   theme_bw()
 ```
 
+
+Very pretty. 
 
 !["mechanised loom"](./img/june_04_0462.jpg)
 
 ## Adding covariates
 
-We can adapt the exposure-response curve in the last example to illustrate why the simple emax regression model `base_model` is inadequate. If we shade the data points by the value of `cov_a` it is clear that the effect of this covariate has not been properly accounted for in the model:
+We can adapt the exposure-response curve in the last example to illustrate why the simple Emax regression model `base_model` is inadequate. If we shade the data points by the value of `cov_a` it is clear that the effect of this covariate has not been properly accounted for in the model:
 
 ```{r}
 #| label: show-continuous-residuals
-ggplot(mapping = aes(exposure, response_1)) + 
-  geom_path(data = continuous_base_epred) + 
-  geom_point(mapping = aes(color = cnt_a), data = d_sim_emax) + 
+continuous_base_epred |>
+  ggplot(mapping = aes(exposure, .epred)) + 
+  geom_path() + 
+  geom_ribbon(aes(ymin = .lower, ymax = .upper), alpha = 0.3) +
+  geom_point(data = d_sim_emax, mapping = aes(y = response_1, color = cnt_a)) + 
   scale_color_distiller(palette = "PuOr", limits = c(0, 10)) + 
   theme_bw()
 ```
@@ -277,7 +288,7 @@ $$
 y_i = E_0 + E_{max} \frac{\phi_i^\gamma}{EC_{50}^\gamma + \phi_i^\gamma} + \sum_k b_k x_{ik} + \epsilon_i 
 $$
 
-If we were to translate this formula literally in the call to `brmsformula()` the model specification would look like this:
+While this way of expressing the regression with covariate model is perfectly fine, it's not the most natural way to do things when operating in a nonlinear regression framework. To see what I mean, suppose I were to translate this formula literally in the call to `brmsformula()`. If I do this, I get a model specification that look like this
 
 ```{r}
 #| label: full-model-clunky-spec
@@ -294,7 +305,9 @@ full_model <- brmsformula(
 )
 ```
 
-A model written this way would work just fine but it is a little inelegant, and we can do better than this. Earlier in the post I mentioned that the recommended way to think about nonlinear "parameters" in brms is to think of them as "placeholders". This is the point at which that becomes relevant. We can write a more general formulation of Emax regression with covariates like this:
+Again, I stress that this is formally correct. A model written this way would work just fine but dear lord the code is unpleasant. We can do better than this. 
+
+Earlier in the post I mentioned that the recommended way to think about nonlinear "parameters" in brms is to think of them as "placeholders". This is the point at which that becomes relevant. We can write a more general formulation of Emax regression with covariates like this:
 
 $$
 y_i = f_1(X_i) + f_2(X_i) \frac{\phi_i^{f_4(X)}}{f_3(X_i) ^ {f_4(X_i)} + \phi_i ^ {f_4(X_i)}} + \epsilon_i
@@ -316,7 +329,7 @@ $$
 y_i = f_1(X_i) + f_2(X_i) \frac{\phi_i}{f_3(X_i) + \phi_i} + \epsilon_i
 $$
 
-In principle we could specify a covariate model for any of these functions, but in the typical case we would do so only for $f_1$. Letting $b_k$ denote the regression coefficient for the $k$-th covariate:
+In principle we could specify a covariate model for any of these functions (and indeed people do exactly this in real analyses), but for the sake of this blog post I'm only going to consider the most typical case where a covariate model is specified only for $f_1$. Letting $b_k$ denote the regression coefficient for the $k$-th covariate, we have the following expressions:
 
 $$
 \begin{array}{rcl}
@@ -325,7 +338,8 @@ f_2(X_i) &=& E_{max} \\
 f_3(X_i) &=& EC_{50}
 \end{array}
 $$
-Or, if we wrote this in the "classical" R formula style where, it would look something like this:
+
+Noting that each of these is a linear regression model, it becomes perfectly sensible to use the compact "implicit" formula representation in R, in which only the variable names are stated and the coefficients are implied. That is to say, we'd end up with something like this:
 
 ```r
 e0 ~ 1 + x1 + x2 + ...
@@ -333,7 +347,7 @@ emax ~ 1
 ec50 ~ 1
 ```
 
-Oh hey, that's how it works in brms. The first line in the model formula defines Emax as a structural model, and subsequent lines specify covariate models for each of the Emax components:
+Oh hey, actually, that's how it usually works in brms when you're not being weird like I was at the start of this section. What you typically do in brms is use the first line in the model formula to define the (nonlinear) Emax function as a *structural* model, and subsequent lines specify (linear) *covariate models* that attach to each of the Emax parameters. In other words, we write this:
 
 ```{r}
 #| label: full-model-clean-spec
@@ -346,7 +360,11 @@ full_model <- brmsformula(
 )
 ```
 
-Having done so, the prior specification looks like this:
+Isn't that much nicer? 
+
+### Fitting the model
+
+Well that was a fascinating excursion, Danielle, but could we possibly get back on point and get to the model-fitting part? Okay yes, hypothetical reader, you make a good point. Having written down the model specification, the next step in building an Emax model with covariates is to write down the priors. Superficially at least, nothing seems to have changed, and the prior specification looks like this:
 
 ```{r}
 #| label: redefine-parameter-prior
@@ -357,7 +375,7 @@ parameter_prior <- c(
 )
 ```
 
-Although this specification of `parameter_prior` is identical to the one I wrote down earlier, it's worth noting that brms interprets this prior slightly differently in the context of the two models. In `base_model` there is only one `e0` parameter (the intercept) over which the normal prior is specified. In contrast, `full_model` has four parameters (intercept plus three coefficients), and each of those four terms is supplied with its own normal prior. In other words, the specification `prior(normal(0, 5), nlpar = "e0")` is interpreted as a prior to be applied across all parameters in the `e0` part of the structural model. You can see this if you look closely at the Stan code, which is tucked below the fold here, but it's not the most thrilling read so let's move on, shall we?
+However, a little care is required here. Although this specification of `parameter_prior` is identical to the one I wrote down earlier, it's worth noting that brms interprets this prior slightly differently in the context of the two models. In `base_model` there is only one `e0` parameter (the intercept) over which the normal prior is specified. In contrast, `full_model` has four parameters (intercept plus three coefficients), and each of those four terms is supplied with its own normal prior. In other words, the specification `prior(normal(0, 5), nlpar = "e0")` is interpreted as a prior to be applied across all parameters in the `e0` part of the structural model. You can see this if you look closely at the Stan code, which is tucked below the fold here...
 
 ::: {.callout-caution collapse="true" appearance="minimal" title="Click to see the Stan code"}
 
@@ -373,9 +391,7 @@ make_stancode(
 
 :::
 
-### Fitting the model
-
-Now that the model is full specified we can call `brm()` and estimate model parameters:
+...but it's not the most thrilling read so let's move on, shall we? Now that the model is fully specified, we can call `brm()` and estimate model parameters in the usual way:
 
 ```{r}
 #| label: run-continuous-emax-model-with-covariates
@@ -389,54 +405,23 @@ continuous_full_fit <- brm(
 ) 
 ```
 
-Here they are:
+As before, if I hadn't used quarto magic to suppress the output, you'd be seeing a lot of raw Stan output on the screen as this code runs, but I'm not really interested in that for this post. So again we will skip over that part and jump straight to printing out the fitted model object:
+
 
 ```{r}
 #| label: print-continuous-full-fit
 continuous_full_fit
 ```
 
+Yep. That's a model fit. I'd recognise one of those anwhere. In any case, the key things to take away from this is that the point estimates and credible intervals indicate that `cnt_a` is related to the response, but also that the parameters representing the Emax effect of exposure are no less important than they were in the simple model. 
+
+
 !["cottage whore"](./img/june_20_2000.jpg)
 
 
-## Model comparison
+## Cheerful oblivion
 
-The brms package provides a flexible interface for model comparison using LOO-CV and WAIC, using the [loo](http://mc-stan.org/loo/) package under the hood to do the work. Because the interface is flexible there are several ways to write the code: the approach below is my preferred way to do it. First, we use `add_criterion()` to run the LOO-CV procedure, and store the results internally within the brmsfit object:
-
-```{r}
-#| label: add-loo-criterion
-continuous_full_fit <- add_criterion(continuous_full_fit, "loo")
-continuous_base_fit <- add_criterion(continuous_base_fit, "loo")
-```
-
-You can extract the stored result like this if you need to use it for some other purpose:
-
-```{r}
-#| label: show-criterion-storage
-continuous_full_fit$criteria$loo
-```
-
-Now that we have the required samples stored within both model fit objects, we can call `loo_compare()` to perform the model comparison:
-
-```{r}
-#| label: loo-compare
-continuous_loo_compare <- loo_compare(continuous_full_fit, continuous_base_fit)
-continuous_loo_compare
-```
-
-By default the printed output only shows the most important columns, but the return value from `loo_compare()` is richer than this. It's an object of class "compare.loo", and if we call the print method with `simplify = FALSE` it will show all the columns:
-
-```{r}
-#| label: loo-compare-verbose
-print(continuous_loo_compare, simplify = FALSE)
-```
-
-
+With that, I think I shall call time on another blog post. There are a lot of topics I haven't discussed here. The most obvious one would be variable selection: what statistical procedures can help us decide which covariates should be included in the model? I thought about talking about that here but it's a big topic that probably deserves its own blog post, and in any case there's already a [brief discussion](https://genentech.github.io/BayesERbook/notebook/emax/covariate_modeling.html#model-comparison) in the BayesERbook. This post doesn't need to be longer than it already is. Honestly, the only reason it even exists at all is that I still had all these notes I wrote to myself while thinking about the BayesERbook chapters, and figured I should put them down somewhere so that I can find them later. 
 
 
 !["all the mermaids have sharp teeth"](./img/june_09_0907.jpg)
-
-## Cheerful oblivion
-
-
-Everything is harder than it looks. 
