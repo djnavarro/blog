@@ -265,7 +265,6 @@ More important for our current purposes we can fit the model by calling `brm()`:
 
 ```{r}
 #| label: run-continuous-emax-model
-#| cache: true
 #| message: false
 #| results: hide
 continuous_base_fit <- brm(
@@ -417,7 +416,6 @@ Now that the model is full specified we can call `brm()` and estimate model para
 
 ```{r}
 #| label: run-continuous-emax-model-with-covariates
-#| cache: true
 #| message: false
 #| results: hide
 continuous_full_fit <- brm(
