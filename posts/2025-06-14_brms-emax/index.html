@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.5.52">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Danielle Navarro">
+<meta name="dcterms.date" content="2025-06-14">
+<meta name="description" content="A little bit like the book chapters, except with fewer details about things you care about, and several weird digressions that nobody will love">
+
+<title>Bayesian Emax regression using brms – Notes from a data witch</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<style>
+
+      .quarto-title-block .quarto-title-banner {
+        background: #eeeeee;
+      }
+</style>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="Bayesian Emax regression using brms – Notes from a data witch">
+<meta property="og:description" content="A little bit like the book chapters, except with fewer details about things you care about, and several weird digressions that nobody will love">
+<meta property="og:image" content="https://blog.djnavarro.net/posts/2025-06-14_brms-emax/img/june_12_1236.jpg">
+<meta property="og:site_name" content="Notes from a data witch">
+<meta property="og:image:alt" content="Abstract generative art in a blue, red, orange and purple palette">
+<meta name="twitter:title" content="Bayesian Emax regression using brms – Notes from a data witch">
+<meta name="twitter:description" content="A little bit like the book chapters, except with fewer details about things you care about, and several weird digressions that nobody will love">
+<meta name="twitter:image" content="https://blog.djnavarro.net/posts/2025-06-14_brms-emax/img/june_12_1236.jpg">
+<meta name="twitter:creator" content="@djnavarro">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image:alt" content="Abstract generative art in a blue, red, orange and purple palette">
+</head>
+
+<body class="floating nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.xml"> 
+<span class="menu-text">RSS</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-sites" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Sites</span>
+    </a>
+    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="nav-menu-sites">    
+        <li>
+    <a class="dropdown-item" href="https://djnavarro.net">
+ <span class="dropdown-text">Homepage</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://blog.djnavarro.net">
+ <span class="dropdown-text">Data science blog</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://art.djnavarro.net">
+ <span class="dropdown-text">Generative art</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://papers.djnavarro.net">
+ <span class="dropdown-text">Academic papers</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://djnavarro.net/sites">
+ <span class="dropdown-text">More…</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default toc-left page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Bayesian Emax regression using brms</h1>
+                  <div>
+        <div class="description">
+          A little bit like the book chapters, except with fewer details about things you care about, and several weird digressions that nobody will love
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">R</div>
+                <div class="quarto-category">Pharmacometrics</div>
+                <div class="quarto-category">Statistics</div>
+                <div class="quarto-category">Bayes</div>
+                <div class="quarto-category">Stan</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p><a href="https://djnavarro.net">Danielle Navarro</a> <a href="https://orcid.org/0000-0001-7648-6578" class="quarto-title-author-orcid"> <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA2ZpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYwIDYxLjEzNDc3NywgMjAxMC8wMi8xMi0xNzozMjowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo1N0NEMjA4MDI1MjA2ODExOTk0QzkzNTEzRjZEQTg1NyIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDozM0NDOEJGNEZGNTcxMUUxODdBOEVCODg2RjdCQ0QwOSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDozM0NDOEJGM0ZGNTcxMUUxODdBOEVCODg2RjdCQ0QwOSIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ1M1IE1hY2ludG9zaCI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOkZDN0YxMTc0MDcyMDY4MTE5NUZFRDc5MUM2MUUwNEREIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjU3Q0QyMDgwMjUyMDY4MTE5OTRDOTM1MTNGNkRBODU3Ii8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+84NovQAAAR1JREFUeNpiZEADy85ZJgCpeCB2QJM6AMQLo4yOL0AWZETSqACk1gOxAQN+cAGIA4EGPQBxmJA0nwdpjjQ8xqArmczw5tMHXAaALDgP1QMxAGqzAAPxQACqh4ER6uf5MBlkm0X4EGayMfMw/Pr7Bd2gRBZogMFBrv01hisv5jLsv9nLAPIOMnjy8RDDyYctyAbFM2EJbRQw+aAWw/LzVgx7b+cwCHKqMhjJFCBLOzAR6+lXX84xnHjYyqAo5IUizkRCwIENQQckGSDGY4TVgAPEaraQr2a4/24bSuoExcJCfAEJihXkWDj3ZAKy9EJGaEo8T0QSxkjSwORsCAuDQCD+QILmD1A9kECEZgxDaEZhICIzGcIyEyOl2RkgwAAhkmC+eAm0TAAAAABJRU5ErkJggg=="></a></p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">June 14, 2025</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#formalism" id="toc-formalism" class="nav-link active" data-scroll-target="#formalism">Formalism</a></li>
+  <li><a href="#data" id="toc-data" class="nav-link" data-scroll-target="#data">Data</a></li>
+  <li><a href="#simple-emax-regression" id="toc-simple-emax-regression" class="nav-link" data-scroll-target="#simple-emax-regression">Simple Emax regression</a>
+  <ul class="collapse">
+  <li><a href="#model-specification" id="toc-model-specification" class="nav-link" data-scroll-target="#model-specification">Model specification</a></li>
+  <li><a href="#measurement-model" id="toc-measurement-model" class="nav-link" data-scroll-target="#measurement-model">Measurement model</a></li>
+  <li><a href="#parameter-priors" id="toc-parameter-priors" class="nav-link" data-scroll-target="#parameter-priors">Parameter priors</a></li>
+  <li><a href="#fitting-the-model" id="toc-fitting-the-model" class="nav-link" data-scroll-target="#fitting-the-model">Fitting the model</a></li>
+  </ul></li>
+  <li><a href="#adding-covariates" id="toc-adding-covariates" class="nav-link" data-scroll-target="#adding-covariates">Adding covariates</a>
+  <ul class="collapse">
+  <li><a href="#formalism-revisited" id="toc-formalism-revisited" class="nav-link" data-scroll-target="#formalism-revisited">Formalism revisited</a></li>
+  <li><a href="#fitting-the-model-1" id="toc-fitting-the-model-1" class="nav-link" data-scroll-target="#fitting-the-model-1">Fitting the model</a></li>
+  </ul></li>
+  <li><a href="#cheerful-oblivion" id="toc-cheerful-oblivion" class="nav-link" data-scroll-target="#cheerful-oblivion">Cheerful oblivion</a></li>
+  </ul>
+</nav>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<!--------------- my typical setup ----------------->
+<!--------------- post begins here ----------------->
+<p>This is another in the ongoing series of posts I’ve written on <a href="../../#category=Pharmacometrics">pharmacometrics</a>. As usual I feel a little cautious writing about this topic because I’m still relatively new to this field,<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> but fortunately for my impostor syndrome this is a post about Bayesian Emax regression models for exposure-response analysis, and as it happens I’ve worked with these tools a few times before. In fact, one of my ongoing collaborations has been with the very wonderful Kenta Yoshida, in which I’ve helped out with some updates to the <a href="https://yoshidk6.github.io/rstanemax/">rstanemax</a> and <a href="https://mc-stan.org/docs/stan-users-guide/latent-discrete.html">BayesERtools</a> R packages, and contributed a few chapters to the <a href="https://genentech.github.io/BayesERbook/">BayesERbook</a> guide that Kenta has been leading. It’s been a lot of fun. I love it when my professional life lets me work on projects that are legitimately enjoyable. 🎉</p>
+<p>So okay, in this post I’m going to talk about implementing Bayesian Emax regression models within the lovely <a href="https://paulbuerkner.com/brms/">brms</a> package. It’s territory we’ve already covered in BayesERbook, which might make people wonder why I would write a blog post here also, but the thing about writing on my own blog is that here I am under no obligation to behave professionally, thus <a href="https://www.quotes.net/mquote/716213">allowing me my full range of expression</a>. It would be only the most naive of readers that come to this blog expecting a statistics discusssion to be PG-rated. I am notoriously poor at compartmentalisation, and miscellaneous queerness tends to intrude into the data science.<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a> Also, because the book chapters already exist and cover a wider range of topics than this post, it gives me licence to touch on a few topics that aren’t in the book.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(brms)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyr)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tibble)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidybayes)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="./img/june_02_0205.jpg" class="img-fluid figure-img"></p>
+<figcaption>“coatless in the rain”</figcaption>
+</figure>
+</div>
+<section id="formalism" class="level2">
+<h2 class="anchored" data-anchor-id="formalism">Formalism</h2>
+<p>I’ll start by considering the simplest case: a simple Emax regression model for a continuous response variable, with no covariates. First, the formalism. Letting <span class="math inline">\(\phi_i\)</span> denote<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a> the observed exposure for the <span class="math inline">\(i\)</span>-th subject, and letting <span class="math inline">\(y_i\)</span> denote the observed response, the Emax model for a continuous response is written as follows:</p>
+<p><span class="math display">\[
+y_i = E_0 + E_{max} \frac{\phi_i^\gamma}{EC_{50}^\gamma + \phi_i^\gamma} + \epsilon_i
+\]</span></p>
+<p>where <span class="math inline">\(\epsilon_i \sim \mbox{Normal}(0, \sigma^2)\)</span> supplies the measurement model for the data set. The (nonlinear) predictor function in an Emax regression is described by four structural model parameters, as well as the residual variance <span class="math inline">\(\sigma^2\)</span>. The interpretation of the structural parameters are:</p>
+<ul>
+<li><span class="math inline">\(E_0\)</span> is represents the baseline response when drug exposure is zero. It is interpreted on the same scale as the response variable. Depending on what the response variable is, there might be constraints on what values are permitted (e.g., negative numbers might not make sense).</li>
+<li><span class="math inline">\(E_{max}\)</span> defines the maximum change from baseline as the drug exposure increases. In some contexts we expect this value to be positive, but in others we might be expecting the drug to inhibit a response in which case a negative value would be appropriate. Again, the parameter lies on the same scale as the response.</li>
+<li><span class="math inline">\(EC_{50}\)</span> defines the exposure at which the change from baseline is 50% of the maximum. It lies on the same scale as the exposure, and inherits the same restrictions that apply to the exposure (e.g., negative exposure makes no sense).</li>
+<li><span class="math inline">\(\gamma\)</span> is the Hill coefficient, and describes the steepness of the response curve. In the regular version of the Emax model (sometimes called the “hyperbolic” Emax model) we fix <span class="math inline">\(\gamma = 1\)</span>, and for the purposes of this post I’ll make this restriction rather than use the full “sigmoidal” Emax model: you can see worked examples using the full model in the BayesERbook. To my knowledge there isn’t really a natural scale on which to interpret this parameter, though I’m told it can sometimes make sense in terms of <a href="../../2024-01-09_emax-models/#interpreting-the-hill-coefficient">cooperative binding</a>. Honestly most of the time I think of it as “steepness” and leave it at that.</li>
+</ul>
+<p>The Emax regression framework also supports binary response data (e.g., adverse events in an exposure-safety analysis). At the risk of being even more tedious than usual by writing down that which seems obvious, and letting <span class="math inline">\(p_i = \mbox{Pr}(y_i = 1)\)</span> be the probability of an event, we typically have</p>
+<p><span class="math display">\[
+\mbox{logit}(p_i) = E_0 + E_{max} \frac{\phi_i^\gamma}{EC_{50}^\gamma + \phi_i^\gamma}
+\]</span></p>
+<p>where <span class="math inline">\(\mbox{logit}(p_i) = \ln (p_i/(1-p_i))\)</span>. I won’t focus much on this version of the model in this blog post but it is not difficult to specify this version within brms, and anyway there are some examples using binary Emax regression in the book so you can go look at those if it’s deeply important to you I guess?</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="./img/june_21_2137.jpg" class="img-fluid figure-img"></p>
+<figcaption>“we used up all the perfect”</figcaption>
+</figure>
+</div>
+</section>
+<section id="data" class="level2">
+<h2 class="anchored" data-anchor-id="data">Data</h2>
+<p>Now that we have dispensed with the tiresome notation part, we’ll need some data to work with. As I mentioned in <a href="../../posts/2024-11-11_emax-parameters/">an earlier blog post</a>, simulating semi-plausible data sets for exposure-response analysis isn’t trivial when you don’t have a properly specified pharmacokinetic (PK) model under the hood, but if we make a few simplifying assumptions we can produce something that seems reasonable. Rather than waste all our time repeating material from an earlier post, I’ll simply note that the framework I put together in that post is (more or less) exactly the one I used to generate the <code>d_sim_emax</code> data set that comes with the BayesERtools package. So, let’s just load that data here yes?</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(<span class="st">"d_sim_emax"</span>, <span class="at">package =</span> <span class="st">"BayesERtools"</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>d_sim_emax</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 300 × 9
+    dose exposure response_1 response_2 cnt_a cnt_b cnt_c bin_d bin_e
+   &lt;dbl&gt;    &lt;dbl&gt;      &lt;dbl&gt;      &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+ 1   100    4151.       12.8          1  5.71  2.33  7.83     0     1
+ 2   100    8067.       14.6          1  4.92  4.66  6.74     1     1
+ 3   100    4878.       12.8          1  4.88  4.21  4.68     1     1
+ 4   100    9713.       16.6          1  8.42  6.56  1.29     0     1
+ 5   100   11491.       14.4          0  4.37  3.96  3.55     0     1
+ 6   100    2452.       12.6          1  8.69  7.60  3.64     0     0
+ 7   100    5652.       14.8          1  6.61  3.95  5.13     0     0
+ 8   100    9939.       15.2          1  5.35  7.77  8.29     0     1
+ 9   100    5817.       14.6          0  5.61  2.24  9.60     0     1
+10   100    5176.       13.7          1  6.06  1.79  8.74     0     1
+# ℹ 290 more rows</code></pre>
+</div>
+</div>
+<p>The data set comes with an <code>exposure</code> variable, but does not supply units and is intentionally vague about what specific exposure metric it refers to. Similarly, there are two different outcome variables with generic names: the continuous-valued <code>response_1</code> and the binary-valued <code>response_2</code>. There are five covariates included, with equally unimaginitive names. The <code>cnt_a</code>, <code>cnt_b</code>, and <code>cnt_c</code> columns correspond to continuous covariates, while <code>bin_d</code> and <code>bin_e</code> are binary-valued. It is of course heavily simplified in comparison to a real world exposure-response data set, but that’s the point: it’s not meant to be realistic, it’s meant to be convenient.</p>
+<p>In any case, to give you a general sense of what the simulated data set looks like (at least, those parts most relevant to this post), here are some scatterplots depicting how the continuous response variable is related to exposure and to the three continuous covariates in the data set:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>d_sim_emax <span class="sc">|&gt;</span> </span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">cols =</span> <span class="fu">c</span>(exposure, cnt_a, cnt_b, cnt_c), </span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">names_to =</span> <span class="st">"variable"</span>,</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_to =</span> <span class="st">"value"</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(value, response_1)) <span class="sc">+</span> </span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span> </span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">formula =</span> y <span class="sc">~</span> x, <span class="at">method =</span> <span class="st">"loess"</span>) <span class="sc">+</span> </span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span> variable, <span class="at">scales =</span> <span class="st">"free_x"</span>) <span class="sc">+</span> </span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/plot-continuous-response-1.png" class="img-fluid figure-img" width="768"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>At a quick glance it’s clear that <code>exposure</code> is related to <code>response_1</code> (as one would hope), but it also seems clear that the response is related to <code>cnt_a</code>. Some modelling will be required to disentangle these effects.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="./img/june_18_1808.jpg" class="img-fluid figure-img"></p>
+<figcaption>“rothko in ggplot2”</figcaption>
+</figure>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="./img/june_12_1236.jpg" class="img-fluid figure-img"></p>
+<figcaption>“burn-in samples”</figcaption>
+</figure>
+</div>
+</section>
+<section id="simple-emax-regression" class="level2">
+<h2 class="anchored" data-anchor-id="simple-emax-regression">Simple Emax regression</h2>
+<p>Like anyone in Bayes-land who hasn’t been living under a rock, I’ve followed Paul Bürkner’s fabulous work on brms with interest for many years, but it is only in my new life as a pharmacometrician that I’ve found an excuse to put it to good use.<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a> I am very excited about this. In the first instance, I’ll ignore the covariates and focus only on the relationship between <code>exposure</code> and <code>response_1</code>. To build an Emax regression model within brms we have to define three components: the <strong>model specification</strong>, the <strong>measurement model</strong>, and the <strong>parameter priors</strong>. I’ll discuss each of these in turn.</p>
+<section id="model-specification" class="level3">
+<h3 class="anchored" data-anchor-id="model-specification">Model specification</h3>
+<p>The first step in the model building process is describing the nonlinear predictor function. We do this in brms using the <code>brmsformula()</code> function, or just <code>bf()</code> if we want to use the shorthand:<a href="#fn5" class="footnote-ref" id="fnref5" role="doc-noteref"><sup>5</sup></a></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>base_model <span class="ot">&lt;-</span> <span class="fu">brmsformula</span>(</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  response_1 <span class="sc">~</span> e0 <span class="sc">+</span> emax <span class="sc">*</span> exposure <span class="sc">/</span> (ec50 <span class="sc">+</span> exposure),</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  e0 <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  emax <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  ec50 <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">nl =</span> <span class="cn">TRUE</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>There are a few important things to note here.</p>
+<ul>
+<li><p>First, notice that we’ve set <code>nl = TRUE</code>. This is important because the syntax for a nonlinear model formula is qualitatively different to the syntax for a linear model formula. For linear models, we use the compact syntax where the model parameters (i.e., the regression coefficients) are <em>implicit</em>, like <code>y ~ x1 + x2</code> corresponds to the regression model <span class="math inline">\(y_i = b_0 + b_1 x_1 + b_2 x_2\)</span>. For nonlinear models, this approach won’t work because brms has no way to know the form of the model. So we have to be <em>explicit</em> and include the parameters (in this case <code>e0</code>, <code>emax</code>, and <code>ec50</code>) in the model formula.</p></li>
+<li><p>Second, note that I explicitly included formulas <code>e0 ~ 1</code>, <code>emax ~ 1</code>, and <code>ec50 ~ 1</code> in the model specification. This serves two purposes. First, it tells brms that <code>e0</code>, <code>emax</code> and <code>ec50</code> should be interpreted as model parameters (and brms will expect a prior for these parameters), whereas <code>exposure</code> should be treated as a predictor (brms will look for it in the data set).</p></li>
+<li><p>Third, be aware that the formula notation like <code>e0 ~ 1</code> is not arbitrary. In this particular model, <code>e0</code> will be treated like an “intercept” parameter: it’s a single parameter and doesn’t have a covariate model or any random effects attached to it. I’ll come back to this later, but for now let’s just be aware of this because you’ll see this pop up in the output later.</p></li>
+</ul>
+<p>Exciting, no?</p>
+</section>
+<section id="measurement-model" class="level3">
+<h3 class="anchored" data-anchor-id="measurement-model">Measurement model</h3>
+<p>The second step is specifying the error model and link function. In an Emax regression with continuous response variables such as <code>response_1</code> in our data set, we typically adopt the same approach we would do in an ordinary linear regression, and assume that measurement errors are normally distributed with an identity link:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>gaussian_measurement <span class="ot">&lt;-</span> <span class="fu">brmsfamily</span>(</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">family =</span> <span class="st">"gaussian"</span>, </span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">link =</span> <span class="st">"identity"</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>If we were analysing the binary outcome <code>response_2</code>, we would typically specify a Bernoulli distribution with logit-link:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>bernoulli_measurement <span class="ot">&lt;-</span> <span class="fu">brmsfamily</span>(</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">family =</span> <span class="st">"bernoulli"</span>, </span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">link =</span> <span class="st">"logit"</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>More generally, the measurement model is where we make some assumptions about error distributions, and so it is here that we end up making different choices for continuous and binary outcomes. The two measurement models I’ve listed here are the most common ones I’ve seen in use, but other choices are possible and indeed can sometimes be better than these two “default” models.</p>
+</section>
+<section id="parameter-priors" class="level3">
+<h3 class="anchored" data-anchor-id="parameter-priors">Parameter priors</h3>
+<p>Finally we need to specify the priors. By default brms places an improper flat prior over regression parameters, but that’s not usually the best approach and (at least in my experience) can misbehave when you have a nonlinear model such as Emax.<a href="#fn6" class="footnote-ref" id="fnref6" role="doc-noteref"><sup>6</sup></a> In addition, since the <code>e0</code> and <code>emax</code> variables are interpreted on the same scale as <code>response_1</code>, and <code>ec50</code> is interpreted on the same scale as <code>exposure</code>, it’s usually possible to set informed priors that make sense for the experimental design (e.g., if you’ve already built a PK model you have a good sense of the range of possible exposures, and that in turn tells you something about the plausible range for your EC50 parameter). Anyway, here’s a prior that is pretty conservative but not unreasonable for this design (e.g., I’m allowing for an exposure-response relationship but not specifying the direction in advance), but rules out nonsense parameters (e.g., you really shouldn’t have negative EC50 values):<a href="#fn7" class="footnote-ref" id="fnref7" role="doc-noteref"><sup>7</sup></a></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>parameter_prior <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">prior</span>(<span class="fu">normal</span>(<span class="dv">0</span>, <span class="dv">5</span>), <span class="at">nlpar =</span> <span class="st">"e0"</span>),</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">prior</span>(<span class="fu">normal</span>(<span class="dv">0</span>, <span class="dv">5</span>), <span class="at">nlpar =</span> <span class="st">"emax"</span>),</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">prior</span>(<span class="fu">normal</span>(<span class="dv">2000</span>, <span class="dv">500</span>), <span class="at">nlpar =</span> <span class="st">"ec50"</span>, <span class="at">lb =</span> <span class="dv">0</span>)</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="fitting-the-model" class="level3">
+<h3 class="anchored" data-anchor-id="fitting-the-model">Fitting the model</h3>
+<p>Now that we have all three components we are ready to go. It’s possible to use <code>make_stancode()</code> to inspect the Stan code that brms generates, and you can take a look at it here if you want to get a sense of what the “brms to stan” translation does, but I’ll admit it’s not always very pretty:</p>
+<div class="callout callout-style-simple callout-caution no-icon callout-titled" title="Click to see the Stan code">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Click to see the Stan code
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">make_stancode</span>(</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">formula =</span> base_model, </span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">family =</span> gaussian_measurement, </span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> d_sim_emax, </span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">prior =</span> parameter_prior</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>// generated with brms 2.22.0
+functions {
+}
+data {
+  int&lt;lower=1&gt; N;  // total number of observations
+  vector[N] Y;  // response variable
+  int&lt;lower=1&gt; K_e0;  // number of population-level effects
+  matrix[N, K_e0] X_e0;  // population-level design matrix
+  int&lt;lower=1&gt; K_emax;  // number of population-level effects
+  matrix[N, K_emax] X_emax;  // population-level design matrix
+  int&lt;lower=1&gt; K_ec50;  // number of population-level effects
+  matrix[N, K_ec50] X_ec50;  // population-level design matrix
+  // covariates for non-linear functions
+  vector[N] C_1;
+  int prior_only;  // should the likelihood be ignored?
+}
+transformed data {
+}
+parameters {
+  vector[K_e0] b_e0;  // regression coefficients
+  vector[K_emax] b_emax;  // regression coefficients
+  vector&lt;lower=0&gt;[K_ec50] b_ec50;  // regression coefficients
+  real&lt;lower=0&gt; sigma;  // dispersion parameter
+}
+transformed parameters {
+  real lprior = 0;  // prior contributions to the log posterior
+  lprior += normal_lpdf(b_e0 | 0, 5);
+  lprior += normal_lpdf(b_emax | 0, 5);
+  lprior += normal_lpdf(b_ec50 | 2000, 500)
+    - 1 * normal_lccdf(0 | 2000, 500);
+  lprior += student_t_lpdf(sigma | 3, 0, 2.5)
+    - 1 * student_t_lccdf(0 | 3, 0, 2.5);
+}
+model {
+  // likelihood including constants
+  if (!prior_only) {
+    // initialize linear predictor term
+    vector[N] nlp_e0 = rep_vector(0.0, N);
+    // initialize linear predictor term
+    vector[N] nlp_emax = rep_vector(0.0, N);
+    // initialize linear predictor term
+    vector[N] nlp_ec50 = rep_vector(0.0, N);
+    // initialize non-linear predictor term
+    vector[N] mu;
+    nlp_e0 += X_e0 * b_e0;
+    nlp_emax += X_emax * b_emax;
+    nlp_ec50 += X_ec50 * b_ec50;
+    for (n in 1:N) {
+      // compute non-linear predictor values
+      mu[n] = (nlp_e0[n] + nlp_emax[n] * C_1[n] / (nlp_ec50[n] + C_1[n]));
+    }
+    target += normal_lpdf(Y | mu, sigma);
+  }
+  // priors including constants
+  target += lprior;
+}
+generated quantities {
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<p>More important for our current purposes we can fit the model by calling <code>brm()</code>:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>continuous_base_fit <span class="ot">&lt;-</span> <span class="fu">brm</span>(</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">formula =</span> base_model, </span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">family =</span> gaussian_measurement, </span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> d_sim_emax, </span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">prior =</span> parameter_prior</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>In this code we pass the model specification as the <code>formula</code> argument, the measurement model as the <code>family</code> argument, and the parameter priors as the <code>prior</code> argument. To the surprise of nobody, we pass the data via the <code>data</code> argument. When this code is executed, the brms model is translated to stan code, which in turn compiles to a binary executable that does all that fancy Hamiltonian Monte Carlo sampling. For the sake of my sanity, in this post I’ve suppressed all the output that you’d see when this happens, and – also for the sake of my sanity – I’m not going to talk much about the statistical meaning of the output except in the shallowest possible way. With that in mind, let’s print the fitted brms model object:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>continuous_base_fit</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> Family: gaussian 
+  Links: mu = identity; sigma = identity 
+Formula: response_1 ~ e0 + emax * exposure/(ec50 + exposure) 
+         e0 ~ 1
+         emax ~ 1
+         ec50 ~ 1
+   Data: d_sim_emax (Number of observations: 300) 
+  Draws: 4 chains, each with iter = 2000; warmup = 1000; thin = 1;
+         total post-warmup draws = 4000
+
+Regression Coefficients:
+               Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+e0_Intercept       5.02      1.23     2.28     7.11 1.00      779     1060
+emax_Intercept    11.92      1.21     9.79    14.54 1.00      824     1097
+ec50_Intercept  2398.14    394.72  1662.63  3202.76 1.00      871     1214
+
+Further Distributional Parameters:
+      Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+sigma     1.27      0.05     1.17     1.38 1.00     1520     1453
+
+Draws were sampled using sample(hmc). For each parameter, Bulk_ESS
+and Tail_ESS are effective sample size measures, and Rhat is the potential
+scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
+</div>
+</div>
+<p>So, yeah, there’s a lot of output here and the details do matter in real life. But for the purposes of this post I’ll focus on the table of regression coefficients. The estimated value for E0 is 5.02, with a 95% credible interval of [2.28, 7.11]. In other words, there’s some uncertainty about the baseline response, but not too much. For the Emax parameter itself, the point estimate is 11.92 and the 95% credible interval is [9.79, 14.54]. For EC50 we estimate that 50% of the maximum effect occurs at exposure 2398, and again we have a 95% interval for that, namely [1662, 3202].</p>
+<p>To extract model predictions and make a nice plot, we can use some of the tools from Matthew Kay’s lovely <a href="https://mjskay.github.io/tidybayes/">tidybayes</a> package to extract the predictions…</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>continuous_base_epred <span class="ot">&lt;-</span> continuous_base_fit <span class="sc">|&gt;</span> </span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">epred_draws</span>(<span class="at">newdata =</span> <span class="fu">tibble</span>(<span class="at">exposure =</span> <span class="fu">seq</span>(<span class="dv">0</span>, <span class="dv">50000</span>, <span class="dv">1000</span>))) <span class="sc">|&gt;</span> </span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">median_qi</span>()</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>continuous_base_epred</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 51 × 8
+   exposure  .row .epred .lower .upper .width .point .interval
+      &lt;dbl&gt; &lt;int&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;  &lt;chr&gt;    
+ 1        0     1   5.13   2.28   7.11   0.95 median qi       
+ 2     1000     2   8.62   7.59   9.56   0.95 median qi       
+ 3     2000     3  10.5    9.99  11.1    0.95 median qi       
+ 4     3000     4  11.7   11.4   12.1    0.95 median qi       
+ 5     4000     5  12.5   12.3   12.8    0.95 median qi       
+ 6     5000     6  13.1   12.9   13.3    0.95 median qi       
+ 7     6000     7  13.6   13.4   13.8    0.95 median qi       
+ 8     7000     8  13.9   13.8   14.1    0.95 median qi       
+ 9     8000     9  14.2   14.1   14.4    0.95 median qi       
+10     9000    10  14.5   14.3   14.6    0.95 median qi       
+# ℹ 41 more rows</code></pre>
+</div>
+</div>
+<p>… and as usual we use ggplot2 to visualise them.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>continuous_base_epred <span class="sc">|&gt;</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="at">mapping =</span> <span class="fu">aes</span>(exposure, .epred)) <span class="sc">+</span> </span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_path</span>() <span class="sc">+</span> </span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">ymin =</span> .lower, <span class="at">ymax =</span> .upper), <span class="at">alpha =</span> <span class="fl">0.3</span>) <span class="sc">+</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">data =</span> d_sim_emax, <span class="at">mapping =</span> <span class="fu">aes</span>(<span class="at">y =</span> response_1)) <span class="sc">+</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/plot-continuous-emax-model-predictions-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Very pretty.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="./img/june_04_0462.jpg" class="img-fluid figure-img"></p>
+<figcaption>“mechanised loom”</figcaption>
+</figure>
+</div>
+</section>
+</section>
+<section id="adding-covariates" class="level2">
+<h2 class="anchored" data-anchor-id="adding-covariates">Adding covariates</h2>
+<p>We can adapt the exposure-response curve in the last example to illustrate why the simple Emax regression model <code>base_model</code> is inadequate. If we shade the data points by the value of <code>cov_a</code> it is clear that the effect of this covariate has not been properly accounted for in the model:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>continuous_base_epred <span class="sc">|&gt;</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="at">mapping =</span> <span class="fu">aes</span>(exposure, .epred)) <span class="sc">+</span> </span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_path</span>() <span class="sc">+</span> </span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">ymin =</span> .lower, <span class="at">ymax =</span> .upper), <span class="at">alpha =</span> <span class="fl">0.3</span>) <span class="sc">+</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">data =</span> d_sim_emax, <span class="at">mapping =</span> <span class="fu">aes</span>(<span class="at">y =</span> response_1, <span class="at">color =</span> cnt_a)) <span class="sc">+</span> </span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_distiller</span>(<span class="at">palette =</span> <span class="st">"PuOr"</span>, <span class="at">limits =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">10</span>)) <span class="sc">+</span> </span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/show-continuous-residuals-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Clearly we need an extended model.</p>
+<section id="formalism-revisited" class="level3">
+<h3 class="anchored" data-anchor-id="formalism-revisited">Formalism revisited</h3>
+<p>To include covariates in the model we need to revisit the notation at the start of the post, and extend it in a way that allows us to represent the effect of covariates <span class="math inline">\(\mathbf{X} = [x_{ik}]\)</span>. In the most common case, covariates are included as additional linear terms, which gives us this as our extended Emax model:</p>
+<p><span class="math display">\[
+y_i = E_0 + E_{max} \frac{\phi_i^\gamma}{EC_{50}^\gamma + \phi_i^\gamma} + \sum_k b_k x_{ik} + \epsilon_i
+\]</span></p>
+<p>While this way of expressing the regression with covariate model is perfectly fine, it’s not the most natural way to do things when operating in a nonlinear regression framework. To see what I mean, suppose I were to translate this formula literally in the call to <code>brmsformula()</code>. If I do this, I get a model specification that look like this</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>full_model <span class="ot">&lt;-</span> <span class="fu">brmsformula</span>(</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  response_1 <span class="sc">~</span> e0 <span class="sc">+</span> emax <span class="sc">*</span> exposure <span class="sc">/</span> (ec50 <span class="sc">+</span> exposure) <span class="sc">+</span> </span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    a <span class="sc">*</span> cnt_a <span class="sc">+</span> b <span class="sc">*</span> cnt_b <span class="sc">+</span> c <span class="sc">*</span> cnt_c,</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>  e0 <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>  emax <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>  ec50 <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>  a <span class="sc">~</span> <span class="dv">1</span>, </span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>  b <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>  c <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">nl =</span> <span class="cn">TRUE</span></span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Again, I stress that this is formally correct. A model written this way would work just fine but dear lord the code is unpleasant. We can do better than this.</p>
+<p>Earlier in the post I mentioned that the recommended way to think about nonlinear “parameters” in brms is to think of them as “placeholders”. This is the point at which that becomes relevant. We can write a more general formulation of Emax regression with covariates like this:</p>
+<p><span class="math display">\[
+y_i = f_1(X_i) + f_2(X_i) \frac{\phi_i^{f_4(X)}}{f_3(X_i) ^ {f_4(X_i)} + \phi_i ^ {f_4(X_i)}} + \epsilon_i
+\]</span> where each of the functions <span class="math inline">\(f_1\)</span>, <span class="math inline">\(f_2\)</span>, <span class="math inline">\(f_3\)</span> and <span class="math inline">\(f_4\)</span> describe a linear predictor, <span class="math inline">\(X_i\)</span> denotes the covariate vector for the <span class="math inline">\(i\)</span>-th subject, and for simplicity the dependence on regression coefficients is suppressed in the notation. When we specify an emax model without covariates all four of these functions correspond to “intercept-only” models and are constant with respect to <span class="math inline">\(X_i\)</span>:</p>
+<p><span class="math display">\[
+\begin{array}{rcl}
+f_1(X_i) &amp;=&amp; E_0 \\
+f_2(X_i) &amp;=&amp; E_{max} \\
+f_3(X_i) &amp;=&amp; EC_{50} \\
+f_4(X_i) &amp;=&amp; \gamma
+\end{array}
+\]</span></p>
+<p>If we fix <span class="math inline">\(\gamma = 1\)</span> we can drop <span class="math inline">\(f_4\)</span> entirely:</p>
+<p><span class="math display">\[
+y_i = f_1(X_i) + f_2(X_i) \frac{\phi_i}{f_3(X_i) + \phi_i} + \epsilon_i
+\]</span></p>
+<p>In principle we could specify a covariate model for any of these functions (and indeed people do exactly this in real analyses), but for the sake of this blog post I’m only going to consider the most typical case where a covariate model is specified only for <span class="math inline">\(f_1\)</span>. Letting <span class="math inline">\(b_k\)</span> denote the regression coefficient for the <span class="math inline">\(k\)</span>-th covariate, we have the following expressions:</p>
+<p><span class="math display">\[
+\begin{array}{rcl}
+f_1(X_i) &amp;=&amp; E_0 + \sum_k b_k x_{ik} \\
+f_2(X_i) &amp;=&amp; E_{max} \\
+f_3(X_i) &amp;=&amp; EC_{50}
+\end{array}
+\]</span></p>
+<p>Noting that each of these is a linear regression model, it becomes perfectly sensible to use the compact “implicit” formula representation in R, in which only the variable names are stated and the coefficients are implied. That is to say, we’d end up with something like this:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>e0 <span class="sc">~</span> <span class="dv">1</span> <span class="sc">+</span> x1 <span class="sc">+</span> x2 <span class="sc">+</span> ...</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>emax <span class="sc">~</span> <span class="dv">1</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>ec50 <span class="sc">~</span> <span class="dv">1</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Oh hey, actually, that’s how it usually works in brms when you’re not being weird like I was at the start of this section. What you typically do in brms is use the first line in the model formula to define the (nonlinear) Emax function as a <em>structural</em> model, and subsequent lines specify (linear) <em>covariate models</em> that attach to each of the Emax parameters. In other words, we write this:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>full_model <span class="ot">&lt;-</span> <span class="fu">brmsformula</span>(</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  response_1 <span class="sc">~</span> e0 <span class="sc">+</span> emax <span class="sc">*</span> exposure <span class="sc">/</span> (ec50 <span class="sc">+</span> exposure), <span class="co"># structural model</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  e0   <span class="sc">~</span> <span class="dv">1</span> <span class="sc">+</span> cnt_a <span class="sc">+</span> cnt_b <span class="sc">+</span> cnt_c, <span class="co"># covariate model for baseline</span></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>  emax <span class="sc">~</span> <span class="dv">1</span>,                         <span class="co"># covariate model for max response</span></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>  ec50 <span class="sc">~</span> <span class="dv">1</span>,                         <span class="co"># covariate model for EC50</span></span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">nl =</span> <span class="cn">TRUE</span></span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Isn’t that much nicer?</p>
+</section>
+<section id="fitting-the-model-1" class="level3">
+<h3 class="anchored" data-anchor-id="fitting-the-model-1">Fitting the model</h3>
+<p>Well that was a fascinating excursion, Danielle, but could we possibly get back on point and get to the model-fitting part? Okay yes, hypothetical reader, you make a good point. Having written down the model specification, the next step in building an Emax model with covariates is to write down the priors. Superficially at least, nothing seems to have changed, and the prior specification looks like this:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>parameter_prior <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">prior</span>(<span class="fu">normal</span>(<span class="dv">0</span>, <span class="dv">5</span>), <span class="at">nlpar =</span> <span class="st">"e0"</span>),</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">prior</span>(<span class="fu">normal</span>(<span class="dv">0</span>, <span class="dv">5</span>), <span class="at">nlpar =</span> <span class="st">"emax"</span>),</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">prior</span>(<span class="fu">normal</span>(<span class="dv">2000</span>, <span class="dv">500</span>), <span class="at">nlpar =</span> <span class="st">"ec50"</span>, <span class="at">lb =</span> <span class="dv">0</span>)</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>However, a little care is required here. Although this specification of <code>parameter_prior</code> is identical to the one I wrote down earlier, it’s worth noting that brms interprets this prior slightly differently in the context of the two models. In <code>base_model</code> there is only one <code>e0</code> parameter (the intercept) over which the normal prior is specified. In contrast, <code>full_model</code> has four parameters (intercept plus three coefficients), and each of those four terms is supplied with its own normal prior. In other words, the specification <code>prior(normal(0, 5), nlpar = "e0")</code> is interpreted as a prior to be applied across all parameters in the <code>e0</code> part of the structural model. You can see this if you look closely at the Stan code, which is tucked below the fold here…</p>
+<div class="callout callout-style-simple callout-caution no-icon callout-titled" title="Click to see the Stan code">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-2-contents" aria-controls="callout-2" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Click to see the Stan code
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-2" class="callout-2-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">make_stancode</span>(</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">formula =</span> full_model, </span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">family =</span> gaussian_measurement, </span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> d_sim_emax, </span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">prior =</span> parameter_prior</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>// generated with brms 2.22.0
+functions {
+}
+data {
+  int&lt;lower=1&gt; N;  // total number of observations
+  vector[N] Y;  // response variable
+  int&lt;lower=1&gt; K_e0;  // number of population-level effects
+  matrix[N, K_e0] X_e0;  // population-level design matrix
+  int&lt;lower=1&gt; K_emax;  // number of population-level effects
+  matrix[N, K_emax] X_emax;  // population-level design matrix
+  int&lt;lower=1&gt; K_ec50;  // number of population-level effects
+  matrix[N, K_ec50] X_ec50;  // population-level design matrix
+  // covariates for non-linear functions
+  vector[N] C_1;
+  int prior_only;  // should the likelihood be ignored?
+}
+transformed data {
+}
+parameters {
+  vector[K_e0] b_e0;  // regression coefficients
+  vector[K_emax] b_emax;  // regression coefficients
+  vector&lt;lower=0&gt;[K_ec50] b_ec50;  // regression coefficients
+  real&lt;lower=0&gt; sigma;  // dispersion parameter
+}
+transformed parameters {
+  real lprior = 0;  // prior contributions to the log posterior
+  lprior += normal_lpdf(b_e0 | 0, 5);
+  lprior += normal_lpdf(b_emax | 0, 5);
+  lprior += normal_lpdf(b_ec50 | 2000, 500)
+    - 1 * normal_lccdf(0 | 2000, 500);
+  lprior += student_t_lpdf(sigma | 3, 0, 2.5)
+    - 1 * student_t_lccdf(0 | 3, 0, 2.5);
+}
+model {
+  // likelihood including constants
+  if (!prior_only) {
+    // initialize linear predictor term
+    vector[N] nlp_e0 = rep_vector(0.0, N);
+    // initialize linear predictor term
+    vector[N] nlp_emax = rep_vector(0.0, N);
+    // initialize linear predictor term
+    vector[N] nlp_ec50 = rep_vector(0.0, N);
+    // initialize non-linear predictor term
+    vector[N] mu;
+    nlp_e0 += X_e0 * b_e0;
+    nlp_emax += X_emax * b_emax;
+    nlp_ec50 += X_ec50 * b_ec50;
+    for (n in 1:N) {
+      // compute non-linear predictor values
+      mu[n] = (nlp_e0[n] + nlp_emax[n] * C_1[n] / (nlp_ec50[n] + C_1[n]));
+    }
+    target += normal_lpdf(Y | mu, sigma);
+  }
+  // priors including constants
+  target += lprior;
+}
+generated quantities {
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<p>…but it’s not the most thrilling read so let’s move on, shall we? Now that the model is fully specified, we can call <code>brm()</code> and estimate model parameters in the usual way:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>continuous_full_fit <span class="ot">&lt;-</span> <span class="fu">brm</span>(</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">formula =</span> full_model, </span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">family =</span> gaussian_measurement, </span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> d_sim_emax, </span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">prior =</span> parameter_prior</span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>As before, if I hadn’t used quarto magic to suppress the output, you’d be seeing a lot of raw Stan output on the screen as this code runs, but I’m not really interested in that for this post. So again we will skip over that part and jump straight to printing out the fitted model object:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>continuous_full_fit</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> Family: gaussian 
+  Links: mu = identity; sigma = identity 
+Formula: response_1 ~ e0 + emax * exposure/(ec50 + exposure) 
+         e0 ~ 1 + cnt_a + cnt_b + cnt_c
+         emax ~ 1
+         ec50 ~ 1
+   Data: d_sim_emax (Number of observations: 300) 
+  Draws: 4 chains, each with iter = 2000; warmup = 1000; thin = 1;
+         total post-warmup draws = 4000
+
+Regression Coefficients:
+               Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+e0_Intercept       3.47      0.63     2.10     4.57 1.00     1042     1412
+e0_cnt_a           0.51      0.01     0.49     0.54 1.00     3499     2725
+e0_cnt_b          -0.01      0.01    -0.04     0.01 1.00     3533     2706
+e0_cnt_c          -0.00      0.01    -0.03     0.02 1.00     3918     2689
+emax_Intercept    11.34      0.56    10.34    12.57 1.00     1152     1560
+ec50_Intercept  2997.86    321.22  2390.23  3636.36 1.00     1081     1499
+
+Further Distributional Parameters:
+      Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+sigma     0.50      0.02     0.46     0.54 1.00     2846     1813
+
+Draws were sampled using sample(hmc). For each parameter, Bulk_ESS
+and Tail_ESS are effective sample size measures, and Rhat is the potential
+scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
+</div>
+</div>
+<p>Yep. That’s a model fit. I’d recognise one of those anwhere. In any case, the key things to take away from this is that the point estimates and credible intervals indicate that <code>cnt_a</code> is related to the response, but also that the parameters representing the Emax effect of exposure are no less important than they were in the simple model.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="./img/june_20_2000.jpg" class="img-fluid figure-img"></p>
+<figcaption>“cottage whore”</figcaption>
+</figure>
+</div>
+</section>
+</section>
+<section id="cheerful-oblivion" class="level2">
+<h2 class="anchored" data-anchor-id="cheerful-oblivion">Cheerful oblivion</h2>
+<p>With that, I think I shall call time on another blog post. There are a lot of topics I haven’t discussed here. The most obvious one would be variable selection: what statistical procedures can help us decide which covariates should be included in the model? I thought about talking about that here but it’s a big topic that probably deserves its own blog post, and in any case there’s already a <a href="https://genentech.github.io/BayesERbook/notebook/emax/covariate_modeling.html#model-comparison">brief discussion</a> in the BayesERbook. This post doesn’t need to be longer than it already is. Not everything on the internet needs to be a monograph sweetie. Honestly, the only reason it even exists at all is that I still had all these notes I wrote to myself while thinking about the BayesERbook chapters, and figured I should put them down somewhere so that I can find them later.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="./img/june_09_0907.jpg" class="img-fluid figure-img"></p>
+<figcaption>“all the mermaids have sharp teeth”</figcaption>
+</figure>
+</div>
+
+
+</section>
+
+
+<div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p>I mean okay I’ve been a pharmacometrician for two years now so I guess I can officially add that to the long list of scientific/technical fields in which I’ve worked, but nevertheless I am acutely aware of how much I still have left to learn.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>In fairness, this goes both ways, and I rather suspect that my tendency to discuss linear algebra on grindr might explain the current absence of a man in my life. Though also in fairness, it’s not precisely <em>my life</em> that I want a man inside. Either way though, bringing up eigendecompositions has not been a very effective strategy for me on the apps.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3"><p>Using <span class="math inline">\(\phi_i\)</span> here is not standard notation, and insofar as exposure is treated as a predictor for the response (as it is in the logistic regression context) you can think of it statistically in the same way you would a covariate. That would suggest that <span class="math inline">\(x_i\)</span> would be a sensible notation choice, but it is a little misleading. From a scientific perspective exposure-response modelling treats exposure as a qualitatively different entity to the covariates, and within the Emax regression framework in particular exposure is structurally different to other covariates. As such it seems sensible to use a distinct symbol.<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn4"><p>This might seem odd given that in my former professional life I was an <a href="https://papers.djnavarro.net/">academic mathematical psychologist</a>, and brms is well-equipped to handle classic psychometric tools like IRT models and math psych models like Weiner diffusion, but my specific field of work tended to force me to run head-first into the nightmare of <a href="https://mc-stan.org/docs/stan-users-guide/latent-discrete.html">latent discrete parameters</a>, which limited the usefulness of stan for me. Happily for me, this is rarely an issue in pharmacometrics, so I have now joined the Church of the No U-Turn Sampler and offer up my daily prayers to Our Lady of the Hamiltonian Monte Carlo like all the other Bayesian girls.<a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn5"><p>My personal preference is to use <code>brmsformula()</code>. In general I prefer informative function names, even if they require a few extra keystrokes. Among other things, it helps me remember that <code>bf()</code> does not stand for <a href="../../posts/2023-04-12_bayes-factors/">“Bayes factor”</a>, nor does it stand for “boyfriend”. I have far too much trauma around both of these topics, and as much as I’m trying to repent my sins, my therapist isn’t very well versed in statistical model selection and has not been particularly helpful in that arena.<a href="#fnref5" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn6"><p>I discussed this in an <a href="../../posts/2024-11-11_emax-parameters/">earlier blog post</a>. The structure of an Emax model more or less guarantees that if you don’t have strong information provided either by the data or the priors, you’ll run into some unpleasant model identifability issues. For this post I’ll be supplying mildly informative priors and using data sets that are moderately informative, so we won’t run into the pathological cases I constructed in that post, but it is still important to be mindful of this as an issue.<a href="#fnref6" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn7"><p>Okay yes, I have not manually specified the prior for the error variance <span class="math inline">\(\sigma^2\)</span>. Feel free to inspect the Stan code to see how brms handles that.<a href="#fnref7" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section><section class="quarto-appendix-contents" id="quarto-reuse"><h2 class="anchored quarto-appendix-heading">Reuse</h2><div class="quarto-appendix-contents"><div><a rel="license" href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></div></div></section><section class="quarto-appendix-contents" id="quarto-citation"><h2 class="anchored quarto-appendix-heading">Citation</h2><div><div class="quarto-appendix-secondary-label">BibTeX citation:</div><pre class="sourceCode code-with-copy quarto-appendix-bibtex"><code class="sourceCode bibtex">@online{navarro2025,
+  author = {Navarro, Danielle},
+  title = {Bayesian {Emax} Regression Using Brms},
+  date = {2025-06-14},
+  url = {https://blog.djnavarro.net/posts/2025-06-14_brms-emax/},
+  langid = {en}
+}
+</code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre><div class="quarto-appendix-secondary-label">For attribution, please cite this work as:</div><div id="ref-navarro2025" class="csl-entry quarto-appendix-citeas" role="listitem">
+Navarro, Danielle. 2025. <span>“Bayesian Emax Regression Using
+Brms.”</span> June 14, 2025. <a href="https://blog.djnavarro.net/posts/2025-06-14_brms-emax/">https://blog.djnavarro.net/posts/2025-06-14_brms-emax/</a>.
+</div></div></section></div></main> <!-- /main -->
+<!-- plausible -->
+<script async="" defer="" data-domain="blog.djnavarro.net" src="https://plausible.io/js/plausible.js"></script>
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp("https:\/\/blog\.djnavarro\.net");
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+    <a class="nav-link" href="https://blog.djnavarro.net">
+<p>blog.djnavarro.net</p>
+</a>
+  </li>  
+</ul>
+    </div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>
