@@ -1,0 +1,308 @@
+---
+title: "Scatterplot matrices with pairwise pivoting"
+description: "As with so many things in life, something that I used to think was infuriatingly difficult and cumbersome turns out to be really easy if you just format the data properly"
+categories: ["R", "Data Visualisation", "Data Wrangling"]
+date: "2025-06-03"
+image: "absurdity.png"
+image-alt: "An unlabelled scatterplot matrix with convex hull annotations"
+--- 
+
+<!--------------- my typical setup ----------------->
+
+```{r}
+#| label: setup
+#| include: false
+very_wide <- 500
+wide <- 136
+narrow <- 76
+options(width = narrow)
+cache_images <- TRUE
+set.seed(1)
+```
+
+<!--------------- post begins here ----------------->
+
+```{r}
+#| label: pairwise-pivot-function
+#| echo: false
+pivot_pairwise <- function(data, 
+                           pivot_cols, 
+                           other_cols = !pivot_cols,
+                           names_to = "name",
+                           values_to = "value",
+                           pair_label = c("x", "y"),
+                           pair_label_sep = "_",
+                           row_id = "row_id") {
+
+    # construct variable names
+    x_value <- paste(pair_label[1], values_to, sep = pair_label_sep)
+    y_value <- paste(pair_label[2], values_to, sep = pair_label_sep)
+    x_name  <- paste(pair_label[1], names_to, sep = pair_label_sep)
+    y_name  <- paste(pair_label[2], names_to, sep = pair_label_sep)
+
+    # create an id column
+    base <- data |> 
+        dplyr::mutate({{row_id}} := dplyr::row_number())
+  
+    # variables to be retained but not pairwise-pivoted
+    fixed_data <- base |> 
+        dplyr::select(
+            {{other_cols}}, 
+            tidyselect::all_of(row_id)
+        )
+    
+    # select pivoting columns, pivot to long, and relabel as x-var 
+    long_x <- base |>
+        dplyr::select(
+            {{pivot_cols}},            
+            tidyselect::all_of(row_id)
+        ) |>
+        tidyr::pivot_longer(
+            cols = {{pivot_cols}},
+            names_to = {{x_name}},
+            values_to = {{x_value}}
+        )
+
+    # same data frame, but with new variable names for pivoted vars
+    long_y <- long_x |> 
+        dplyr::rename(
+            {{y_name}} := {{x_name}}, 
+            {{y_value}} := {{x_value}}
+        )
+
+    # full join with many-to-many gives all pairs; then restore other columns
+    pairs <- dplyr::full_join(
+        x = long_x,
+        y = long_y,
+        by = row_id,
+        relationship = "many-to-many"
+    ) |>
+    dplyr::relocate({{y_name}}, .after = {{x_name}}) |>
+    dplyr::left_join(fixed_data, by = row_id)
+    
+    return(pairs)
+}
+```
+
+```{r}
+#| label: pairwise-pivot-data
+#| echo: false
+#| results: hide
+penguin_paired_measurements <- penguins |>
+    pivot_pairwise(
+        pivot_cols = bill_len:body_mass,
+        other_cols = species,
+        row_id = "penguin",
+        names_to = "var",
+        values_to = "val"
+    )
+
+penguin_paired_measurements
+```
+
+
+Everybody loves a good data visualisation. I love plots as much as the next weirdo, and I love tinkering with ggplot2 and other tools that let me design them the way I want them to look. It's fun, and it makes me attractive, and popular, and scientific. Yay for plots.
+
+The dirty truth about plotting data though, is that a distressingly large proportion of the work that goes into making a data visualisation happens before you even get to the fun plotting part. So often all the hard work is done at the data wrangling stage: getting the *data* into the form that it needs to be in order to create the pretty pictures all the boys love me for.^[Shut up it's my fantasy, let a girl dream okay?]
+
+I've written about this before. When I talked about [how to visualise a billion rows of data in R](/posts/2022-08-23_visualising-a-billion-rows/), I spent waaaaaaay more time talking about the data wrangling than about the data visualisation itself. That's where all the hard work is done.
+
+And so it is with considerable displeasure that I come to the vexing topic of drawing scatterplot matrices in ggplot2. As a mathematical psychologist this was a task I had to perform regularly and it annoyed me. As a data scientist, it was also a task I had to perform regularly, and it annoyed me. But now I am a pharmacometrician,^[Apparently.] and... yep, I still have to perform this task regularly, and it still annoys me.
+
+Something about it feels *wrong*. It feels wrong because the data set that the analyst is using for other purposes is almost always mismatched to the format that the data needs to be in to make the plot effortless. Here's what I mean, let's say I'm working with our bestest friend, the Palmer penguins data. It looks like this:
+
+```{r}
+penguins <- datasets::penguins |>
+    tibble::as_tibble()
+
+penguins
+```
+
+This data makes sense. It is *tidy*. There is one row per penguin, and one column per measurement. We love data in this format. But suppose I wanted to draw a scatterplot matrix, to visualise the relationships between bill length, bill depth, flipper length, etc, perhaps with each penguin species plotted in a different colour. Intuitively what I *want* to do in ggplot2 is treat each separate pairwise plot as a facet, and then use something like `facet_grid()` to give me a plot that looks like this:
+
+```{r}
+#| label: demo-plot
+#| echo: false
+#| warning: false
+penguin_paired_measurements |>
+    dplyr::filter(y_var > x_var) |>
+    ggplot2::ggplot(ggplot2::aes(
+        x = x_val, 
+        y = y_val,
+        colour = species
+    )) +
+    ggplot2::geom_point() +
+    ggplot2::theme_bw() +
+    ggplot2::labs(
+        x = NULL,
+        y = NULL
+    ) +
+    ggh4x::facet_grid2(
+        y_var ~ x_var,
+        scales = "free",
+        switch = "both",
+        render_empty = FALSE
+    )
+```
+
+However, you can't easily do this with ggplot2, not with the `penguins` data in its current form. So what people (including me) usually do, because life is short and scatterplot matrices suck, is fall back on a canned solution like `GGally::ggpairs()` to do the work. As much as I respect the amount of work that has gone into this function -- and I really do it's awesome -- it is essentially a canned plot, and it suffers from the inherent problem that attaches to all canned plots. Whenever you want something that isn't already catered to by one of the various customisation features supplied the plot function, you're forced to adopt horrible hacks.^[In fairness to the authors, if you do a deep dive on `ggpairs()` you might be surprised at how impressively customisable it is. I'm pretty sure that with some careful thought I could recreate and of the plots below purely with `ggpairs()`. It's just that... well, I don't want to. I already understand ggplot2, I don't want to have to learn a new thing.] On many occasions when I have used `ggpairs()` I've found myself diving into the source code to try to work out precisely what kind of plot object it produces, just so that I can tinker with one tiny little thing that is specific to my use case that (quite understandably) the authors of GGally were unable to predict in advance.
+
+It is very frustrating, and for years I have thought that there must be a better way. It turns out that there is, and it's not very hard. All you have to do is stop thinking of this as a visualisation problem and instead think of it as a data wrangling problem. As is so often the case in life, once you think about the problem in the right terms, it becomes sooooooo much easier to solve. 
+
+## The desired functionality
+
+Let us imagine, for the moment, that we had a function called `pivot_pairwise()` with arguments similar to those in the lovely `tidyr::pivot_longer()` function. It would have arguments like these:
+
+- `pivot_cols` provides a [tidy selection](https://tidyr.tidyverse.org/reference/tidyr_tidy_select.html) of columns. These columns are the ones that we need in "pairwise" format. That is, for each penguin we want one row for each pair of measurements: there would be one row for the combination of `bill_len` and `bill_dep`, another row for the combination of `bill_leng` and `flipper_len`, and so on. 
+- `other_cols` is also a tidy selection of columns, but this time for those variables that you will want to use in your plot but aren't actually part of the "pairwise" specification. In our example, `species` is the only one we need: later on we will want to colour each dot by species, but it's not one of the rows or columns in our scatterplot matrix
+- Because each penguin will now correspond to many rows there would be a `row_id` argument that specifies the name of a newly-inserted column that would be used as an identifier for each individual penguin
+- There would also be `names_to` and `values_to` arguments, which work much the same way the same arguments in `pivot_longer()` work. We would use `names_to` to specify the name of the column that stores the variable names, and `values_to` would be a string specifying the name of the column storing the measured values for each variable.
+
+If we did in fact have access to wonderful magical fabulous function like this, we could effortly pivot the `penguins` data into a new pairwise format like this:
+
+```{r}
+#| ref.label: pairwise-pivot-data
+```
+
+Once you have the data in this format you can tackle it with ggplot2 in exactly the same way you would any other data visualisation problem:^[Normally this would throw a ggplot2 warning about missing values. I've suppressed those here because they're ugly and somewhat irrelevant to the point of this post.]
+
+```{r}
+#| warning: false
+library(ggplot2)
+
+penguin_paired_measurements |>
+    ggplot(aes(x_val, y_val, colour = species)) +
+    geom_point() +
+    facet_grid(y_var ~ x_var, scales = "free") + 
+    theme_bw()
+```
+
+Clearly not perfect, and some tinkering will be needed so that we can get the actual plot we're looking for but... it now feels like a normal ggplot2 exercise. Because we have the data in the format that is natural for the plot, writing the code for the visualisation no longer seems like an exercise in smashing your head agains a wall or trying to explain to people why there is not and should not be a "straight pride" month.^[Some personal recollections on this topic [here](https://etc.djnavarro.net/007/straight-pride/). Be warned, it ain't pretty.]
+
+
+
+## The code
+
+To my everlasting embarrassment, the moment I realised that this was a data formatting issue and not a data visualisation issue, it took me less than an hour to write a basic version of the `pivot_pairwise()` function. I'm writing this post on a very strict time budget because I have actual client work that needs to be attended to, so let's cut to the chase and present the code:
+
+```{r}
+#| ref.label: pairwise-pivot-function
+```
+
+It looks a little fancy because I wanted to properly support tidy selection, and I wanted the usage to feel similar to `pivot_longer()` but in truth it's very simple. I'm just doing a pivot and a couple of dplyr joins. It's really simple, so much so that a part of me is wondering if I missed something shockingly obvious? Like, doesn't this already exist as a function somewhere? If not, it ought to.^[I later learned that there are indeed similar approaches elsewhere. The `tidybayes::gather_pairs()` function provides much the same functionality by operating directly on the data the same way that `pivot_pairwise()` does, but it predates both `pivot_longer()` and the tidy selection framework so the syntax is a bit different and you can't pass a tidy selection. Alternatively, I've been told that `ggforce::facet_matrix()` allows you to accomplish some of the same results entirely within ggplot2. I can imagine either of those being useful in different situations.]
+
+## Plotting the pivoted data
+
+As I hinted at previously the nice thing about having the data in the `penguin_paired_measurements` format is that we can now tinker with the plot in all sorts of fun and exciting ways. To do this, I'll quietly replace the `ggplot2::facet_grid()` function with the `ggh4x::facet_grid2()` function. It does roughly the same thing but has some extra functionality that comes in handy here. For example, if I use `dplyr::filter()` to remove the pointless data on the main diagonal of the scatterplot matrix, `facet_grid2()` allows me to remove those facets entirely by setting `render_empty = FALSE`: 
+
+```{r}
+#| label: paired-plot-drop-diagonal
+#| warning: false
+penguin_paired_measurements |>
+    dplyr::filter(y_var != x_var) |>
+    ggplot(aes(x_val, y_val, colour = species)) +
+    geom_point() +
+    ggh4x::facet_grid2(
+        y_var ~ x_var,
+        scales = "free",
+        render_empty = FALSE
+    ) +
+    labs(x = NULL, y = NULL) +
+    theme_bw()
+```
+
+That's neat, but of course I could take this further and choose to plot only the lower triangular panels, in a style similar to how `ggpairs()` works by default. That requires only very minor edits to the code:
+
+```{r}
+#| label: paired-plot-lower-triangular
+#| warning: false
+penguin_paired_measurements |>
+    dplyr::filter(y_var > x_var) |>
+    ggplot(aes(x_val, y_val, colour = species)) +
+    geom_point() +
+    ggh4x::facet_grid2(
+        y_var ~ x_var,
+        scales = "free",
+        switch = "both",
+        render_empty = FALSE
+    ) +
+    labs(x = NULL, y = NULL) +
+    theme_bw()
+```
+
+Rendering my scatterplots as upper triangular matrix is equally simple:
+
+```{r}
+#| label: paired-plot-upper-triangular
+#| warning: false
+penguin_paired_measurements |>
+    dplyr::filter(x_var > y_var) |>
+    ggplot(aes(x_val, y_val, colour = species)) +
+    geom_point() +
+    ggh4x::facet_grid2(
+        y_var ~ x_var,
+        scales = "free",
+        render_empty = FALSE
+    ) + 
+    ggplot2::scale_x_continuous(position = "top") + 
+    ggplot2::scale_y_continuous(position = "right") +
+    labs(x = NULL, y = NULL) +
+    theme_bw()
+```
+
+
+I'm not sure why I would want to do this, but if for some reason I actually did, I could take it even further and use functionality like `ggforce::geom_mark_hull()`:
+
+```{r}
+#| label: paired-plot-with-hulls
+#| warning: false
+#| fig-height: 8
+penguin_paired_measurements |>
+    dplyr::filter(y_var > x_var) |>
+    ggplot(aes(x_val, y_val, colour = species)) +
+    ggforce::geom_mark_hull(aes(fill = species)) +
+    geom_point() +
+    ggh4x::facet_grid2(
+        y_var ~ x_var,
+        scales = "free",
+        switch = "both",
+        render_empty = FALSE
+    ) +
+    labs(x = NULL, y = NULL) +
+    theme_bw() + 
+    theme(legend.position = "bottom")
+
+```
+
+
+You can do anything with [properly formatted data](https://zombo.com/). 
+
+Anything at all. 
+
+The only limit is yourself.
+
+```{r}
+#| echo: false
+#| label: absurdity
+#| warning: false
+#| fig-height: 7.5
+penguin_paired_measurements |>
+    dplyr::filter(y_var != x_var) |>
+    ggplot(aes(x_val, y_val, colour = species)) +
+    ggforce::geom_mark_hull(aes(fill = species), show.legend = FALSE) +
+    geom_point(show.legend = FALSE) +
+    ggh4x::facet_grid2(
+        y_var ~ x_var,
+        scales = "free",
+        switch = "both",
+        render_empty = FALSE
+    ) +
+    labs(x = NULL, y = NULL) +
+    scale_color_viridis_d() + 
+    scale_fill_viridis_d() + 
+    theme_void() + 
+    theme(
+        panel.border = element_rect(color = "black", fill = NA),
+        strip.text = element_blank()
+    ) 
+```
