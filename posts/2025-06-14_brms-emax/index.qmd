@@ -67,7 +67,7 @@ $$
 y_i = E_0 + E_{max} \frac{\phi_i^\gamma}{EC_{50}^\gamma + \phi_i^\gamma} + \epsilon_i 
 $$
 
-where $\epsilon_i \sim \mbox{Normal}(0, \sigma^2)$ supplies the measurement model for the data set. The (nonlinear) predictor function in an Emax regression is described by four structural model parameters, as well as the residual variance $\sigma^2$. The interpretation of the structural parameers are:
+where $\epsilon_i \sim \mbox{Normal}(0, \sigma^2)$ supplies the measurement model for the data set. The (nonlinear) predictor function in an Emax regression is described by four structural model parameters, as well as the residual variance $\sigma^2$. The interpretation of the structural parameters are:
 
 - $E_0$ is represents the baseline response when drug exposure is zero. It is interpreted on the same scale as the response variable. Depending on what the response variable is, there might be constraints on what values are permitted (e.g., negative numbers might not make sense).
 - $E_{max}$ defines the maximum change from baseline as the drug exposure increases. In some contexts we expect this value to be positive, but in others we might be expecting the drug to inhibit a response in which case a negative value would be appropriate. Again, the parameter lies on the same scale as the response. 
@@ -421,7 +421,7 @@ Yep. That's a model fit. I'd recognise one of those anwhere. In any case, the ke
 
 ## Cheerful oblivion
 
-With that, I think I shall call time on another blog post. There are a lot of topics I haven't discussed here. The most obvious one would be variable selection: what statistical procedures can help us decide which covariates should be included in the model? I thought about talking about that here but it's a big topic that probably deserves its own blog post, and in any case there's already a [brief discussion](https://genentech.github.io/BayesERbook/notebook/emax/covariate_modeling.html#model-comparison) in the BayesERbook. This post doesn't need to be longer than it already is. Honestly, the only reason it even exists at all is that I still had all these notes I wrote to myself while thinking about the BayesERbook chapters, and figured I should put them down somewhere so that I can find them later. 
+With that, I think I shall call time on another blog post. There are a lot of topics I haven't discussed here. The most obvious one would be variable selection: what statistical procedures can help us decide which covariates should be included in the model? I thought about talking about that here but it's a big topic that probably deserves its own blog post, and in any case there's already a [brief discussion](https://genentech.github.io/BayesERbook/notebook/emax/covariate_modeling.html#model-comparison) in the BayesERbook. This post doesn't need to be longer than it already is. Not everything on the internet needs to be a monograph sweetie. Honestly, the only reason it even exists at all is that I still had all these notes I wrote to myself while thinking about the BayesERbook chapters, and figured I should put them down somewhere so that I can find them later. 
 
 
 !["all the mermaids have sharp teeth"](./img/june_09_0907.jpg)
