@@ -1,0 +1,130 @@
+---
+title: "Yet another Emax regression post"
+description: "I need to find a new hobby"
+categories: ["R", "Pharmacometrics", "Statistics"]
+date: "2025-06-23"
+--- 
+
+<!--------------- my typical setup ----------------->
+
+```{r}
+#| label: setup
+#| include: false
+very_wide <- 500
+wide <- 136
+narrow <- 76
+options(width = narrow)
+cache_images <- TRUE
+set.seed(1)
+```
+
+<!--------------- post begins here ----------------->
+
+```{r}
+#| message: false
+library(ggplot2)
+library(tibble)
+library(dplyr)
+```
+
+The toy data set:
+
+```{r}
+dat <- BayesERtools::d_sim_emax
+dat
+```
+
+Minimal implementation with `nls()`
+
+```{r}
+mod <- nls(
+    formula = response_1 ~ E0 + Emax * exposure / (exposure + EC50),
+    data = dat,
+    start = c(E0 = 5, Emax = 10, EC50 = 4000),
+    algorithm = "port",
+    lower = c(E0 = -Inf, Emax = -Inf, EC50 = 0),
+    upper = c(E0 = Inf, Emax = Inf, EC50 = 20000)
+)
+
+summary(mod)
+```
+
+Extract predictions:
+
+```{r}
+pred <- tibble(
+    exposure = seq(0, 50000, by = 100),
+    pred = predict(mod, newdata = tibble(exposure = exposure))
+)
+pred
+```
+
+Plot predictions
+
+```{r}
+ggplot() + 
+    geom_point(
+        data = dat,
+        mapping = aes(exposure, response_1, color = factor(dose)),
+    ) + 
+    geom_path(
+        data = pred,
+        mapping = aes(exposure, pred)
+    ) +
+    theme_bw()
+```
+
+A better approach:
+
+```{r}
+pred_ci <- investr::predFit(
+    object = mod,
+    newdata = tibble(exposure = pred$exposure),
+    interval = "confidence",
+    level = 0.95
+) |>
+    as_tibble() |>
+    select(ci_lower = lwr, ci_upper = upr)
+
+pred_pi <- investr::predFit(
+    object = mod,
+    newdata = tibble(exposure = pred$exposure),
+    interval = "prediction",
+    level = 0.95
+) |>
+    as_tibble() |>
+    select(pi_lower = lwr, pi_upper = upr)
+
+pred_all <- bind_cols(pred, pred_ci, pred_pi)
+pred_all
+```
+
+And as a plot:
+
+```{r}
+ggplot() + 
+    geom_ribbon(
+        data = pred_all,
+        mapping = aes(exposure, ymin = ci_lower, ymax = ci_upper),
+        color = "grey50",
+        fill = "grey80",
+        alpha = 0.5
+    ) +
+    geom_ribbon(
+        data = pred_all,
+        mapping = aes(exposure, ymin = pi_lower, ymax = pi_upper),
+        linetype = "dotted",
+        color = "black",
+        fill = NA
+    ) +
+    geom_point(
+        data = dat,
+        mapping = aes(exposure, response_1, color = factor(dose)),
+    ) + 
+    geom_path(
+        data = pred_all,
+        mapping = aes(exposure, pred)
+    ) +
+    theme_bw()
+
+```
