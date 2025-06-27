@@ -31,7 +31,6 @@ quarto_tabsec <- function(.content, .title, .level = 3L) {
     ),
     class = "quarto_tabsec"
   )
-
 }
 
 quarto_collection <- function(...) {
