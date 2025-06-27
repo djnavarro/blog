@@ -26,7 +26,6 @@ ggplot2::theme_set(ggplot2::theme_bw())
 #| include: false
 source("class.R")
 source("print.R")
-source("coerce.R")
 ```
 
 ```{r}
@@ -34,8 +33,10 @@ source("coerce.R")
 #| message: false
 library(dplyr)
 library(tibble)
+library(stringr)
 library(ggplot2)
 library(babynames)
+library(janeaustenr)
 ```
 
 ## One way
@@ -63,9 +64,59 @@ for(bb in bbs) {
   dat[[bb]] <- babynames |> filter(name == bb)
   pic[[bb]] <- ggplot(dat[[bb]], aes(year, prop, fill = sex)) + geom_col()
 }
-quarto_collection(
+quarto_output(
   quarto_tabsec(.title = "Plot", .content = pic, .level = 3),
   quarto_tabsec(.title = "Data", .content = dat, .level = 3)
+)
+```
+
+## Passing markdown directly
+
+```{r}
+#| label: raw-1
+#| results: asis
+quarto_markdown(prideprejudice[8:16], .sep = " ")
+```
+
+```{r}
+#| label: raw-2
+#| results: asis
+quarto_markdown(
+  "- this ends up being",
+  "- a markdown list", 
+  "- with **formatting**",
+  .sep = "\n"
+)
+```
+
+## Divs and spans
+
+```{r}
+#| label: div
+#| results: asis
+quarto_div(
+  "This is some margin text.", 
+  "The strings are pasted together,",
+  "with a separator",
+  .class = "column-margin",
+  .sep = " "
+)
+quarto_div(
+  "This is a callout note.",
+  "The idea is the same, really.",
+  .class = "callout-note",
+  .sep = " "
+)
+```
+
+```{r}
+#| label: span
+#| results: asis
+quarto_paragraph(
+  quarto_span(.content = "this is plain text"),
+  quarto_span(.content = "this is highlighted", .class = "mark"),
+  quarto_span(.content = "this is underlined", .class = "underline"),
+  .sep = ", "
 )
 ```
 
