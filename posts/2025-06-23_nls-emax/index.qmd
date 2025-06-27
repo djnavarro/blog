@@ -27,12 +27,16 @@ library(tibble)
 library(dplyr)
 ```
 
+## Minimal implementation
+
 The toy data set:
 
 ```{r}
 dat <- BayesERtools::d_sim_emax
 dat
 ```
+
+
 
 Minimal implementation with `nls()`
 
@@ -48,6 +52,10 @@ mod <- nls(
 
 summary(mod)
 ```
+
+Notes: 
+
+- Link to the [port](https://netlib.org/port/) library
 
 Extract predictions:
 
