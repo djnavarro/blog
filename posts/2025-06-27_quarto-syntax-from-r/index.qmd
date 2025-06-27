@@ -1,0 +1,71 @@
+---
+title: "quarto-syntax-from-r"
+description: "This is a subtitle"
+date: "2025-06-27"
+categories: ["Quarto", "Literate Programming", "R"]
+--- 
+
+<!--------------- my typical setup ----------------->
+
+```{r}
+#| label: setup
+#| include: false
+very_wide <- 500
+wide <- 136
+narrow <- 76
+options(width = narrow)
+cache_images <- TRUE
+set.seed(1)
+ggplot2::theme_set(ggplot2::theme_bw())
+```
+
+<!--------------- post begins here ----------------->
+
+```{r}
+#| label: scripts
+#| include: false
+source("class.R")
+source("print.R")
+source("coerce.R")
+```
+
+```{r}
+#| label: packages
+#| message: false
+library(dplyr)
+library(tibble)
+library(ggplot2)
+library(babynames)
+```
+
+## One way
+
+```{r}
+#| label: tabs-and-headers
+#| results: asis
+for(bb in c("Danielle", "Jasmine")) {
+  dat <- babynames |> filter(name == bb)
+  pic <- ggplot(dat, aes(year, prop, fill = sex)) + geom_col()
+  print(quarto_section(.title = bb, .level = 3))
+  print(quarto_tabset("Plot" = pic, "Data" = dat, .level = 4))
+}
+```
+
+## Or another
+
+```{r}
+#| label: tabs-and-headers-2
+#| results: asis
+dat <- list()
+pic <- list()
+bbs <- paste0("Dan", c("", "i", "ni", "ny", "iel", "ielle", "iela"))
+for(bb in bbs) {
+  dat[[bb]] <- babynames |> filter(name == bb)
+  pic[[bb]] <- ggplot(dat[[bb]], aes(year, prop, fill = sex)) + geom_col()
+}
+quarto_collection(
+  quarto_tabsec(.title = "Plot", .content = pic, .level = 3),
+  quarto_tabsec(.title = "Data", .content = dat, .level = 3)
+)
+```
+
