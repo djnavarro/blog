@@ -22,24 +22,22 @@ ggplot2::theme_set(ggplot2::theme_bw())
 <!--------------- post begins here ----------------->
 
 ```{r}
-#| label: scripts
-#| include: false
-source("class.R")
-source("print.R")
-```
-
-```{r}
 #| label: packages
 #| message: false
+library(knitr)
 library(dplyr)
+library(purrr)
 library(tibble)
 library(stringr)
 library(ggplot2)
+library(quartose)
 library(babynames)
 library(janeaustenr)
 ```
 
-## One way
+## Tabs and sections
+
+### Printing in a loop
 
 ```{r}
 #| label: tabs-and-headers
@@ -47,45 +45,27 @@ library(janeaustenr)
 for(bb in c("Danielle", "Jasmine")) {
   dat <- babynames |> filter(name == bb)
   pic <- ggplot(dat, aes(year, prop, fill = sex)) + geom_col()
-  print(quarto_section(.title = bb, .level = 3))
-  print(quarto_tabset("Plot" = pic, "Data" = dat, .level = 4))
+  knit_print(quarto_tabset(
+    .content = list("Plot" = pic, "Data" = dat), 
+    .title = bb,
+    .level = 4
+  ))
 }
 ```
 
-## Or another
+### Printing as a group
 
 ```{r}
 #| label: tabs-and-headers-2
 #| results: asis
-dat <- list()
-pic <- list()
 bbs <- paste0("Dan", c("", "i", "ni", "ny", "iel", "ielle", "iela"))
-for(bb in bbs) {
-  dat[[bb]] <- babynames |> filter(name == bb)
-  pic[[bb]] <- ggplot(dat[[bb]], aes(year, prop, fill = sex)) + geom_col()
-}
+dat <- map(bbs, \(bb) filter(babynames, name == bb))
+pic <- map(dat, \(dd) ggplot(dd, aes(year, prop, fill = sex)) + geom_col())
+names(dat) <- bbs
+names(pic) <- bbs
 quarto_output(
-  quarto_tabsec(.title = "Plot", .content = pic, .level = 3),
-  quarto_tabsec(.title = "Data", .content = dat, .level = 3)
-)
-```
-
-## Passing markdown directly
-
-```{r}
-#| label: raw-1
-#| results: asis
-quarto_markdown(prideprejudice[8:16], .sep = " ")
-```
-
-```{r}
-#| label: raw-2
-#| results: asis
-quarto_markdown(
-  "- this ends up being",
-  "- a markdown list", 
-  "- with **formatting**",
-  .sep = "\n"
+  quarto_tabset(.title = "Plot", .content = pic, .level = 4),
+  quarto_tabset(.title = "Data", .content = dat, .level = 4)
 )
 ```
 
@@ -95,15 +75,19 @@ quarto_markdown(
 #| label: div
 #| results: asis
 quarto_div(
-  "This is some margin text.", 
-  "The strings are pasted together,",
-  "with a separator",
+  .content = list(
+    "This is some margin text.", 
+    "The strings are pasted together,",
+    "with a separator"
+  ),
   .class = "column-margin",
   .sep = " "
 )
 quarto_div(
-  "This is a callout note.",
-  "The idea is the same, really.",
+  .content = list(
+    "This is a callout note.",
+    "The idea is the same, really."
+  ),
   .class = "callout-note",
   .sep = " "
 )
@@ -112,11 +96,35 @@ quarto_div(
 ```{r}
 #| label: span
 #| results: asis
-quarto_paragraph(
-  quarto_span(.content = "this is plain text"),
-  quarto_span(.content = "this is highlighted", .class = "mark"),
-  quarto_span(.content = "this is underlined", .class = "underline"),
+quarto_span(.content = "this is highlighted", .class = "mark")
+
+quarto_div(
+  .content = list(
+    quarto_span(.content = "this is plain text"),
+    quarto_span(.content = "this is highlighted", .class = "mark"),
+    quarto_span(.content = "this is underlined", .class = "underline")
+  ),
   .sep = ", "
 )
 ```
+
+## Raw markdown
+
+```{r}
+#| label: raw-1
+#| results: asis
+quarto_markdown(
+  "- this ends up being",
+  "- a markdown list", 
+  "- with **formatting**",
+  .sep = "\n"
+)
+```
+
+```{r}
+#| label: raw-2
+#| results: asis
+quarto_markdown(!!!c(">", prideprejudice[8:16]), .sep = " ")
+```
+
 
