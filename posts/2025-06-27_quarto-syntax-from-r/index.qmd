@@ -61,7 +61,7 @@ for(bb in c("Danielle", "Jasmine")) {
 bbs <- paste0("Dan", c("", "i", "ni", "ny", "iel", "ielle", "iela"))
 dat <- map(bbs, \(bb) filter(babynames, name == bb))
 pic <- map(dat, \(dd) ggplot(dd, aes(year, prop, fill = sex)) + geom_col())
-quarto_output(
+quarto_group(
   quarto_tabset(.content = pic, .names = bbs, .title = "Plot", .level = 4),
   quarto_tabset(.content = dat, .names = bbs, .title = "Data", .level = 4)
 )
@@ -171,4 +171,5 @@ quarto_markdown(
 #| results: asis
 quarto_markdown(!!!c(">", prideprejudice[8:16]), .sep = " ")
 ```
+
 
