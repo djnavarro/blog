@@ -61,11 +61,9 @@ for(bb in c("Danielle", "Jasmine")) {
 bbs <- paste0("Dan", c("", "i", "ni", "ny", "iel", "ielle", "iela"))
 dat <- map(bbs, \(bb) filter(babynames, name == bb))
 pic <- map(dat, \(dd) ggplot(dd, aes(year, prop, fill = sex)) + geom_col())
-names(dat) <- bbs
-names(pic) <- bbs
 quarto_output(
-  quarto_tabset(.title = "Plot", .content = pic, .level = 4),
-  quarto_tabset(.title = "Data", .content = dat, .level = 4)
+  quarto_tabset(.content = pic, .names = bbs, .title = "Plot", .level = 4),
+  quarto_tabset(.content = dat, .names = bbs, .title = "Data", .level = 4)
 )
 ```
 
