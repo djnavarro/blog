@@ -61,10 +61,10 @@ for(bb in c("Danielle", "Jasmine")) {
 bbs <- paste0("Dan", c("", "i", "ni", "ny", "iel", "ielle", "iela"))
 dat <- map(bbs, \(bb) filter(babynames, name == bb))
 pic <- map(dat, \(dd) ggplot(dd, aes(year, prop, fill = sex)) + geom_col())
-quarto_group(
+quarto_group(list(
   quarto_tabset(.content = pic, .names = bbs, .title = "Plot", .level = 4),
   quarto_tabset(.content = dat, .names = bbs, .title = "Data", .level = 4)
-)
+))
 ```
 
 ## Divs and spans
@@ -159,9 +159,11 @@ quarto_div(
 #| label: raw-1
 #| results: asis
 quarto_markdown(
-  "- this ends up being",
-  "- a markdown list", 
-  "- with **formatting**",
+  .content = c(
+    "- this ends up being",
+    "- a markdown list", 
+    "- with **formatting**"
+  ),
   .sep = "\n"
 )
 ```
@@ -169,7 +171,6 @@ quarto_markdown(
 ```{r}
 #| label: raw-2
 #| results: asis
-quarto_markdown(!!!c(">", prideprejudice[8:16]), .sep = " ")
+quarto_markdown(c(">", prideprejudice[8:16]), .sep = " ")
 ```
-
 
