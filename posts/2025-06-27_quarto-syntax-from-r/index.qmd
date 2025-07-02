@@ -53,17 +53,18 @@ Unfortunately, the elegance of my data visualisation code has created a problem.
 quarto_tabset(content = pic, names = bbs, level = 3)
 ```
 
-So lovely, so sexy, so.... look, I need a moment, okay?
+So lovely, so sexy. Now could we do that to the...
 
 
 ```{r}
 #| label: tabs-and-headers-2
 #| results: asis
-quarto_group(list(
-  quarto_tabset(content = pic, names = bbs, title = "Plot", level = 3),
-  quarto_tabset(content = dat, names = bbs, title = "Data", level = 3)
-))
+quarto_tabset(content = dat, names = bbs, level = 3)
 ```
+
+...data? 
+
+Ahhhhhh yes. Lovely. 
 
 ## Divs and spans
 
