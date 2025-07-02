@@ -35,35 +35,33 @@ library(babynames)
 library(janeaustenr)
 ```
 
-## Tabs and sections
-
-### Printing in a loop
+A spectre is haunting my data analyses. Consider this:
 
 ```{r}
-#| label: tabs-and-headers
-#| results: asis
-for(bb in c("Danielle", "Jasmine")) {
-  dat <- babynames |> filter(name == bb)
-  pic <- ggplot(dat, aes(year, prop, fill = sex)) + geom_col()
-  knit_print(quarto_tabset(
-    content = list("Plot" = pic, "Data" = dat), 
-    title = bb,
-    level = 4
-  ))
-}
+bbs <- paste0("Dan", c("", "i", "ni", "ny", "iel", "ielle", "iela"))
+dat <- map(bbs, \(bb) filter(babynames, name == bb))
+pic <- map(dat, \(dd) ggplot(dd, aes(year, prop, fill = sex)) + geom_col())
 ```
 
-### Printing as a group
+The simple elegance of this code appeals to me. In three lines of code I took a vector of names (`bbs`), used `map()` to construct a list of data frames (`dat`) that describe the popularity of each of these names, and how that popularity has changed over time, and then repeated the exercise to produce a list of data visualisation objects (`pic`). 
+
+Unfortunately, the elegance of my data visualisation code has created a problem. If you're the kind of data analyst who loves the prettiness of the previous code, you're almost certainly the kind of data analyst who adores literate programming, and would like a similarly clean tool for inserting the plots directly into this very document. Perhaps something like this?
+
+```{r}
+#| label: tabs-and-headers-1
+#| results: asis
+quarto_tabset(content = pic, names = bbs, level = 3)
+```
+
+So lovely, so sexy, so.... look, I need a moment, okay?
+
 
 ```{r}
 #| label: tabs-and-headers-2
 #| results: asis
-bbs <- paste0("Dan", c("", "i", "ni", "ny", "iel", "ielle", "iela"))
-dat <- map(bbs, \(bb) filter(babynames, name == bb))
-pic <- map(dat, \(dd) ggplot(dd, aes(year, prop, fill = sex)) + geom_col())
 quarto_group(list(
-  quarto_tabset(content = pic, names = bbs, title = "Plot", level = 4),
-  quarto_tabset(content = dat, names = bbs, title = "Data", level = 4)
+  quarto_tabset(content = pic, names = bbs, title = "Plot", level = 3),
+  quarto_tabset(content = dat, names = bbs, title = "Data", level = 3)
 ))
 ```
 
