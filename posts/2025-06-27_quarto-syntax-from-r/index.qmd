@@ -1,8 +1,10 @@
 ---
-title: "Writing quarto syntax from R"
+title: "Generating quarto syntax within R"
 description: "To quote Cassian Andor, \"It's harder than it looks\""
 date: "2025-06-27"
 categories: ["Quarto", "Literate Programming", "R"]
+image: diego.jpg
+image-alt: "Diego Luna. Because he is very pretty"
 --- 
 
 <!--------------- my typical setup ----------------->
@@ -32,6 +34,8 @@ library(babynames)
 ```
 
 It is Saturday morning in my quiet neighbourhood in Sydney's inner west, and for no particular reason I'm thinking about the strange human convention of assigning names and labels to one another. I'm quite fond of this tradition. So much so that I have collected a surprising number of names in my half century on the planet. At different moments in my life I have been Dan, Dani, Danni, Danny, Daniel, Danielle, and Daniela. All variations on a theme, perhaps, but each one has its own flavour and connotation. In my experience of how people use the words, a "Danielle" is a different person to a "Daniela", and both are a very different person to a "Daniel". I wonder at the strangeness of people who go through life with only the one name, unaware perhaps of the possibilities that surround them. Ah well.
+
+## The topic at hand
 
 In any case, none of these musings are particularly relevant to the blog post. They are merely a pretext for me to introduce the following tiny data analysis. Using data from the [babynames](https://hadley.github.io/babynames/) R package, I can do something like this:
 
@@ -127,11 +131,46 @@ quarto_div(
   content = list(
     quarto_span(content = "You can wrap multiple spans in a div so that"),
     quarto_span(content = "some text is highlighted", class = "mark"),
-    quarto_span(content = "and some text is underlined", class = "underline")
+    quarto_span(content = "and some is underlined", class = "underline")
   ),
   class = "column-margin",
   sep = " "
 )
 ```
 
-Why yes, Danielle, Daniela, or whatever name you're using these days, that does seem rather handy. Are you planning to explain what you're doing here babe, or are you just showboating?
+Why yes, Danielle, Daniela, or whatever name you're using these days, that does seem rather handy. Are you planning to explain what you're doing here babe, or are you just being annoying?
+
+## Unpacking it a bit
+
+All the work here is being done by a little convenience package I wrote for myself called [quartose](https://quartose.djnavarro.net/). It's not especially fancy, but it solves a problem I often encounter in real life data analysis. As I wrote in the package README:
+
+> When analysing data sets in R, it is often convenient to wrap the analysis within a quarto document for reporting purposes: containing all the analysis components within a single easy-to-navigate HTML document is generally a kindness for the reader. One consequence of this, however, is that sometimes you find yourself wanting to write code within an R code chunk that will generate parts of the quarto document for you. For instance, when iterating over many analyses within a single R chunk, you might want to have that chunk generate the quarto section headers, tabsets and so on. This is possible because the knitr engine (which evaluates the R code chunks) allows you to generate “asis” output that will later be captured by the quarto parser; if such output is formatted to look like correct quarto syntax, it will be captured and translated to the appropriate HTML.
+
+In principle this isn't very hard. Here's the output of a call to `quarto_div()` when I *don't* supply the `results: asis` code chunk option:
+
+```{r}
+quarto_div(
+  content = "This is some margin text.", 
+  class = "column-margin"
+)
+```
+
+Any quarto user would immediately recognise the syntax here. All that `quarto_div()` actually does is construct syntax for the quarto parser to capture and render. It truly isn't fancy. The `quarto_tabset()` output isn't much more complicated either:
+
+```{r}
+quarto_tabset(
+  content = list( 
+    tab1 = 1:5,
+    tab2 = "hello"
+  ),
+  level = 3
+)
+```
+
+The function goes a little overboard when inserting whitespace around the quarto commands (each component imposes its own "bubble" of whitespace), and there's probably a better way of producing the "output formatting" than directly supplying HTML pre tags, but whatever, it does the job. Things get messier when inserting the syntax for plots, because when that happens you're juggling ggplot2, knitr, and quarto in a kind of strange way. At the moment, the way this is handled in quartose is to delay the rendering of the plot object until the last possible moment so that knitr doesn't get trigger happy and insert it into the wrong place in the document (there were some quite hilarious early versions where plots would show up in pretty weird places like it was a word document or something). Plus, at the moment I haven't even attempted to capture base graphics correctly: at present, the trick only works for ggplot2 objects. 
+
+## Is this even useful?
+
+Anyway, this isn't really intended to be a long blog post or a deep dive. Right now I'm at the stage of wondering if this is even a useful thing to do. I know why the functionality is useful for me, but I'm not sure if anyone else has the same needs that I do. I have no problems with writing personal packages that are intended only for a single user, but there's something odd about this one: the only context in which I really *need* this functionality is at work, but if I'm going to use it at work I do need to make sure it is developed to a sufficiently high standard that it can be called within code that needs to be executed by regulatory agencies, set time aside for maintenance, etc. That's more software development work than I typically want to expend on one of my silly side projects.
+
+So yeah, I don't know. Given all this context I find myself pondering two questions; (a) is this functionality even useful? (b) is there a better way do it? I'm not sure about either one. 
