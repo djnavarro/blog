@@ -1,7 +1,7 @@
 ---
 title: "Generating quarto syntax within R"
 description: "To quote Cassian Andor, \"It's harder than it looks\""
-date: "2025-06-27"
+date: "2025-07-05"
 categories: ["Quarto", "Literate Programming", "R"]
 image: diego.jpg
 image-alt: "Diego Luna. Because he is very pretty"
