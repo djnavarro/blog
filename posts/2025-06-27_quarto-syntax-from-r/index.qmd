@@ -1,6 +1,6 @@
 ---
-title: "quarto-syntax-from-r"
-description: "This is a subtitle"
+title: "Writing quarto syntax from R"
+description: "To quote Cassian Andor, \"It's harder than it looks\""
 date: "2025-06-27"
 categories: ["Quarto", "Literate Programming", "R"]
 --- 
@@ -24,18 +24,16 @@ ggplot2::theme_set(ggplot2::theme_bw())
 ```{r}
 #| label: packages
 #| message: false
-library(knitr)
 library(dplyr)
 library(purrr)
-library(tibble)
-library(stringr)
 library(ggplot2)
 library(quartose)
 library(babynames)
-library(janeaustenr)
 ```
 
-A spectre is haunting my data analyses. Consider this:
+It is Saturday morning in my quiet neighbourhood in Sydney's inner west, and for no particular reason I'm thinking about the strange human convention of assigning names and labels to one another. I'm quite fond of this tradition. So much so that I have collected a surprising number of names in my half century on the planet. At different moments in my life I have been Dan, Dani, Danni, Danny, Daniel, Danielle, and Daniela. All variations on a theme, perhaps, but each one has its own flavour and connotation. In my experience of how people use the words, a "Danielle" is a different person to a "Daniela", and both are a very different person to a "Daniel". I wonder at the strangeness of people who go through life with only the one name, unaware perhaps of the possibilities that surround them. Ah well.
+
+In any case, none of these musings are particularly relevant to the blog post. They are merely a pretext for me to introduce the following tiny data analysis. Using data from the [babynames](https://hadley.github.io/babynames/) R package, I can do something like this:
 
 ```{r}
 bbs <- paste0("Dan", c("", "i", "ni", "ny", "iel", "ielle", "iela"))
@@ -45,7 +43,7 @@ pic <- map(dat, \(dd) ggplot(dd, aes(year, prop, fill = sex)) + geom_col())
 
 The simple elegance of this code appeals to me. In three lines of code I took a vector of names (`bbs`), used `map()` to construct a list of data frames (`dat`) that describe the popularity of each of these names, and how that popularity has changed over time, and then repeated the exercise to produce a list of data visualisation objects (`pic`). 
 
-Unfortunately, the elegance of my data visualisation code has created a problem. If you're the kind of data analyst who loves the prettiness of the previous code, you're almost certainly the kind of data analyst who adores literate programming, and would like a similarly clean tool for inserting the plots directly into this very document. Perhaps something like this?
+Unfortunately, the elegance of my data visualisation code has created a problem. If you're the kind of data analyst who loves the prettiness of the previous code, you're almost certainly the kind of data analyst who adores literate programming, and would like a similarly clean tool for inserting the plots directly into this very document. Intuitively it seems like there should be some functionality that would allow you to place each element of the `pic` list into its own tab and assign each tab the corresponding label from `bbs`. It *ought* to be possible to do this from R, using a function like `quarto_tabset()` or the like, and it *ought* to do something like this:
 
 ```{r}
 #| label: tabs-and-headers-1
@@ -53,7 +51,7 @@ Unfortunately, the elegance of my data visualisation code has created a problem.
 quarto_tabset(content = pic, names = bbs, level = 3)
 ```
 
-So lovely, so sexy. Now could we do that to the...
+Huh. Yes that is rather nice. But does it have to be restricted to plots? It doesn't seem like it should be -- if anything, it seems like it should be even easier for a function like `quarto_tabset()` to wrap a list of data frames and print each of those within a tab. Wouldn't it be nice if we could that to the...
 
 
 ```{r}
@@ -62,11 +60,9 @@ So lovely, so sexy. Now could we do that to the...
 quarto_tabset(content = dat, names = bbs, level = 3)
 ```
 
-...data? 
+...data? Ahhhhhh yes. Quite lovely.
 
-Ahhhhhh yes. Lovely. 
-
-## Divs and spans
+Although... if we are going to go down this path, why would we stop at tabsets? Why not have functions like `quarto_div()` and `quarto_span()` that would insert HTML divs and spans into the document, assigning them to whatever CSS classes happen to strike our fancy? That shouldn't be too hard really: the quarto syntax for a tabset is essentially identical to the syntax for any other HTML div, so that should be pretty straightforward. Armed with this functionality, it would be fairly easy to write an R command to generate margin text, callouts, paragraphs with fancy formatting, and a great deal more besides...
 
 ```{r}
 #| label: div-1
@@ -76,7 +72,6 @@ quarto_div(
   class = "column-margin"
 )
 ```
-
 
 ```{r}
 #| label: div-2
@@ -113,30 +108,16 @@ quarto_div(
 
 
 ```{r}
-#| label: div-4
-#| results: asis
-quarto_div(
-  content = "This is a callout note.",
-  class = "callout-note"
-)
-
-```
-
-
-```{r}
 #| label: div-5
 #| results: asis
 quarto_div(
-  content = "You can supply multiple classes",
-  class = c("column-margin", "callout-tip")
+  content = c(
+    "You can supply multiple classes.",
+    "This creates a callout box in the margin"
+  ),
+  class = c("column-margin", "callout-tip"),
+  sep = " "
 )
-```
-
-
-```{r}
-#| label: span-1
-#| results: asis
-quarto_span(content = "this is highlighted", class = "mark")
 ```
 
 ```{r}
@@ -144,33 +125,13 @@ quarto_span(content = "this is highlighted", class = "mark")
 #| results: asis
 quarto_div(
   content = list(
-    quarto_span(content = "this is plain text"),
-    quarto_span(content = "this is highlighted", class = "mark"),
-    quarto_span(content = "this is underlined", class = "underline")
+    quarto_span(content = "You can wrap multiple spans in a div so that"),
+    quarto_span(content = "some text is highlighted", class = "mark"),
+    quarto_span(content = "and some text is underlined", class = "underline")
   ),
-  sep = ", "
+  class = "column-margin",
+  sep = " "
 )
 ```
 
-## Raw markdown
-
-```{r}
-#| label: raw-1
-#| results: asis
-quarto_markdown(
-  content = c(
-    "- this ends up being",
-    "- a markdown list", 
-    "- with **formatting**"
-  ),
-  sep = "\n"
-)
-```
-
-```{r}
-#| label: raw-2
-#| results: asis
-quarto_markdown(c(">", prideprejudice[8:16]), sep = " ")
-```
-
-
+Why yes, Danielle, Daniela, or whatever name you're using these days, that does seem rather handy. Are you planning to explain what you're doing here babe, or are you just showboating?
