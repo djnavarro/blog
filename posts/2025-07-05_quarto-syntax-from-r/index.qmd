@@ -33,6 +33,15 @@ library(quartose)
 library(babynames)
 ```
 
+**EDIT:** I later decided to send [quartose](https://quartose.djnavarro.net) to CRAN, and so for documentation purposes I'll note the package version used for this post:
+
+```{r}
+packageVersion("quartose")
+```
+
+
+**ACTUAL POST:**
+
 It is Saturday morning in my quiet neighbourhood in Sydney's inner west, and for no particular reason I'm thinking about the strange human convention of assigning names and labels to one another. I'm quite fond of this tradition. So much so that I have collected a surprising number of names in my half century on the planet. At different moments in my life I have been Dan, Dani, Danni, Danny, Daniel, Danielle, and Daniela. All variations on a theme, perhaps, but each one has its own flavour and connotation. In my experience of how people use the words, a "Danielle" is a different person to a "Daniela", and both are a very different person to a "Daniel". I wonder at the strangeness of people who go through life with only the one name, unaware perhaps of the possibilities that surround them. Ah well.
 
 ## The topic at hand
