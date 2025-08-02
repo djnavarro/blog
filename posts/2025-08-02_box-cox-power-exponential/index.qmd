@@ -35,6 +35,7 @@ library(dplyr)
 library(tidyr)
 library(tibble)
 library(ggplot2)
+library(moments)
 library(gamlss.dist)
 ```
 
@@ -101,8 +102,8 @@ boxcox <- function(y, lambda) {
 }
 
 bc <- expand_grid(
-  y = seq(1, 5, .01),
-  lambda = seq(-2, 2, .5)
+  y = seq(.2, 5, .01),
+  lambda = seq(-2, 2)
 ) |>
   mutate(
     fy = boxcox(y, first(lambda)),
@@ -324,8 +325,10 @@ dat |>
 
 ## Fitting the BCPE
 
+As a final exercise, I'll implement a simple method for finding maximum likelihood estimates of the BCPE distribution parameters. My approach here is absolutely *not* recommended in a real life setting: I'm using the `optim()` function with the `"L-BFGS-B"` method. For this specific example it works well, but the impression I get is that it can be a bit fragile because fitting a kurtosis parameter is not a trivial thing to do: when estimating a GAMLSS model with BCPE distribution there are better tools than an off-the-shelf optimiser. But that is a topic for another day, and having made the required disclaimer, let's do the lazy thing anyway:
+
 ```{r}
-#| label: fit-bcpe
+#| label: fit-bcpe-functions
 nll <- function(values) {
   function(par) {
     -sum(dBCPE(
@@ -348,14 +351,36 @@ fit <- function(x) {
     method = "L-BFGS-B"
   )
 }
+```
 
+When calling `nll()` with a vector of values it returns an objective function for `optim()` to minimise, based on the negative log-likelihood. The wrapper function `fit()` calls `optim()` and returns the result. Here are the parameter estimates we obtain when fitting the BCPE distribution to adult male weights:
+
+```{r}
+#| label: fit-bcpe-male
 weight_m <- nhanes |>
   filter(age_yr > 25, age_yr <= 50, sex_fct == "male") |>
   pull(weight_kg)
 
 par_m <- fit(weight_m)$par
 par_m
+```
 
+To help us interpret these parameters it's useful to mention that (as discussed by Rigby and Stasinopoulos, 2004, Appendix A) the $\mu$ parameter is approximately equal to the population median and $\sigma$ is approximately the coefficient of variation, but while there are relationships between $\nu$ and skewness and between $\tau$ and kurtosis, they are a little more opaque. To illustrate: 
+
+```{r}
+#| label: summary-stats-male-weights
+c(
+  median = median(weight_m),
+  cv = sd(weight_m) / mean(weight_m),
+  skewness = skewness(weight_m),
+  kurtosis = kurtosis(weight_m)
+)
+```
+
+It's pretty clear that you can interpret $\mu$ and $\sigma$ with little difficulty, but interpreting the two shape parameters $\nu$ and $\tau$ requires some care. I'll return to this later. For now, let's just move forward and repeat the fitting exercise for the female body weight data: 
+
+```{r}
+#| label: fit-bcpe-female
 weight_f <- nhanes |>
   filter(age_yr > 25, age_yr <= 50, sex_fct == "female") |>
   pull(weight_kg)
@@ -363,6 +388,20 @@ weight_f <- nhanes |>
 par_f <- fit(weight_f)$par
 par_f
 ```
+
+Okay yes, that seems sensible enough. Calculating descriptive statistics for the female body weights shows the same pattern as for the male weights:
+
+```{r}
+#| label: summary-stats-female-weights
+c(
+  median = median(weight_f),
+  cv = sd(weight_f) / mean(weight_f),
+  skewness = skewness(weight_f),
+  kurtosis = kurtosis(weight_f)
+)
+```
+
+Just to be sure that this has worked, let's plot the estimated BCPE densities (red curves) on top of a simple histogram-based density estimate (grey bars) for these two data sets:
 
 ```{r}
 #| label: plot-bcpe-fit
@@ -392,7 +431,7 @@ nhanes |>
   ) +
   facet_wrap(~sex_fct) + 
   theme_bw()
-
-
 ```
+
+Very nice. 
 
