@@ -322,3 +322,77 @@ dat |>
   theme_bw()
 ```
 
+## Fitting the BCPE
+
+```{r}
+#| label: fit-bcpe
+nll <- function(values) {
+  function(par) {
+    -sum(dBCPE(
+      x     = values, 
+      mu    = par[1], 
+      sigma = par[2], 
+      nu    = par[3], 
+      tau   = par[4], 
+      log   = TRUE
+    ))
+  }
+}
+
+fit <- function(x) {
+  optim(
+    par = c(mu = 70, sigma = .1, nu = 0, tau = 2), 
+    fn = nll(x), 
+    lower = c(mu = 40, sigma = .01, nu = -10, tau = .01), 
+    upper = c(mu = 100, sigma = 50, nu = 10, tau = 10),
+    method = "L-BFGS-B"
+  )
+}
+
+weight_m <- nhanes |>
+  filter(age_yr > 25, age_yr <= 50, sex_fct == "male") |>
+  pull(weight_kg)
+
+par_m <- fit(weight_m)$par
+par_m
+
+weight_f <- nhanes |>
+  filter(age_yr > 25, age_yr <= 50, sex_fct == "female") |>
+  pull(weight_kg)
+
+par_f <- fit(weight_f)$par
+par_f
+```
+
+```{r}
+#| label: plot-bcpe-fit
+
+pred_wide <- tibble(
+  weight_kg = 20:250,
+  male      = dBCPE(weight_kg, par_m[1], par_m[2], par_m[3], par_m[4]),
+  female    = dBCPE(weight_kg, par_f[1], par_f[2], par_f[3], par_f[4])
+)
+
+pred_long <- pred_wide |>
+  pivot_longer(
+    cols = c(male, female),
+    names_to = "sex_fct",
+    values_to = "density"
+  )
+
+nhanes |>
+  filter(age_yr > 25 & age_yr <= 50) |>
+  ggplot(aes(weight_kg, after_stat(density))) + 
+  geom_histogram(binwidth = 5, center = 0) +
+  geom_path(
+    data = pred_long, 
+    mapping = aes(weight_kg, density), 
+    colour = "red",
+    linewidth = 1
+  ) +
+  facet_wrap(~sex_fct) + 
+  theme_bw()
+
+
+```
+
