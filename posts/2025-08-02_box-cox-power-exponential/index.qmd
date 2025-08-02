@@ -237,3 +237,88 @@ Okay. So now we have a family of distributions that has one parameter describing
 
 In the [CDC growth charts](https://www.cdc.gov/growthcharts/cdc-data-files.htm) for example, the "LMS" parameters refer to the parameters of the corresponding Box-Cox normal distribution associated with the relevant age group. 
 
+## The Box-Cox power exponential distribution
+
+We are now in a position to introduce the Box-Cox power exponential (BCPE) distribution. The goal when building the Box-Cox normal (BCN) distribution was to extend the normal distribution in a way that allows us to manipulate the skewness; by analogy, the goal in building the BCPE distribution is to extend the BCN distribution to capture kurtosis. As such, we'll now need four parameters to describe the distribution. 
+
+$$
+p(y | \mu, \sigma, \nu, \tau) 
+= \frac{y^{\nu - 1}}{\mu^\nu \sigma} p(z | \tau)
+$$
+
+where $z$ is a power-exponential distributed variable related to $y$ via:
+
+$$
+z = \left\{ 
+\begin{array}{rl}
+1/(\sigma\nu) \left( (y/\mu)^\nu - 1 \right) & \mbox{ if } \nu \neq 0 \\
+1/\sigma \log (y/\mu) & \mbox{ if } \nu = 0
+\end{array}
+\right.
+$$
+
+The probability density function $p(z|\tau)$ is given by
+
+$$
+p(z | \tau) = \frac{\tau}{c2^{1 + 1/\tau} \Gamma(1/\tau)} \exp(-0.5 |z/c|^\tau)
+$$
+
+where $c^2 = 2^{-2/\tau} \Gamma(1/\tau) (\Gamma(3/\tau))^{-1}$, and $\Gamma(\cdot)$ is the usual gamma function.
+
+```{r}
+#| label: box-cox-power-exponential-density
+density_bcpe <- function(y, mu, sigma, nu, tau) {
+  c <- sqrt(2^{-2/tau} * gamma(1/tau) / gamma(3/tau))
+  if (nu == 0) z <- (1/sigma) * log (y/mu)
+  if (nu != 0) z <- (1/(sigma*nu)) * ((y/mu)^nu - 1)
+  pz <- tau / (c * 2^(1 + 1/tau) * gamma(1/tau)) * exp(-0.5 * abs(z/c)^tau)
+  py <- pz * y^(nu - 1) / (sigma * mu^nu)
+  py
+}
+```
+
+```{r}
+#| label: compare-to-dBCPE
+dat <- tibble(
+  y      = seq(6, 14, by = 0.1),
+  lazy   = density_bcpe(y, mu = 10, sigma = .1, nu = 2, tau = 5),
+  proper = dBCPE(y, mu = 10, sigma = .1, nu = 2, tau = 5) 
+) 
+dat |>
+  pivot_longer(
+    cols = c(lazy, proper),
+    names_to = "type",
+    values_to = "density"
+  ) |> 
+  ggplot(aes(y, density)) + 
+  geom_path() +
+  facet_wrap(~type, scales = "free") + 
+  theme_bw()
+```
+
+Okay. Fabulous. It works. 
+
+
+```{r}
+#| label: explore-bcpe
+#| fig-height: 8
+#| fig-width: 8
+
+y_val   <- seq(6, 14, 0.01)
+nu_val  <- c(-9, -3, 0, 3, 9)
+tau_val <- c(1, 2, 4, 16)
+
+dat <- expand_grid(y = y_val, mu = 10, sigma = .1, nu = nu_val, tau = tau_val) |> 
+  mutate(
+    density = dBCPE(y, mu, sigma, nu, tau), .by = c("mu", "sigma", "nu", "tau"),
+    nu_lbl = factor(nu, levels = nu_val, labels = paste("nu =", nu_val)),
+    tau_lbl = factor(tau, levels = tau_val, labels = paste("tau =", tau_val))
+  )
+
+dat |>
+  ggplot(aes(y, density)) + 
+  geom_path() +
+  facet_grid(tau_lbl ~ nu_lbl) + 
+  theme_bw()
+```
+
