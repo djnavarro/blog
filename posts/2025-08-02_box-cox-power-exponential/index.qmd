@@ -2,6 +2,9 @@
 title: "The Box-Cox power exponential distribution"
 description: "This is so obviously a prequel post to something else that I want to write about GAMLSS models"
 date: "2025-08-02"
+image: lucille2.jpg
+image-alt: "Lucille Bluth confessing her disdain for the Box-Cox power exponential"
+categories: ["Statistics", "R"]
 --- 
 
 <!--------------- my typical setup ----------------->
@@ -39,7 +42,7 @@ library(moments)
 library(gamlss.dist)
 ```
 
-## Oh look, real world data are annoying
+## Data are annoying
 
 I'll start with a data set I use very often when doing this kind of work: the [National Health and Nutrition Examination Survey](https://wwwn.cdc.gov/nchs/nhanes/),^[Yes, it's an American data set. You can tell by the fact that it uses the word "national" in the title, without perceiving that there might be a need to specify *which* of the literally hundreds of nations on this planet the word refers to. It takes a certain kind of insular psychology to do this, which very quickly narrows down the list of possible culprits. Suffice it to say, the citizens of every other nation besides the one that *always* does this find it extraordinarily annoying.] usually abbreviated to NHANES. I'll probably talk more about NHANES when I finally write the GAMLSS post I've been promising, but for now let's just load some data that I preprocessed earlier:^[If you must know, this is a subset constructed from the `DEMO-L.xpt` and `BMX-L.xpt` data cuts for demographics and body measurements in the post-pandemic 2021-2023 release.]
 
@@ -86,21 +89,26 @@ Enter, stage left and hopefully not pursued by a bear, the Box-Cox transformatio
 
 ## The Box-Cox transformation
 
-The story begins in a place simple enough that I used to discuss it in graduate statistics classes for social science students. Often when we encounter empirical data that are visibly and blantantly non-normal in their distribution and our toolkit is only designed to handle normally distributed data, it is common to *transform* the data in some fashion that makes the transformed values sufficiently close to normal that we can heave a sigh of relief, chuck the transformation into a footnote somewhere, and happily report a $p$-value in the paper. While such a cavalier approach to data transformation was probably not what they had in mind at the time, a widely-used approach to this problem was introduced by [Box and Cox (1964)](https://www.jstor.org/stable/2984418), who suggested that we could compute the transformed variable $f_\lambda(y)$ for a suitable value of $\lambda$ as follows:^[Actually, if you look at the original paper they also suggest a two-parameter version of the transformation, but since I've never seen anyone use that version in the wild I shall not concern myself with it.]
+The story begins in a place simple enough that I used to discuss it in graduate statistics classes for social science students. Often when we encounter empirical data that are visibly and blantantly non-normal in their distribution and our toolkit is only designed to handle normally distributed data, it is common to *transform* the data in some fashion that makes the transformed values sufficiently close to normal that we can heave a sigh of relief, chuck the transformation into a footnote somewhere, and happily report a $p$-value in the paper. While such a cavalier approach to data transformation was probably not what they had in mind at the time, a widely-used approach to this problem was introduced by [Box and Cox (1964)](https://www.jstor.org/stable/2984418), who suggested that we could compute the transformed variable $f_\lambda(y)$ for a suitable value of $\lambda$ as follows:^[Actually, if you look at the original paper they also suggest a two-parameter version of the transformation that includes an offset parameter, but I won't trouble myself with that version in this post.]
 
 $$
 f_\lambda(y) = \left\{ \begin{array}{rl} \frac{y^\lambda - 1}{\lambda} & \mbox{ if } \lambda \neq 0 \\ \ln(y) & \mbox{ if } \lambda = 0 \end{array} \right.
 $$
 
-This has since become known as the [Box-Cox transformation](https://en.wikipedia.org/wiki/Power_transform#Box%E2%80%93Cox_transformation) and has been the saviour of many an otherwise doomed Ph.D. thesis.
+This has since become known as the [Box-Cox transformation](https://en.wikipedia.org/wiki/Power_transform#Box%E2%80%93Cox_transformation) and has been the saviour of many an otherwise doomed Ph.D. thesis. Here's what the Box-Cox transformation looks like implemented as an R function:
 
 ```{r}
-#| label: box-cox
+#| label: box-cox-function
 boxcox <- function(y, lambda) {
   if (lambda == 0) return(log(y))
   (y^lambda - 1) / lambda
 }
+```
 
+It's not very exciting, I'll admit, but we can use it to draw a plot illustrating how the shape of the Box-Cox transformation function changes as we vary the value of $\lambda$:
+
+```{r}
+#| label: box-cox
 bc <- expand_grid(
   y = seq(.2, 5, .01),
   lambda = seq(-2, 2)
@@ -120,9 +128,13 @@ ggplot(bc, aes(y, fy, colour = factor(lambda))) +
   )
 ```
 
+Okay fine, that's still not very interesting either, but I stand by my decision to include it. I like pretty pictures, okay?
+
 ## The Box-Cox normal distribution
 
-Introduced^[At least to the growth curve modelling literature, I'm sure there's an obscure physics paper in 1937 that used it once and then vanished into the mists of history.] by [Cole and Green (1992)](https://doi.org/10.1002/sim.4780111005). As described by [Freeman and Modarres (2002)](https://files.udc.edu/docs/dc_water_resources/technical_reports/report_n_190.pdf), this is a distribution over positive-valued numbers $y$ that has probability density function
+Having introduced the Box-Cox transformation, the idea of the Box-Cox normal (BCN) distribution is intuitive: if the *transformed* data are normally distributed, we say that the *untransformed* data are BCN distributed. In that sense, the Box-Cox normal has been around ever since the Box-Cox transformation was proposed in 1964. That being said, its application into the growth curve modelling literature didn't really take off until the early 1990s, and the canonical reference for this is the paper by [Cole and Green (1992)](https://doi.org/10.1002/sim.4780111005). The impression I get is that it was about this time that the properties of the BCN distribution were investigated a little more explicitly. From the Wikipedia entry I was led to discover a short paper by [Freeman and Modarres (2002)](https://files.udc.edu/docs/dc_water_resources/technical_reports/report_n_190.pdf) that provides a nice description of the BCN and its properties, and it's from that paper that I have lifted much of this part of the blog post. 
+
+Viewed in its own terms, the BCN is a distribution over positive-valued numbers $y$ that has probability density function
 
 $$
 p(y | \mu, \sigma^2, \lambda) 
@@ -135,7 +147,7 @@ p(y | \mu, \sigma^2, \lambda)
 \right)
 $$
 
-where
+where $k$ is a normalising constant given as follows:
 
 $$
 k = \left\{ 
@@ -147,7 +159,7 @@ k = \left\{
 \right.
 $$
 
-As usual, $\Phi(\cdot)$ denotes the cumulative distribution function for a normal distribution with mean 0 and standard deviation 1, and in this expression $z = (1/(\lambda\sigma) + \mu/\sigma)$. If for some reason we ever wanted to implement this in R ourselves, a function like this would work:
+As usual, $\Phi(\cdot)$ denotes the cumulative distribution function for a normal distribution with mean 0 and standard deviation 1, and in this expression $z = (1/(\lambda\sigma) + \mu/\sigma)$. So if for some reason we ever wanted to implement this in R ourselves, a function like this would work:
 
 ```{r}
 #| label: box-cox-normal-density
@@ -164,7 +176,7 @@ density_bcn <- function(y, mu, sigma, lambda) {
 }
 ```
 
-Which is very nice and fancy, but usually we think of the Box-Cox normal distribution in a simpler way: we imagine some variable $z$ that is normally distributed with mean $\mu$ and variance $\sigma^2$, and then apply the inverse Box-Cox transform with parameter $\lambda$:
+Now, this is all nice and fancy and I admit I always feel reassured when I can see the analytic expression for the pdf of a distribution, but in practice it's not really the way we think about the BCN. Instead, we usually imagine some variable $z$ that is normally distributed with mean $\mu$ and variance $\sigma^2$, and then transform it as follows:
 
 $$
 \begin{array}{rcl} 
@@ -178,7 +190,7 @@ y & = & \left\{
 \end{array}
 $$
 
-The resulting variable $y$ follows the Box-Cox normal distribution with parameters $\mu$, $\sigma^2$, and $\lambda$. If we were truly desperate, we could write our own function that would sample from the Box-Cox normal distribution: 
+The resulting variable $y$ follows the BCN distribution with parameters $\mu$, $\sigma^2$, and $\lambda$. If we were truly desperate to do so, we could write our own function that would sample from the BCN distribution: 
 
 ```{r}
 #| label: box-cox-normal-sampler
@@ -193,13 +205,14 @@ However, there is little need for us to do so because the **gamlss.dist** packag
 
 ```{r}
 #| label: compare-to-rBCCG
+n <- 50000
 dat <- tibble(
-  lazy   = sample_bcn(10000, mu = 1, sigma = .1, lambda = 2),
-  proper = rBCCG(10000, mu = 1, sigma = .1, nu = 2) 
+  sample_bcn = sample_bcn(n, mu = 1, sigma = .1, lambda = 2),
+  rBCCG = rBCCG(n, mu = 1, sigma = .1, nu = 2) 
 ) 
 dat |>
   pivot_longer(
-    cols = c(lazy, proper),
+    cols = c(sample_bcn, rBCCG),
     names_to = "type",
     values_to = "values"
   ) |> 
@@ -209,18 +222,18 @@ dat |>
   theme_bw()
 ```
 
-and here's an example illustrating the connection between `density_bcn()` and `dBCCG()`:
+and, just to make the connection even more explicit, here's an example illustrating the connection between my rather lazy `density_bcn()` function and the infinitely superior `dBCCG()` function supplied by **gamlss.dist**:
 
 ```{r}
 #| label: compare-to-dBCCG
 dat <- tibble(
-  y      = seq(0.4, 1.4, by = 0.01),
-  lazy   = density_bcn(y, mu = 1, sigma = .1, lambda = 2),
-  proper = dBCCG(y, mu = 1, sigma = .1, nu = 2) 
+  y = seq(0.4, 1.4, by = 0.01),
+  density_bcn  = density_bcn(y, mu = 1, sigma = .1, lambda = 2),
+  dBCCG = dBCCG(y, mu = 1, sigma = .1, nu = 2) 
 ) 
 dat |>
   pivot_longer(
-    cols = c(lazy, proper),
+    cols = c(density_bcn, dBCCG),
     names_to = "type",
     values_to = "density"
   ) |> 
@@ -230,17 +243,19 @@ dat |>
   theme_bw()
 ```
 
-Okay. So now we have a family of distributions that has one parameter describing the location (i.e., $\mu$), another parameter describing the scale (i.e., $\sigma$), and a third parameter describing the skewness (i.e., $\lambda$). This is good, and it will allow us to solve the problem at hand. Even better, this family of distributions has a natural connection to the Box-Cox method of data transformation that many (most?) of us encounter as graduate students, so there is a sense in which it feels quite natural. Regression models that use the Box-Cox normal distribution are often referred to as the "LMS method" for growth curve modelling. This terminology was introduced by Cole and Green (1992):
+Well, that's a relief. It would have been embarrassing if I'd gotten that wrong, wouldn't it?^[For the record: in the process of writing this blog post I did indeed get it wrong several times. The real reason why I included the comparison between my functions and the proper ones is that I have learned from bitter experience that it usually takes me several attempts to correctly understand the underlying statistical concepts and implement them as functions, so I make certain to include cross-checks like this every single time.]
+
+So now we have a family of distributions that has one parameter describing the location (i.e., $\mu$), another parameter describing the scale (i.e., $\sigma$), and a third parameter describing the skewness (i.e., $\lambda$). This is good, and it will allow us to solve the problem at hand. Even better, this family of distributions has a natural connection to the Box-Cox method of data transformation that many (most?) of us encounter as graduate students, so there is a sense in which it feels quite natural. Regression models that use the Box-Cox normal distribution are often referred to as the "LMS method" for growth curve modelling. This terminology was introduced by Cole and Green (1992):
 
 - The **L** parameter refers to lambda ($\lambda$), and captures skewness
 - The **M** parameter refers to mu ($\mu$), and captures location
 - The **S** parameter refers to sigma ($\sigma$), and captures scale
 
-In the [CDC growth charts](https://www.cdc.gov/growthcharts/cdc-data-files.htm) for example, the "LMS" parameters refer to the parameters of the corresponding Box-Cox normal distribution associated with the relevant age group. 
+In the [CDC growth charts](https://www.cdc.gov/growthcharts/cdc-data-files.htm) for example, the "LMS" parameters refer to the parameters of the corresponding Box-Cox normal distribution associated with the relevant age group. It's not anything mysterious, it is literally a readout of parameters for a BCN distribution, and yes, I wish someone had told this to me two years ago when I really needed this piece of information.^[Perhaps the CDC could have... idk... put that little snippet of information on the website rather than assume that everyone knows that LMS is a synonym for BCN, and maybe someone else could have mentioned that BCCG is also a synonym for BCN? It gets very confusing when the connections aren't stated explicitly. Just sayin']
 
 ## The Box-Cox power exponential distribution
 
-We are now in a position to introduce the Box-Cox power exponential (BCPE) distribution. The goal when building the Box-Cox normal (BCN) distribution was to extend the normal distribution in a way that allows us to manipulate the skewness; by analogy, the goal in building the BCPE distribution is to extend the BCN distribution to capture kurtosis. As such, we'll now need four parameters to describe the distribution. 
+We are now in a position to introduce the Box-Cox power exponential (BCPE) distribution. And by "we" I of course mean Rigby and Stasinopoulos (2004), because I sure as fuck wasn't going to do this work myself. The goal when building the Box-Cox normal (BCN) distribution was to extend the normal distribution in a way that allows us to manipulate the skewness; by analogy, the goal in building the BCPE distribution is to extend the BCN distribution to capture kurtosis.^[In fact, the BCPE distribution wasn't even their first attempt at addressing the problem: in an earlier paper they introduced the Box-Cox t-distribution, which has the same goal as BCPE of allowing kurtosis to be modelled, but it's a different entity and is more restricted than the BCPE.] As such, we'll now need four parameters to describe the distribution. I won't go into the details of how the BCPE is constructed (it's in the paper after all), and will instead go straight to showing you the pdf for the BCPE. The BCPE is described by a location parameter $\mu$, a scale parameter $\sigma$, and two shape parameters $\nu$ and $\tau$ that are related to skewness and kurtosis respectively. The pdf can be written as follows:
 
 $$
 p(y | \mu, \sigma, \nu, \tau) 
@@ -264,7 +279,7 @@ $$
 p(z | \tau) = \frac{\tau}{c2^{1 + 1/\tau} \Gamma(1/\tau)} \exp(-0.5 |z/c|^\tau)
 $$
 
-where $c^2 = 2^{-2/\tau} \Gamma(1/\tau) (\Gamma(3/\tau))^{-1}$, and $\Gamma(\cdot)$ is the usual gamma function.
+where $c^2 = 2^{-2/\tau} \Gamma(1/\tau) (\Gamma(3/\tau))^{-1}$, and $\Gamma(\cdot)$ is the usual gamma function. An R implementation of this terribly exciting mathematical beast is shown below:
 
 ```{r}
 #| label: box-cox-power-exponential-density
@@ -278,16 +293,18 @@ density_bcpe <- function(y, mu, sigma, nu, tau) {
 }
 ```
 
+Not surprisingly, my `density_bcpe()` function is entirely unnecessary because the **gamlss.dist** package already supplies the `dBCPE()` function which does the same job in a much better way. However, as before, I'll do a side by side comparison to convince myself that yes, I have indeed implemented the same distribution:
+
 ```{r}
 #| label: compare-to-dBCPE
 dat <- tibble(
-  y      = seq(6, 14, by = 0.1),
-  lazy   = density_bcpe(y, mu = 10, sigma = .1, nu = 2, tau = 5),
-  proper = dBCPE(y, mu = 10, sigma = .1, nu = 2, tau = 5) 
+  y = seq(6, 14, by = 0.1),
+  density_bcpe = density_bcpe(y, mu = 10, sigma = .1, nu = 2, tau = 5),
+  dBCPE = dBCPE(y, mu = 10, sigma = .1, nu = 2, tau = 5) 
 ) 
 dat |>
   pivot_longer(
-    cols = c(lazy, proper),
+    cols = c(density_bcpe, dBCPE),
     names_to = "type",
     values_to = "density"
   ) |> 
@@ -297,8 +314,7 @@ dat |>
   theme_bw()
 ```
 
-Okay. Fabulous. It works. 
-
+Okay. Fabulous. My code works. But gosh, that is a peculiar looking density, isn't it? The BCPE family is quite flexible, and can produce a surprising range of shapes depending on the parameters you supply. To give you a sense of it, here's a quick tour of some part of the parameter space. I'll fix the $\mu$ and $\sigma$ parameters for this example, and focus on the two shape parameters $\nu$ and $\tau$:
 
 ```{r}
 #| label: explore-bcpe
@@ -322,6 +338,11 @@ dat |>
   facet_grid(tau_lbl ~ nu_lbl) + 
   theme_bw()
 ```
+
+Intuitively, you can see what they parameters are doing:
+
+- Approximately speaking, the role of $\nu$ is to control skewness. When $\nu = 0$ the distribution is approximately symmetric^[Yes, I know, what the fuck is going on in the bottom row? The key thing to remember here is that the BCPE is a distribution over the positive reals, and that can have some counterintuitive effects when you ramp up kurtosis. It is best, therefore, to remember that $\nu$ is only "approximately" a descriptor of symmetry. Rigby and Stasinopoulos discuss this in Appendix A in the paper, where they point out that the actual behaviour of the shape parameters is a little more nuanced. The thing that you're seeing in the bottom row is exactly the phenomenon they refer to.], when $\nu < 0$ the distribution has positive skewness^[Again: yes, I know, I know, the directions are flipped. I didn't design this thing okay, I'm just trying to make it make sense.] and when $\nu > 0$ the distribution has negative skewness. 
+- Again speaking approximately, the role of $\tau$ is to control kurtosis. When $\tau = 2$ the distributions are mesokurtic: the tails are about as heavy as the tails of a normal distribution. When $\tau < 2$ the distribution is leptokurtic: kurtosis is high, and the tails are heavier than the tails of a normal distribution. When $\tau > 2$ the distribution is platykurtic: kurtosis is low, and the tails are lighter. 
 
 ## Fitting the BCPE
 
@@ -377,7 +398,7 @@ c(
 )
 ```
 
-It's pretty clear that you can interpret $\mu$ and $\sigma$ with little difficulty, but interpreting the two shape parameters $\nu$ and $\tau$ requires some care. I'll return to this later. For now, let's just move forward and repeat the fitting exercise for the female body weight data: 
+It's pretty clear that you can interpret $\mu$ and $\sigma$ with little difficulty, but interpreting the two shape parameters $\nu$ and $\tau$ requires some care. It seems to me that any time you estimate parameters for a BCPE distribution you should *always* plot the density (see below!). The BCPE is a complicated beast: don't assume you know how to interpret the parameters until you've seen the density function that they produce! In any case, let's move forward and repeat the fitting exercise for the female body weight data: 
 
 ```{r}
 #| label: fit-bcpe-female
@@ -401,7 +422,7 @@ c(
 )
 ```
 
-Just to be sure that this has worked, let's plot the estimated BCPE densities (red curves) on top of a simple histogram-based density estimate (grey bars) for these two data sets:
+Just to be sure that this has worked -- and to follow my own advice from a couple of paragraphs prior -- let's plot the estimated BCPE densities (red curves) on top of a simple histogram-based density estimate (grey bars) for these two data sets:
 
 ```{r}
 #| label: plot-bcpe-fit
@@ -433,5 +454,11 @@ nhanes |>
   theme_bw()
 ```
 
-Very nice. 
+Very nice. This fit is close enough that I would feel quite comfortable using these BCPE distribution in a simulation. Which is, of course, the point.
+
+## Summary
+
+There's a lot I could say on this topic. The BCPE is a very powerful and useful tool and I am very grateful it exists. I use it regularly. Nevertheless...
+
+![](lucille.jpg)
 
