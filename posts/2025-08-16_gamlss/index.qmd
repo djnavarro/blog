@@ -1,0 +1,394 @@
+---
+title: "gamlss"
+description: "This is a subtitle"
+date: "2025-08-16"
+--- 
+
+<!--------------- my typical setup ----------------->
+
+```{r}
+#| label: setup
+#| include: false
+very_wide <- 500
+wide <- 136
+narrow <- 76
+options(width = narrow)
+cache_images <- TRUE
+set.seed(1)
+```
+
+<!--------------- post begins here ----------------->
+
+Okay, so in my [last post](/posts/2025-08-02_box-cox-power-exponential/) I was whining about the Box-Cox power exponential distribution, and promising that it would be followed by a new post whining about the [generalised additive model for location, shape and scale](https://en.wikipedia.org/wiki/Generalized_additive_model_for_location,_scale_and_shape) (GAMLSS). This is that post.
+
+```{r}
+#| label: load-packages
+#| message: false
+library(fs)
+library(dplyr)
+library(purrr)
+library(haven)
+library(readr)
+library(gamlss)
+library(tibble)
+library(ggplot2)
+library(quartose)
+library(rprojroot)
+```
+
+```{r}
+#| label: directories
+proj_root  <- find_root_file(criterion = has_file(".here"))
+local_dir  <- path(proj_root, "nhanes")
+data_dir   <- path(local_dir, "data")
+output_dir <- path(local_dir, "output")
+```
+
+## NHANES
+
+
+
+The NHANES [body measurements](https://wwwn.cdc.gov/nchs/nhanes/search/datapage.aspx?Component=Examination) and [demographics](https://wwwn.cdc.gov/nchs/nhanes/search/datapage.aspx?Component=Demographics) data sets. Brief summaries here:
+
+```{r}
+#| results: asis
+#| message: false
+#| label: nhanes-metadata
+metadata <- list( 
+  BMX  = read_csv(path(local_dir, "bmx-summary.csv"), show_col_types = FALSE),
+  DEMO = read_csv(path(local_dir, "demo-summary.csv"), show_col_types = FALSE) 
+)
+
+quarto_tabset(metadata, level = 3)
+```
+
+Import the data:
+
+```{r}
+#| label: nhanes-import
+# all demographics and body measurement files
+demo_files <- dir_ls(path(data_dir, "demo"))
+bmx_files  <- dir_ls(path(data_dir, "bmx"))
+
+# read demographics file (selected variables only)
+demos <- demo_files |> 
+  map(\(xx) {
+    dd <- read_xpt(xx) 
+    if (!exists("RIDEXAGM", where = dd)) dd$RIDEXAGM <- NA_real_
+    dd <- select(dd, SEQN, RIAGENDR, RIDAGEYR, RIDAGEMN, RIDEXAGM)
+    dd
+  }) |> 
+  bind_rows(.id = "file_demo") |> 
+  mutate(file_demo = path_file(file_demo)) |>
+  left_join(metadata$DEMO, by = "file_demo") |>
+  select(-description)
+
+# read body measurements file (selected variables only)
+bmxes <- bmx_files |> 
+  map(\(xx) {
+    dd <- read_xpt(xx) 
+    dd <- select(dd, SEQN, BMXWT, BMXHT, BMXRECUM)
+    dd
+}) |> 
+  bind_rows(.id = "file_bmx") |> 
+  mutate(file_bmx = path_file(file_bmx)) |>
+  left_join(metadata$BMX, by = "file_bmx") |>
+  select(-description)
+
+# join data sets, retaining only those rows where the
+# required body measurements exist, and use nicer names
+nhanes <- bmxes |>
+  left_join(demos, by = c("SEQN", "cohort")) |>
+  select(
+    id          = SEQN,
+    sex_s       = RIAGENDR, # sex/gender at screen (1 = M, 2 = F, . = NA)
+    weight_kg_e = BMXWT,    # weight at exam
+    height_cm_e = BMXHT,    # standing height at exam
+    length_cm_e = BMXRECUM, # recumbent length at exam (0-47 months only)
+    age_yr_s    = RIDAGEYR, # natal age at screening (years)
+    age_mn_s    = RIDAGEMN, # natal age at screening (months; 0-24 mos only)
+    age_mn_e    = RIDEXAGM, # natal age at exam (months; 0-19 years only)
+    cohort
+  )
+
+# recumbent length and standing height are not equivalent; in the NHANES
+# data when both are present for the same person, length is 1.02cm greater
+# than height; in this context, a simple adjustment will suffice
+length_to_height <- function(length_cm, adjust = 1.02) {
+  length_cm - adjust
+}
+
+# additional preprocessing
+nhanes <- nhanes |>
+  mutate(
+    sex_num = sex_s - 1, # rescale to 0 = M, 1 = F
+    sex_fct = factor(sex_s, levels = 1:2, labels = c("male", "female")),
+    age_mn = case_when(
+      !is.na(age_mn_e) ~ age_mn_e, # use exam months if present
+      !is.na(age_mn_s) ~ age_mn_s, # else use survey months
+      TRUE ~ (age_yr_s * 12)       # else use age in years
+    ),
+    age_yr    = age_mn / 12,
+    weight_kg = weight_kg_e,
+    height_cm = case_when(
+      !is.na(height_cm_e) ~ height_cm_e, # use height if it was measured
+      !is.na(length_cm_e) ~ length_to_height(length_cm_e), # or convert length
+      TRUE ~ NA_real_, # else missing
+    )
+  )
+
+# retain only the to-be-used columns, and only those cases for which
+# age, weight, height, and sex are all present; filter to age < 80
+# because NHANES uses "80" to mean "80 and above" so the actual age
+# is not known
+ok <- function(x) !is.na(x)
+nhanes <- nhanes |>
+  select(id, sex_num, sex_fct, weight_kg, height_cm, age_mn, age_yr, cohort) |>
+  filter(ok(sex_num), ok(weight_kg), ok(height_cm), ok(age_mn)) |>
+  filter(age_yr < 80)
+
+nhanes
+```
+
+
+## GAMLSS
+
+```{r}
+# maximum age used in gamlss modelling; this restriction is
+# to ensure that the gamlss models are well-behaved over
+# the age range of most interest (i.e. pediatric)
+age_max_yr <- 40
+
+# subsets used for gamlss training
+nhanes_m <- nhanes |> filter(sex_fct == "male", age_yr <= age_max_yr)
+nhanes_f <- nhanes |> filter(sex_fct == "female", age_yr <= age_max_yr)
+
+# gamlss settings that turned out not to matter much in this case
+opt_control <- gamlss.control(c.crit = .001, n.cyc = 250)
+```
+
+
+```{r}
+#| label: gamlss-height-models
+#| eval: false
+ht_m <- gamlss(
+  formula       = height_cm ~ ps(age_mn),
+  sigma.formula = ~ps(age_mn),
+  nu.formula    = ~1,
+  tau.formula   = ~1,
+  data    = nhanes_m,
+  family  = BCPE,
+  control = opt_control
+)
+
+ht_f <- gamlss(
+  formula       = height_cm ~ ps(age_mn),
+  sigma.formula = ~ps(age_mn),
+  nu.formula    = ~1,
+  tau.formula   = ~1,
+  data    = nhanes_f,
+  family  = BCPE,
+  control = opt_control
+)
+```
+
+```{r}
+#| label: gamlss-weight-models
+#| eval: false
+wt_htm <- gamlss(
+  formula       = weight_kg ~ ps(age_mn) + height_cm + ps(age_mn):height_cm,
+  sigma.formula = ~ps(age_mn),
+  nu.formula    = ~1,
+  tau.formula   = ~1,
+  data    = nhanes_m,
+  family  = BCPE,
+  control = opt_control
+)
+
+wt_htf <- gamlss(
+  formula       = weight_kg ~ ps(age_mn) + height_cm + ps(age_mn):height_cm,
+  sigma.formula = ~ps(age_mn),
+  nu.formula    = ~1,
+  tau.formula   = ~1,
+  data    = nhanes_f,
+  family  = BCPE,
+  control = opt_control
+)
+```
+
+```{r}
+#| label: gamlss-objects
+#| results: asis
+ht_m   <- readRDS(path(output_dir, "ht-m-v03.rds"))
+ht_f   <- readRDS(path(output_dir, "ht-f-v03.rds"))
+wt_htm <- readRDS(path(output_dir, "wt-htm-v03.rds"))
+wt_htf <- readRDS(path(output_dir, "wt-htf-v03.rds"))
+
+mod <- list(
+  ht_m = ht_m,
+  ht_f = ht_f,
+  wt_htm = wt_htm,
+  wt_htf = wt_htf
+)
+
+quarto_tabset(mod, level = 3)
+```
+
+```{r}
+#| label: sample-hw
+sample_hw <- function(age, sex, mod) {
+
+  # setup
+  nn <- length(age)
+  height <- numeric(nn)
+  weight <- numeric(nn)
+  mm <- sex == "male"
+  ff <- sex == "female"
+
+  # wrapper to predict all distributional parameters.
+  # somewhat redundant given gamlss::predictAll() exists
+  predict_all <- function(obj, new) {
+    tibble(
+      mu    = predict(obj, newdata = new, type = "response", what = "mu"),
+      sigma = predict(obj, newdata = new, type = "response", what = "sigma"),
+      nu    = predict(obj, newdata = new, type = "response", what = "nu"),
+      tau   = predict(obj, newdata = new, type = "response", what = "tau"),
+    )
+  }
+
+  # sample from a trimmed Box-Cox power-exponential:
+  # because even with nu/tau parameters, the BCPE
+  # has support on non-biological values in the tails,
+  # creating physically impossible outliers in large
+  # simulations. the default trim is 1% on either side,
+  # (as compared to 3% for nhanesgamlss::simwtage())
+  
+  # trimmed BCPE sampler
+  rTBCPE <- function(n, mu, sigma, nu, tau, trim = .01) {
+    p <- runif(n, min = trim, max = 1 - trim)
+    if (any(mu <= 0)) mu[mu <= 0] <- 1E-6
+    if (any(sigma <= 0)) sigma[sigma <= 0] <- 1E-6
+    r <- qBCPE(p, mu = mu, sigma = sigma, nu = nu, tau = tau)
+    r
+  }
+
+  # sample height conditional on age/sex (sex specified by passing
+  # the appropriate sex-specific ht_mod)
+  sample_h <- function(age, ht_mod) {
+    ht_mod |>
+      predict_all(tibble(age_mn = age)) |>
+      pmap_dbl(\(...) rTBCPE(n = 1, ...))
+  }
+
+  # sample weight conditional on age/height/sex
+  sample_w <- function(age, height, wt_mod) {
+    wt_mod |>
+      predict_all(tibble(age_mn = age, height_cm = height)) |>
+      pmap_dbl(\(...) rTBCPE(n = 1, ...))
+  }
+
+  # draw heights
+  if (any(mm)) height[mm] <- sample_h(age[mm], mod$ht_m)
+  if (any(ff)) height[ff] <- sample_h(age[ff], mod$ht_f)
+  
+  # draw weights
+  if (any(mm)) weight[mm] <- sample_w(age[mm], height[mm], mod$wt_htm)
+  if (any(ff)) weight[ff] <- sample_w(age[ff], height[ff], mod$wt_htf)
+  
+  out <- tibble(
+    age = age,
+    sex = sex,
+    height = height,
+    weight = weight
+  )
+  return(out)
+}
+```
+
+```{r}
+#| label: simulation
+set.seed(345456)
+n <- 100000
+
+pop <- tibble(
+  age_mn  = sample(1:480, size = n, replace = TRUE),
+  sex_fct = sample(factor(c("male", "female")), size = n, replace = TRUE)
+)
+
+sim <- sample_hw(pop$age_mn, pop$sex_fct, mod) |> 
+  rename(
+    age_mn = age, 
+    sex_fct = sex, 
+    height_cm = height, 
+    weight_kg = weight
+  )
+
+all <- bind_rows(
+    nhanes = nhanes |> 
+      filter(age_yr < age_max_yr) |> 
+      select(age_mn, sex_fct, height_cm, weight_kg),
+    gamlss = sim,
+    .id = "source"
+  ) |> 
+  mutate(age_yr = floor(age_mn / 12))
+```
+
+
+```{r}
+#| label: little-helpers
+# boxplot with whisker length via sample quantiles
+geom_quantile_boxplot <- function(
+  ..., 
+  probs = c(0.05, 0.25, 0.5, 0.75, 0.95), 
+  na.rm = TRUE,
+  type = 7,
+  digits = 7
+) {
+  quantile_summary <- function(x) {
+    setNames(
+      quantile(x, probs = probs, na.rm = na.rm, type = type, digits = digits), 
+      c("ymin", "lower", "middle", "upper", "ymax")
+    )
+  }
+  geom_boxplot(stat = "summary", fun.data = quantile_summary, ...)
+}
+
+# Du Bois D, Du Bois EF (Jun 1916). "A formula to estimate the approximate
+# surface area if height and weight be known". Archives of Internal Medicine
+# 17 (6): 863-71. PMID 2520314.
+bsa_dubois <- function(height_cm, weight_kg) {
+  0.007184 * weight_kg^0.425 * height_cm^0.725
+}
+```
+
+```{r}
+#| label: simulation-plots
+#| results: asis
+pics <- list()
+
+pics$height_cm <- all |> 
+  mutate(age_yr = factor(age_yr)) |> 
+  ggplot(aes(age_yr, height_cm)) +
+  geom_quantile_boxplot() + 
+  facet_grid(sex_fct ~ source) + 
+  theme_bw()
+
+pics$weight_kg <- all |> 
+  mutate(age_yr = factor(age_yr)) |> 
+  ggplot(aes(age_yr, weight_kg)) +
+  geom_quantile_boxplot() + 
+  facet_grid(sex_fct ~ source) + 
+  theme_bw()
+
+pics$bsa_m2 <- all |> 
+  mutate(
+    age_yr = factor(age_yr),
+    bsa_m2 = bsa_dubois(height_cm, weight_kg)
+  ) |> 
+  ggplot(aes(age_yr, bsa_m2)) +
+  geom_quantile_boxplot() + 
+  facet_grid(sex_fct ~ source) + 
+  theme_bw()
+
+quarto_tabset(pics, level = 3)
+```
