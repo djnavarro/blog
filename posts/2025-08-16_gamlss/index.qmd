@@ -15,6 +15,42 @@ narrow <- 76
 options(width = narrow)
 cache_images <- TRUE
 set.seed(1)
+
+theme_custom <- function() {
+  dark_rect <- ggplot2::element_rect(fill = "#666", color = "#666")
+  lite_rect <- ggplot2::element_rect(fill = "#fff", color = "#fff")
+  dark_text <- ggplot2::element_text(color = "#000")
+  lite_text <- ggplot2::element_text(color = "#ddd")
+  ggplot2::`%+replace%`(
+    ggplot2::theme_bw(),
+    ggplot2::theme(
+      plot.margin = ggplot2::margin(18, 18, 18, 18),
+      plot.background = dark_rect,
+      legend.background = dark_rect,
+      strip.background = ggplot2::element_rect(
+        fill = "#333", 
+        color = "#333"
+      ),
+      legend.key = dark_rect,
+      panel.background = ggplot2::element_rect(
+        fill = "#ddd", color = "#ddd"),
+      plot.title = lite_text,
+      plot.subtitle = lite_text,
+      plot.caption = lite_text,
+      axis.text.x = lite_text,
+      axis.text.y = lite_text,
+      axis.title.x = lite_text,
+      axis.title.y = ggplot2::element_text(color = "#ddd", angle = 90), 
+      legend.text = lite_text,
+      legend.title = lite_text,
+      strip.text = ggplot2::element_text(
+        colour = "#ddd", 
+        margin = ggplot2::margin(4.4, 4.4, 4.4, 4.4) 
+      )
+    ) 
+  )
+}
+ggplot2::theme_set(theme_custom())
 ```
 
 <!--------------- post begins here ----------------->
@@ -29,6 +65,8 @@ library(dplyr)
 library(purrr)
 library(haven)
 library(readr)
+library(tidyr)
+library(gifski)
 library(gamlss)
 library(tibble)
 library(ggplot2)
@@ -45,8 +83,6 @@ output_dir <- path(local_dir, "output")
 ```
 
 ## NHANES
-
-
 
 The NHANES [body measurements](https://wwwn.cdc.gov/nchs/nhanes/search/datapage.aspx?Component=Examination) and [demographics](https://wwwn.cdc.gov/nchs/nhanes/search/datapage.aspx?Component=Demographics) data sets. Brief summaries here:
 
@@ -234,161 +270,61 @@ mod <- list(
 quarto_tabset(mod, level = 3)
 ```
 
+
 ```{r}
-#| label: sample-hw
-sample_hw <- function(age, sex, mod) {
-
-  # setup
-  nn <- length(age)
-  height <- numeric(nn)
-  weight <- numeric(nn)
-  mm <- sex == "male"
-  ff <- sex == "female"
-
-  # wrapper to predict all distributional parameters.
-  # somewhat redundant given gamlss::predictAll() exists
-  predict_all <- function(obj, new) {
-    tibble(
-      mu    = predict(obj, newdata = new, type = "response", what = "mu"),
-      sigma = predict(obj, newdata = new, type = "response", what = "sigma"),
-      nu    = predict(obj, newdata = new, type = "response", what = "nu"),
-      tau   = predict(obj, newdata = new, type = "response", what = "tau"),
-    )
-  }
-
-  # sample from a trimmed Box-Cox power-exponential:
-  # because even with nu/tau parameters, the BCPE
-  # has support on non-biological values in the tails,
-  # creating physically impossible outliers in large
-  # simulations. the default trim is 1% on either side,
-  # (as compared to 3% for nhanesgamlss::simwtage())
-  
-  # trimmed BCPE sampler
-  rTBCPE <- function(n, mu, sigma, nu, tau, trim = .01) {
-    p <- runif(n, min = trim, max = 1 - trim)
-    if (any(mu <= 0)) mu[mu <= 0] <- 1E-6
-    if (any(sigma <= 0)) sigma[sigma <= 0] <- 1E-6
-    r <- qBCPE(p, mu = mu, sigma = sigma, nu = nu, tau = tau)
-    r
-  }
-
-  # sample height conditional on age/sex (sex specified by passing
-  # the appropriate sex-specific ht_mod)
-  sample_h <- function(age, ht_mod) {
-    ht_mod |>
-      predict_all(tibble(age_mn = age)) |>
-      pmap_dbl(\(...) rTBCPE(n = 1, ...))
-  }
-
-  # sample weight conditional on age/height/sex
-  sample_w <- function(age, height, wt_mod) {
-    wt_mod |>
-      predict_all(tibble(age_mn = age, height_cm = height)) |>
-      pmap_dbl(\(...) rTBCPE(n = 1, ...))
-  }
-
-  # draw heights
-  if (any(mm)) height[mm] <- sample_h(age[mm], mod$ht_m)
-  if (any(ff)) height[ff] <- sample_h(age[ff], mod$ht_f)
-  
-  # draw weights
-  if (any(mm)) weight[mm] <- sample_w(age[mm], height[mm], mod$wt_htm)
-  if (any(ff)) weight[ff] <- sample_w(age[ff], height[ff], mod$wt_htf)
-  
-  out <- tibble(
-    age = age,
-    sex = sex,
-    height = height,
-    weight = weight
+#| label: height-quantiles
+get_pars <- function(data, model) {
+  pars <- tibble(
+    mu    = predict(model, newdata = data, type = "response", what = "mu"),
+    sigma = predict(model, newdata = data, type = "response", what = "sigma"),
+    nu    = predict(model, newdata = data, type = "response", what = "nu"),
+    tau   = predict(model, newdata = data, type = "response", what = "tau"),
   )
-  return(out)
+  bind_cols(data, pars)
 }
-```
 
-```{r}
-#| label: simulation
-set.seed(345456)
-n <- 100000
-
-pop <- tibble(
-  age_mn  = sample(1:480, size = n, replace = TRUE),
-  sex_fct = sample(factor(c("male", "female")), size = n, replace = TRUE)
+predict_cases <- expand_grid(
+  age_mn  = 1:(age_max_yr * 12),
+  sex_fct = factor(c("male", "female"))
 )
 
-sim <- sample_hw(pop$age_mn, pop$sex_fct, mod) |> 
-  rename(
-    age_mn = age, 
-    sex_fct = sex, 
-    height_cm = height, 
-    weight_kg = weight
+predict_pars <- bind_rows(
+  predict_cases |> filter(sex_fct == "male") |> get_pars(ht_m),
+  predict_cases |> filter(sex_fct == "female") |> get_pars(ht_f)
+)
+
+predict_quantiles <- predict_pars |>
+  mutate(
+    q05 = qBCPE(.05, mu = mu, sigma = sigma, nu = nu, tau = tau),
+    q25 = qBCPE(.25, mu = mu, sigma = sigma, nu = nu, tau = tau),
+    q50 = qBCPE(.50, mu = mu, sigma = sigma, nu = nu, tau = tau),
+    q75 = qBCPE(.75, mu = mu, sigma = sigma, nu = nu, tau = tau),
+    q95 = qBCPE(.95, mu = mu, sigma = sigma, nu = nu, tau = tau)
   )
 
-all <- bind_rows(
-    nhanes = nhanes |> 
-      filter(age_yr < age_max_yr) |> 
-      select(age_mn, sex_fct, height_cm, weight_kg),
-    gamlss = sim,
-    .id = "source"
-  ) |> 
-  mutate(age_yr = floor(age_mn / 12))
-```
-
-
-```{r}
-#| label: little-helpers
-# boxplot with whisker length via sample quantiles
-geom_quantile_boxplot <- function(
-  ..., 
-  probs = c(0.05, 0.25, 0.5, 0.75, 0.95), 
-  na.rm = TRUE,
-  type = 7,
-  digits = 7
-) {
-  quantile_summary <- function(x) {
-    setNames(
-      quantile(x, probs = probs, na.rm = na.rm, type = type, digits = digits), 
-      c("ymin", "lower", "middle", "upper", "ymax")
-    )
-  }
-  geom_boxplot(stat = "summary", fun.data = quantile_summary, ...)
-}
-
-# Du Bois D, Du Bois EF (Jun 1916). "A formula to estimate the approximate
-# surface area if height and weight be known". Archives of Internal Medicine
-# 17 (6): 863-71. PMID 2520314.
-bsa_dubois <- function(height_cm, weight_kg) {
-  0.007184 * weight_kg^0.425 * height_cm^0.725
-}
+predict_quantiles
 ```
 
 ```{r}
-#| label: simulation-plots
-#| results: asis
-pics <- list()
-
-pics$height_cm <- all |> 
-  mutate(age_yr = factor(age_yr)) |> 
-  ggplot(aes(age_yr, height_cm)) +
-  geom_quantile_boxplot() + 
-  facet_grid(sex_fct ~ source) + 
-  theme_bw()
-
-pics$weight_kg <- all |> 
-  mutate(age_yr = factor(age_yr)) |> 
-  ggplot(aes(age_yr, weight_kg)) +
-  geom_quantile_boxplot() + 
-  facet_grid(sex_fct ~ source) + 
-  theme_bw()
-
-pics$bsa_m2 <- all |> 
-  mutate(
-    age_yr = factor(age_yr),
-    bsa_m2 = bsa_dubois(height_cm, weight_kg)
-  ) |> 
-  ggplot(aes(age_yr, bsa_m2)) +
-  geom_quantile_boxplot() + 
-  facet_grid(sex_fct ~ source) + 
-  theme_bw()
-
-quarto_tabset(pics, level = 3)
+#| label: height-quantiles-plot
+#| fig-width: 8
+#| fig-height: 6
+ggplot() + 
+  geom_point(
+    data = nhanes |> filter(age_yr < age_max_yr), 
+    mapping = aes(age_mn, height_cm),
+    size = .25
+  ) +
+  geom_path(
+    data = predict_quantiles |> 
+      pivot_longer(
+        cols = starts_with("q"),
+        names_to = "quantile",
+        values_to = "height_cm"
+      ),
+    mapping = aes(age_mn, height_cm, color = quantile)
+  ) +
+  facet_wrap(~sex_fct) +
+  theme(legend.position = "bottom")
 ```
+
