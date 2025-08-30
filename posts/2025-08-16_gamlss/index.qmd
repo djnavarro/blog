@@ -342,8 +342,9 @@ ggplot() +
   theme(legend.position = "bottom")
 ```
 
+Okay, that's nice but you might argue that the GAMLSS modelling is overkill here. The distribution of heights conditional on age and sex is fairly close to normal, and in any case we have about 100k rows in the data set spanning the full range of ages. However, it's not too hard to construct a case where you really do need the model.
 
-We can take the logic further and predict the distribution of weights for tall (95th height percentile) and short (5th height percentile) people, stratified by age and sex:
+We can take the logic further and predict the distribution of weights for very tall (99th height percentile) and short (1st height percentile) people, stratified by age and sex. It's a nice illustration of where the GAMLSS framework is useful even when you have a lot of data: as good as it is, the NHANES data become very sparse when you start focusing on very thin slices through the tails of the distributions. 
 
 ```{r}
 predict_cases_wt <- predict_pars_ht |>
@@ -441,70 +442,94 @@ ggplot() +
 
 ```
 
+Works better than I would have expected. Note that the slight "clumpiness" of the NHANES data is partially tied to the slight misfit in the model at ~12 years. The data flatten out slightly faster than the model predictions, which has the effect that the curves are slightly below the data at that specific age. So if we slice through the data based on model-predicted 99th percentile, there will be more actual 12 year olds selected than other age groups.
+
 ### Sampling 
 
-Sample from a trimmed Box-Cox power-exponential: because even with nu/tau parameters, the BCPE has support on non-biological values in the tails, creating physically impossible outliers in large simulations. the default trim is 1% on either side, (as compared to 3% for `nhanesgamlss::simwtage()`)
-
-
-```{r}
-rTBCPE <- function(n, mu, sigma, nu, tau, trim = .01) {
-  p <- runif(n, min = trim, max = 1 - trim)
-  if (any(mu <= 0)) mu[mu <= 0] <- 1E-6
-  if (any(sigma <= 0)) sigma[sigma <= 0] <- 1E-6
-  r <- gamlss.dist::qBCPE(p, mu = mu, sigma = sigma, nu = nu, tau = tau)
-  r
-}
-```
-
-Sample height conditional on `age`, using an appropriate (sec-specific) gamlss model `ht_mod`. Similarly, we can sample weight conditional on `age` and `height` using a model.
-
-```{r}
-sample_h <- function(age, ht_mod) {
-  pars <- get_pars(
-    data = tibble(age_mn = age),
-    model = ht_mod
-  )
-  pars |> 
-    select(mu, sigma, nu, tau) |> 
-    pmap_dbl(\(...) rTBCPE(n = 1, ...))
-}
-
-sample_w <- function(age, height, wt_mod) {
-  pars <- get_pars(
-    data = tibble(age_mn = age, height_cm = height),
-    model = wt_mod
-  )
-  pars |> 
-    select(mu, sigma, nu, tau) |> 
-    pmap_dbl(\(...) rTBCPE(n = 1, ...))
-}
-```
-
-```{r}
-sample_hw <- function(age, sex, mod) {
-
-  nn <- length(age)
-  height <- numeric(nn)
-  weight <- numeric(nn)
-  mm <- sex == "male"
-  ff <- sex == "female"
-
-  if (any(mm)) height[mm] <- sample_h(age[mm], mod$ht_m)
-  if (any(ff)) height[ff] <- sample_h(age[ff], mod$ht_f)  
-  if (any(mm)) weight[mm] <- sample_w(age[mm], height[mm], mod$wt_htm)
-  if (any(ff)) weight[ff] <- sample_w(age[ff], height[ff], mod$wt_htf)
+Sample height conditional on `age`, using an appropriate (sec-specific) gamlss model `ht_mod`. Similarly, we can sample weight conditional on `age` and `height` using a model. Note the use of a trimmed Box-Cox power-exponential: even with nu/tau parameters, the BCPE has support on non-biological values in the tails creating physically impossible outliers in large simulations. The default trim is 0.25% on either side, as compared to 3% for `nhanesgamlss::simwtage()`. 
   
-  tibble(
-    age = age,
-    sex = sex,
-    height = height,
-    weight = weight
-  )
+
+```{r}
+sample_hw <- function(age_mn, sex_fct, mod) {
+
+  rTBCPE <- function(n, mu, sigma, nu, tau, trim = .0025) {
+    p <- runif(n, min = trim, max = 1 - trim)
+    if (any(mu <= 0)) mu[mu <= 0] <- 1E-6
+    if (any(sigma <= 0)) sigma[sigma <= 0] <- 1E-6
+    r <- qBCPE(p, mu = mu, sigma = sigma, nu = nu, tau = tau)
+    r
+  }
+  sample_h <- function(age_mn, ht_mod) {
+    tibble(age_mn) |> 
+      get_pars(model = ht_mod) |> 
+      select(mu, sigma, nu, tau) |> 
+      pmap_dbl(\(mu, sigma, nu, tau) rTBCPE(n = 1, mu, sigma, nu, tau))
+  }
+  sample_w <- function(age_mn, height_cm, wt_mod) {
+    tibble(age_mn, height_cm) |>
+      get_pars(model = wt_mod) |> 
+      select(mu, sigma, nu, tau) |> 
+      pmap_dbl(\(mu, sigma, nu, tau) rTBCPE(n = 1, mu, sigma, nu, tau))
+  }
+
+  height_cm <- weight_kg <- numeric(length(age_mn))
+  mm <- sex_fct == "male"
+  ff <- sex_fct == "female"
+
+  if (any(mm)) height_cm[mm] <- sample_h(age_mn[mm], mod$ht_m)
+  if (any(ff)) height_cm[ff] <- sample_h(age_mn[ff], mod$ht_f)  
+  if (any(mm)) weight_kg[mm] <- sample_w(age_mn[mm], height_cm[mm], mod$wt_htm)
+  if (any(ff)) weight_kg[ff] <- sample_w(age_mn[ff], height_cm[ff], mod$wt_htf)
+  
+  tibble(age_mn, sex_fct, height_cm, weight_kg)
 }
 ```
 
 
 ```{r}
-dat <- expand_grid(age_mn = 1:24, sex_fct = c("male", "female"))
-sample_hw(age = dat$age_mn, sex = dat$sex_fct, mod = mod)
+nhanes_fit <- bind_rows(nhanes_m, nhanes_f) |> arrange(age_mn)
+
+age_band <- function(age_mn) {
+  factor(
+    x = case_when(
+      age_mn <= 12 ~ 1,
+      age_mn > 12 & age_mn <= 24 ~ 2,
+      age_mn > 24 & age_mn <= 72 ~ 3,
+      age_mn > 72 & age_mn <= 144 ~ 4,
+      age_mn > 144 & age_mn <= 216 ~ 5,
+      age_mn > 216 ~ 6
+    ),
+    levels = 1:6,
+    labels = c(
+      "<1 year",
+      "1-2 years",
+      "2-6 years",
+      "6-12 years",
+      "12-18 years",
+      ">18 years"
+    )
+  )
+}
+
+pop <- bind_rows(
+  gamlss = sample_hw(nhanes_fit$age_mn, nhanes_fit$sex_fct, mod = mod),
+  nhanes = nhanes_fit |> select(age_mn, sex_fct, height_cm, weight_kg),
+  .id = "source"
+) |> mutate(age_band_fct = age_band(age_mn))
+
+pop
 ```
+
+```{r}
+#| label: height-weight-age-band-scatterplot
+#| fig-width: 8
+#| fig-height: 10
+pop |>
+  ggplot(aes(height_cm, weight_kg, color = sex_fct)) + 
+  geom_point(size = .25, alpha = .5) +
+  facet_grid(age_band_fct ~ source, scales = "free_y") +
+  theme(legend.position = "bottom")
+```
+
+Once again this is a neat example, but it's mostly a validation of the GAMLSS model: it shows us the model does allow us to sample from the joint conditional density $P(\mbox{weight}, \mbox{height} | \mbox{age}, \mbox{sex})$. But by design the GAMLSS samples in `pop` are matched to the NHANES data on age and sex. Anything that we could do with the GAMLSS samples is something that we could have done with the NHANES samples directly. 
+
