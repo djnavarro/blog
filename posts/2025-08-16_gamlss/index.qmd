@@ -189,6 +189,8 @@ nhanes
 
 ## GAMLSS
 
+### Estimation
+
 ```{r}
 # maximum age used in gamlss modelling; this restriction is
 # to ensure that the gamlss models are well-behaved over
@@ -270,9 +272,21 @@ mod <- list(
 quarto_tabset(mod, level = 3)
 ```
 
+### Quantiles
 
 ```{r}
 #| label: height-quantiles
+get_predictors <- function(model) {
+  outcome <- deparse(model$mu.formula[[2]])
+  all_vars <- unique(c(
+    all.vars(model$mu.formula),
+    all.vars(model$sigma.formula),
+    all.vars(model$nu.formula),
+    all.vars(model$tau.formula)
+  )) 
+  setdiff(all_vars, outcome)
+}
+
 get_pars <- function(data, model) {
   pars <- tibble(
     mu    = predict(model, newdata = data, type = "response", what = "mu"),
@@ -283,17 +297,17 @@ get_pars <- function(data, model) {
   bind_cols(data, pars)
 }
 
-predict_cases <- expand_grid(
+predict_cases_ht <- expand_grid(
   age_mn  = 1:(age_max_yr * 12),
   sex_fct = factor(c("male", "female"))
 )
 
-predict_pars <- bind_rows(
-  predict_cases |> filter(sex_fct == "male") |> get_pars(ht_m),
-  predict_cases |> filter(sex_fct == "female") |> get_pars(ht_f)
+predict_pars_ht <- bind_rows(
+  predict_cases_ht |> filter(sex_fct == "male") |> get_pars(ht_m),
+  predict_cases_ht |> filter(sex_fct == "female") |> get_pars(ht_f)
 )
 
-predict_quantiles <- predict_pars |>
+predict_quantiles_ht <- predict_pars_ht |>
   mutate(
     q05 = qBCPE(.05, mu = mu, sigma = sigma, nu = nu, tau = tau),
     q25 = qBCPE(.25, mu = mu, sigma = sigma, nu = nu, tau = tau),
@@ -302,7 +316,7 @@ predict_quantiles <- predict_pars |>
     q95 = qBCPE(.95, mu = mu, sigma = sigma, nu = nu, tau = tau)
   )
 
-predict_quantiles
+predict_quantiles_ht
 ```
 
 ```{r}
@@ -316,7 +330,7 @@ ggplot() +
     size = .25
   ) +
   geom_path(
-    data = predict_quantiles |> 
+    data = predict_quantiles_ht |> 
       pivot_longer(
         cols = starts_with("q"),
         names_to = "quantile",
@@ -328,3 +342,169 @@ ggplot() +
   theme(legend.position = "bottom")
 ```
 
+
+We can take the logic further and predict the distribution of weights for tall (95th height percentile) and short (5th height percentile) people, stratified by age and sex:
+
+```{r}
+predict_cases_wt <- predict_pars_ht |>
+  mutate(
+    very_tall  = qBCPE(.99, mu = mu, sigma = sigma, nu = nu, tau = tau),
+    very_short = qBCPE(.01, mu = mu, sigma = sigma, nu = nu, tau = tau)
+  ) |> 
+  pivot_longer(
+    cols = c(very_tall, very_short),
+    names_to = "height_fct", 
+    values_to = "height_cm"
+  ) |> 
+  mutate(height_fct = factor(height_fct)) |> 
+  select(age_mn, sex_fct, height_fct, height_cm)
+
+predict_cases_wt
+
+predict_pars_wt <- bind_rows(
+  predict_cases_wt |> filter(sex_fct == "male") |> select(-height_fct) |> get_pars(wt_htm),
+  predict_cases_wt |> filter(sex_fct == "female") |> select(-height_fct) |> get_pars(wt_htf)
+) |> 
+  left_join(predict_cases_wt, by = join_by(age_mn, sex_fct, height_cm)) |> 
+  relocate(height_fct, .before = height_cm)
+
+predict_quantiles_wt <- predict_pars_wt |>
+  mutate(
+    q05 = qBCPE(.05, mu = mu, sigma = sigma, nu = nu, tau = tau),
+    q25 = qBCPE(.25, mu = mu, sigma = sigma, nu = nu, tau = tau),
+    q50 = qBCPE(.50, mu = mu, sigma = sigma, nu = nu, tau = tau),
+    q75 = qBCPE(.75, mu = mu, sigma = sigma, nu = nu, tau = tau),
+    q95 = qBCPE(.95, mu = mu, sigma = sigma, nu = nu, tau = tau)
+  )
+
+predict_quantiles_wt
+```
+
+```{r}
+permitted <- predict_cases_wt |> 
+  mutate(
+    height_cm_lo = height_cm * 0.99, 
+    height_cm_hi = height_cm * 1.01
+  ) |> 
+  select(age_mn, sex_fct, height_fct, height_cm_lo, height_cm_hi)
+
+match_rules <- join_by(
+  x$sex_fct == y$sex_fct, 
+  x$age_mn == y$age_mn, 
+  x$height_cm > y$height_cm_lo, 
+  x$height_cm < y$height_cm_hi
+)
+
+nhanes_very_short <- semi_join(
+  x = nhanes, 
+  y = permitted |> filter(height_fct == "very_short"),
+  by = match_rules
+)
+
+nhanes_very_tall <- semi_join(
+  x = nhanes, 
+  y = permitted |> filter(height_fct == "very_tall"),
+  by = match_rules
+)
+
+nhanes_partial <- bind_rows(
+  very_short = nhanes_very_short,
+  very_tall = nhanes_very_tall,
+  .id = "height_fct"
+) |> mutate(height_fct = factor(height_fct))
+
+nhanes_partial
+```
+
+```{r}
+#| label: weight-quantiles-plot
+#| fig-width: 8
+#| fig-height: 10
+ggplot() + 
+  geom_point(
+    data = nhanes_partial, 
+    mapping = aes(age_mn, weight_kg),
+    size = .5
+  ) +
+  geom_path(
+    data = predict_quantiles_wt |> 
+      pivot_longer(
+        cols = starts_with("q"),
+        names_to = "quantile",
+        values_to = "weight_kg"
+      ),
+    mapping = aes(age_mn, weight_kg, color = quantile),
+    linewidth = 1
+  ) +
+  facet_grid(height_fct ~ sex_fct) +
+  theme(legend.position = "bottom")
+
+```
+
+### Sampling 
+
+Sample from a trimmed Box-Cox power-exponential: because even with nu/tau parameters, the BCPE has support on non-biological values in the tails, creating physically impossible outliers in large simulations. the default trim is 1% on either side, (as compared to 3% for `nhanesgamlss::simwtage()`)
+
+
+```{r}
+rTBCPE <- function(n, mu, sigma, nu, tau, trim = .01) {
+  p <- runif(n, min = trim, max = 1 - trim)
+  if (any(mu <= 0)) mu[mu <= 0] <- 1E-6
+  if (any(sigma <= 0)) sigma[sigma <= 0] <- 1E-6
+  r <- gamlss.dist::qBCPE(p, mu = mu, sigma = sigma, nu = nu, tau = tau)
+  r
+}
+```
+
+Sample height conditional on `age`, using an appropriate (sec-specific) gamlss model `ht_mod`. Similarly, we can sample weight conditional on `age` and `height` using a model.
+
+```{r}
+sample_h <- function(age, ht_mod) {
+  pars <- get_pars(
+    data = tibble(age_mn = age),
+    model = ht_mod
+  )
+  pars |> 
+    select(mu, sigma, nu, tau) |> 
+    pmap_dbl(\(...) rTBCPE(n = 1, ...))
+}
+
+sample_w <- function(age, height, wt_mod) {
+  pars <- get_pars(
+    data = tibble(age_mn = age, height_cm = height),
+    model = wt_mod
+  )
+  pars |> 
+    select(mu, sigma, nu, tau) |> 
+    pmap_dbl(\(...) rTBCPE(n = 1, ...))
+}
+```
+
+```{r}
+sample_hw <- function(age, sex, mod) {
+
+  nn <- length(age)
+  height <- numeric(nn)
+  weight <- numeric(nn)
+  mm <- sex == "male"
+  ff <- sex == "female"
+
+  if (any(mm)) height[mm] <- sample_h(age[mm], mod$ht_m)
+  if (any(ff)) height[ff] <- sample_h(age[ff], mod$ht_f)  
+  if (any(mm)) weight[mm] <- sample_w(age[mm], height[mm], mod$wt_htm)
+  if (any(ff)) weight[ff] <- sample_w(age[ff], height[ff], mod$wt_htf)
+  
+  tibble(
+    age = age,
+    sex = sex,
+    height = height,
+    weight = weight
+  )
+}
+```
+
+
+```{r}
+dat <- expand_grid(age_mn = 1:24, sex_fct = c("male", "female"))
+sample_hw(age = dat$age_mn, sex = dat$sex_fct, mod = mod)
+```
