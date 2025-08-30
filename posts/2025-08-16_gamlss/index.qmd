@@ -2,6 +2,10 @@
 title: "gamlss"
 description: "This is a subtitle"
 date: "2025-08-16"
+knitr:
+  opts_chunk: 
+    dev.args:
+      bg: "#00000000"
 --- 
 
 <!--------------- my typical setup ----------------->
@@ -17,36 +21,42 @@ cache_images <- TRUE
 set.seed(1)
 
 theme_custom <- function() {
+  tran_rect <- ggplot2::element_rect(fill = NA, color = NA)
   dark_rect <- ggplot2::element_rect(fill = "#666", color = "#666")
   lite_rect <- ggplot2::element_rect(fill = "#fff", color = "#fff")
   dark_text <- ggplot2::element_text(color = "#000")
   lite_text <- ggplot2::element_text(color = "#ddd")
+  grey_text <- ggplot2::element_text(color = "#888")
   ggplot2::`%+replace%`(
     ggplot2::theme_bw(),
     ggplot2::theme(
+      # plot exterior regions
       plot.margin = ggplot2::margin(18, 18, 18, 18),
-      plot.background = dark_rect,
-      legend.background = dark_rect,
+      plot.background   = tran_rect,
+      legend.background = tran_rect,
+      legend.key        = tran_rect,
+      plot.title    = grey_text,
+      plot.subtitle = grey_text,
+      plot.caption  = grey_text,
+      axis.text.x   = grey_text,
+      axis.text.y   = grey_text,
+      axis.title.x  = grey_text,
+      axis.title.y  = ggplot2::element_text(color = "#888", angle = 90), 
+      legend.text   = grey_text,
+      legend.title  = grey_text,
+
+      # plot strip region
       strip.background = ggplot2::element_rect(
         fill = "#333", 
         color = "#333"
       ),
-      legend.key = dark_rect,
-      panel.background = ggplot2::element_rect(
-        fill = "#ddd", color = "#ddd"),
-      plot.title = lite_text,
-      plot.subtitle = lite_text,
-      plot.caption = lite_text,
-      axis.text.x = lite_text,
-      axis.text.y = lite_text,
-      axis.title.x = lite_text,
-      axis.title.y = ggplot2::element_text(color = "#ddd", angle = 90), 
-      legend.text = lite_text,
-      legend.title = lite_text,
       strip.text = ggplot2::element_text(
         colour = "#ddd", 
         margin = ggplot2::margin(4.4, 4.4, 4.4, 4.4) 
-      )
+      ),
+
+      # plot interior background
+      panel.background = ggplot2::element_rect(fill = "#ddd", color = "#ddd"),
     ) 
   )
 }
