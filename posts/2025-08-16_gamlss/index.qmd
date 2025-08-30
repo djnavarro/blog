@@ -533,3 +533,81 @@ pop |>
 
 Once again this is a neat example, but it's mostly a validation of the GAMLSS model: it shows us the model does allow us to sample from the joint conditional density $P(\mbox{weight}, \mbox{height} | \mbox{age}, \mbox{sex})$. But by design the GAMLSS samples in `pop` are matched to the NHANES data on age and sex. Anything that we could do with the GAMLSS samples is something that we could have done with the NHANES samples directly. 
 
+
+```{r}
+#| label: bsa-computation
+compute_bsa <- function(height, weight, method = "dubois") {
+
+  w <- weight # numeric (kg)
+  h <- height # numeric (cm)
+
+  # Du Bois D, Du Bois EF (Jun 1916). "A formula to estimate the approximate
+  # surface area if height and weight be known". Archives of Internal Medicine
+  # 17 (6): 863-71. PMID 2520314.
+  if (method == "dubois") return(0.007184 * w^0.425 * h^0.725)
+
+  # Mosteller RD. "Simplified calculation of body-surface area". N Engl J Med
+  # 1987; 317:1098. PMID 3657876.
+  if (method == "mosteller") return(0.016667 * w^0.5 * h^0.5)
+
+  # Haycock GB, Schwartz GJ, Wisotsky DH "Geometric method for measuring body
+  # surface area: A height-weight formula validated in infants, children and
+  # adults" J Pediatr 1978, 93:62-66.
+  if (method == "haycock") return(0.024265 * w^0.5378 * h^0.3964)
+
+  # Gehan EA, George SL, Cancer Chemother Rep 1970, 54:225-235
+  if (method == "gehan") return(0.0235 * w^0.51456 * h^0.42246)
+
+  # Boyd, Edith (1935). The Growth of the Surface Area of the Human Body.
+  # University of Minnesota. The Institute of Child Welfare, Monograph Series,
+  # No. x. London: Oxford University Press
+  if (method == "boyd") return(0.03330 * w^(0.6157 - 0.0188 * log10(w)) * h^0.3)
+
+  # Fujimoto S, Watanabe T, Sakamoto A, Yukawa K, Morimoto K. Studies on the
+  # physical surface area of Japanese. 18. Calculation formulae in three stages
+  # over all ages. Nippon Eiseigaku Zasshi 1968;5:443-50.
+  if (method == "fujimoto") return(0.008883 * w^0.444 * h^0.663)
+
+  rlang::abort("unknown BSA method")
+}
+```
+
+```{r}
+#| label: height-weight-bsa-scatterplot
+#| fig-width: 8
+#| fig-height: 10
+bsa_cutoff <- tibble(
+  height_cm = 60:110,
+  dubois = (0.5 / 0.007184 / (height_cm^0.725)) ^ (1/0.425),
+  haycock = (0.5 / 0.024265 / (height_cm^0.3964)) ^(1/0.5378)
+) |> 
+  pivot_longer(
+    cols = c(dubois, haycock),
+    names_to = "method",
+    values_to = "weight_kg"
+  )
+
+bsa_pop <- pop |> 
+  select(age_mn, age_band_fct, height_cm, weight_kg, sex_fct, source) |>
+  filter(age_mn <= 72) |>
+  mutate(
+    bsa_m2_dubois = compute_bsa(height_cm, weight_kg, method = "dubois"),
+    bsa_m2_haycock = compute_bsa(height_cm, weight_kg, method = "haycock")
+  ) |>
+  filter(bsa_m2_dubois > 0.5 | bsa_m2_haycock > 0.5) 
+ 
+ggplot() + 
+  geom_point(
+    data = bsa_pop,
+    mapping = aes(height_cm, weight_kg, color = sex_fct), 
+    size = .25
+  ) +
+  geom_path(
+    data = bsa_cutoff,
+    mapping = aes(height_cm, weight_kg, linetype = method)
+  ) +
+  facet_grid(age_band_fct ~ source, scales = "free_y") +
+  theme(legend.position = "bottom")
+``` 
+
+
