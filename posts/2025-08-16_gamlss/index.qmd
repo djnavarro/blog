@@ -199,6 +199,84 @@ nhanes
 
 ## GAMLSS
 
+### Structural model
+
+Let $\tilde{y}_i = E[y_i|x_{i1}, \ldots, x_{ip}]$ denote the expected value of (the $i$-th observation of) the outcome variable $y$, conditioned on knowing the values of $p$ predictor variables $x_{1}, \ldots, x_{p}$. In linear regression we propose that
+
+$$
+\tilde{y}_i = \beta_0 + \sum_{k=1}^p \beta_k \ x_{ik}
+$$
+
+Often we would rewrite this in matrix notation and express it as $\tilde{\mathbf{y}} = \mathbf{X} \mathbf{\beta}$ to make it look pretty, but I honestly don't think it adds much in this context. There are two different paths you could pursue when extending this framework: you could change something on the left hand side, or you could change something on the right hand side. For example, the [generalised linear model](https://en.wikipedia.org/wiki/Generalized_linear_model) introduced by [Nelder and Wedderburn (1972)](https://www.jstor.org/stable/2344614) modifies the linear model by supplying a "link function" $g()$ that transforms $\tilde{y}$, 
+
+$$
+g(\tilde{y}_i) = \beta_0 + \sum_{k=1}^p \beta_k \ x_{ik}
+$$
+
+Crudely put, the GLM applies a linear model to a transformed **outcome** variable (i.e., $y$). On the other hand, in the [additive model](https://en.wikipedia.org/wiki/Additive_model) proposed by [Friedman and Stuetzle (1981)](https://www.tandfonline.com/doi/abs/10.1080/01621459.1981.10477729), transformation functions (often called "smoothing functions") are applied to the **predictor** variables (i.e., $x$):
+
+$$
+\tilde{y}_i = s_0 + \sum_{k=1}^p s_k(x_{ik})
+$$
+
+When you do both of these things, the end result is the [generalised additive model](https://en.wikipedia.org/wiki/Generalized_additive_model) (GAM) was introduced by [Hastie and Tibshirani (1990)](https://www.jstor.org/stable/2245459), in which
+
+$$
+g(\tilde{y}_i) = s_0 + \sum_{k=1}^p s_k(x_{ik})
+$$
+
+### Measurement model
+
+In linear model with homogeneity of variance, we normally write this:
+
+$$
+y_i = \tilde{y}_i + \epsilon_i
+$$
+
+where the measurement error terms $\epsilon_i$ are assumed to be normally distributed with mean fixed at 0 and standard deviation $\sigma$ estimated from the data. Another way to express the same idea would be to say that the outcome variable $y_i$ is normally distributed with mean $\mu_i = \tilde{y}_i$, and a constant standard deviation $\sigma_i = \sigma$. Taking this line of reasoning a little further, we could rewrite the model in terms of *two* regression models: a linear model for the mean $\mu$, and another linear model for the standard deviation $\sigma$:
+
+$$
+\begin{array}{rcl}
+\mu_i &=& \beta_{\mu 0} + \sum_k \beta_{\mu k} \ x_{ik} \\
+\sigma_i &=& \beta_{\sigma 0} \\ \\
+y_i &\sim& \mbox{Normal}(\mu_i, \sigma_i)
+\end{array}
+$$
+
+When expressed this way, the "homogeneity of variance" assumption in linear model corresponds to a model in which no covariates (predictors) are included in the model for $\sigma$. However there's no inherent reason to limit ourselves in this way. Relaxing homogeneity of variance allows us to specify regression models for both $\mu$ and $\sigma$,
+
+$$
+\begin{array}{rcl}
+\mu_i &=& \beta_{\mu 0} + \sum_k \beta_{\mu k} \ x_{ik} \\
+\sigma_i &=& \beta_{\sigma 0}  + \sum_k \beta_{\sigma k} \ x_{ik} \\ \\
+y_i &\sim& \mbox{Normal}(\mu_i, \sigma_i)
+\end{array}
+$$
+
+Introducing smoothing functions $s()$ to transform the predictors gives us this:
+
+$$
+\begin{array}{rcl}
+\mu_i &=& s_{\mu 0} + \sum_k s_{\mu k}(x_{ik}) \\
+\sigma_i &=& s_{\sigma 0} + \sum_k s_{\sigma k}(x_{ik}) \\ \\
+y_i &\sim& \mbox{Normal}(\mu_i, \sigma_i)
+\end{array}
+$$
+
+The normal distribution is not the only choice of measurement model. Like many other distributions (e.g., beta distribution) it can be described as a distribution that contains one parameter for the **location** (i.e., $\mu$) and **scale** (i.e., $\sigma$). More generally though, we might want to use distributions described by one parameter for location, one parameter for scale, and one or more parameters for the **shape**. If we instead choose the [Box-Cox power exponential](/posts/2025-08-02_box-cox-power-exponential/), the statistical model now looks like this,
+
+$$
+\begin{array}{rcl}
+\mu_i &=& s_{\mu 0} + \sum_k s_{\mu k}(x_{ik}) \\
+\sigma_i &=& s_{\sigma 0} + \sum_k s_{\sigma k}(x_{ik}) \\
+\nu_i &=& s_{\nu 0} + \sum_k s_{\nu k}(x_{ik}) \\
+\tau_i &=& s_{\tau 0} + \sum_k s_{\tau k}(x_{ik}) \\ \\
+y_i &\sim& \mbox{BCPE}(\mu_i, \sigma_i, \nu_i, \tau_i)
+\end{array}
+$$
+
+and we now have a **generalised additive model for location, scale, and shape** (GAMLSS).
+
 ### Estimation
 
 ```{r}
