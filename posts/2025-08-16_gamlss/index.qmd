@@ -21,42 +21,43 @@ cache_images <- TRUE
 set.seed(1)
 
 theme_custom <- function() {
-  tran_rect <- ggplot2::element_rect(fill = NA, color = NA)
-  dark_rect <- ggplot2::element_rect(fill = "#666", color = "#666")
-  lite_rect <- ggplot2::element_rect(fill = "#fff", color = "#fff")
-  dark_text <- ggplot2::element_text(color = "#000")
-  lite_text <- ggplot2::element_text(color = "#ddd")
+
+  transparent_rect <- ggplot2::element_rect(fill = NA, color = NA)
   grey_text <- ggplot2::element_text(color = "#888")
+  rotated_grey_text <- ggplot2::element_text(color = "#888", angle = 90)
+  light_grey_rect <- ggplot2::element_rect(fill = "#ccc", color = "#ccc")
+
+  plot_margin <- ggplot2::margin(18, 18, 18, 18)
+
+  strip_margin <- ggplot2::margin(4.4, 4.4, 4.4, 4.4)
+  strip_background <- ggplot2::element_rect(fill = "#333", color = "#333")
+  strip_text <- ggplot2::element_text(colour = "#ddd", margin = strip_margin)
+
   ggplot2::`%+replace%`(
     ggplot2::theme_bw(),
     ggplot2::theme(
+
       # plot exterior regions
-      plot.margin = ggplot2::margin(18, 18, 18, 18),
-      plot.background   = tran_rect,
-      legend.background = tran_rect,
-      legend.key        = tran_rect,
+      plot.margin = plot_margin,
+      plot.background   = transparent_rect,
+      legend.background = transparent_rect,
+      legend.key        = light_grey_rect,
       plot.title    = grey_text,
       plot.subtitle = grey_text,
       plot.caption  = grey_text,
       axis.text.x   = grey_text,
       axis.text.y   = grey_text,
       axis.title.x  = grey_text,
-      axis.title.y  = ggplot2::element_text(color = "#888", angle = 90), 
+      axis.title.y  = rotated_grey_text, 
       legend.text   = grey_text,
       legend.title  = grey_text,
 
       # plot strip region
-      strip.background = ggplot2::element_rect(
-        fill = "#333", 
-        color = "#333"
-      ),
-      strip.text = ggplot2::element_text(
-        colour = "#ddd", 
-        margin = ggplot2::margin(4.4, 4.4, 4.4, 4.4) 
-      ),
+      strip.background = strip_background,
+      strip.text = strip_text,
 
       # plot interior background
-      panel.background = ggplot2::element_rect(fill = "#ddd", color = "#ddd"),
+      panel.background = light_grey_rect
     ) 
   )
 }
@@ -76,7 +77,6 @@ library(purrr)
 library(haven)
 library(readr)
 library(tidyr)
-library(gifski)
 library(gamlss)
 library(tibble)
 library(ggplot2)
@@ -502,12 +502,12 @@ nhanes_fit <- bind_rows(nhanes_m, nhanes_f) |> arrange(age_mn)
 age_band <- function(age_mn) {
   factor(
     x = case_when(
-      age_mn <= 12 ~ 1,
-      age_mn > 12 & age_mn <= 24 ~ 2,
-      age_mn > 24 & age_mn <= 72 ~ 3,
-      age_mn > 72 & age_mn <= 144 ~ 4,
+      age_mn <= 12                 ~ 1,
+      age_mn >  12 & age_mn <=  24 ~ 2,
+      age_mn >  24 & age_mn <=  72 ~ 3,
+      age_mn >  72 & age_mn <= 144 ~ 4,
       age_mn > 144 & age_mn <= 216 ~ 5,
-      age_mn > 216 ~ 6
+      age_mn > 216                 ~ 6
     ),
     levels = 1:6,
     labels = c(
@@ -588,7 +588,7 @@ compute_bsa <- function(height, weight, method = "dubois") {
 #| fig-height: 10
 bsa_cutoff <- tibble(
   height_cm = 60:110,
-  dubois = (0.5 / 0.007184 / (height_cm^0.725)) ^ (1/0.425),
+  dubois  = (0.5 / 0.007184 / (height_cm^0.725)) ^ (1/0.425),
   haycock = (0.5 / 0.024265 / (height_cm^0.3964)) ^(1/0.5378)
 ) |> 
   pivot_longer(
@@ -601,15 +601,15 @@ bsa_pop <- pop |>
   select(age_mn, age_band_fct, height_cm, weight_kg, sex_fct, source) |>
   filter(age_mn <= 72) |>
   mutate(
-    bsa_m2_dubois = compute_bsa(height_cm, weight_kg, method = "dubois"),
+    bsa_m2_dubois  = compute_bsa(height_cm, weight_kg, method = "dubois"),
     bsa_m2_haycock = compute_bsa(height_cm, weight_kg, method = "haycock")
   ) |>
-  filter(bsa_m2_dubois > 0.5 | bsa_m2_haycock > 0.5) 
+  filter(bsa_m2_dubois > 0.5) 
  
 ggplot() + 
   geom_point(
     data = bsa_pop,
-    mapping = aes(height_cm, weight_kg, color = sex_fct), 
+    mapping = aes(height_cm, weight_kg), 
     size = .25
   ) +
   geom_path(
@@ -620,4 +620,92 @@ ggplot() +
   theme(legend.position = "bottom")
 ``` 
 
+```{r}
+cases <- expand_grid(
+  age_mn  = 1:24,
+  sex_fct = factor(c("male", "female"))
+)
+bsa_pop_2 <- sample_hw(
+  age_mn  = rep(cases$age_mn, 10000),
+  sex_fct = rep(cases$sex_fct, 10000),
+  mod = mod 
+) |> 
+  mutate(
+    id = row_number(),
+    bsa_m2_dubois  = compute_bsa(height_cm, weight_kg, method = "dubois"),
+    bsa_m2_haycock = compute_bsa(height_cm, weight_kg, method = "haycock"),
+    threshold = case_when(
+      bsa_m2_dubois >  .5 & bsa_m2_haycock >  .5 ~ "above both",
+      bsa_m2_dubois >  .5 & bsa_m2_haycock <= .5 ~ "above dubois only",
+      bsa_m2_dubois <= .5 & bsa_m2_haycock >  .5 ~ "above haycock only",
+      bsa_m2_dubois <= .5 & bsa_m2_haycock <= .5 ~ "below both",
+    )
+  ) |> 
+  relocate(id, 1)
+bsa_pop_2
+```
+
+
+```{r}
+#| label: height-weight-bsa-scatterplot-detailed
+#| fig-width: 8
+#| fig-height: 12
+ggplot() + 
+  geom_point(
+    data = bsa_pop_2,
+    mapping = aes(height_cm, weight_kg, color = threshold), 
+    alpha = .25, 
+    shape = ".",
+    show.legend = FALSE
+  ) +
+  geom_path(
+    data = bsa_cutoff,
+    mapping = aes(height_cm, weight_kg, linetype = method)
+  ) +
+  facet_wrap(~ age_mn, ncol = 4) +
+  theme(legend.position = "bottom")
+```
+
+
+```{r}
+#| label: bsa-method-comparison
+#| fig-width: 8
+#| fig-height: 6
+bsa_pop_2 |> 
+  summarise(
+    dubois_0.4  = mean(bsa_m2_dubois > 0.4),
+    dubois_0.5  = mean(bsa_m2_dubois > 0.5),
+    dubois_0.6  = mean(bsa_m2_dubois > 0.6),
+    haycock_0.4 = mean(bsa_m2_haycock > 0.4),
+    haycock_0.5 = mean(bsa_m2_haycock > 0.5),
+    haycock_0.6 = mean(bsa_m2_haycock > 0.6),
+    .by = age_mn
+  ) |> 
+  pivot_longer(
+    cols = c(
+      starts_with("dubois"), 
+      starts_with("haycock")
+    ),
+    names_to = "group",
+    values_to = "percent_above_threshold"
+  ) |> 
+  separate(
+    col = group, 
+    into = c("method", "threshold"), 
+    sep = "_"
+  ) |> 
+  mutate(threshold = paste("BSA >", threshold, "m^2")) |> 
+  ggplot(aes(
+    x = age_mn, 
+    y = percent_above_threshold, 
+    linetype = method, 
+    shape = method
+  )) +
+  scale_y_continuous(label = scales::label_percent()) +
+  scale_x_continuous(breaks = seq(0, 24, 6)) +
+  geom_path() +
+  geom_point() +
+  facet_wrap(~threshold) +
+  theme(legend.position = "bottom")
+```
 
