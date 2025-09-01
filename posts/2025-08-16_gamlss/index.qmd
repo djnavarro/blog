@@ -268,13 +268,15 @@ $$
 Crudely put, the GLM applies a linear model to a transformed **outcome** variable (i.e., $y$). On the other hand, in the [additive model](https://en.wikipedia.org/wiki/Additive_model) proposed by [Friedman and Stuetzle (1981)](https://www.tandfonline.com/doi/abs/10.1080/01621459.1981.10477729), transformation functions $f()$ -- sometimes called "smoothing functions" -- are applied to the **predictor** variables (i.e., $x$):
 
 $$
-\tilde{y}_i = s_0 + \sum_{k=1}^p f_k(x_{ik})
+\tilde{y}_i = \beta_0 + \sum_{k=1}^p f_k(x_{ik})
 $$
 
-When you do both of these things, the end result is the [generalised additive model](https://en.wikipedia.org/wiki/Generalized_additive_model) (GAM) was introduced by [Hastie and Tibshirani (1990)](https://www.jstor.org/stable/2245459), in which
+I'll talk more about the choice of smoothing function $f()$ later in the post, but for now the key thing to note is that the functions used for this purpose usually have free parameters that need to be estimated from the data. Because of this, fitting an additive model is a little more complicated than a simple "transform the predictors first and then fit a linear regression later" procedure. 
+
+In any case, having noted that **generalised** linear models introduce the link function $g()$ and **additive** models introduce the smoothing functions $f()$, it seems natural to consider a modelling framework that uses both of these things. That framework exists: it is called the [generalised additive model](https://en.wikipedia.org/wiki/Generalized_additive_model) (GAM), introduced by [Hastie and Tibshirani (1990)](https://www.jstor.org/stable/2245459):
 
 $$
-g(\tilde{y}_i) = s_0 + \sum_{k=1}^p f_k(x_{ik})
+g(\tilde{y}_i) = \beta_0 + \sum_{k=1}^p f_k(x_{ik})
 $$
 
 ### Measurement model
@@ -841,3 +843,7 @@ bsa_pop_2 |>
   theme(legend.position = "bottom")
 ```
 
+
+## Epilogue
+
+For example, [Hayes et al (2014)](https://pmc.ncbi.nlm.nih.gov/articles/PMC4339962/pdf/BLT.14.139113.pdf) provide detailed regional weight-for-age charts based on GAMLSS models
