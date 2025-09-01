@@ -20,14 +20,14 @@ output_dir <- fs::path(local_dir, "output")
 # - primary source finds 0.5 cm difference
 # - they cite earlier NHANES data with 0.8 cm difference
 # 
-# The NHANES data to current release has a mean difference of 1.02 and
+# The NHANES data to current release has a mean difference of 1.06 and
 # any effects of age/sex are very small. Given restricted range (i.e.
 # we only have both measurements from the 2-4yr age brackets, a simple
 # mean adjustment is used here)
-length_to_height <- function(length_cm, adjust = 1.02) {
+length_to_height <- function(length_cm, adjust = 1.06) {
   length_cm - adjust
 }
-height_to_length <- function(height_cm, adjust = 1.02) {
+height_to_length <- function(height_cm, adjust = 1.06) {
   height_cm + adjust
 }
 
