@@ -62,11 +62,14 @@ theme_custom <- function() {
   )
 }
 ggplot2::theme_set(theme_custom())
+
+post_dir <- rprojroot::find_root_file(criterion = rprojroot::has_file(".here"))
 ```
 
 <!--------------- post begins here ----------------->
 
 Okay, so in my [last post](/posts/2025-08-02_box-cox-power-exponential/) I was whining about the Box-Cox power exponential distribution, and promising that it would be followed by a new post whining about the [generalised additive model for location, shape and scale](https://en.wikipedia.org/wiki/Generalized_additive_model_for_location,_scale_and_shape) (GAMLSS). This is that post.
+
 
 ```{r}
 #| label: load-packages
@@ -81,16 +84,14 @@ library(gamlss)
 library(tibble)
 library(ggplot2)
 library(quartose)
-library(rprojroot)
 ```
 
-```{r}
-#| label: directories
-proj_root  <- find_root_file(criterion = has_file(".here"))
-local_dir  <- path(proj_root, "nhanes")
-data_dir   <- path(local_dir, "data")
-output_dir <- path(local_dir, "output")
-```
+
+## The modelling problem
+
+$$
+p(h, w | a, s)
+$$
 
 ## The NHANES data
 
@@ -109,8 +110,8 @@ As of the most recent release, the summaries below list the file names the body 
 #| message: false
 #| label: nhanes-metadata
 metadata <- list( 
-  BMX  = read_csv(path(local_dir, "bmx-summary.csv"), show_col_types = FALSE),
-  DEMO = read_csv(path(local_dir, "demo-summary.csv"), show_col_types = FALSE) 
+  BMX  = read_csv(path(post_dir, "nhanes", "bmx-summary.csv"), show_col_types = FALSE),
+  DEMO = read_csv(path(post_dir, "nhanes", "demo-summary.csv"), show_col_types = FALSE) 
 )
 
 quarto_tabset(metadata, level = 3)
@@ -125,8 +126,8 @@ To explore the NHANES data, we can download all these files and load them into R
 ```{r}
 #| label: nhanes-import
 # all demographics and body measurement files
-demo_files <- dir_ls(path(data_dir, "demo"))
-bmx_files  <- dir_ls(path(data_dir, "bmx"))
+demo_files <- dir_ls(path(post_dir, "nhanes", "data", "demo"))
+bmx_files  <- dir_ls(path(post_dir, "nhanes", "data", "bmx"))
 
 # read demographics file (selected variables only)
 demos <- demo_files |> 
@@ -245,9 +246,8 @@ nhanes <- nhanes |>
 nhanes
 ```
 
-A small slice through a very large data set, but one that contains the four variables that I need in almost every NHANES-based analysis: age, sex, height, and weight. 
+A small slice through a very large data set, but one that contains the four variables that I need in almost every NHANES-based analysis: `age_mn` ($a$), `sex_fct` ($s$), `height_cm` ($h$), and `weight_kg` ($w$). I can now turn to the substantive statistical problem: estimating the joint conditional density $p(h, w | a, s)$.
 
-## The modelling problem
 
 ## The GAMLSS framework
 
@@ -408,10 +408,10 @@ wt_htf <- gamlss(
 ```{r}
 #| label: gamlss-objects
 #| results: asis
-ht_m   <- readRDS(path(output_dir, "ht-m-v03.rds"))
-ht_f   <- readRDS(path(output_dir, "ht-f-v03.rds"))
-wt_htm <- readRDS(path(output_dir, "wt-htm-v03.rds"))
-wt_htf <- readRDS(path(output_dir, "wt-htf-v03.rds"))
+ht_m   <- readRDS(path(post_dir, "nhanes", "output", "ht-m-v03.rds"))
+ht_f   <- readRDS(path(post_dir, "nhanes", "output", "ht-f-v03.rds"))
+wt_htm <- readRDS(path(post_dir, "nhanes", "output", "wt-htm-v03.rds"))
+wt_htf <- readRDS(path(post_dir, "nhanes", "output", "wt-htf-v03.rds"))
 
 mod <- list(
   ht_m = ht_m,
@@ -673,7 +673,7 @@ pop |>
   theme(legend.position = "bottom")
 ```
 
-Once again this is a neat example, but it's mostly a validation of the GAMLSS model: it shows us the model does allow us to sample from the joint conditional density $P(\mbox{weight}, \mbox{height} | \mbox{age}, \mbox{sex})$. But by design the GAMLSS samples in `pop` are matched to the NHANES data on age and sex. Anything that we could do with the GAMLSS samples is something that we could have done with the NHANES samples directly. 
+Once again this is a neat example, but it's mostly a validation of the GAMLSS model: it shows us the model does allow us to sample from the joint conditional density $p(h, w | a, s)$. But by design the GAMLSS samples in `pop` are matched to the NHANES data on age and sex. Anything that we could do with the GAMLSS samples is something that we could have done with the NHANES samples directly. 
 
 
 ```{r}
