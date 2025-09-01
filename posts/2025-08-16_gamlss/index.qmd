@@ -92,9 +92,17 @@ data_dir   <- path(local_dir, "data")
 output_dir <- path(local_dir, "output")
 ```
 
-## NHANES
+## The NHANES data
 
-The NHANES [body measurements](https://wwwn.cdc.gov/nchs/nhanes/search/datapage.aspx?Component=Examination) and [demographics](https://wwwn.cdc.gov/nchs/nhanes/search/datapage.aspx?Component=Demographics) data sets. Brief summaries here:
+The data set I'll look at in this post comes from the [National Health and Nutrition Examination Survey](https://www.cdc.gov/nchs/nhanes/) (NHANES), a large ongoing study conducted under the auspices of the United States [Center for Disease Control](https://www.cdc.gov/nchs/nhanes/) (CDC). The program started in the 1960s, but the data set that is conventionally called "the NHANES data set" refers to the *continuous* data set that has been collected since 1999, with updates released every couple of years with approximately 5000 participants added each year. The data collection process is quite extensive. As described on the website, it includes:
+
+> - Interviews about health, diet, and personal, social, and economic characteristics
+> - Visits to our mobile exam center for dental exams and health and body measurements
+> - Laboratory tests by highly trained medical professionals
+
+For any given participant, records are split across several data files. For instance, the [body measurements](https://wwwn.cdc.gov/nchs/nhanes/search/datapage.aspx?Component=Examination) table contains very typical measurements such as height and weight, but also includes variables like waist circumference, thigh circumference, and so on. The [demographics](https://wwwn.cdc.gov/nchs/nhanes/search/datapage.aspx?Component=Demographics) table data includes information like age, sex, and so forth. These are the only two tables I'll use in this post, but there are a great many others also: you can find blood pressure data, audiometry data, various clinical measurements, and so on. It's a very handy data set used for a variety of purposes, not least of which is the fact that NHANES data are used to build the [CDC growth charts](https://www.cdc.gov/growthcharts) that are themselves used for a wide range of scientific and medical purposes. In my own work as a newly-minted pharmacometrician I've needed to rely on the NHANES data and/or CDC growth charts in several projects over the last couple of years, and for that reason I've found it useful to dive into the data set quite a few times. 
+
+As of the most recent release, the summaries below list the file names the body measurement (BMX) and demographics (DEMO) tables:
 
 ```{r}
 #| results: asis
@@ -108,7 +116,11 @@ metadata <- list(
 quarto_tabset(metadata, level = 3)
 ```
 
-Import the data:
+As you can see from the summaries, the data sets are released as SAS transport (i.e., XPT) files, with letters used to represent each data cut. In principle these should go from "A" (data from the 1999-2000 cohort) through to "L" (data from the 2021-2023 cohort), but that's not precisely what happens. The original release (which ostensibly should be the "A" data cut) doesn't have a label, and the "K" data cut is missing entirely due to the COVID-19 pandemic. In its place there is a "P" version of data set that breaks the file naming scheme, presumably short for "pandemic", and labelled differently to highlight that data from that release might be a little strange I suppose.  
+
+### Importing the data
+
+To explore the NHANES data, we can download all these files and load them into R:
 
 ```{r}
 #| label: nhanes-import
@@ -140,9 +152,12 @@ bmxes <- bmx_files |>
   mutate(file_bmx = path_file(file_bmx)) |>
   left_join(metadata$BMX, by = "file_bmx") |>
   select(-description)
+```
 
-# join data sets, retaining only those rows where the
-# required body measurements exist, and use nicer names
+Looking at the code above, you can see that I haven't included *all* the columns from the BMX and DEMO tables, only the ones that are most relevant to my purposes. My `demos` and `bmxes` data frames are considerably smaller than they would be if I included everything. Importantly for our purposes the `SEQN` column serves as an id variable, and we can use it to join the tables. In the code below I'm using `left_join(bmxes, demos)` to do the work because I'm only really interested in those cases where the body measurement data exists, and I'm tidying the column names a little for the sake of my sanity: 
+
+```{r}
+#| label: nhanes-join
 nhanes <- bmxes |>
   left_join(demos, by = c("SEQN", "cohort")) |>
   select(
@@ -157,14 +172,45 @@ nhanes <- bmxes |>
     cohort
   )
 
-# recumbent length and standing height are not equivalent; in the NHANES
-# data when both are present for the same person, length is 1.02cm greater
-# than height; in this context, a simple adjustment will suffice
-length_to_height <- function(length_cm, adjust = 1.02) {
-  length_cm - adjust
-}
+ nhanes
+```
 
-# additional preprocessing
+Very nice indeed. 
+
+### Preprocessing choices
+
+Even with the small snippet shown above you can see hints of nuances that arise when working with the NHANES data, especially if pediatric age ranges are of interest (as they very often are for me). Suppose one of the variables of interest in your analysis is height. On row 4 we have data from a 22 month old boy: there is no height measurement for him. That's very often the case for young infants, most obviously because very young infants can't stand up so you can't measure standing height. What you *can* do for those infants is take a related measurement: recumbent length. Okay that makes sense: you measure height for adults, and length for babies. Except... there are some kids in the age range where it makes sense to take *both* measurements. Row 1 contains data from a 29 month old girl, who was measured as 91.6cm in height and... 93.2cm in length. 
+
+Ah.
+
+Right. The height of a standing human and the length of the same human lying down don't have to be the same, and the differences between the two won't be random measurement error, because gravity and posture are real things that exist! The NHANES data itself illustrates that:
+
+```{r}
+#| label: height-vs-length
+ok <- function(x) !is.na(x)
+nhanes |> 
+  filter(ok(height_cm_e), ok(length_cm_e)) |> 
+  summarise(
+    mean_diff = mean(length_cm_e - height_cm_e),
+    sd_diff = sd(length_cm_e - height_cm_e)
+  )
+```
+
+So, when considering what *height* to use for the boy in row 4, it's not necessarily a good idea to substitute his *length*, because those probably aren't the same. An imputation procedure of some kind is needed. I won't go into it in this post, but I played around with a few possible models for predicting length from height in the process of writing it, and in the end concluded that nothing fancy is needed here. A simple adjustment will suffice: 
+
+```{r}
+#| label: height-vs-length-2
+length_to_height <- function(length_cm) {
+  length_cm - 1.06  # adjust based on average difference in NHANES
+}
+```
+
+It feels a bit silly writing a function for this conversion, but it's helpful from a documentation purpose: creating a dummy function to use (rather than just subtracting 1.06 later in the code) makes it clear to the reader that I *am* using some kind of explicit conversion when I transform length to height, and the comment provides a little extra detail on how I chose the conversion rule.
+
+Similar nuances for other measurements exist. There are three different measurements that record age, and they don't have to be in agreement: the *survey* takes place at a different point in time to the *exam*, so it's possible that the (now relabelled) `age_mn_e` and `age_mn_s` variables are different. Age in years at the time of the survey `age_yr_s` should presumably be consistent with the age in months at the time of the survey, but data aren't always straightforward. Given all this, the preprocessing steps used to create measurements of age and height look like this:
+
+```{r}
+#| label: nhanes-preprocessing
 nhanes <- nhanes |>
   mutate(
     sex_num = sex_s - 1, # rescale to 0 = M, 1 = F
@@ -182,12 +228,15 @@ nhanes <- nhanes |>
       TRUE ~ NA_real_, # else missing
     )
   )
+```
 
-# retain only the to-be-used columns, and only those cases for which
-# age, weight, height, and sex are all present; filter to age < 80
-# because NHANES uses "80" to mean "80 and above" so the actual age
-# is not known
-ok <- function(x) !is.na(x)
+The NHANES data set doesn't include information about transgender status or intersex status (at least not in the demographics and body measurements tables), and so for the purposes of NHANES-based analyses sex is a treated as binary variable, and doesn't require any extra steps beyond tidying and attaching nice labels. A similar story holds for weight: we have one measurement, the weight at time of exam, and that's what we'll use. 
+
+At this point the unwary might fall into the trap of thinking that we're done, but -- alas -- we aren't quite there yet. There's one more detail to consider regarding the age data. In the NHANES data set the age values stop at 80, but that value doesn't literally mean "80 years" it means "80 years or older". Because of that, you need to take some care in how you work with data for older participants. As it happens, I've never had to deal with this in the wild because my projects have used NHANES data in the pediatric setting. Given that, I'll keep it simple here and just drop all cases with age recorded as "80+" years. Not a problem if your application is pediatric, but you wouldn't want to do this in situations where you're interested in older populations. 
+
+In any case, having noted this I can finally complete the preprocessing and arrive at my `nhanes` data frame:
+
+```{r}
 nhanes <- nhanes |>
   select(id, sex_num, sex_fct, weight_kg, height_cm, age_mn, age_yr, cohort) |>
   filter(ok(sex_num), ok(weight_kg), ok(height_cm), ok(age_mn)) |>
@@ -196,8 +245,11 @@ nhanes <- nhanes |>
 nhanes
 ```
 
+A small slice through a very large data set, but one that contains the four variables that I need in almost every NHANES-based analysis: age, sex, height, and weight. 
 
-## GAMLSS
+## The modelling problem
+
+## The GAMLSS framework
 
 ### Structural model
 
@@ -213,16 +265,16 @@ $$
 g(\tilde{y}_i) = \beta_0 + \sum_{k=1}^p \beta_k \ x_{ik}
 $$
 
-Crudely put, the GLM applies a linear model to a transformed **outcome** variable (i.e., $y$). On the other hand, in the [additive model](https://en.wikipedia.org/wiki/Additive_model) proposed by [Friedman and Stuetzle (1981)](https://www.tandfonline.com/doi/abs/10.1080/01621459.1981.10477729), transformation functions (often called "smoothing functions") are applied to the **predictor** variables (i.e., $x$):
+Crudely put, the GLM applies a linear model to a transformed **outcome** variable (i.e., $y$). On the other hand, in the [additive model](https://en.wikipedia.org/wiki/Additive_model) proposed by [Friedman and Stuetzle (1981)](https://www.tandfonline.com/doi/abs/10.1080/01621459.1981.10477729), transformation functions $f()$ -- sometimes called "smoothing functions" -- are applied to the **predictor** variables (i.e., $x$):
 
 $$
-\tilde{y}_i = s_0 + \sum_{k=1}^p s_k(x_{ik})
+\tilde{y}_i = s_0 + \sum_{k=1}^p f_k(x_{ik})
 $$
 
 When you do both of these things, the end result is the [generalised additive model](https://en.wikipedia.org/wiki/Generalized_additive_model) (GAM) was introduced by [Hastie and Tibshirani (1990)](https://www.jstor.org/stable/2245459), in which
 
 $$
-g(\tilde{y}_i) = s_0 + \sum_{k=1}^p s_k(x_{ik})
+g(\tilde{y}_i) = s_0 + \sum_{k=1}^p f_k(x_{ik})
 $$
 
 ### Measurement model
@@ -253,31 +305,42 @@ y_i &\sim& \mbox{Normal}(\mu_i, \sigma_i)
 \end{array}
 $$
 
-Introducing smoothing functions $s()$ to transform the predictors gives us this:
+If we replace the regression coefficients $\beta_{\mu k}$ and $\beta_{\sigma k}$ with smooth functions $f_{\mu k}()$ and $f_{\sigma k}()$ and use these to transform the predictors, we now have an additive regression model for the mean and the standard deviation...
 
 $$
 \begin{array}{rcl}
-\mu_i &=& s_{\mu 0} + \sum_k s_{\mu k}(x_{ik}) \\
-\sigma_i &=& s_{\sigma 0} + \sum_k s_{\sigma k}(x_{ik}) \\ \\
+\mu_i &=& \beta_{\mu 0} + \sum_k f_{\mu k}(x_{ik}) \\
+\sigma_i &=& \beta_{\sigma 0} + \sum_k f_{\sigma k}(x_{ik}) \\ \\
 y_i &\sim& \mbox{Normal}(\mu_i, \sigma_i)
 \end{array}
 $$
 
-The normal distribution is not the only choice of measurement model. Like many other distributions (e.g., beta distribution) it can be described as a distribution that contains one parameter for the **location** (i.e., $\mu$) and **scale** (i.e., $\sigma$). More generally though, we might want to use distributions described by one parameter for location, one parameter for scale, and one or more parameters for the **shape**. If we instead choose the [Box-Cox power exponential](/posts/2025-08-02_box-cox-power-exponential/), the statistical model now looks like this,
+Adding link functions $g()$ to connect the additive predictor to the parameters gives a generalised additive regression on the mean and the standard deviation...
 
 $$
 \begin{array}{rcl}
-\mu_i &=& s_{\mu 0} + \sum_k s_{\mu k}(x_{ik}) \\
-\sigma_i &=& s_{\sigma 0} + \sum_k s_{\sigma k}(x_{ik}) \\
-\nu_i &=& s_{\nu 0} + \sum_k s_{\nu k}(x_{ik}) \\
-\tau_i &=& s_{\tau 0} + \sum_k s_{\tau k}(x_{ik}) \\ \\
+g_\mu(\mu_i) &=& \beta_{\mu 0} + \sum_k f_{\mu k}(x_{ik}) \\
+g_\sigma(\sigma_i) &=& \beta_{\sigma 0} + \sum_k f_{\sigma k}(x_{ik}) \\ \\
+y_i &\sim& \mbox{Normal}(\mu_i, \sigma_i)
+\end{array}
+$$
+
+Finally, we recognise that the normal distribution is not the only choice of measurement model. Like many other distributions (e.g., beta distribution) it can be described as a distribution that contains one parameter for the **location** (i.e., $\mu$) and **scale** (i.e., $\sigma$). More generally though, we might want to use distributions described by one parameter for location, one parameter for scale, and one or more parameters for the **shape**. If we instead choose the [Box-Cox power exponential](/posts/2025-08-02_box-cox-power-exponential/) (BCPE) -- in which $\mu$ is a location parameter, $\sigma$ is a scale parameter, and $\nu$ and $\tau$ together control the shape -- the statistical model now looks like this...
+
+$$
+\begin{array}{rcl}
+g_\mu(\mu_i) &=& \beta_{\mu 0} + \sum_k f_{\mu k}(x_{ik}) \\
+g_\sigma(\sigma_i) &=& \beta_{\sigma 0} + \sum_k f_{\sigma k}(x_{ik}) \\
+g_\nu(\nu_i) &=& \beta_{\nu 0} + \sum_k f_{\nu k}(x_{ik}) \\
+g_\tau(\tau_i) &=& \beta_{\tau 0} + \sum_k f_{\tau k}(x_{ik}) \\ \\
 y_i &\sim& \mbox{BCPE}(\mu_i, \sigma_i, \nu_i, \tau_i)
 \end{array}
 $$
 
-and we now have a **generalised additive model for location, scale, and shape** (GAMLSS).
+and we now have an example of a **generalised additive model for location, scale, and shape** (GAMLSS), noting of course you don't have to use the BCPE specifically. The key requirement here is that the distributional family be flexible enough that you can separately model location, scale, and shape. There are a lot of distrubutions that satisfy this property, though for the purposes of this post I am just going to stick with BCPE.^[One thing I will note as an aside, however, is that this stipulation is one of the key ways in which GAMLSS models extend GAM regressions and GLM analyses. In the GAM and GLM frameworks, the probabilistic component is assumed to be a distribution in the [exponential family](https://en.wikipedia.org/wiki/Exponential_family). The GAMLSS framework relaxes that considerably, insofar as location/scale/shape encompasses many distributions that fall outside the exponential family.]
 
-### Estimation
+
+### Model fitting
 
 ```{r}
 # maximum age used in gamlss modelling; this restriction is
@@ -360,21 +423,12 @@ mod <- list(
 quarto_tabset(mod, level = 3)
 ```
 
+## Using the GAMLSS models
+
 ### Quantiles
 
 ```{r}
 #| label: height-quantiles
-get_predictors <- function(model) {
-  outcome <- deparse(model$mu.formula[[2]])
-  all_vars <- unique(c(
-    all.vars(model$mu.formula),
-    all.vars(model$sigma.formula),
-    all.vars(model$nu.formula),
-    all.vars(model$tau.formula)
-  )) 
-  setdiff(all_vars, outcome)
-}
-
 get_pars <- function(data, model) {
   pars <- tibble(
     mu    = predict(model, newdata = data, type = "response", what = "mu"),
