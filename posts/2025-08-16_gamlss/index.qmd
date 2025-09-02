@@ -70,6 +70,15 @@ post_dir <- rprojroot::find_root_file(criterion = rprojroot::has_file(".here"))
 
 Okay, so in my [last post](/posts/2025-08-02_box-cox-power-exponential/) I was whining about the Box-Cox power exponential distribution, and promising that it would be followed by a new post whining about the [generalised additive model for location, shape and scale](https://en.wikipedia.org/wiki/Generalized_additive_model_for_location,_scale_and_shape) (GAMLSS). This is that post.
 
+My introduction to GAMLSS models came from a problem that is easy to state, and strangely difficult to solve. If you know a person's age $a$ and their sex $s$, describe (and sample from) the joint distribution over height $h$ and weight $w$ for people of that age and sex. That is, estimate the following distribution:
+
+$$
+p(h, w | a, s)
+$$
+
+If you don't think very hard this doesn't seem like it should be very difficult. Data sets containing age, sex, height and weight are not too difficult to find. The question doesn't ask for any fancy longitudinal modelling: all we're being asked to do is estimate a probability distribution. Not difficult at all. It's a problem I've encountered several times in my pharmacometric work -- very commonly, we have to run simulations to explore the expected distribution of drug exposures among a population of patients that varies in weight, height, age, and sex -- so it's one I've had to think about a few times now, and it's a trickier than it looks. Typically we have to rely on fairly large population survey data sets (e.g. NHANES) and sophisticated regression models (e.g. GAMLSS), and I will confess that neither of these two things were covered in my undergraduate classes. 
+
+It's been a rather steep learning curve, and in keeping with my usual habit, I decided it might be wise to write up some notes. I know with a dread certainty that I'll have to use this knowledge again in a few months, and given how awful my memory is these days I'd prefer not to have to relearn the whole thing from the beginning next time. 
 
 ```{r}
 #| label: load-packages
@@ -85,13 +94,6 @@ library(tibble)
 library(ggplot2)
 library(quartose)
 ```
-
-
-## The modelling problem
-
-$$
-p(h, w | a, s)
-$$
 
 ## The NHANES data
 
@@ -246,7 +248,7 @@ nhanes <- nhanes |>
 nhanes
 ```
 
-A small slice through a very large data set, but one that contains the four variables that I need in almost every NHANES-based analysis: `age_mn` ($a$), `sex_fct` ($s$), `height_cm` ($h$), and `weight_kg` ($w$). I can now turn to the substantive statistical problem: estimating the joint conditional density $p(h, w | a, s)$.
+A small slice through a very large data set, but one that contains the four variables that I need almost every time I have to use NHANES data in a pharmacometric analysis: `age_mn` ($a$), `sex_fct` ($s$), `height_cm` ($h$), and `weight_kg` ($w$). I can now turn to the substantive statistical problem: estimating the joint conditional density $p(h, w | a, s)$.
 
 
 ## The GAMLSS framework
@@ -297,7 +299,7 @@ y_i &\sim& \mbox{Normal}(\mu_i, \sigma_i)
 \end{array}
 $$
 
-When expressed this way, the "homogeneity of variance" assumption in linear model corresponds to a model in which no covariates (predictors) are included in the model for $\sigma$. However there's no inherent reason to limit ourselves in this way. Relaxing homogeneity of variance allows us to specify regression models for both $\mu$ and $\sigma$,
+The only way in which this framing of the model differs from the usual form is that I've used $\beta_{\sigma 0}$ to refer to the to-be-estimated $\sigma$ parameter. The difference is purely notational, but it reflects a slight shift in mindset: it signals that we're now considering the possibility that we *could* have chosen to develop a richer regression model that allows each observation to have its $\sigma_i$, rather than use an "intercept only" model for the variance. Indeed when expressed this way, the "homogeneity of variance" assumption in linear regression now corresponds to the special case in which no covariates (predictors) are included in the model for $\sigma$. Moreover, it makes clear that there's no inherent reason to limit ourselves in this way. Relaxing homogeneity of variance allows us to specify regression models for both $\mu$ and $\sigma$, giving us the following framework for linear regression:
 
 $$
 \begin{array}{rcl}
@@ -307,7 +309,7 @@ y_i &\sim& \mbox{Normal}(\mu_i, \sigma_i)
 \end{array}
 $$
 
-If we replace the regression coefficients $\beta_{\mu k}$ and $\beta_{\sigma k}$ with smooth functions $f_{\mu k}()$ and $f_{\sigma k}()$ and use these to transform the predictors, we now have an additive regression model for the mean and the standard deviation...
+Having made this conceptual shift, it's not too hard to see that we can repeat the line of reasoning from the previous section that took us from linear models to generalised additive models. To wit, if we replace the regression coefficients $\beta_{\mu k}$ and $\beta_{\sigma k}$ with smooth functions $f_{\mu k}()$ and $f_{\sigma k}()$ and use these to transform the predictors, we have an additive regression model for the mean and the standard deviation...
 
 $$
 \begin{array}{rcl}
@@ -327,7 +329,7 @@ y_i &\sim& \mbox{Normal}(\mu_i, \sigma_i)
 \end{array}
 $$
 
-Finally, we recognise that the normal distribution is not the only choice of measurement model. Like many other distributions (e.g., beta distribution) it can be described as a distribution that contains one parameter for the **location** (i.e., $\mu$) and **scale** (i.e., $\sigma$). More generally though, we might want to use distributions described by one parameter for location, one parameter for scale, and one or more parameters for the **shape**. If we instead choose the [Box-Cox power exponential](/posts/2025-08-02_box-cox-power-exponential/) (BCPE) -- in which $\mu$ is a location parameter, $\sigma$ is a scale parameter, and $\nu$ and $\tau$ together control the shape -- the statistical model now looks like this...
+Finally, we recognise that the normal distribution is not the only choice of measurement model. Like many other distributions it can be described as a distribution that contains one parameter for the **location** (i.e., $\mu$) and **scale** (i.e., $\sigma$). More generally though, we might want to use distributions described by one parameter for location, one parameter for scale, and one or more parameters for the **shape**. If we instead choose the [Box-Cox power exponential](/posts/2025-08-02_box-cox-power-exponential/) (BCPE) -- in which $\mu$ is a location parameter, $\sigma$ is a scale parameter, and $\nu$ and $\tau$ together control the shape -- the statistical model now looks like this...
 
 $$
 \begin{array}{rcl}
