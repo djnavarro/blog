@@ -2,6 +2,7 @@
 title: "gamlss"
 description: "This is a subtitle"
 date: "2025-09-07"
+categories: ["statistics", "R"]
 knitr:
   opts_chunk: 
     dev.args:
@@ -68,7 +69,9 @@ post_dir <- rprojroot::find_root_file(criterion = rprojroot::has_file(".here"))
 
 <!--------------- post begins here ----------------->
 
-Okay, so in my [last post](/posts/2025-08-02_box-cox-power-exponential/) I was whining about the Box-Cox power exponential distribution, and promising that it would be followed by a new post whining about the [generalised additive model for location, shape and scale](https://en.wikipedia.org/wiki/Generalized_additive_model_for_location,_scale_and_shape) (GAMLSS). This is that post.
+Okay, so [two posts ago](/posts/2025-08-02_box-cox-power-exponential/) I was whining about the Box-Cox power exponential distribution, and promising that it would be followed by a new post whining about the [generalised additive model for location, shape and scale](https://en.wikipedia.org/wiki/Generalized_additive_model_for_location,_scale_and_shape) (GAMLSS). It turns out I was lying because I had to set time aside and write a separate whiny [post about penalized splines](/posts/2025-09-06_p-splines/) and promising it would be followed by a post whining about GAMLSS.
+
+This is that post.
 
 My introduction to GAMLSS models came from a problem that is easy to state, and strangely difficult to solve. If you know a person's age $a$ and their sex $s$, describe (and sample from) the joint distribution over height $h$ and weight $w$ for people of that age and sex. That is, estimate the following distribution:
 

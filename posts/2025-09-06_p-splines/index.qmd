@@ -1,7 +1,12 @@
 ---
-title: "p-splines"
-description: "This is a subtitle"
+title: "A short post about p-splines"
+description: "Yes, this is also secretly about GAMLSS regression"
 date: "2025-09-06"
+categories: ["statistics", "R"]
+knitr:
+  opts_chunk: 
+    dev.args:
+      bg: "#00000000"
 --- 
 
 <!--------------- my typical setup ----------------->
@@ -18,6 +23,12 @@ set.seed(1)
 ```
 
 <!--------------- post begins here ----------------->
+
+This is a post about penalised splines, and lets be brutally honest I do not care for penalised splines any more than I care for the [Box-Cox power exponential distribution](/posts/2025-08-02_box-cox-power-exponential/) that I wittered on about in the last post. I did not care then and I do not care now. Unfortunately, in much the same way that I had to learn about the BCPE distribution in order to understand the [GAMLSS regression](https://en.wikipedia.org/wiki/Generalized_additive_model_for_location,_scale_and_shape) framework that I'm going to talk about in the [next post](/posts/2025-09-07_gamlss/), so much so that my BCPE notes became their own post, I have fallen prey to my own vices and again found myself through the looking glass, shaving an unhappy yak, and writing about a topic very different to the one I originally intended to. 
+
+Oh well.
+
+
 
 A [spline](https://en.wikipedia.org/wiki/Spline_(mathematics)) is just a piecewise polynomial. Partition the interval $[a, b]$ into $k$ subintervals defined by **knot** points that demark the edges of each interval. The $i$-th subinterval is the region $[t_{_i-1}, t_i]$ and 
 
