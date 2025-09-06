@@ -5,18 +5,20 @@ date: "2025-08-02"
 image: lucille2.jpg
 image-alt: "Lucille Bluth confessing her disdain for the Box-Cox power exponential"
 categories: ["Statistics", "R"]
---- 
+knitr:
+  opts_chunk: 
+    dev.args:
+      bg: "#00000000"
+---
 
 <!--------------- my typical setup ----------------->
 
 ```{r}
 #| label: setup
 #| include: false
-very_wide <- 500
-wide <- 136
-narrow <- 76
-options(width = narrow)
-cache_images <- TRUE
+blog_dir <- rprojroot::find_root_file(criterion = rprojroot::has_file("_quarto.yml"))
+source(fs::path(blog_dir, "shared", "common.R"))
+ggplot2::theme_set(theme_custom())
 set.seed(1)
 ```
 
@@ -60,8 +62,7 @@ nhanes |>
   filter(age_yr <= 50) |>
   ggplot(aes(age_yr, weight_kg)) + 
   geom_point() +
-  facet_wrap(~sex_fct) + 
-  theme_bw()
+  facet_wrap(~sex_fct)
 ```
 
 There's nothing partictularly suprising about this plot: human beings do have a tendency to get bigger and heavier until we reach adulthood, after which the changes in weight are much less dramatic. Again... duh. But the devil is in the details here. You can see just from looking at the chart that (again, obviously) the variability changes over time: adult weights are a lot more variable than infant weights. A model for this data set will necessarily need to capture that heterogeneity, otherwise it will make some hilariously wrong predictions about how heavy a baby can be.^[I have a funny story to tell about a GAMLSS model that I fit to NHANES data, in which my first attempt was rather ambitiously trying to do something fancy with the shape parameters of the BCPE distribution and I got burned: the bloody thing was convinced that a few female babies (and only female babies) could in fact be born 100cm or so in length and... look, either we're talking about a xenomorph situation here or I fucked up the model.]
@@ -74,9 +75,7 @@ nhanes |>
   filter(age_yr > 25 & age_yr <= 50) |>
   ggplot(aes(weight_kg)) + 
   geom_histogram(bins = 40) +
-  facet_wrap(~sex_fct) + 
-  theme_bw()
-
+  facet_wrap(~sex_fct) 
 ```
 
 Ah. Yeah, there's no way we're going to have much luck fitting a normal distribution to that: the distribution of body weight is positively skewed in pretty much every data set we encounter.^[To a pharmacometrician (as I now apparently am), this is a "well duh" kind of thing to say, because a shockingly large number of the variables we typically deal with in this field are right-skewed and are usually fit with log-normal distributions. In psychology, the discipline from which I emerged like some kind of twisted transsexual moth, it might be more of a surprise because unless you have been cursed with the knowledge of how to model reaction time distributions (sadly, like most mathematical psychologists, I have been so cursed) you might be used to data that are typically normal, or approximately so.] So we will need a family of distributions that can capture the [skewness](https://en.wikipedia.org/wiki/Skewness) we typically see in this kind of data.
@@ -120,7 +119,6 @@ bc <- expand_grid(
 
 ggplot(bc, aes(y, fy, colour = factor(lambda))) +
   geom_path() + 
-  theme_bw() + 
   labs(
     x = "Untransformed value", 
     y = "Box-Cox transformed value", 
@@ -218,8 +216,7 @@ dat |>
   ) |> 
   ggplot(aes(values)) + 
   geom_histogram(bins = 100) +
-  facet_wrap(~type) + 
-  theme_bw()
+  facet_wrap(~type)
 ```
 
 and, just to make the connection even more explicit, here's an example illustrating the connection between my rather lazy `density_bcn()` function and the infinitely superior `dBCCG()` function supplied by **gamlss.dist**:
@@ -239,8 +236,7 @@ dat |>
   ) |> 
   ggplot(aes(y, density)) + 
   geom_path() +
-  facet_wrap(~type, scales = "free") + 
-  theme_bw()
+  facet_wrap(~type, scales = "free")
 ```
 
 Well, that's a relief. It would have been embarrassing if I'd gotten that wrong, wouldn't it?^[For the record: in the process of writing this blog post I did indeed get it wrong several times. The real reason why I included the comparison between my functions and the proper ones is that I have learned from bitter experience that it usually takes me several attempts to correctly understand the underlying statistical concepts and implement them as functions, so I make certain to include cross-checks like this every single time.]
@@ -310,8 +306,7 @@ dat |>
   ) |> 
   ggplot(aes(y, density)) + 
   geom_path() +
-  facet_wrap(~type, scales = "free") + 
-  theme_bw()
+  facet_wrap(~type, scales = "free")
 ```
 
 Okay. Fabulous. My code works. But gosh, that is a peculiar looking density, isn't it? The BCPE family is quite flexible, and can produce a surprising range of shapes depending on the parameters you supply. To give you a sense of it, here's a quick tour of some part of the parameter space. I'll fix the $\mu$ and $\sigma$ parameters for this example, and focus on the two shape parameters $\nu$ and $\tau$:
@@ -335,11 +330,10 @@ dat <- expand_grid(y = y_val, mu = 10, sigma = .1, nu = nu_val, tau = tau_val) |
 dat |>
   ggplot(aes(y, density)) + 
   geom_path() +
-  facet_grid(tau_lbl ~ nu_lbl) + 
-  theme_bw()
+  facet_grid(tau_lbl ~ nu_lbl)
 ```
 
-Intuitively, you can see what they parameters are doing:
+Intuitively, you can see what the parameters are doing:
 
 - Approximately speaking, the role of $\nu$ is to control skewness. When $\nu = 0$ the distribution is approximately symmetric^[Yes, I know, what the fuck is going on in the bottom row? The key thing to remember here is that the BCPE is a distribution over the positive reals, and that can have some counterintuitive effects when you ramp up kurtosis. It is best, therefore, to remember that $\nu$ is only "approximately" a descriptor of symmetry. Rigby and Stasinopoulos discuss this in Appendix A in the paper, where they point out that the actual behaviour of the shape parameters is a little more nuanced. The thing that you're seeing in the bottom row is exactly the phenomenon they refer to.], when $\nu < 0$ the distribution has positive skewness^[Again: yes, I know, I know, the directions are flipped. I didn't design this thing okay, I'm just trying to make it make sense.] and when $\nu > 0$ the distribution has negative skewness. 
 - Again speaking approximately, the role of $\tau$ is to control kurtosis. When $\tau = 2$ the distributions are mesokurtic: the tails are about as heavy as the tails of a normal distribution. When $\tau < 2$ the distribution is leptokurtic: kurtosis is high, and the tails are heavier than the tails of a normal distribution. When $\tau > 2$ the distribution is platykurtic: kurtosis is low, and the tails are lighter. 
@@ -426,7 +420,6 @@ Just to be sure that this has worked -- and to follow my own advice from a coupl
 
 ```{r}
 #| label: plot-bcpe-fit
-
 pred_wide <- tibble(
   weight_kg = 20:250,
   male      = dBCPE(weight_kg, par_m[1], par_m[2], par_m[3], par_m[4]),
@@ -450,11 +443,10 @@ nhanes |>
     colour = "red",
     linewidth = 1
   ) +
-  facet_wrap(~sex_fct) + 
-  theme_bw()
+  facet_wrap(~sex_fct)
 ```
 
-Very nice. This fit is close enough that I would feel quite comfortable using these BCPE distribution in a simulation. Which is, of course, the point.
+Very nice. This fit is close enough that I would feel quite comfortable using these BCPE distributions in a simulation. Which is, of course, the point.
 
 ## Summary
 

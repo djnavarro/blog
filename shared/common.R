@@ -1,3 +1,8 @@
+very_wide <- 500
+wide <- 136
+narrow <- 76
+options(width = narrow)
+
 theme_custom <- function() {
 
   transparent_rect <- ggplot2::element_rect(fill = NA, color = NA)
