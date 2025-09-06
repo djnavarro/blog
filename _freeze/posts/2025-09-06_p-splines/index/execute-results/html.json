@@ -1,0 +1,15 @@
+{
+  "hash": "b3771e3e6d54d145e0e28b6f432d0e7e",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"p-splines\"\ndescription: \"This is a subtitle\"\ndate: \"2025-09-06\"\n--- \n\n\n\n\n<!--------------- my typical setup ----------------->\n\n\n\n\n\n\n\n\n\n<!--------------- post begins here ----------------->\n\nA [spline](https://en.wikipedia.org/wiki/Spline_(mathematics)) is just a piecewise polynomial. Partition the interval $[a, b]$ into $k$ subintervals defined by **knot** points that demark the edges of each interval. The $i$-th subinterval is the region $[t_{_i-1}, t_i]$ and \n\n$$\na = t_0 \\leq t_1 \\leq t_2 \\leq \\ldots \\leq t_k = b\n$$\n\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}
