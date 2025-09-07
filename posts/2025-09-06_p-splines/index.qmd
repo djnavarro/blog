@@ -1,8 +1,8 @@
 ---
-title: "A short post about p-splines"
-description: "Yes, this is also secretly about GAMLSS regression"
+title: "Splines, B-splines, and P-splines"
+description: "No, I do not care about splines. But I am trying to learn about GAMLSS regression, and yes, it is to this dark place that this topic has taken me"
 date: "2025-09-06"
-categories: ["statistics", "R"]
+categories: ["Statistics", "R"]
 knitr:
   opts_chunk: 
     dev.args:
@@ -30,13 +30,13 @@ library(tibble)
 library(ggplot2)
 ```
 
-This is a post about penalised splines, and lets be brutally honest I do not care for penalised splines any more than I care for the [Box-Cox power exponential distribution](/posts/2025-08-02_box-cox-power-exponential/) that I wittered on about in the last post. I did not care about the BCPE then and I do not care about P-splines now. Unfortunately, in much the same way that I had to learn about the BCPE distribution in order to understand the [GAMLSS regression](https://en.wikipedia.org/wiki/Generalized_additive_model_for_location,_scale_and_shape) framework that I'm going to talk about in the [next post](/posts/2025-09-07_gamlss/), so much so that my BCPE notes became their own post, I have fallen prey to my own vices and again found myself through the looking glass, shaving an unhappy yak, and writing about a topic very different to the one I originally intended to. 
+This is a post about splines. It's also a post about "basis splines" and "penalised splines", a fact that does not endear it to me greatly. Indeed, let;s be brutally honest: I do not care for penalised splines any more than I care for the [Box-Cox power exponential distribution](/posts/2025-08-02_box-cox-power-exponential/) that I wittered on about in the last post. I did not care about the BCPE then and I do not care about P-splines now. Unfortunately, in much the same way that I had to learn about the BCPE distribution in order to understand the [GAMLSS regression](https://en.wikipedia.org/wiki/Generalized_additive_model_for_location,_scale_and_shape) framework that I'm going to talk about in the [next post](/posts/2025-09-07_gamlss/), so much so that my BCPE notes became their own post, I have fallen prey to my own vices and again found myself through the looking glass, shaving an unhappy yak, and writing about a topic very different to the one I originally intended to. 
 
 Oh well.
 
 ## Splines
 
-A [spline](https://en.wikipedia.org/wiki/Spline_(mathematics)) is just a piecewise polynomial, and for the sake of my sanity I'm only going to consider polynomials in a single variable $x$, and consider a spline function $f(x)$ defined over the interval $[a, b]$. To build the spline, we partition the interval $[a, b]$ into $m$ disjoint regions $r_1, r_2, \ldots, r_m$, whose edges are defined by a vector of **knot** points $\mathbf{k} = (k_0, k_1, \ldots, k_m)$.^[Conventionally, the knot points are denoted $t$ but I think that's stupid and the number of knots uses $k$ as the notation but honestly I think that's stupid and just makes it harder to understand.] If we order the knot points such that $k_i \leq k_{i+1}$ and set $k_0 = a$ and $k_m = b$, then the $i$-th region corresponds to the interval $[k_{i-1}, k_i]$ between two successive knots.^[I suppose if I were being nitpicky enough to define the partition properly I would be a bit more precise and use half-open intervals like $[k_{i-1}, k_i)$ and then make a special case for the final interval by making that one closed, i.e., $[k_{m-1}, k_m]$, but this isn't the kind of post where I'm going to be that technical, and frankly even if I tried I'd probably just fuck it up.] Given this partition we can then define a continuous spline function in terms of $m$ distinct polynomial functions $p_1(x), p_2(x), \ldots p_m(x)$, one for each subinterval. Our spline function is just a fancy if-then rule. If the point $x$ lies within region $r_i$, use the polynomial $p_i(x)$:
+A [spline](https://en.wikipedia.org/wiki/Spline_(mathematics)) is just a piecewise polynomial, and for the sake of my sanity I'm only going to consider polynomials in a single variable $x$, and consider a spline function $f(x)$ defined over the interval $[a, b]$. To build the spline, we partition the interval $[a, b]$ into $m$ disjoint regions $r_1, r_2, \ldots, r_m$, whose edges are defined by a vector of **knot** points $\mathbf{k} = (k_0, k_1, \ldots, k_m)$.^[Conventionally, the knot points are denoted $t$ and the number of knots uses $k$ as the notation but honestly I think that's stupid and just makes it harder to understand.] If we order the knot points such that $k_i \leq k_{i+1}$ and set $k_0 = a$ and $k_m = b$, then the $i$-th region corresponds to the interval $[k_{i-1}, k_i]$ between two successive knots.^[I suppose if I were being nitpicky enough to define the partition properly I would be a bit more precise and use half-open intervals like $[k_{i-1}, k_i)$ and then make a special case for the final interval by making that one closed, i.e., $[k_{m-1}, k_m]$, but this isn't the kind of post where I'm going to be that technical, and frankly even if I tried I'd probably just fuck it up.] Given this partition we can then define a continuous spline function in terms of $m$ distinct polynomial functions $p_1(x), p_2(x), \ldots p_m(x)$, one for each subinterval. Our spline function is just a fancy if-then rule. If the point $x$ lies within region $r_i$, use the polynomial $p_i(x)$:
 
 $$
 f(x) = 
@@ -194,6 +194,358 @@ $$
 
 where $B_{i,m}(x)$ is a **basis spline** ([B-spline](https://en.wikipedia.org/wiki/B-spline)) function defined with respect to the same knot vector $\mathbf{k}$, and the coefficient $\alpha_i$ define the weight assigned to the $i$-th basis spline of order $m$. The basis spline functions are themselves splines, but they are a specific set of spline functions designed to give us the result above.^[Something something about B-splines forming a basis for the spline function space or whatever.] From the perspective of a data analyst who wants to fit an arbitrary spline function to a set of points, it can be awfully convenient to work with basis splines because the problem of estimating the unknown spline function $f(x)$ can be transformed into the problem of estimating the coefficients $\alpha$. 
 
+$$
+B_{i,0}(x) = 
+\left\{
+  \begin{array}{rl}
+  1 & \mbox{ if } x \in [k_i, k_{i+1}) \\
+  0 & \mbox{ otherwise}
+  \end{array}
+\right.
+$$
+
+The higher-order basis splines can be conveniently constructed using the Cox-de Boer recursion which expresses a basis spline of order $m$ as a weighted sum of two basis splines of order $m-1$:
+
+$$
+B_{i,m}(x) \ = \ \frac{x - k_i}{k_{i+m} - k_i} B_{i, m-1}(x) \ + \ \frac{k_{i+m+1} - x}{k_{i+m+1} - k_{i+1}} B_{i+1, m-1}(x)
+$$
+
+Again, just to provide a sense of what these basis spline functions look like, we'll use B-splines with evenly spaced knots, and -- using a very hacky `plot_b_splines()` function hidden below the fold -- show what B-splines look like when we increase the order of the splines that we wish to represent using them.
+
+```{r}
+#| code-fold: true
+#| code-summary: Code for b_spline(), even_knots(), plot_b_splines()
+even_knots <- function(n_internal, k0 = 0, kn = 1) {
+  k <- function(i) {
+    if (i < 0) return(k0)
+    if (i > (n_internal+1)) return(kn)
+    return(k0 + (kn - k0) * ceiling(i)/(n_internal+1))
+  }
+  knot_vals <- (k0 + (kn - k0) * 0:(n_internal+1))/(n_internal+1)
+  attr(k, "n_internal") <- n_internal
+  attr(k, "knots") <- knot_vals
+  return(k)
+}
+
+knots <- even_knots(4)
+
+b_spline <- function(x, i, m, k) {
+  if(m == 0) {
+    y <- rep(0, length(x))
+    y[x >= k(i) & x < k(i+1)] <- 1  
+    return(y)
+  } 
+
+  n <- length(x)
+  if (k(i+m) == k(i)) w1 <- rep(0, n)
+  if (k(i+m) != k(i)) w1 <- (x - k(i)) / (k(i+m) - k(i))
+  if (k(i+m+1) == k(i+1)) w2 <- rep(0, n)
+  if (k(i+m+1) != k(i+1)) w2 <- (k(i+m+1) - x) / (k(i+m+1) - k(i+1))
+
+  y1 <- b_spline(x, i, m-1, k)
+  y2 <- b_spline(x, i+1, m-1, k)
+  y <- (w1 * y1) + (w2 * y2)
+
+  return(y)
+}
+
+plot_b_splines <- function(degree, knots = even_knots(degree)) {
+  k0 <- min(attr(knots, "knots"))
+  kn <- max(attr(knots, "knots"))
+  x_val <- seq(k0, kn, length.out = 200L)
+  n_internal <- attr(knots, "n_internal")
+  knot_index <- -n_internal:n_internal
+  dat_fn <- knot_index |> 
+    map_dfr(\(i_val) tibble(
+      x = x_val,
+      i = i_val, 
+      y = b_spline(
+        x = x_val, 
+        i = i_val, 
+        m = degree, 
+        k = knots
+      )
+    )) |> 
+    mutate(i = factor(i))
+  dat_kn <- tibble(
+    x = map_dbl(knot_index, knots),
+    y = 0
+  )
+  plt <- ggplot() + 
+    geom_path(
+      data = dat_fn, 
+      mapping = aes(x, y, color = i),
+      linewidth = 1, 
+      show.legend = FALSE
+    ) +
+    geom_point(
+      data = dat_kn, 
+      mapping = aes(x, y),
+      show.legend = FALSE
+    ) + 
+    facet_wrap(~i) + 
+    labs(x = "x", y = "B(x)")
+  return(plt)
+}
+```
+
+### Flat "splines" 
+
+For the degree 0 basis splines, there's... really not very much to say. Like, okay, if we call my plotting code it shows us that yup, the basis functions are just step functions:
+
+```{r}
+#| label: b-splines-0
+plot_b_splines(degree = 0, knots)
+```
+
+The only interesting thing to note here is that each basis spline covers only a single region, and since the knots carve the interval into 5 regions, there's only 5 basis splines that are identical apart from being shifted.^[Okay yes, the code also plots several other "basis splines" that are zero everywhere, but we can ignore those: it's purely because I was lazy in how I wrote the code hidden beneath the fold. Actually there are several respects in which the code is a bit sloppy but I'm not going to let myself be bothered by that in a silly blog post like this] The key thing to notice is that if I define a new spline using these as my B-splines (with the assistance of the `b_spline()` function that is also hidden behind the fold above), I'll always end up with step functions (i.e., piecewise flat): 
+
+```{r}
+#| code-fold: true
+#| code-summary: Code for plot_custom_spline()
+plot_custom_spline <- function(f) {
+  dat_f <- tibble(
+    x = seq(0, .99, by = .01),
+    y = f(x)    
+  )
+  dat_k <- tibble(
+    x = attr(knots, "knots"), 
+    y = f(x)
+  )
+  ggplot(mapping = aes(x, y)) + 
+    geom_path(data = dat_f) + 
+    geom_point(data = dat_k)
+}
+```
+
+```{r}
+#| label: my-spline-0
+my_spline_0 <- function(x) {
+  0.4 * b_spline(x, i = 0, m = 0, knots) + 
+  2.5 * b_spline(x, i = 1, m = 0, knots) + 
+  3.1 * b_spline(x, i = 2, m = 0, knots) +
+  1.4 * b_spline(x, i = 3, m = 0, knots) +
+  1.4 * b_spline(x, i = 4, m = 0, knots)
+}
+
+plot_custom_spline(my_spline_0)
+```
+
+I mean, I guess this isn't technically a splines at all since it isn't continuous, but whatever. You get the basic idea: when building a function from a linear combination of 0-degree B-splines defined with respect to a set of knots, you can create an arbitrary step function with breakpoints located at those knots. But you can *only* create step functions, nothing else.
+
+### Linear splines 
+
+So that makes sense. Let's now see what the 1-degree B-splines look like, again using my somewhat-hacky `plot_b_splines()` function to do the work:
+
+```{r}
+#| label: b-splines-1
+plot_b_splines(degree = 1, knots)
+```
+
+Hm. Okay, so our basis splines here are always triangular in shape. It took me a little bit of thinking to understand the implications of this, but there are three:
+
+- when we add these together we will end up with piecewise-linear functions
+- by design they will connect at the knots, so we "gain" one degree of continuity
+- all of our B-splines now span two subintervals, so they always have one internal knot, and we've gained one extra B-spline
+
+That last point might not be obvious because it kind of *looks* like some of our 1-degree B-splines don't have any internal knots, but looks are deceiving: when creating knots for higher degree B-splines, we have to "tie" it with several knots all located at the ends of the interval. So, for instance, the pink asymmetric triangle at the bottom right hand side of the plot above actually does have an internal knot, it just happens to be located at the exact same place as the right-hand knot.^[Well, aaaaactually, there's an argument to be made that in the statistical context it's not ideal to clamp the spline down by placing lots of additional knots at the ends. An alternative approach is to simply extend the range: keep all the knots equally spaced, but go far enough outside the range of the data that you don't need any of the B-splines near the edges. That way, you end up with basis splines that have the same shape. This is discussed by [Eilers, Marx and Durbán (2016)](https://www.researchgate.net/publication/290086196_Twenty_years_of_P-splines) in the P-spline context, but it's waaaaay beyond the scope of what I wanted to accomplish with this post. So let's move on, shall we?] 
+
+Aaaaaaannnnnnyway. It's not like any of this is terribly interesting, but to convince ourselves that that a linear combination of 1-degree B-splines will produce another 1-degree (piecewise linear) spline, let's make one and plot it:
+
+```{r}
+#| label: my-spline-1
+my_spline_1 <- function(x) {
+  0.4 * b_spline(x, i = -1, m = 1, knots) + 
+  0.4 * b_spline(x, i =  0, m = 1, knots) + 
+  2.5 * b_spline(x, i =  1, m = 1, knots) + 
+  3.1 * b_spline(x, i =  2, m = 1, knots) +
+  1.4 * b_spline(x, i =  3, m = 1, knots) +
+  1.4 * b_spline(x, i =  4, m = 1, knots)
+}
+
+plot_custom_spline(my_spline_1)
+```
+
+Yup. As expected. 
+
+### Quadratic splines 
+
+Next we turn to quadratic splines. First let's have a look at our basis splines. Again, because we've increased the order of the B-splines we have gained one more spline, and the quadratic splines we create from these will gain an additional degree of continuity (i.e., the first derivatives will be continuous at the knots). Here they are:
+
+```{r}
+#| label: b-splines-2
+plot_b_splines(degree = 2, knots)
+```
+
+Once again, I'll create a quadratic spline as a linear combination of the 2-degree B-splines. Notice that I'm not changing the weights assigned to the B-splines when I do so...
+
+```{r}
+#| label: my-spline-2
+my_spline_2 <- function(x) {
+  0.4 * b_spline(x, i = -2, m = 2, knots) + 
+  0.4 * b_spline(x, i = -1, m = 2, knots) + 
+  0.4 * b_spline(x, i =  0, m = 2, knots) + 
+  2.5 * b_spline(x, i =  1, m = 2, knots) + 
+  3.1 * b_spline(x, i =  2, m = 2, knots) +
+  1.4 * b_spline(x, i =  3, m = 2, knots) +
+  1.4 * b_spline(x, i =  4, m = 2, knots)
+}
+
+plot_custom_spline(my_spline_2)
+```
+
+...and the result is a piecewise-quadratic function that looks rather similar to the piecewise-linear function I built in the previous section, just a little smoother.
+
+### Cubic splines 
+
+At this point it's probably obvious that I could keep playing this game as long as I wanted to, but I'm getting bored already so let's do one last round and take a look at 3-degree B-splines. Visually they don't look much different to the 2-degree ones, but they aren't quite the same:
+
+```{r}
+#| label: b-splines-3
+plot_b_splines(degree = 3, knots)
+```
+
+As before, we can create a cubic spline by taking a linear combination of these 3-degree B-splines:
+
+```{r}
+#| label: my-spline-3
+my_spline_3 <- function(x) {
+  0.4 * b_spline(x, i = -3, m = 3, knots) + 
+  0.4 * b_spline(x, i = -2, m = 3, knots) + 
+  0.4 * b_spline(x, i = -1, m = 3, knots) + 
+  0.4 * b_spline(x, i =  0, m = 3, knots) + 
+  2.5 * b_spline(x, i =  1, m = 3, knots) + 
+  3.1 * b_spline(x, i =  2, m = 3, knots) +
+  1.4 * b_spline(x, i =  3, m = 3, knots) +
+  1.4 * b_spline(x, i =  4, m = 3, knots)
+}
+
+plot_custom_spline(my_spline_3)
+```
+
+It looks very similar to the quadratic version, but they aren't quite the same. We could keep going and look at quartic and quintic splines if we wanted to but at this point it's starting to seem a little silly. Besides, in practice we don't usually go above cubic splines in real life data analysis, from what I can tell. 
+
+## Least squares estimation
+
+We are making progress, I think? At this point I'm starting to get a decent intuitive feel for B-splines. That's good. That being said, I can't help but notice that it is 11pm on a Sunday night and I am aaaaaaawfully keen to finish this post and the [GAMLSS post](/posts/2025-09-07_gamlss/) that I am wrapping up in parallel with this one. So let's move things along yeah?
+
+Up to this point I've built a very simple framework for working with B-splines, and to define arbitrary splines using B-splines. What I don't have yet is any way to *estimate* a spline using data. Now, in the real world I don't actually need to do this myself, because there are many tools in R that already do so, and said tools are implemented soooo much better than any hacky code I could write for myself in a weekend. But that is beside the point. My goal here is to build something that helps *me* understand how it works, so let's do something hacky. Here's the entire "framwork", in all its horrible, terrible, no good, very bad glory:
+
+```{r}
+# returns a function used to specify knots
+even_knots <- function(n_internal, k0 = 0, kn = 1) {
+  k <- function(i) {
+    if (i < 0) return(k0)
+    if (i > (n_internal+1)) return(kn)
+    return(k0 + (kn - k0) * ceiling(i)/(n_internal+1))
+  }
+  knot_vals <- (k0 + (kn - k0) * 0:(n_internal+1))/(n_internal+1)
+  attr(k, "n_internal") <- n_internal
+  attr(k, "knots") <- knot_vals
+  return(k)
+}
+
+# function implementing B-splines 
+b_spline <- function(x, i, m, k) {
+  if(m == 0) {
+    y <- rep(0, length(x))
+    y[x >= k(i) & x < k(i+1)] <- 1  
+    return(y)
+  } 
+
+  n <- length(x)
+  if (k(i+m) == k(i)) w1 <- rep(0, n)
+  if (k(i+m) != k(i)) w1 <- (x - k(i)) / (k(i+m) - k(i))
+  if (k(i+m+1) == k(i+1)) w2 <- rep(0, n)
+  if (k(i+m+1) != k(i+1)) w2 <- (k(i+m+1) - x) / (k(i+m+1) - k(i+1))
+
+  y1 <- b_spline(x, i, m-1, k)
+  y2 <- b_spline(x, i+1, m-1, k)
+  y <- (w1 * y1) + (w2 * y2)
+
+  return(y)
+}
+
+# given a set of knots (k) and their weights (a), predict the 
+# value of corresponding cubic spline at a set of points (x)
+cubic_spline <- function(x, a, k) {
+  n_k <- attr(k, "n_internal")
+  n_s <- length(a)
+  if (n_s != 2*n_k) stop("argh...", call. = FALSE)
+  y <- rep(0, length(x))
+  for (i in seq_along(a)) {
+    k_i <- -n_k + i 
+    y <- y + a[i] * b_spline(x, i = k_i, m = 3, k)
+  }
+  return(y)
+}
+
+# least squares loss function for parameters (a), observed
+# predictors (x), outcomes (y), and knots (k)
+cs_loss <- function(a, x, y, k) {
+  y_hat <- cubic_spline(x, a, k)
+  loss <- sum((y - y_hat)^2)
+}
+
+# use the optim() function to estimate the parameters
+# using least squares method; it doesn't work terribly
+# well in general but it will do for now
+cs_pars <- function(x, y, k) {
+  n <- attr(k, "n_internal")
+  fit <- optim(
+    par = rep(mean(y), 2*n),
+    fn = cs_loss,
+    x = x,
+    y = y,
+    k = k
+  )
+  return(fit$par)
+}
+```
+
+To convince myself that it "works", at least in the sense that it seems to produce fairly reasonable smoothing in a very simple example, I'll use the `mpg` data from the **ggplot2** package. In keeping with tradition, I will use `displ` (engine displacement) as the predictor, and `hwy` (mileage for highway driving) as the outcome. Here goes...
+
+```{r}
+#| label: mpg-fit
+# the predictor is going to be the displ
+# column in mpg, so we'll make sure the 
+# knots have a wider range thant the data
+knots_displ <- even_knots(
+  n = 20, 
+  k0 = 0, # min(mpg$displ) = 1.6 
+  kn = 10 # max(mpg$displ) = 7
+)
+
+# estimate the parameters
+pars_mpg <- cs_pars(
+  x = mpg$displ, 
+  y = mpg$hwy, 
+  k = knots_displ
+)
+
+# calculate the estimated spline across the 
+# full range of the data 
+pred <- tibble(
+  displ = seq(
+    from = min(mpg$displ), 
+    to = max(mpg$displ), 
+    length.out = 100L
+  ),
+  hwy = cubic_spline(
+    x = displ, 
+    a = pars_mpg, 
+    k = knots_displ
+  )
+)
+
+# draw a pretty picture
+ggplot(mapping = aes(displ, hwy)) + 
+  geom_point(data = mpg) + 
+  geom_path(data = pred)
+```
+
+...okay, yeah, good enough. Moving on. 
+
 ## P-splines
 
-
+At long last I get to P-splines, and thankfully there's not much I really need to say about them. Originally indroduced by [Eilers & Marx, 1996](https://www.jstor.org/stable/2246049), there's now a very extensive literature on penalised spline, and I will be brutally honest and admit I've read almost none of it. Happily, the overview paper by [Eilers, Marx & Durbán 2016](https://www.researchgate.net/publication/290086196_Twenty_years_of_P-splines) is pretty helpful, and I found it a decent enough place to start. 
