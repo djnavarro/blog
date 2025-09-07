@@ -1,8 +1,8 @@
 ---
-title: "gamlss"
-description: "This is a subtitle"
+title: "GAMLSS, NHANES, and my own personal hell"
+description: "Fiiiiiiinally she writes the cursed GAMLSS post. Oh and it's also about the NHANES data set I guess"
 date: "2025-09-07"
-categories: ["statistics", "R"]
+categories: ["Statistics", "R"]
 knitr:
   opts_chunk: 
     dev.args:
@@ -384,7 +384,7 @@ sigma.formula = ~pb(age_mn),
 
 Note that the `formula` argument takes a two-sided formula as its argument: the outcome variable `height_cm` is passed on the left hand side of the formula. 
 
-Okay, yes Danielle that's all well and good, but what's the story with the `pb()` function? As you've probably guessed, this is where we specify the smoothing functions $f()$ in the additive model. The `pb()` function is used specify P-spline smoothing ([Eilers & Marx, 1996](https://www.jstor.org/stable/2246049), [Eilers, Marx & Durbán 2016](https://www.researchgate.net/publication/290086196_Twenty_years_of_P-splines))
+Okay, yes Danielle that's all well and good, but what's the story with the `pb()` function? As you've probably guessed, this is where we specify the smoothing functions $f()$ in the additive model. The `pb()` function is used specify P-spline smoothing ([Eilers & Marx, 1996](https://www.jstor.org/stable/2246049), [Eilers, Marx & Durbán 2016](https://www.researchgate.net/publication/290086196_Twenty_years_of_P-splines)), and I absolutely do not have any desire to delve into the formalism for P-splines because that is *literally* what I did in the [post about P-splines](/posts/2025-09-06_p-splines/).
 
 
 When this code is executed, the output looks something like this:
