@@ -1,8 +1,10 @@
 ---
-title: "Splines, B-splines, and P-splines"
+title: "Splines, B-splines, P-splines, and a disapproving kitten"
 description: "No, I do not care about splines. But I am trying to learn about GAMLSS regression, and yes, it is to this dark place that this topic has taken me"
 date: "2025-09-06"
 categories: ["Statistics", "R"]
+image: haunted.jpg
+image-alt: A black cat looking disapproving
 knitr:
   opts_chunk: 
     dev.args:
@@ -490,14 +492,15 @@ cs_loss <- function(a, x, y, k) {
 # use the optim() function to estimate the parameters
 # using least squares method; it doesn't work terribly
 # well in general but it will do for now
-cs_pars <- function(x, y, k) {
+cs_pars <- function(x, y, k, ..., loss = cs_loss) {
   n <- attr(k, "n_internal")
   fit <- optim(
     par = rep(mean(y), 2*n),
-    fn = cs_loss,
+    fn = loss,
     x = x,
     y = y,
-    k = k
+    k = k,
+    ...
   )
   return(fit$par)
 }
@@ -511,7 +514,7 @@ To convince myself that it "works", at least in the sense that it seems to produ
 # column in mpg, so we'll make sure the 
 # knots have a wider range thant the data
 knots_displ <- even_knots(
-  n = 20, 
+  n = 10, 
   k0 = 0, # min(mpg$displ) = 1.6 
   kn = 10 # max(mpg$displ) = 7
 )
@@ -541,11 +544,76 @@ pred <- tibble(
 # draw a pretty picture
 ggplot(mapping = aes(displ, hwy)) + 
   geom_point(data = mpg) + 
-  geom_path(data = pred)
+  geom_path(data = pred, color = "tomato", linewidth = 1)
 ```
 
 ...okay, yeah, good enough. Moving on. 
 
 ## P-splines
 
-At long last I get to P-splines, and thankfully there's not much I really need to say about them. Originally indroduced by [Eilers & Marx, 1996](https://www.jstor.org/stable/2246049), there's now a very extensive literature on penalised spline, and I will be brutally honest and admit I've read almost none of it. Happily, the overview paper by [Eilers, Marx & Durbán 2016](https://www.researchgate.net/publication/290086196_Twenty_years_of_P-splines) is pretty helpful, and I found it a decent enough place to start. 
+At long last I get to P-splines, and thankfully there's not much I really need to say about them. Originally indroduced by [Eilers & Marx, 1996](https://www.jstor.org/stable/2246049), there's now a very extensive literature on penalised spline, and I will be brutally honest and admit I've read almost none of it. Happily, the overview paper by [Eilers, Marx & Durbán 2016](https://www.researchgate.net/publication/290086196_Twenty_years_of_P-splines) is pretty helpful, and I found it a decent enough place to start. The basic idea is fairly simple: instead of minimising least squares, introduce a penalty function $P(\mathbf{a})$ on the B-spline weights, to enforce smoothness. 
+
+$$
+\hat{\mathbf{a}} = \arg \min_{\mathbf{a}} \left(\sum_i (f(x_i, \mathbf{a}) - y_i) \right) + \lambda P(\mathbf{a}) 
+$$
+
+Now, in the real world one should take care in defining a penalty function, and the literature on P-splines quite clearly goes into a lot of detail on this. However, it is now midnight, and I want to go to bed. With that in mind, I'll do something very simple. 
+
+$$
+P(\mathbf{a}) = \sum_i (a_i - a_{i+1})^2
+$$
+
+Here's what the implementation of this looks like:
+
+```{r}
+#| label: mpg-fit-penalised
+# penalised loss function based on differences between
+# the weights assigned to adjacent B-splines
+cs_penalised_loss <- function(a, x, y, k, l) {
+  n <- length(a)
+  diffs <- a[-1] - a[-n]
+  y_hat <- cubic_spline(x, a, k)
+  ols <- sum((y - y_hat)^2)
+  pen <- sum(diffs^2)
+  return(ols + l*pen)
+}
+
+# estimate parameters for hwy ~ cs(displ)
+pars_mpg_p <- cs_pars(
+  x = mpg$displ, 
+  y = mpg$hwy, 
+  k = knots_displ,
+  l = 20,
+  loss = cs_penalised_loss
+)
+
+# calculate predictions of the penalised
+# spline estimated above
+pred_p <- tibble(
+  displ = seq(
+    from = min(mpg$displ), 
+    to = max(mpg$displ), 
+    length.out = 100L
+  ),
+  hwy = cubic_spline(
+    x = displ, 
+    a = pars_mpg_p, 
+    k = knots_displ
+  )
+)
+
+# draw a pretty picture: tomato red line is the original
+# fit; sea green line is the fit with penalty added
+ggplot(mapping = aes(displ, hwy)) + 
+  geom_point(data = mpg) + 
+  geom_path(data = pred, color = "tomato", linewidth = 1) +
+  geom_path(data = pred_p, color = "seagreen", linewidth = 1)
+```
+
+Okay, yes that does seem to have smoothed the spline somewhat. The green line is less wiggly than the reddish one, which I suppose was the point of the exercise.
+
+And with that, I am done. This post is haunted and I want nothing more to do with it.
+
+![](haunted.jpg)
+
+
