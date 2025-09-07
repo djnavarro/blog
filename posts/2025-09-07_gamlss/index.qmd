@@ -334,6 +334,8 @@ Second, noting that I'm about to use the [gamlss](https://gamlss.org/) R package
 opt_control <- gamlss.control(c.crit = .001, n.cyc = 250)
 ```
 
+#### Estimating $p(h|a,s)$
+
 Let's start with the simpler models. When estimating $p(h | a, s = \mbox{male})$ and $p(h | a, s = \mbox{female})$ there is only a single predictor that varies within the data set (i,e., age), so we don't have to think about headache inducing questions like what interaction terms to include. Here's the code I used to fit these two models:
 
 ```{r}
@@ -360,7 +362,7 @@ ht_f <- gamlss(
 )
 ```
 
-For the post part, the code here is fairly straightforward. I've chosen to use the Box-Cox power exponential distribution as my measurement model, so I've set `family = BCPE`. Calling `BCPE()` returns a "gamlss.family" object that does two things: it indicates that the Box-Cox power exponential distribution should be used, and it specifies the link functions to be used. Under the default settings for `BCPE()`, the link functions $g_{\mu}()$ and $g_{\nu}()$ are the identity-link, whereas $g_{\sigma}()$ and $g_{\tau}()$ are both log-link:
+For the most part, the code here is fairly straightforward. I've chosen to use the Box-Cox power exponential distribution as my measurement model, so I've set `family = BCPE`. Calling `BCPE()` returns a "gamlss.family" object that does two things: it indicates that the Box-Cox power exponential distribution should be used, and it specifies the link functions to be used. Under the default settings for `BCPE()`, the link functions $g_{\mu}()$ and $g_{\nu}()$ are the identity-link, whereas $g_{\sigma}()$ and $g_{\tau}()$ are both log-link:
 
 ```{r}
 BCPE()
@@ -384,8 +386,7 @@ sigma.formula = ~pb(age_mn),
 
 Note that the `formula` argument takes a two-sided formula as its argument: the outcome variable `height_cm` is passed on the left hand side of the formula. 
 
-Okay, yes Danielle that's all well and good, but what's the story with the `pb()` function? As you've probably guessed, this is where we specify the smoothing functions $f()$ in the additive model. The `pb()` function is used specify P-spline smoothing ([Eilers & Marx, 1996](https://www.jstor.org/stable/2246049), [Eilers, Marx & Durbán 2016](https://www.researchgate.net/publication/290086196_Twenty_years_of_P-splines)), and I absolutely do not have any desire to delve into the formalism for P-splines because that is *literally* what I did in the [post about P-splines](/posts/2025-09-06_p-splines/).
-
+Okay, yes Danielle that's all well and good, but what's the story with the `pb()` function? As you've probably guessed, this is where we specify the smoothing functions $f()$ in the additive model. The `pb()` function is used specify P-spline smoothing ([Eilers & Marx, 1996](https://www.jstor.org/stable/2246049), [Eilers, Marx & Durbán 2016](https://www.researchgate.net/publication/290086196_Twenty_years_of_P-splines)), and I absolutely do not have any desire to delve into the formalism for P-splines because that is *literally* what I did in the [post about P-splines](/posts/2025-09-06_p-splines/). For my current purposes it's sufficient to note that `pb()` implements uses penalised B-splines as a tool to fit a smoothed function to the data. The details don't matter too much right now.  
 
 When this code is executed, the output looks something like this:
 
@@ -401,6 +402,11 @@ GAMLSS-RS iteration 8: Global Deviance = 245643.8
 GAMLSS-RS iteration 9: Global Deviance = 245643.8 
 ```
 
+It can sometimes be a slow process, but the more recent implementation of `pb()` is much more efficient than other spline functions like `cs()`, and has the advantage that the user doesn't need to fiddle around with hyperparameters. 
+
+#### Estimating $p(w|h,a,s)$
+
+Turning now to the second part of the problem, we need to estimate the distributions $p(w | h, a, s = \mbox{male})$ and $p(w | h, a, s = \mbox{female})$. The GAMLSS models I implemented for these distributions are shown below:
 
 ```{r}
 #| label: gamlss-weight-models
@@ -425,6 +431,10 @@ wt_htf <- gamlss(
   control = opt_control
 )
 ```
+
+The models for $\sigma$, $\nu$ and $\tau$ haven't changed from before, but the model for $\mu$ is substantially different. I suspect that there are many different ways you could do this, but the approach I took was to use penalised splines for age, but treat height as a linear predictor. You can see from the code that I also allowed an age-by-height interaction term.^[The **gamlss** package documentation notes there is nothing sophisticated about how the interactions are implemented for spline predictors; it literally multiplies the two terms.]
+
+In any case, I'm not so foolish as to actually run the GAMLSS-fitting code inside this blog post. Instead, I fit the models in another script, and saved the resulting model objects to RDS files. So now I can load these objects and take a look at the objects:
 
 ```{r}
 #| label: gamlss-objects
