@@ -1,0 +1,60 @@
+/*-- scss:defaults --*/
+
+// use litera as the base
+$theme: "litera" !default;
+
+// import google fonts
+@import 'https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&display=swap';
+@import 'https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&display=swap';
+
+// use Atkinson Hyperlegible font if available
+$font-family-sans-serif:      "Atkinson Hyperlegible", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji" !default;
+
+// dark theme colours
+$navbar-bg: #333;
+$body-bg: #222;
+$body-color: #bbb;
+$link-color: #cd3782;
+$code-block-bg: #333;
+$code-bg: #333;
+$code-color: #995bd5;
+$input-bg: #333;
+
+/*-- scss:rules --*/
+
+// litera is serif by default: revert to san-serif
+p {
+  font-family: $font-family-sans-serif;
+}
+
+pre {
+  background: #222;
+  color: #bbb;
+}
+
+.quarto-title-block .quarto-title-banner {
+  background: #333 !important;
+}
+
+.listing-category {
+  background: #444;
+  color: #ccc !important;
+  border-color: #666 !important;
+}
+
+.quarto-grid-item {
+  border-color: #666 !important;  
+}
+
+.nav-link.active {
+  color: #eee !important;
+}
+
+.nav-link {
+  --bs-nav-link-hover-color: #a42c68 !important;
+}
+
+.subtitle > a {
+  color: #666;
+  font-weight: bold
+}

@@ -1,0 +1,952 @@
+---
+title: "GAMLSS, NHANES, and my own personal hell"
+description: "Fiiiiiiinally she writes the cursed GAMLSS post. Oh and it's also about the NHANES data set I guess"
+date: "2025-09-07"
+categories: ["Statistics", "R"]
+image: agnes-enid.jpg
+image-alt: Agnes and Enid dancing, from the TV show Wednesday
+knitr:
+  opts_chunk: 
+    dev.args:
+      bg: "#00000000"
+--- 
+
+<!--------------- my typical setup ----------------->
+
+```{r}
+#| label: setup
+#| include: false
+set.seed(1)
+blog_dir <- rprojroot::find_root_file(criterion = rprojroot::has_file("_quarto.yml"))
+post_dir <- rprojroot::find_root_file(criterion = rprojroot::has_file(".here"))
+source(fs::path(blog_dir, "shared", "common.R"))
+ggplot2::theme_set(theme_custom())
+```
+
+<!--------------- post begins here ----------------->
+
+Okay, so [two posts ago](/posts/2025-08-02_box-cox-power-exponential/) I was whining about the Box-Cox power exponential distribution, and promising that it would be followed by a new post whining about the [generalised additive model for location, shape and scale](https://en.wikipedia.org/wiki/Generalized_additive_model_for_location,_scale_and_shape) (GAMLSS). It turns out I was lying because I had to set time aside and write a separate whiny [post about penalized splines](/posts/2025-09-06_p-splines/) and promising it would be followed by a post whining about GAMLSS.
+
+This is that post.
+
+![Frankly, I deserve applause for simply getting this post finished. Whether it is any good is entirely an ancillary matter, one that we shall not be concerned with in these pages.](agnes-enid.jpg)
+
+## Background
+
+My introduction to GAMLSS models came from a problem that is easy to state, and strangely difficult to solve. If you know a person's age $a$ and their sex $s$, describe (and sample from) the joint distribution over height $h$ and weight $w$ for people of that age and sex. That is, estimate the following distribution:
+
+$$
+p(h, w | a, s)
+$$
+
+If you don't think very hard this doesn't seem like it should be very difficult. Data sets containing age, sex, height and weight are not too difficult to find. The question doesn't ask for any fancy longitudinal modelling: all we're being asked to do is estimate a probability distribution. Not difficult at all. It's a problem I've encountered several times in my pharmacometric work -- very commonly, we have to run simulations to explore the expected distribution of drug exposures among a population of patients that varies in weight, height, age, and sex -- so it's one I've had to think about a few times now, and it's a trickier than it looks. Typically we have to rely on fairly large population survey data sets (e.g. NHANES) and sophisticated regression models (e.g. GAMLSS), and I will confess that neither of these two things were covered in my undergraduate classes. 
+
+It's been a rather steep learning curve, and in keeping with my usual habit, I decided it might be wise to write up some notes. I know with a dread certainty that I'll have to use this knowledge again in a few months, and given how awful my memory is these days I'd prefer not to have to relearn the whole thing from the beginning next time. 
+
+```{r}
+#| label: load-packages
+#| message: false
+library(fs)
+library(dplyr)
+library(purrr)
+library(haven)
+library(readr)
+library(tidyr)
+library(gamlss)
+library(tibble)
+library(ggplot2)
+library(quartose)
+```
+
+## The NHANES data
+
+The data set I'll look at in this post comes from the [National Health and Nutrition Examination Survey](https://www.cdc.gov/nchs/nhanes/) (NHANES), a large ongoing study conducted under the auspices of the United States [Center for Disease Control](https://www.cdc.gov/nchs/nhanes/) (CDC). The program started in the 1960s, but the data set that is conventionally called "the NHANES data set" refers to the *continuous* data set that has been collected since 1999, with updates released every couple of years with approximately 5000 participants added each year. The data collection process is quite extensive. As described on the website, it includes:
+
+> - Interviews about health, diet, and personal, social, and economic characteristics
+> - Visits to our mobile exam center for dental exams and health and body measurements
+> - Laboratory tests by highly trained medical professionals
+
+For any given participant, records are split across several data files. For instance, the [body measurements](https://wwwn.cdc.gov/nchs/nhanes/search/datapage.aspx?Component=Examination) table contains very typical measurements such as height and weight, but also includes variables like waist circumference, thigh circumference, and so on. The [demographics](https://wwwn.cdc.gov/nchs/nhanes/search/datapage.aspx?Component=Demographics) table data includes information like age, sex, and so forth. These are the only two tables I'll use in this post, but there are a great many others also: you can find blood pressure data, audiometry data, various clinical measurements, and so on. It's a very handy data set used for a variety of purposes, not least of which is the fact that NHANES data are used to build the [CDC growth charts](https://www.cdc.gov/growthcharts) that are themselves used for a wide range of scientific and medical purposes. In my own work as a newly-minted pharmacometrician I've needed to rely on the NHANES data and/or CDC growth charts in several projects over the last couple of years, and for that reason I've found it useful to dive into the data set quite a few times. 
+
+As of the most recent release, the summaries below list the file names the body measurement (BMX) and demographics (DEMO) tables:
+
+```{r}
+#| results: asis
+#| message: false
+#| label: nhanes-metadata
+metadata <- list( 
+  BMX  = read_csv(path(post_dir, "nhanes", "bmx-summary.csv"), show_col_types = FALSE),
+  DEMO = read_csv(path(post_dir, "nhanes", "demo-summary.csv"), show_col_types = FALSE) 
+)
+
+quarto_tabset(metadata, level = 3)
+```
+
+As you can see from the summaries, the data sets are released as SAS transport (i.e., XPT) files, with letters used to represent each data cut. In principle these should go from "A" (data from the 1999-2000 cohort) through to "L" (data from the 2021-2023 cohort), but that's not precisely what happens. The original release (which ostensibly should be the "A" data cut) doesn't have a label, and the "K" data cut is missing entirely due to the COVID-19 pandemic. In its place there is a "P" version of data set that breaks the file naming scheme, presumably short for "pandemic", and labelled differently to highlight that data from that release might be a little strange I suppose.  
+
+### Importing the data
+
+To explore the NHANES data, we can download all these files and load them into R:
+
+```{r}
+#| label: nhanes-import
+# all demographics and body measurement files
+demo_files <- dir_ls(path(post_dir, "nhanes", "data", "demo"))
+bmx_files  <- dir_ls(path(post_dir, "nhanes", "data", "bmx"))
+
+# read demographics file (selected variables only)
+demos <- demo_files |> 
+  map(\(xx) {
+    dd <- read_xpt(xx) 
+    if (!exists("RIDEXAGM", where = dd)) dd$RIDEXAGM <- NA_real_
+    dd <- select(dd, SEQN, RIAGENDR, RIDAGEYR, RIDAGEMN, RIDEXAGM)
+    dd
+  }) |> 
+  bind_rows(.id = "file_demo") |> 
+  mutate(file_demo = path_file(file_demo)) |>
+  left_join(metadata$DEMO, by = "file_demo") |>
+  select(-description)
+
+# read body measurements file (selected variables only)
+bmxes <- bmx_files |> 
+  map(\(xx) {
+    dd <- read_xpt(xx) 
+    dd <- select(dd, SEQN, BMXWT, BMXHT, BMXRECUM)
+    dd
+}) |> 
+  bind_rows(.id = "file_bmx") |> 
+  mutate(file_bmx = path_file(file_bmx)) |>
+  left_join(metadata$BMX, by = "file_bmx") |>
+  select(-description)
+```
+
+Looking at the code above, you can see that I haven't included *all* the columns from the BMX and DEMO tables, only the ones that are most relevant to my purposes. My `demos` and `bmxes` data frames are considerably smaller than they would be if I included everything. Importantly for our purposes the `SEQN` column serves as an id variable, and we can use it to join the tables. In the code below I'm using `left_join(bmxes, demos)` to do the work because I'm only really interested in those cases where the body measurement data exists, and I'm tidying the column names a little for the sake of my sanity: 
+
+```{r}
+#| label: nhanes-join
+nhanes <- bmxes |>
+  left_join(demos, by = c("SEQN", "cohort")) |>
+  select(
+    id          = SEQN,
+    sex_s       = RIAGENDR, # sex/gender at screen (1 = M, 2 = F, . = NA)
+    weight_kg_e = BMXWT,    # weight at exam
+    height_cm_e = BMXHT,    # standing height at exam
+    length_cm_e = BMXRECUM, # recumbent length at exam (0-47 months only)
+    age_yr_s    = RIDAGEYR, # natal age at screening (years)
+    age_mn_s    = RIDAGEMN, # natal age at screening (months; 0-24 mos only)
+    age_mn_e    = RIDEXAGM, # natal age at exam (months; 0-19 years only)
+    cohort
+  )
+
+ nhanes
+```
+
+Very nice indeed. 
+
+### Preprocessing choices
+
+Even with the small snippet shown above you can see hints of nuances that arise when working with the NHANES data, especially if pediatric age ranges are of interest (as they very often are for me). Suppose one of the variables of interest in your analysis is height. On row 4 we have data from a 22 month old boy: there is no height measurement for him. That's very often the case for young infants, most obviously because very young infants can't stand up so you can't measure standing height. What you *can* do for those infants is take a related measurement: recumbent length. Okay that makes sense: you measure height for adults, and length for babies. Except... there are some kids in the age range where it makes sense to take *both* measurements. Row 1 contains data from a 29 month old girl, who was measured as 91.6cm in height and... 93.2cm in length. 
+
+Ah.
+
+Right. The height of a standing human and the length of the same human lying down don't have to be the same, and the differences between the two won't be random measurement error, because gravity and posture are real things that exist! The NHANES data itself illustrates that:
+
+```{r}
+#| label: height-vs-length
+ok <- function(x) !is.na(x)
+nhanes |> 
+  filter(ok(height_cm_e), ok(length_cm_e)) |> 
+  summarise(
+    mean_diff = mean(length_cm_e - height_cm_e),
+    sd_diff = sd(length_cm_e - height_cm_e)
+  )
+```
+
+So, when considering what *height* to use for the boy in row 4, it's not necessarily a good idea to substitute his *length*, because those probably aren't the same. An imputation procedure of some kind is needed. I won't go into it in this post, but I played around with a few possible models for predicting length from height in the process of writing it, and in the end concluded that nothing fancy is needed here. A simple adjustment will suffice: 
+
+```{r}
+#| label: height-vs-length-2
+length_to_height <- function(length_cm) {
+  length_cm - 1.06  # adjust based on average difference in NHANES
+}
+```
+
+It feels a bit silly writing a function for this conversion, but it's helpful from a documentation purpose: creating a dummy function to use (rather than just subtracting 1.06 later in the code) makes it clear to the reader that I *am* using some kind of explicit conversion when I transform length to height, and the comment provides a little extra detail on how I chose the conversion rule.
+
+Similar nuances for other measurements exist. There are three different measurements that record age, and they don't have to be in agreement: the *survey* takes place at a different point in time to the *exam*, so it's possible that the (now relabelled) `age_mn_e` and `age_mn_s` variables are different. Age in years at the time of the survey `age_yr_s` should presumably be consistent with the age in months at the time of the survey, but data aren't always straightforward. Given all this, the preprocessing steps used to create measurements of age and height look like this:
+
+```{r}
+#| label: nhanes-preprocessing
+nhanes <- nhanes |>
+  mutate(
+    sex_num = sex_s - 1, # rescale to 0 = M, 1 = F
+    sex_fct = factor(sex_s, levels = 1:2, labels = c("male", "female")),
+    age_mn = case_when(
+      !is.na(age_mn_e) ~ age_mn_e, # use exam months if present
+      !is.na(age_mn_s) ~ age_mn_s, # else use survey months
+      TRUE ~ (age_yr_s * 12)       # else use age in years
+    ),
+    age_yr    = age_mn / 12,
+    weight_kg = weight_kg_e,
+    height_cm = case_when(
+      !is.na(height_cm_e) ~ height_cm_e, # use height if it was measured
+      !is.na(length_cm_e) ~ length_to_height(length_cm_e), # or convert length
+      TRUE ~ NA_real_, # else missing
+    )
+  )
+```
+
+The NHANES data set doesn't include information about transgender status or intersex status (at least not in the demographics and body measurements tables), and so for the purposes of NHANES-based analyses sex is a treated as binary variable, and doesn't require any extra steps beyond tidying and attaching nice labels. A similar story holds for weight: we have one measurement, the weight at time of exam, and that's what we'll use. 
+
+At this point the unwary might fall into the trap of thinking that we're done, but -- alas -- we aren't quite there yet. There's one more detail to consider regarding the age data. In the NHANES data set the age values stop at 80, but that value doesn't literally mean "80 years" it means "80 years or older". Because of that, you need to take some care in how you work with data for older participants. As it happens, I've never had to deal with this in the wild because my projects have used NHANES data in the pediatric setting. Given that, I'll keep it simple here and just drop all cases with age recorded as "80+" years. Not a problem if your application is pediatric, but you wouldn't want to do this in situations where you're interested in older populations. 
+
+In any case, having noted this I can finally complete the preprocessing and arrive at my `nhanes` data frame:
+
+```{r}
+nhanes <- nhanes |>
+  select(id, sex_num, sex_fct, weight_kg, height_cm, age_mn, age_yr, cohort) |>
+  filter(ok(sex_num), ok(weight_kg), ok(height_cm), ok(age_mn)) |>
+  filter(age_yr < 80)
+
+nhanes
+```
+
+A small slice through a very large data set, but one that contains the four variables that I need almost every time I have to use NHANES data in a pharmacometric analysis: `age_mn` ($a$), `sex_fct` ($s$), `height_cm` ($h$), and `weight_kg` ($w$). I can now turn to the substantive statistical problem: estimating the joint conditional density $p(h, w | a, s)$.
+
+## The GAMLSS framework
+
+### Structural model
+
+Let $\tilde{y}_i = E[y_i|x_{i1}, \ldots, x_{ip}]$ denote the expected value of (the $i$-th observation of) the outcome variable $y$, conditioned on knowing the values of $p$ predictor variables $x_{1}, \ldots, x_{p}$. In linear regression we propose that
+
+$$
+\tilde{y}_i = \beta_0 + \sum_{k=1}^p \beta_k \ x_{ik}
+$$
+
+Often we would rewrite this in matrix notation and express it as $\tilde{\mathbf{y}} = \mathbf{X} \mathbf{\beta}$ to make it look pretty, but I honestly don't think it adds much in this context. There are two different paths you could pursue when extending this framework: you could change something on the left hand side, or you could change something on the right hand side. For example, the [generalised linear model](https://en.wikipedia.org/wiki/Generalized_linear_model) introduced by [Nelder and Wedderburn (1972)](https://www.jstor.org/stable/2344614) modifies the linear model by supplying a "link function" $g()$ that transforms $\tilde{y}$, 
+
+$$
+g(\tilde{y}_i) = \beta_0 + \sum_{k=1}^p \beta_k \ x_{ik}
+$$
+
+Crudely put, the GLM applies a linear model to a transformed **outcome** variable (i.e., $y$). On the other hand, in the [additive model](https://en.wikipedia.org/wiki/Additive_model) proposed by [Friedman and Stuetzle (1981)](https://www.tandfonline.com/doi/abs/10.1080/01621459.1981.10477729), transformation functions $f()$ -- sometimes called "smoothing functions" -- are applied to the **predictor** variables (i.e., $x$):
+
+$$
+\tilde{y}_i = \beta_0 + \sum_{k=1}^p f_k(x_{ik})
+$$
+
+I'll talk more about the choice of smoothing function $f()$ later in the post, but for now the key thing to note is that the functions used for this purpose usually have free parameters that need to be estimated from the data. Because of this, fitting an additive model is a little more complicated than a simple "transform the predictors first and then fit a linear regression later" procedure. 
+
+In any case, having noted that **generalised** linear models introduce the link function $g()$ and **additive** models introduce the smoothing functions $f()$, it seems natural to consider a modelling framework that uses both of these things. That framework exists: it is called the [generalised additive model](https://en.wikipedia.org/wiki/Generalized_additive_model) (GAM), introduced by [Hastie and Tibshirani (1990)](https://www.jstor.org/stable/2245459):
+
+$$
+g(\tilde{y}_i) = \beta_0 + \sum_{k=1}^p f_k(x_{ik})
+$$
+
+### Measurement model
+
+In linear model with homogeneity of variance, we normally write this:
+
+$$
+y_i = \tilde{y}_i + \epsilon_i
+$$
+
+where the measurement error terms $\epsilon_i$ are assumed to be normally distributed with mean fixed at 0 and standard deviation $\sigma$ estimated from the data. Another way to express the same idea would be to say that the outcome variable $y_i$ is normally distributed with mean $\mu_i = \tilde{y}_i$, and a constant standard deviation $\sigma_i = \sigma$. Taking this line of reasoning a little further, we could rewrite the model in terms of *two* regression models: a linear model for the mean $\mu$, and another linear model for the standard deviation $\sigma$:
+
+$$
+\begin{array}{rcl}
+\mu_i &=& \beta_{\mu 0} + \sum_k \beta_{\mu k} \ x_{ik} \\
+\sigma_i &=& \beta_{\sigma 0} \\ \\
+y_i &\sim& \mbox{Normal}(\mu_i, \sigma_i)
+\end{array}
+$$
+
+The only way in which this framing of the model differs from the usual form is that I've used $\beta_{\sigma 0}$ to refer to the to-be-estimated $\sigma$ parameter. The difference is purely notational, but it reflects a slight shift in mindset: it signals that we're now considering the possibility that we *could* have chosen to develop a richer regression model that allows each observation to have its $\sigma_i$, rather than use an "intercept only" model for the variance. Indeed when expressed this way, the "homogeneity of variance" assumption in linear regression now corresponds to the special case in which no covariates (predictors) are included in the model for $\sigma$. Moreover, it makes clear that there's no inherent reason to limit ourselves in this way. Relaxing homogeneity of variance allows us to specify regression models for both $\mu$ and $\sigma$, giving us the following framework for linear regression:
+
+$$
+\begin{array}{rcl}
+\mu_i &=& \beta_{\mu 0} + \sum_k \beta_{\mu k} \ x_{ik} \\
+\sigma_i &=& \beta_{\sigma 0}  + \sum_k \beta_{\sigma k} \ x_{ik} \\ \\
+y_i &\sim& \mbox{Normal}(\mu_i, \sigma_i)
+\end{array}
+$$
+
+Having made this conceptual shift, it's not too hard to see that we can repeat the line of reasoning from the previous section that took us from linear models to generalised additive models. To wit, if we replace the regression coefficients $\beta_{\mu k}$ and $\beta_{\sigma k}$ with smooth functions $f_{\mu k}()$ and $f_{\sigma k}()$ and use these to transform the predictors, we have an additive regression model for the mean and the standard deviation...
+
+$$
+\begin{array}{rcl}
+\mu_i &=& \beta_{\mu 0} + \sum_k f_{\mu k}(x_{ik}) \\
+\sigma_i &=& \beta_{\sigma 0} + \sum_k f_{\sigma k}(x_{ik}) \\ \\
+y_i &\sim& \mbox{Normal}(\mu_i, \sigma_i)
+\end{array}
+$$
+
+Adding link functions $g()$ to connect the additive predictor to the parameters gives a generalised additive regression on the mean and the standard deviation...
+
+$$
+\begin{array}{rcl}
+g_\mu(\mu_i) &=& \beta_{\mu 0} + \sum_k f_{\mu k}(x_{ik}) \\
+g_\sigma(\sigma_i) &=& \beta_{\sigma 0} + \sum_k f_{\sigma k}(x_{ik}) \\ \\
+y_i &\sim& \mbox{Normal}(\mu_i, \sigma_i)
+\end{array}
+$$
+
+Finally, we recognise that the normal distribution is not the only choice of measurement model. Like many other distributions it can be described as a distribution that contains one parameter for the **location** (i.e., $\mu$) and **scale** (i.e., $\sigma$). More generally though, we might want to use distributions described by one parameter for location, one parameter for scale, and one or more parameters for the **shape**. If we instead choose the [Box-Cox power exponential](/posts/2025-08-02_box-cox-power-exponential/) (BCPE) -- in which $\mu$ is a location parameter, $\sigma$ is a scale parameter, and $\nu$ and $\tau$ together control the shape -- the statistical model now looks like this...
+
+$$
+\begin{array}{rcl}
+g_\mu(\mu_i) &=& \beta_{\mu 0} + \sum_k f_{\mu k}(x_{ik}) \\
+g_\sigma(\sigma_i) &=& \beta_{\sigma 0} + \sum_k f_{\sigma k}(x_{ik}) \\
+g_\nu(\nu_i) &=& \beta_{\nu 0} + \sum_k f_{\nu k}(x_{ik}) \\
+g_\tau(\tau_i) &=& \beta_{\tau 0} + \sum_k f_{\tau k}(x_{ik}) \\ \\
+y_i &\sim& \mbox{BCPE}(\mu_i, \sigma_i, \nu_i, \tau_i)
+\end{array}
+$$
+
+and we now have an example of a **generalised additive model for location, scale, and shape** (GAMLSS), noting of course you don't have to use the BCPE specifically. The key requirement here is that the distributional family be flexible enough that you can separately model location, scale, and shape. There are a lot of distributions that satisfy this property, though for the purposes of this post I am just going to stick with BCPE.^[One thing I will note as an aside, however, is that this stipulation is one of the key ways in which GAMLSS models extend GAM regressions and GLM analyses. In the GAM and GLM frameworks, the probabilistic component is assumed to be a distribution in the [exponential family](https://en.wikipedia.org/wiki/Exponential_family). The GAMLSS framework relaxes that considerably, insofar as location/scale/shape encompasses many distributions that fall outside the exponential family.]
+
+### Model fitting
+
+Okay, so that's the basic idea. How do we go about building a model? It's not entirely straightforward: because the GAMLSS framework is so flexible, there are a lot of different possibilities. My approach to the problem was heavily influenced by the [nhanesgamlss](https://github.com/smouksassi/nhanesgamlss) R package developed by my former colleague, the always-wonderful Samer Mouksassi. In fact, the first few times I fit a GAMLSS model all I did was use the `nhanesgamlss::simwtage()` function his package provides, and to be perfectly honest I probably wouldn't have bothered to dive any deeper than this except for the fact that twice this year I've collided with a real world modelling problem that needed something that Samer hadn't already solved for me! Specifically, the **nhanesgamlss** package is concerned with estimating and sampling from the distribution of weight conditional on age and sex, $p(w | a, s)$ and unfortunately for me, the problems I've worked on lately have needed me to sample height *and* weight. The density I need is $p(h, w | a, s)$. The NHANES data set and the GAMLSS modelling framework are both well suited to estimating this density, of course, but it's a different density to the one that `nhanesgamlss::simwtage()` is designed for. And so it was with a great deal of sadness I discovered that this time I would have to do my own work and not rely on Samer to have already done it for me. Curses. 
+
+The approach I've taken when tackling this problem is split it into two distinct parts. Rather than try to build a multivariate model with $(h, w)$ as the outcome vector, I use exchangeability to factorise the joint density as follows:
+
+$$
+p(h, w | a, s) = p(w | h, a, s) p(h | a, s)
+$$
+
+More precisely, the goal is to fit four GAMLSS models one for each of the following densities:
+
+$$
+\begin{array}{l}
+p(h | a, s = \mbox{male}) \\
+p(h | a, s = \mbox{female}) \\
+p(w | h, a, s = \mbox{male}) \\
+p(w | h, a, s = \mbox{female})
+\end{array}
+$$
+
+To get started, there are a few tiresome preliminaries to take care of. First, noting that the age range of most interest in the problems I've worked on is the pediatric range, I made a pragmatic decision to restrict the training data to participants aged 40 years or less, and split the NHANES data into two data sets: `nhanes_m` contains data for male participants, and `nhanes_f` contains data from female participants.
+
+```{r}
+age_max_yr <- 40
+nhanes_m <- nhanes |> filter(sex_fct == "male", age_yr <= age_max_yr)
+nhanes_f <- nhanes |> filter(sex_fct == "female", age_yr <= age_max_yr)
+```
+
+Second, noting that I'm about to use the [gamlss](https://gamlss.org/) R package to do the estimation, I'll define some settings for the optimisation routine using `gamlss::gamlss.control()`. As it happens, these settings turned out not to matter much for the models I ended up building, but during the process I'd tried out a few different settings and decided to stick with these:
+
+```{r}
+opt_control <- gamlss.control(c.crit = .001, n.cyc = 250)
+```
+
+#### Estimating $p(h|a,s)$
+
+Let's start with the simpler models. When estimating $p(h | a, s = \mbox{male})$ and $p(h | a, s = \mbox{female})$ there is only a single predictor that varies within the data set (i,e., age), so we don't have to think about headache inducing questions like what interaction terms to include. Here's the code I used to fit these two models:
+
+```{r}
+#| label: gamlss-height-models
+#| eval: false
+ht_m <- gamlss(
+  formula       = height_cm ~ pb(age_mn),
+  sigma.formula = ~pb(age_mn),
+  nu.formula    = ~1,
+  tau.formula   = ~1,
+  data    = nhanes_m,
+  family  = BCPE,
+  control = opt_control
+)
+
+ht_f <- gamlss(
+  formula       = height_cm ~ pb(age_mn),
+  sigma.formula = ~pb(age_mn),
+  nu.formula    = ~1,
+  tau.formula   = ~1,
+  data    = nhanes_f,
+  family  = BCPE,
+  control = opt_control
+)
+```
+
+For the most part, the code here is fairly straightforward. I've chosen to use the Box-Cox power exponential distribution as my measurement model, so I've set `family = BCPE`. Calling `BCPE()` returns a "gamlss.family" object that does two things: it indicates that the Box-Cox power exponential distribution should be used, and it specifies the link functions to be used. Under the default settings for `BCPE()`, the link functions $g_{\mu}()$ and $g_{\nu}()$ are the identity-link, whereas $g_{\sigma}()$ and $g_{\tau}()$ are both log-link:
+
+```{r}
+BCPE()
+```
+
+Since we're using the BCPE distribution, we need to pass four formula arguments, one for each parameter. After trying out a few different possibilities, I decided to keep things simple for the shape parameters. For $\nu$ and $\tau$ I specified an intercept-only model. The `nu.formula` and `tau.formula` arguments both accept a one-sided formula, and in this case I've gone with the simplest possibility:
+
+```{r}
+#| eval: false
+nu.formula   = ~1
+tau.formula  = ~1
+```
+
+In other words, while the location and scale of the height distribution can change over the lifespan, the model assumes the shape of the distribution remains the same. Straightforward enough. The formulas for the location parameter $\mu$ and the scale parameter $\sigma$ are a little more complex. As with `nu.formula` and `tau.formula`, the `sigma.formula` argument accepts a one-sided formula. Because we're expecting the variability of height^[More precisely, for the BCPE distribution the scale parameter $\sigma$ roughly maps onto the coefficient of variation.] to change as age increases, `age_mn` is included as a predictor here. Similarly, it's pretty obvious that we'd expect the average height to change with age, I'll also include `age_mn` as a predictor for $\mu$. The code looks like this:
+
+```{r}
+#| eval: false
+formula       = height_cm ~ pb(age_mn),
+sigma.formula = ~pb(age_mn),
+```
+
+Note that the `formula` argument takes a two-sided formula as its argument: the outcome variable `height_cm` is passed on the left hand side of the formula. 
+
+Okay, yes Danielle that's all well and good, but what's the story with the `pb()` function? As you've probably guessed, this is where we specify the smoothing functions $f()$ in the additive model. The `pb()` function is used specify P-spline smoothing ([Eilers & Marx, 1996](https://www.jstor.org/stable/2246049), [Eilers, Marx & Durbán 2016](https://www.researchgate.net/publication/290086196_Twenty_years_of_P-splines)), and I absolutely do not have any desire to delve into the formalism for P-splines because that is *literally* what I did in the [post about P-splines](/posts/2025-09-06_p-splines/). For my current purposes it's sufficient to note that `pb()` implements uses penalised B-splines as a tool to fit a smoothed function to the data. The details don't matter too much right now.  
+
+When this code is executed, the output looks something like this:
+
+```
+GAMLSS-RS iteration 1: Global Deviance = 251100.2 
+GAMLSS-RS iteration 2: Global Deviance = 245961 
+GAMLSS-RS iteration 3: Global Deviance = 245664.8 
+GAMLSS-RS iteration 4: Global Deviance = 245645 
+GAMLSS-RS iteration 5: Global Deviance = 245643.9 
+GAMLSS-RS iteration 6: Global Deviance = 245643.9 
+GAMLSS-RS iteration 7: Global Deviance = 245643.9 
+GAMLSS-RS iteration 8: Global Deviance = 245643.8 
+GAMLSS-RS iteration 9: Global Deviance = 245643.8 
+```
+
+It can sometimes be a slow process, but the more recent implementation of `pb()` is much more efficient than other spline functions like `cs()`, and has the advantage that the user doesn't need to fiddle around with hyperparameters. 
+
+#### Estimating $p(w|h,a,s)$
+
+Turning now to the second part of the problem, we need to estimate the distributions $p(w | h, a, s = \mbox{male})$ and $p(w | h, a, s = \mbox{female})$. The GAMLSS models I implemented for these distributions are shown below:
+
+```{r}
+#| label: gamlss-weight-models
+#| eval: false
+wt_htm <- gamlss(
+  formula       = weight_kg ~ pb(age_mn) + height_cm + pb(age_mn):height_cm,
+  sigma.formula = ~pb(age_mn),
+  nu.formula    = ~1,
+  tau.formula   = ~1,
+  data    = nhanes_m,
+  family  = BCPE,
+  control = opt_control
+)
+
+wt_htf <- gamlss(
+  formula       = weight_kg ~ pb(age_mn) + height_cm + pb(age_mn):height_cm,
+  sigma.formula = ~pb(age_mn),
+  nu.formula    = ~1,
+  tau.formula   = ~1,
+  data    = nhanes_f,
+  family  = BCPE,
+  control = opt_control
+)
+```
+
+The models for $\sigma$, $\nu$ and $\tau$ haven't changed from before, but the model for $\mu$ is substantially different. I suspect that there are many different ways you could do this, but the approach I took was to use penalised splines for age, but treat height as a linear predictor. You can see from the code that I also allowed an age-by-height interaction term.^[The **gamlss** package documentation notes there is nothing sophisticated about how the interactions are implemented for spline predictors; it literally multiplies the two terms.]
+
+In any case, I'm not so foolish as to actually run the GAMLSS-fitting code inside this blog post. Instead, I fit the models in another script, and saved the resulting model objects to RDS files. So now I can load these objects and take a look at the objects:
+
+```{r}
+#| label: gamlss-objects
+#| results: asis
+ht_m   <- readRDS(path(post_dir, "nhanes", "output", "ht-m.rds"))
+ht_f   <- readRDS(path(post_dir, "nhanes", "output", "ht-f.rds"))
+wt_htm <- readRDS(path(post_dir, "nhanes", "output", "wt-htm.rds"))
+wt_htf <- readRDS(path(post_dir, "nhanes", "output", "wt-htf.rds"))
+
+mod <- list(
+  ht_m = ht_m,
+  ht_f = ht_f,
+  wt_htm = wt_htm,
+  wt_htf = wt_htf
+)
+
+quarto_tabset(mod, level = 3)
+```
+
+Oh yes. Those are certainly model objects: I would recognise anywhere that characteristic impenetrable wall of jargon that accompanies every statistical object print method in R. Le sigh.
+
+## Using the GAMLSS models
+
+### Quantile estimation
+
+Now that I have the models I've worked so hard to construct, I suppose I should do something with them. The first application uses the $p(h|a,s)$ models to construct quantile curves for height by age and sex. In essence, I'll build my own version of the CDC growth charts. To that end I'll write a little wrapper function `get_pars()` to extract the specific values of $\mu$, $\sigma$, $\tau$, and $\nu$ that describe the distribution of heights, conditional on knowing the age and sex of the person:
+
+```{r}
+get_pars <- function(data, model) {
+  pars <- tibble(
+    mu    = predict(model, newdata = data, type = "response", what = "mu"),
+    sigma = predict(model, newdata = data, type = "response", what = "sigma"),
+    nu    = predict(model, newdata = data, type = "response", what = "nu"),
+    tau   = predict(model, newdata = data, type = "response", what = "tau"),
+  )
+  bind_cols(data, pars)
+}
+```
+
+In all honesty I probably didn't need to do this, because in addition to supplying a `predict()` method for gamlss objects, the **gamlss** package provides a `predictAll()` function that does essentially the same thing. But it's done now, and I prefer my syntax anyways. I can now calculate the desired quantiles by passing the parameter estimates to `qBCPE()`. The code below computes the 5th, 25th, 50th, 75th, and 95th percentiles for height, conditional on age and sex:
+
+```{r}
+#| label: height-quantiles
+predict_cases_ht <- expand_grid(
+  age_mn  = 1:(age_max_yr * 12),
+  sex_fct = factor(c("male", "female"))
+)
+
+predict_pars_ht <- bind_rows(
+  predict_cases_ht |> filter(sex_fct == "male") |> get_pars(ht_m),
+  predict_cases_ht |> filter(sex_fct == "female") |> get_pars(ht_f)
+)
+
+predict_quantiles_ht <- predict_pars_ht |>
+  mutate(
+    q05 = qBCPE(.05, mu = mu, sigma = sigma, nu = nu, tau = tau),
+    q25 = qBCPE(.25, mu = mu, sigma = sigma, nu = nu, tau = tau),
+    q50 = qBCPE(.50, mu = mu, sigma = sigma, nu = nu, tau = tau),
+    q75 = qBCPE(.75, mu = mu, sigma = sigma, nu = nu, tau = tau),
+    q95 = qBCPE(.95, mu = mu, sigma = sigma, nu = nu, tau = tau)
+  )
+
+predict_quantiles_ht
+```
+
+This is all well and good, Danielle, but since nobody loves looking at tables of numbers, shall we instead draw a pretty picture to display these quantile curves? Why yes, Other Danielle, we shall. 
+
+```{r}
+#| label: height-quantiles-plot
+#| fig-width: 8
+#| fig-height: 6
+ggplot() + 
+  geom_point(
+    data = nhanes |> filter(age_yr < age_max_yr), 
+    mapping = aes(age_mn, height_cm),
+    size = .25
+  ) +
+  geom_path(
+    data = predict_quantiles_ht |> 
+      pivot_longer(
+        cols = starts_with("q"),
+        names_to = "quantile",
+        values_to = "height_cm"
+      ),
+    mapping = aes(age_mn, height_cm, color = quantile)
+  ) +
+  facet_wrap(~sex_fct) +
+  theme(legend.position = "bottom")
+```
+
+Very pretty.
+
+### Even more quantile estimation
+
+Okay, that's nice but you might argue that the GAMLSS modelling is overkill here. The distribution of heights conditional on age and sex is fairly close to normal, and in any case we have about 100k rows in the data set spanning the full range of ages. While it is certainly true that a well-tuned GAMLSS model supplies slightly cleaner curves, and this would *absolutely* matter if I were working for the CDC and tasked with the job of producing official growth curves, this is a side project on a personal blog and I am not the CDC. 
+
+With that in mind, can we think of a case where even a data set as rich as NHANES starts to become awfully sparse and the modelling becomes much more important? Of course we can, Original Danielle, what a silly question. It is indeed trivially easy to find such a case if we start looking for one.
+
+Here is an example. Suppose we had a research question that was focused on some intervention (medication, diet, exercise, whatever) that might have an impact on weight, and moreover there was a particular concern or interest in how the intervention affects people at the extremes. In point of fact I *don't* have any such research question on my desk, but it's not entirely outlandish to imagine that there would be scenarios in which we have a specific interest in the distribution of weights associated with very tall or very short people. For the sake of argument, let's operationally define a "very tall" person to be someone at the 99th height percentile for their age and sex. Similarly we could say that a "very short" person is someone at the 1st percentile. Unless your data set is extremely large -- on a scale that not even NHANES can aspire to -- the data are going to be very sparse at the extremes. The moment we ask questions like this we should be resigned to the fact that we'll be taking *veeeeeery* thin slices through the tails of the distributions. 
+
+Let's take a look. As before, I'll construct the quantiles curves predicted by the GAMLSS model. It's slightly more involved than last time because I'm conditioning on a height percentile first and then constructing quantiles for weight, but the core logic is the same. These are the height percentiles:
+
+```{r}
+predict_cases_wt <- predict_pars_ht |>
+  mutate(
+    very_tall  = qBCPE(.99, mu = mu, sigma = sigma, nu = nu, tau = tau),
+    very_short = qBCPE(.01, mu = mu, sigma = sigma, nu = nu, tau = tau)
+  ) |> 
+  pivot_longer(
+    cols = c(very_tall, very_short),
+    names_to = "height_fct", 
+    values_to = "height_cm"
+  ) |> 
+  mutate(height_fct = factor(height_fct)) |> 
+  select(age_mn, sex_fct, height_fct, height_cm)
+
+predict_cases_wt
+```
+
+So now we have a collection of age/sex/height cases for which we need to compute weight quantiles. Here's the code for that:
+
+```{r}
+predict_pars_wt <- bind_rows(
+  predict_cases_wt |> filter(sex_fct == "male") |> select(-height_fct) |> get_pars(wt_htm),
+  predict_cases_wt |> filter(sex_fct == "female") |> select(-height_fct) |> get_pars(wt_htf)
+) |> 
+  left_join(predict_cases_wt, by = join_by(age_mn, sex_fct, height_cm)) |> 
+  relocate(height_fct, .before = height_cm)
+
+predict_quantiles_wt <- predict_pars_wt |>
+  mutate(
+    q05 = qBCPE(.05, mu = mu, sigma = sigma, nu = nu, tau = tau),
+    q25 = qBCPE(.25, mu = mu, sigma = sigma, nu = nu, tau = tau),
+    q50 = qBCPE(.50, mu = mu, sigma = sigma, nu = nu, tau = tau),
+    q75 = qBCPE(.75, mu = mu, sigma = sigma, nu = nu, tau = tau),
+    q95 = qBCPE(.95, mu = mu, sigma = sigma, nu = nu, tau = tau)
+  )
+
+predict_quantiles_wt
+```
+
+So far, so good. However, now we turn to the data itself. That's the point at which it becomes a little trickier When working with continuous data, you won't find a single person who sits exactly at the 99th or 1st percentile. I mean, the whole reason probability densities even exist as a mathematical formalism is because continous data are inconvenient that way. To the GAMLSS model this isn't a problem at all, but for the NHANES data itself it's terribly awkward. For the current purposes, I'll allow a little slack and extract the subset of the NHANES data where the participant is *near* the 99th or 1st percentile. Here's the code doing that:
+
+```{r}
+permitted <- predict_cases_wt |> 
+  mutate(
+    height_cm_lo = height_cm * 0.99, 
+    height_cm_hi = height_cm * 1.01
+  ) |> 
+  select(age_mn, sex_fct, height_fct, height_cm_lo, height_cm_hi)
+
+match_rules <- join_by(
+  x$sex_fct == y$sex_fct, 
+  x$age_mn == y$age_mn, 
+  x$height_cm > y$height_cm_lo, 
+  x$height_cm < y$height_cm_hi
+)
+
+nhanes_very_short <- semi_join(
+  x = nhanes, 
+  y = permitted |> filter(height_fct == "very_short"),
+  by = match_rules
+)
+
+nhanes_very_tall <- semi_join(
+  x = nhanes, 
+  y = permitted |> filter(height_fct == "very_tall"),
+  by = match_rules
+)
+
+nhanes_partial <- bind_rows(
+  very_short = nhanes_very_short,
+  very_tall = nhanes_very_tall,
+  .id = "height_fct"
+) |> mutate(height_fct = factor(height_fct))
+
+nhanes_partial
+```
+
+It's not exciting reading, but I will confess it was fun to write. I very rarely have to implement semi joins or rolling joins in my day to day life, so it was kind of nice to have an opportunity to remember how they work. Notably though, our filtered NHANES data that contains only very tall and very short people is now much smaller. We have only 1513 subjects, and the effect of this subsetting becomes noticeable when we plot the data, and plot those data against the GAMLSS estimated quantile curves:
+
+```{r}
+#| label: weight-quantiles-plot
+#| fig-width: 8
+#| fig-height: 10
+ggplot() + 
+  geom_point(
+    data = nhanes_partial, 
+    mapping = aes(age_mn, weight_kg),
+    size = .5
+  ) +
+  geom_path(
+    data = predict_quantiles_wt |> 
+      pivot_longer(
+        cols = starts_with("q"),
+        names_to = "quantile",
+        values_to = "weight_kg"
+      ),
+    mapping = aes(age_mn, weight_kg, color = quantile),
+    linewidth = 1
+  ) +
+  facet_grid(height_fct ~ sex_fct) +
+  theme(legend.position = "bottom")
+
+```
+
+Huh. It works better than I would have expected it to, actually. It's not perfect, and the model does seem to underestimate the uppermost weight quantiles for very tall people, but in fairness I set it a very hard task: estimating the 95th quantile for weight by age and sex, conditional on being at the 99th percentile for height? This is not something I'd have dared attempt in the past, and I'm mildly surprised it works as well as it does. The curves aren't smooth as I'd like, I suppose, and had I known in advance I was going to make this plot I might have tailored the GAMLSS fitting to enforce smoothness a little more, but honestly I'm not complaining. This is pretty good!
+
+### Model-based sampling
+
+Time to switch gears. While quantile estimation is the statistical problem for which GAMLSS models are best known, the use case I'm more likely to encounter in my own work is model-based sampling. It is grossly typical of pediatric pharmacometric simulations, in fact. We very often want to simulate the expected drug exposure across a particular subpopulation defined by an age band, stratified by sex, or something along these lines. Performing these simulations is a somewhat complicated affair, and this post is not the right place to dive deep on that topic, but for many of these simulations we need to sample from the full joint conditional distribution $p(h, w | a, s)$.^[A good example of this would be a drug where the approved dosing depends both on weight and body surface area. That happens sometimes, and since body surface area is approximated by a formula based one weight and height (and occasionally sex, depending on which formula you're using), we need the full joint conditional distribution in those cases.]
+
+Let's have a go at doing this. 
+
+The code below defines a function `sample_hw()` that takes a vector of ages, a vector of sexes, and a list of GAMLSS models as input, and returns a data frame that samples heights and weights for each case with the assistance of the appropriate GAMLSS model:
+
+```{r}
+sample_hw <- function(age_mn, sex_fct, mod) {
+
+  rTBCPE <- function(n, mu, sigma, nu, tau, trim = .0025) {
+    p <- runif(n, min = trim, max = 1 - trim)
+    if (any(mu <= 0)) mu[mu <= 0] <- 1E-6
+    if (any(sigma <= 0)) sigma[sigma <= 0] <- 1E-6
+    r <- qBCPE(p, mu = mu, sigma = sigma, nu = nu, tau = tau)
+    r
+  }
+  sample_h <- function(age_mn, ht_mod) {
+    tibble(age_mn) |> 
+      get_pars(model = ht_mod) |> 
+      select(mu, sigma, nu, tau) |> 
+      pmap_dbl(\(mu, sigma, nu, tau) rTBCPE(n = 1, mu, sigma, nu, tau))
+  }
+  sample_w <- function(age_mn, height_cm, wt_mod) {
+    tibble(age_mn, height_cm) |>
+      get_pars(model = wt_mod) |> 
+      select(mu, sigma, nu, tau) |> 
+      pmap_dbl(\(mu, sigma, nu, tau) rTBCPE(n = 1, mu, sigma, nu, tau))
+  }
+
+  height_cm <- weight_kg <- numeric(length(age_mn))
+  mm <- sex_fct == "male"
+  ff <- sex_fct == "female"
+
+  if (any(mm)) height_cm[mm] <- sample_h(age_mn[mm], mod$ht_m)
+  if (any(ff)) height_cm[ff] <- sample_h(age_mn[ff], mod$ht_f)  
+  if (any(mm)) weight_kg[mm] <- sample_w(age_mn[mm], height_cm[mm], mod$wt_htm)
+  if (any(ff)) weight_kg[ff] <- sample_w(age_mn[ff], height_cm[ff], mod$wt_htf)
+  
+  tibble(age_mn, sex_fct, height_cm, weight_kg)
+}
+```
+
+One feature worth noting here is the use of a *trimmed* Box-Cox power-exponential for the sampling. This is somewhat important in practice becase even with $\nu$ and $\tau$ parameters to control the shape (and thereby make the model less prone to sampling absurd values), the BCPE distribution has limits. It is not equipped with a detailed knowledge of human physiology, and even when fit to a data set as large as the whole of NHANES, the resulting distributions still have support on non-biological values and will -- in any sufficiently large simulation -- generate a few outliers that are biologically impossible. To that end, the sampling function quietly truncates the very ends of the distribution. The default trim in my code above is to remove 0.25% of the distribution on either side, which is quite a bit smaller than the 3% default used in the `nhanesgamlss::simwtage()` function that my former colleague Samer developed. The reason for the difference is uninteresting: my GAMLSS models are trained on a much larger data set than the ones supplied by the **nhanesgamlss** package, and I use a slightly different method to construct the model, and one side effect is that the BCPE densities in my version of the GAMLSS model have lighter tails than the ones that you'll get if you apply `nhanesgamlss::simwtage()` to the GAMLSS code provided in the package documentation.  
+
+In any case, now that I have the `sample_hw()` function written down, I can use it as the basis for a simulation. For the first example, I'll keep the exact same set of age and sex values from the NHANES data that were used to train the GAMLSS model, and sample new heights and weights for each case. In the process, I'll also classify into a set of "age bands". In real life these bands would be chosen based on the needs of the simulation, but for this example I don't have a specific application in mind so I just went with something pretty representative of the bands that I often need.
+
+Here's what happens:
+
+```{r}
+nhanes_fit <- bind_rows(nhanes_m, nhanes_f) |> arrange(age_mn)
+
+age_band <- function(age_mn) {
+  factor(
+    x = case_when(
+      age_mn <= 12                 ~ 1,
+      age_mn >  12 & age_mn <=  24 ~ 2,
+      age_mn >  24 & age_mn <=  72 ~ 3,
+      age_mn >  72 & age_mn <= 144 ~ 4,
+      age_mn > 144 & age_mn <= 216 ~ 5,
+      age_mn > 216                 ~ 6
+    ),
+    levels = 1:6,
+    labels = c(
+      "<1 year",
+      "1-2 years",
+      "2-6 years",
+      "6-12 years",
+      "12-18 years",
+      ">18 years"
+    )
+  )
+}
+
+pop <- bind_rows(
+  gamlss = sample_hw(nhanes_fit$age_mn, nhanes_fit$sex_fct, mod = mod),
+  nhanes = nhanes_fit |> select(age_mn, sex_fct, height_cm, weight_kg),
+  .id = "source"
+) |> mutate(age_band_fct = age_band(age_mn))
+
+pop
+```
+
+```{r}
+#| label: height-weight-age-band-scatterplot
+#| fig-width: 8
+#| fig-height: 10
+pop |>
+  ggplot(aes(height_cm, weight_kg, color = sex_fct)) + 
+  geom_point(size = .25, alpha = .5) +
+  facet_grid(age_band_fct ~ source, scales = "free_y") +
+  theme(legend.position = "bottom")
+```
+
+So, so pretty. When I do a pediatric simulation in my work I almost always create a plot similar to this one. It's not the final product or indeed the point of the simulations, but it's a important validation check. You really want to make sure that the distributions that you're sampling from actually make sense and look about right when compared to the known data! Also, they're preeeeeeeettttttty. 
+
+### Even more sampling
+
+Once again this is a neat example, but it's mostly a validation of the GAMLSS model: it shows us the model does allow us to sample from the joint conditional density $p(h, w | a, s)$. But by design the GAMLSS samples in `pop` are matched to the NHANES data on age and sex. Anything that we could do with the GAMLSS samples in the previous example is also something that we could have done with the NHANES samples directly. So, once again, we ask the question: is there something we can do with the GAMLSS model-based sampling that we wouldn't be able to do with the NHANES data? 
+
+Of course there is, dear reader, and as you might guess I'll again look to "extreme cases" like I did in the quantile estimation discussion earlier. This time though I'll focus on age, and more specifically, I'll look at body surface area (BSA) simulations for very young infants.
+
+I'll motivate the example with a little snippet of code that I keep handy in my everyday life. It's a `compute_bsa()` function that calculates a person's approximate BSA based on their height and weight. By it's very nature this calculation has to be approximate: bodies come in all shapes and sizes so any function that approximates BSA based on two simpler measurements is going to have some limitations. It should therefore be unsurprising to note that there are *lots* of different formulae we can use for this purpose:
+
+```{r}
+#| label: bsa-computation
+compute_bsa <- function(height, weight, method = "dubois") {
+
+  w <- weight # numeric (kg)
+  h <- height # numeric (cm)
+
+  # Du Bois D, Du Bois EF (Jun 1916). "A formula to estimate the approximate
+  # surface area if height and weight be known". Archives of Internal Medicine
+  # 17 (6): 863-71. PMID 2520314.
+  if (method == "dubois") return(0.007184 * w^0.425 * h^0.725)
+
+  # Mosteller RD. "Simplified calculation of body-surface area". N Engl J Med
+  # 1987; 317:1098. PMID 3657876.
+  if (method == "mosteller") return(0.016667 * w^0.5 * h^0.5)
+
+  # Haycock GB, Schwartz GJ, Wisotsky DH "Geometric method for measuring body
+  # surface area: A height-weight formula validated in infants, children and
+  # adults" J Pediatr 1978, 93:62-66.
+  if (method == "haycock") return(0.024265 * w^0.5378 * h^0.3964)
+
+  # Gehan EA, George SL, Cancer Chemother Rep 1970, 54:225-235
+  if (method == "gehan") return(0.0235 * w^0.51456 * h^0.42246)
+
+  # Boyd, Edith (1935). The Growth of the Surface Area of the Human Body.
+  # University of Minnesota. The Institute of Child Welfare, Monograph Series,
+  # No. x. London: Oxford University Press
+  if (method == "boyd") return(0.03330 * w^(0.6157 - 0.0188 * log10(w)) * h^0.3)
+
+  # Fujimoto S, Watanabe T, Sakamoto A, Yukawa K, Morimoto K. Studies on the
+  # physical surface area of Japanese. 18. Calculation formulae in three stages
+  # over all ages. Nippon Eiseigaku Zasshi 1968;5:443-50.
+  if (method == "fujimoto") return(0.008883 * w^0.444 * h^0.663)
+
+  rlang::abort("unknown BSA method")
+}
+```
+
+The six formulae I've implemented in my `compute_bsa()` are by no means exhaustive, and while browsing the literature on the topic I found several other approaches that I haven't gotten around to implementing. However, this will be more than sufficient for my example. 
+
+Looking at the code above, you might wonder why I've chosen a formula from 1916 to be the default. The choice wasn't arbitrary: in my experience the Dubois formula is almost *always* the default method used in BSA calculation code, and the single most important thing when doing simulations of this kind is consistency. None of these formulae will be perfect, but to the extent that they're a little inexact the idiosyncracies can be accommodated "upstream" when estimating parameters of a pharmacokinetic (PK) model. So from my perspective as the person implementing simulations that *use* these PK models, the most important thing is that I use the same formula that was used upstream. Almost always that means I use Dubois.
+
+Nevertheless, a girl gets curious from time to time. The world has changed a lot since 1916, as have nutrition and exercise patterns. Similarly, a formula developed for the entire population might have different characteristics to something like the Haycock method that was developed more recently^[I mean, I don't know that 1978 counts as "recent" by any stretch of the imagination, but since I *was* an infant in 1978 I think I'll let that one slide.] and specifically validated in infants and children.
+
+Let's take a look. The visualisation below plots the height-weight values that map to an estimated body surface area of 0.5 m^2^. The solid line depicts the Dubois-constructed curve, and the dashed line corresponds to the Haycock formula. There's a clear difference between the two, but it's unclear if this matters much. In the plots below, I've plotted the data *only* for those cases that exceed the Dubois threshold. For example, if we had a drug that could only be administered to infants with a BSA above 0.5 m^2^, these are the infants and young children who would be allowed to take the medication:
+
+```{r}
+#| label: height-weight-bsa-scatterplot
+#| fig-width: 8
+#| fig-height: 10
+bsa_cutoff <- tibble(
+  height_cm = 60:110,
+  dubois  = (0.5 / 0.007184 / (height_cm^0.725)) ^ (1/0.425),
+  haycock = (0.5 / 0.024265 / (height_cm^0.3964)) ^(1/0.5378)
+) |> 
+  pivot_longer(
+    cols = c(dubois, haycock),
+    names_to = "method",
+    values_to = "weight_kg"
+  )
+
+bsa_pop <- pop |> 
+  select(age_mn, age_band_fct, height_cm, weight_kg, sex_fct, source) |>
+  filter(age_mn <= 72) |>
+  mutate(
+    bsa_m2_dubois  = compute_bsa(height_cm, weight_kg, method = "dubois"),
+    bsa_m2_haycock = compute_bsa(height_cm, weight_kg, method = "haycock")
+  ) |>
+  filter(bsa_m2_dubois > 0.5) 
+ 
+ggplot() + 
+  geom_point(
+    data = bsa_pop,
+    mapping = aes(height_cm, weight_kg), 
+    size = .25
+  ) +
+  geom_path(
+    data = bsa_cutoff,
+    mapping = aes(height_cm, weight_kg, linetype = method)
+  ) +
+  facet_grid(age_band_fct ~ source, scales = "free_y") +
+  theme(legend.position = "bottom")
+``` 
+
+Hm. Okay, so in the region of height/weight space that is relevant to human populations, there is a tendency for the Haycock formula to estimate lower BSA values than Dubois. Moreover, the difference is not merely a shift of the curve up or down: the Dubois formula relies more on weight than the Haycock formula, leading to an "ambiguous triangle" in the plots where an infant might meet the threshold according to Haycock, but not according to Dubois. It's also very clear that the issue *only* pertains to infants. Looking at the bottom row of plots, it's clear that both the raw NHANES data and the GAMLSS model agree that the vast majority of 2-6 year olds will exceed the threshold regardless of which formula is used. The issue is only relevant for infants, and -- irritatingly -- even the NHANES data set is a bit sparse when we focus on infants. It becomes even moreso if we want a detailed month-by-month breakdown. 
+
+If only we had a *model* we could use to generate a large data set in the exact age range of interest...
+
+Oh. 
+
+Right.
+
+We do.
+
+```{r}
+cases <- expand_grid(
+  age_mn  = 1:24,
+  sex_fct = factor(c("male", "female"))
+)
+
+bsa_pop_2 <- sample_hw(
+  age_mn  = rep(cases$age_mn, 10000),
+  sex_fct = rep(cases$sex_fct, 10000),
+  mod = mod 
+) |> 
+  mutate(
+    id = row_number(),
+    bsa_m2_dubois  = compute_bsa(height_cm, weight_kg, method = "dubois"),
+    bsa_m2_haycock = compute_bsa(height_cm, weight_kg, method = "haycock"),
+    threshold = case_when(
+      bsa_m2_dubois >  .5 & bsa_m2_haycock >  .5 ~ "above both",
+      bsa_m2_dubois >  .5 & bsa_m2_haycock <= .5 ~ "above dubois only",
+      bsa_m2_dubois <= .5 & bsa_m2_haycock >  .5 ~ "above haycock only",
+      bsa_m2_dubois <= .5 & bsa_m2_haycock <= .5 ~ "below both",
+    )
+  ) |> 
+  relocate(id, 1)
+
+bsa_pop_2
+```
+
+So now -- thanks to the modern marvel that is the GAMLSS regression framework -- we have a large data set simulated to have the correct height/weight distribution, focused on the precise age range of interest. We can now do a "month by month" plot showing how the height/weight distribution shifts over the first 24 months of life, and see what happens as this distribution "pushes" above the 0.5 m^2^ threshold. 
+
+```{r}
+#| label: height-weight-bsa-scatterplot-detailed
+#| fig-width: 8
+#| fig-height: 12
+ggplot() + 
+  geom_point(
+    data = bsa_pop_2,
+    mapping = aes(height_cm, weight_kg, color = threshold), 
+    alpha = .25, 
+    shape = ".",
+    show.legend = FALSE
+  ) +
+  geom_path(
+    data = bsa_cutoff,
+    mapping = aes(height_cm, weight_kg, linetype = method)
+  ) +
+  facet_wrap(~ age_mn, ncol = 4) +
+  theme(legend.position = "bottom")
+```
+
+In the plots above the density is coloured in blue in the region below both thresholds, and red when it is above both threshold. The "ambiguity triangle" region is shown in green. For very young infants there are almost no ambiguous cases at the 0.5 m^2^ threshold, and by the time we'd start using the word "child" rather than "infant" the ambiguity is also largely irrelevant to any practical situation.
+
+We can push this slightly further and plot the proportion of infants that exceed the Dubois threshold and the Haycock threshold as a function of their age; and plot this separately for three different choices of threshold value:
+
+```{r}
+#| label: bsa-method-comparison
+#| fig-width: 8
+#| fig-height: 6
+bsa_pop_2 |> 
+  summarise(
+    dubois_0.4  = mean(bsa_m2_dubois > 0.4),
+    dubois_0.5  = mean(bsa_m2_dubois > 0.5),
+    dubois_0.6  = mean(bsa_m2_dubois > 0.6),
+    haycock_0.4 = mean(bsa_m2_haycock > 0.4),
+    haycock_0.5 = mean(bsa_m2_haycock > 0.5),
+    haycock_0.6 = mean(bsa_m2_haycock > 0.6),
+    .by = age_mn
+  ) |> 
+  pivot_longer(
+    cols = c(
+      starts_with("dubois"), 
+      starts_with("haycock")
+    ),
+    names_to = "group",
+    values_to = "percent_above_threshold"
+  ) |> 
+  separate(
+    col = group, 
+    into = c("method", "threshold"), 
+    sep = "_"
+  ) |> 
+  mutate(threshold = paste("BSA >", threshold, "m^2")) |> 
+  ggplot(aes(
+    x = age_mn, 
+    y = percent_above_threshold, 
+    linetype = method, 
+    shape = method
+  )) +
+  scale_y_continuous(label = scales::label_percent()) +
+  scale_x_continuous(breaks = seq(0, 24, 6)) +
+  geom_path() +
+  geom_point() +
+  facet_wrap(~threshold) +
+  theme(legend.position = "bottom")
+```
+
+Neat. In practice I think this is pretty reassuring because it suggests that when we look at it solely as a proportion of infants above and below the threshold as a function of their age, the main thing that happens if we switch from Dubois to Haycock is that the curve shifts slightly left, and that's pretty easy to adjust for: you just modify the threshold slightly if you want to! The "ambiguity triangle" I showed above would only start to matter *if* there was some possible adverse effect that varies systematically by weight but not height (or vice versa), *and* said adverse effect was specifically relevant in the age range over which the Dubois and Haycock formulae differ. I imagine that it's possible that this could happen, but I've not yet seen anything like that in the wild. 
+
+## Epilogue
+
+This has been a long post. Painfully long, if we acknowledge that I wrote [the last post](/posts/2025-09-06_p-splines/) and [the one before that](/posts/2025-08-02_box-cox-power-exponential/) in service of making this one work. They are, in effect, the appendices to this post. This post, she looooooooong. Yet in truth there's a lot I haven't talked about. Fitting a GAMLSS model to the NHANES data is a handy thing to do, but the framework becomes much more powerful when we start trying to work with data sets that are smaller and sparser, or seek to build models to account for a more diverse population. For example, there's a nice paper by [Hayes et al (2014)](https://pmc.ncbi.nlm.nih.gov/articles/PMC4339962/pdf/BLT.14.139113.pdf) that provides detailed regional weight-for-age charts based on GAMLSS models that covers parts of the world that are *not* in North America, and as one of the literally dozens of people who live in a country that is not the United States, and who knows people who live in countries that aren't well described by NHANES and -- *gasp* -- cares about those people even if she doesn't know them, I love the fact that people take this stuff seriously enough to do this kind of work. 
+
+That seems like a fitting note upon which to end. I'm done, I'm finished, and like Lana I'm off to the races babes. 

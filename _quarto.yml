@@ -45,9 +45,9 @@ format:
   html:
     respect-user-color-scheme: true
     theme: 
-      dark: ash.scss
-      light: ember.scss
-    css: styles.css
-    include-after-body: plausible.html
+      dark: shared/ash.scss
+      light: shared/ember.scss
+    css: shared/styles.css
+    include-after-body: shared/plausible.html
 
 
