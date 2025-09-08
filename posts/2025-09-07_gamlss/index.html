@@ -1,0 +1,2024 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.5.52">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Danielle Navarro">
+<meta name="dcterms.date" content="2025-09-07">
+<meta name="description" content="Fiiiiiiinally she writes the cursed GAMLSS post. Oh and it’s also about the NHANES data set I guess">
+
+<title>GAMLSS, NHANES, and my own personal hell – Notes from a data witch</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark.min.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<script id="quarto-search-options" type="application/json">{
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<style>
+
+      .quarto-title-block .quarto-title-banner {
+        background: #eeeeee;
+      }
+</style>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../shared/styles.css">
+<meta property="og:title" content="GAMLSS, NHANES, and my own personal hell – Notes from a data witch">
+<meta property="og:description" content="Fiiiiiiinally she writes the cursed GAMLSS post. Oh and it’s also about the NHANES data set I guess">
+<meta property="og:image" content="https://blog.djnavarro.net/posts/2025-09-07_gamlss/agnes-enid.jpg">
+<meta property="og:site_name" content="Notes from a data witch">
+<meta property="og:image:alt" content="Agnes and Enid dancing, from the TV show Wednesday">
+<meta name="twitter:title" content="GAMLSS, NHANES, and my own personal hell – Notes from a data witch">
+<meta name="twitter:description" content="Fiiiiiiinally she writes the cursed GAMLSS post. Oh and it’s also about the NHANES data set I guess">
+<meta name="twitter:image" content="https://blog.djnavarro.net/posts/2025-09-07_gamlss/agnes-enid.jpg">
+<meta name="twitter:creator" content="@djnavarro">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image:alt" content="Agnes and Enid dancing, from the TV show Wednesday">
+</head>
+
+<body class="floating nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.xml"> 
+<span class="menu-text">RSS</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-sites" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Sites</span>
+    </a>
+    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="nav-menu-sites">    
+        <li>
+    <a class="dropdown-item" href="https://djnavarro.net">
+ <span class="dropdown-text">Homepage</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://blog.djnavarro.net">
+ <span class="dropdown-text">Data science blog</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://art.djnavarro.net">
+ <span class="dropdown-text">Generative art</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://papers.djnavarro.net">
+ <span class="dropdown-text">Academic papers</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://djnavarro.net/sites">
+ <span class="dropdown-text">More…</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default toc-left page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">GAMLSS, NHANES, and my own personal hell</h1>
+                  <div>
+        <div class="description">
+          Fiiiiiiinally she writes the cursed GAMLSS post. Oh and it’s also about the NHANES data set I guess
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">Statistics</div>
+                <div class="quarto-category">R</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p><a href="https://djnavarro.net">Danielle Navarro</a> <a href="https://orcid.org/0000-0001-7648-6578" class="quarto-title-author-orcid"> <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA2ZpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYwIDYxLjEzNDc3NywgMjAxMC8wMi8xMi0xNzozMjowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo1N0NEMjA4MDI1MjA2ODExOTk0QzkzNTEzRjZEQTg1NyIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDozM0NDOEJGNEZGNTcxMUUxODdBOEVCODg2RjdCQ0QwOSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDozM0NDOEJGM0ZGNTcxMUUxODdBOEVCODg2RjdCQ0QwOSIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ1M1IE1hY2ludG9zaCI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOkZDN0YxMTc0MDcyMDY4MTE5NUZFRDc5MUM2MUUwNEREIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjU3Q0QyMDgwMjUyMDY4MTE5OTRDOTM1MTNGNkRBODU3Ii8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+84NovQAAAR1JREFUeNpiZEADy85ZJgCpeCB2QJM6AMQLo4yOL0AWZETSqACk1gOxAQN+cAGIA4EGPQBxmJA0nwdpjjQ8xqArmczw5tMHXAaALDgP1QMxAGqzAAPxQACqh4ER6uf5MBlkm0X4EGayMfMw/Pr7Bd2gRBZogMFBrv01hisv5jLsv9nLAPIOMnjy8RDDyYctyAbFM2EJbRQw+aAWw/LzVgx7b+cwCHKqMhjJFCBLOzAR6+lXX84xnHjYyqAo5IUizkRCwIENQQckGSDGY4TVgAPEaraQr2a4/24bSuoExcJCfAEJihXkWDj3ZAKy9EJGaEo8T0QSxkjSwORsCAuDQCD+QILmD1A9kECEZgxDaEZhICIzGcIyEyOl2RkgwAAhkmC+eAm0TAAAAABJRU5ErkJggg=="></a></p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">September 7, 2025</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#background" id="toc-background" class="nav-link active" data-scroll-target="#background">Background</a></li>
+  <li><a href="#the-nhanes-data" id="toc-the-nhanes-data" class="nav-link" data-scroll-target="#the-nhanes-data">The NHANES data</a>
+  <ul class="collapse">
+  <li><a href="#importing-the-data" id="toc-importing-the-data" class="nav-link" data-scroll-target="#importing-the-data">Importing the data</a></li>
+  <li><a href="#preprocessing-choices" id="toc-preprocessing-choices" class="nav-link" data-scroll-target="#preprocessing-choices">Preprocessing choices</a></li>
+  </ul></li>
+  <li><a href="#the-gamlss-framework" id="toc-the-gamlss-framework" class="nav-link" data-scroll-target="#the-gamlss-framework">The GAMLSS framework</a>
+  <ul class="collapse">
+  <li><a href="#structural-model" id="toc-structural-model" class="nav-link" data-scroll-target="#structural-model">Structural model</a></li>
+  <li><a href="#measurement-model" id="toc-measurement-model" class="nav-link" data-scroll-target="#measurement-model">Measurement model</a></li>
+  <li><a href="#model-fitting" id="toc-model-fitting" class="nav-link" data-scroll-target="#model-fitting">Model fitting</a></li>
+  </ul></li>
+  <li><a href="#using-the-gamlss-models" id="toc-using-the-gamlss-models" class="nav-link" data-scroll-target="#using-the-gamlss-models">Using the GAMLSS models</a>
+  <ul class="collapse">
+  <li><a href="#quantile-estimation" id="toc-quantile-estimation" class="nav-link" data-scroll-target="#quantile-estimation">Quantile estimation</a></li>
+  <li><a href="#even-more-quantile-estimation" id="toc-even-more-quantile-estimation" class="nav-link" data-scroll-target="#even-more-quantile-estimation">Even more quantile estimation</a></li>
+  <li><a href="#model-based-sampling" id="toc-model-based-sampling" class="nav-link" data-scroll-target="#model-based-sampling">Model-based sampling</a></li>
+  <li><a href="#even-more-sampling" id="toc-even-more-sampling" class="nav-link" data-scroll-target="#even-more-sampling">Even more sampling</a></li>
+  </ul></li>
+  <li><a href="#epilogue" id="toc-epilogue" class="nav-link" data-scroll-target="#epilogue">Epilogue</a></li>
+  </ul>
+</nav>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<!--------------- my typical setup ----------------->
+<!--------------- post begins here ----------------->
+<p>Okay, so <a href="../../posts/2025-08-02_box-cox-power-exponential/">two posts ago</a> I was whining about the Box-Cox power exponential distribution, and promising that it would be followed by a new post whining about the <a href="https://en.wikipedia.org/wiki/Generalized_additive_model_for_location,_scale_and_shape">generalised additive model for location, shape and scale</a> (GAMLSS). It turns out I was lying because I had to set time aside and write a separate whiny <a href="../../posts/2025-09-06_p-splines/">post about penalized splines</a> and promising it would be followed by a post whining about GAMLSS.</p>
+<p>This is that post.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="agnes-enid.jpg" class="img-fluid figure-img"></p>
+<figcaption>Frankly, I deserve applause for simply getting this post finished. Whether it is any good is entirely an ancillary matter, one that we shall not be concerned with in these pages.</figcaption>
+</figure>
+</div>
+<section id="background" class="level2">
+<h2 class="anchored" data-anchor-id="background">Background</h2>
+<p>My introduction to GAMLSS models came from a problem that is easy to state, and strangely difficult to solve. If you know a person’s age <span class="math inline">\(a\)</span> and their sex <span class="math inline">\(s\)</span>, describe (and sample from) the joint distribution over height <span class="math inline">\(h\)</span> and weight <span class="math inline">\(w\)</span> for people of that age and sex. That is, estimate the following distribution:</p>
+<p><span class="math display">\[
+p(h, w | a, s)
+\]</span></p>
+<p>If you don’t think very hard this doesn’t seem like it should be very difficult. Data sets containing age, sex, height and weight are not too difficult to find. The question doesn’t ask for any fancy longitudinal modelling: all we’re being asked to do is estimate a probability distribution. Not difficult at all. It’s a problem I’ve encountered several times in my pharmacometric work – very commonly, we have to run simulations to explore the expected distribution of drug exposures among a population of patients that varies in weight, height, age, and sex – so it’s one I’ve had to think about a few times now, and it’s a trickier than it looks. Typically we have to rely on fairly large population survey data sets (e.g.&nbsp;NHANES) and sophisticated regression models (e.g.&nbsp;GAMLSS), and I will confess that neither of these two things were covered in my undergraduate classes.</p>
+<p>It’s been a rather steep learning curve, and in keeping with my usual habit, I decided it might be wise to write up some notes. I know with a dread certainty that I’ll have to use this knowledge again in a few months, and given how awful my memory is these days I’d prefer not to have to relearn the whole thing from the beginning next time.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(fs)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(purrr)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(haven)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readr)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyr)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(gamlss)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tibble)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(quartose)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="the-nhanes-data" class="level2">
+<h2 class="anchored" data-anchor-id="the-nhanes-data">The NHANES data</h2>
+<p>The data set I’ll look at in this post comes from the <a href="https://www.cdc.gov/nchs/nhanes/">National Health and Nutrition Examination Survey</a> (NHANES), a large ongoing study conducted under the auspices of the United States <a href="https://www.cdc.gov/nchs/nhanes/">Center for Disease Control</a> (CDC). The program started in the 1960s, but the data set that is conventionally called “the NHANES data set” refers to the <em>continuous</em> data set that has been collected since 1999, with updates released every couple of years with approximately 5000 participants added each year. The data collection process is quite extensive. As described on the website, it includes:</p>
+<blockquote class="blockquote">
+<ul>
+<li>Interviews about health, diet, and personal, social, and economic characteristics</li>
+<li>Visits to our mobile exam center for dental exams and health and body measurements</li>
+<li>Laboratory tests by highly trained medical professionals</li>
+</ul>
+</blockquote>
+<p>For any given participant, records are split across several data files. For instance, the <a href="https://wwwn.cdc.gov/nchs/nhanes/search/datapage.aspx?Component=Examination">body measurements</a> table contains very typical measurements such as height and weight, but also includes variables like waist circumference, thigh circumference, and so on. The <a href="https://wwwn.cdc.gov/nchs/nhanes/search/datapage.aspx?Component=Demographics">demographics</a> table data includes information like age, sex, and so forth. These are the only two tables I’ll use in this post, but there are a great many others also: you can find blood pressure data, audiometry data, various clinical measurements, and so on. It’s a very handy data set used for a variety of purposes, not least of which is the fact that NHANES data are used to build the <a href="https://www.cdc.gov/growthcharts">CDC growth charts</a> that are themselves used for a wide range of scientific and medical purposes. In my own work as a newly-minted pharmacometrician I’ve needed to rely on the NHANES data and/or CDC growth charts in several projects over the last couple of years, and for that reason I’ve found it useful to dive into the data set quite a few times.</p>
+<p>As of the most recent release, the summaries below list the file names the body measurement (BMX) and demographics (DEMO) tables:</p>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>metadata <span class="ot">&lt;-</span> <span class="fu">list</span>( </span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">BMX  =</span> <span class="fu">read_csv</span>(<span class="fu">path</span>(post_dir, <span class="st">"nhanes"</span>, <span class="st">"bmx-summary.csv"</span>), <span class="at">show_col_types =</span> <span class="cn">FALSE</span>),</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">DEMO =</span> <span class="fu">read_csv</span>(<span class="fu">path</span>(post_dir, <span class="st">"nhanes"</span>, <span class="st">"demo-summary.csv"</span>), <span class="at">show_col_types =</span> <span class="cn">FALSE</span>) </span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="fu">quarto_tabset</span>(metadata, <span class="at">level =</span> <span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-1-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-1" role="tab" aria-controls="tabset-1-1" aria-selected="true">BMX</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-2" role="tab" aria-controls="tabset-1-2" aria-selected="false">DEMO</a></li></ul>
+<div class="tab-content">
+<div id="tabset-1-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-1-1-tab">
+<pre> 
+# A tibble: 12 × 3 
+   file_bmx  cohort    description   
+   <chr>     <chr>     <chr>         
+ 1 BMX.xpt   1999-2000 body measures 
+ 2 BMX_B.xpt 2001-2002 body measures 
+ 3 BMX_C.xpt 2003-2004 body measures 
+ 4 BMX_D.xpt 2005-2006 body measures 
+ 5 BMX_E.xpt 2007-2008 body measures 
+ 6 BMX_F.xpt 2009-2010 body measures 
+ 7 BMX_G.xpt 2011-2012 body measures 
+ 8 BMX_H.xpt 2013-2014 body measures 
+ 9 BMX_I.xpt 2015-2016 body measures 
+10 BMX_J.xpt 2017-2018 body measures 
+11 BMX_L.xpt 2021-2023 body measures 
+12 P_BMX.xpt 2017-2020 body measures 
+</chr></chr></chr></pre>
+</div>
+<div id="tabset-1-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-2-tab">
+<pre> 
+# A tibble: 12 × 3 
+   file_demo  cohort    description                     
+   <chr>      <chr>     <chr>                           
+ 1 DEMO.xpt   1999-2000 demographics and sample weights 
+ 2 DEMO_B.xpt 2001-2002 demographics and sample weights 
+ 3 DEMO_C.xpt 2003-2004 demographics and sample weights 
+ 4 DEMO_D.xpt 2005-2006 demographics and sample weights 
+ 5 DEMO_E.xpt 2007-2008 demographics and sample weights 
+ 6 DEMO_F.xpt 2009-2010 demographics and sample weights 
+ 7 DEMO_G.xpt 2011-2012 demographics and sample weights 
+ 8 DEMO_H.xpt 2013-2014 demographics and sample weights 
+ 9 DEMO_I.xpt 2015-2016 demographics and sample weights 
+10 DEMO_J.xpt 2017-2018 demographics and sample weights 
+11 DEMO_L.xpt 2021-2023 demographics and sample weights 
+12 P_DEMO.xpt 2017-2020 demographics and sample weights 
+</chr></chr></chr></pre>
+</div>
+</div>
+</div>
+<p>As you can see from the summaries, the data sets are released as SAS transport (i.e., XPT) files, with letters used to represent each data cut. In principle these should go from “A” (data from the 1999-2000 cohort) through to “L” (data from the 2021-2023 cohort), but that’s not precisely what happens. The original release (which ostensibly should be the “A” data cut) doesn’t have a label, and the “K” data cut is missing entirely due to the COVID-19 pandemic. In its place there is a “P” version of data set that breaks the file naming scheme, presumably short for “pandemic”, and labelled differently to highlight that data from that release might be a little strange I suppose.</p>
+<section id="importing-the-data" class="level3">
+<h3 class="anchored" data-anchor-id="importing-the-data">Importing the data</h3>
+<p>To explore the NHANES data, we can download all these files and load them into R:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># all demographics and body measurement files</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>demo_files <span class="ot">&lt;-</span> <span class="fu">dir_ls</span>(<span class="fu">path</span>(post_dir, <span class="st">"nhanes"</span>, <span class="st">"data"</span>, <span class="st">"demo"</span>))</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>bmx_files  <span class="ot">&lt;-</span> <span class="fu">dir_ls</span>(<span class="fu">path</span>(post_dir, <span class="st">"nhanes"</span>, <span class="st">"data"</span>, <span class="st">"bmx"</span>))</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="co"># read demographics file (selected variables only)</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>demos <span class="ot">&lt;-</span> demo_files <span class="sc">|&gt;</span> </span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">map</span>(\(xx) {</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    dd <span class="ot">&lt;-</span> <span class="fu">read_xpt</span>(xx) </span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="sc">!</span><span class="fu">exists</span>(<span class="st">"RIDEXAGM"</span>, <span class="at">where =</span> dd)) dd<span class="sc">$</span>RIDEXAGM <span class="ot">&lt;-</span> <span class="cn">NA_real_</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    dd <span class="ot">&lt;-</span> <span class="fu">select</span>(dd, SEQN, RIAGENDR, RIDAGEYR, RIDAGEMN, RIDEXAGM)</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    dd</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  }) <span class="sc">|&gt;</span> </span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bind_rows</span>(<span class="at">.id =</span> <span class="st">"file_demo"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">file_demo =</span> <span class="fu">path_file</span>(file_demo)) <span class="sc">|&gt;</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(metadata<span class="sc">$</span>DEMO, <span class="at">by =</span> <span class="st">"file_demo"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>description)</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="co"># read body measurements file (selected variables only)</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>bmxes <span class="ot">&lt;-</span> bmx_files <span class="sc">|&gt;</span> </span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">map</span>(\(xx) {</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>    dd <span class="ot">&lt;-</span> <span class="fu">read_xpt</span>(xx) </span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>    dd <span class="ot">&lt;-</span> <span class="fu">select</span>(dd, SEQN, BMXWT, BMXHT, BMXRECUM)</span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>    dd</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>}) <span class="sc">|&gt;</span> </span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bind_rows</span>(<span class="at">.id =</span> <span class="st">"file_bmx"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">file_bmx =</span> <span class="fu">path_file</span>(file_bmx)) <span class="sc">|&gt;</span></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(metadata<span class="sc">$</span>BMX, <span class="at">by =</span> <span class="st">"file_bmx"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>description)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Looking at the code above, you can see that I haven’t included <em>all</em> the columns from the BMX and DEMO tables, only the ones that are most relevant to my purposes. My <code>demos</code> and <code>bmxes</code> data frames are considerably smaller than they would be if I included everything. Importantly for our purposes the <code>SEQN</code> column serves as an id variable, and we can use it to join the tables. In the code below I’m using <code>left_join(bmxes, demos)</code> to do the work because I’m only really interested in those cases where the body measurement data exists, and I’m tidying the column names a little for the sake of my sanity:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>nhanes <span class="ot">&lt;-</span> bmxes <span class="sc">|&gt;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(demos, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"SEQN"</span>, <span class="st">"cohort"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">id          =</span> SEQN,</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">sex_s       =</span> RIAGENDR, <span class="co"># sex/gender at screen (1 = M, 2 = F, . = NA)</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">weight_kg_e =</span> BMXWT,    <span class="co"># weight at exam</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">height_cm_e =</span> BMXHT,    <span class="co"># standing height at exam</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">length_cm_e =</span> BMXRECUM, <span class="co"># recumbent length at exam (0-47 months only)</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">age_yr_s    =</span> RIDAGEYR, <span class="co"># natal age at screening (years)</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">age_mn_s    =</span> RIDAGEMN, <span class="co"># natal age at screening (months; 0-24 mos only)</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">age_mn_e    =</span> RIDEXAGM, <span class="co"># natal age at exam (months; 0-19 years only)</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    cohort</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a> nhanes</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 119,926 × 9
+      id sex_s weight_kg_e height_cm_e length_cm_e age_yr_s age_mn_s
+   &lt;dbl&gt; &lt;dbl&gt;       &lt;dbl&gt;       &lt;dbl&gt;       &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;
+ 1     1     2        12.5        91.6        93.2        2       29
+ 2     2     1        75.4       174          NA         77      926
+ 3     3     2        32.9       137.         NA         10      125
+ 4     4     1        13.3        NA          87.1        1       22
+ 5     5     1        92.5       178.         NA         49      597
+ 6     6     2        59.2       162          NA         19      230
+ 7     7     2        78         163.         NA         59      712
+ 8     8     1        40.7       162          NA         13      159
+ 9     9     2        45.5       157.         NA         11      133
+10    10     1       112.        190.         NA         43      518
+# ℹ 119,916 more rows
+# ℹ 2 more variables: age_mn_e &lt;dbl&gt;, cohort &lt;chr&gt;</code></pre>
+</div>
+</div>
+<p>Very nice indeed.</p>
+</section>
+<section id="preprocessing-choices" class="level3">
+<h3 class="anchored" data-anchor-id="preprocessing-choices">Preprocessing choices</h3>
+<p>Even with the small snippet shown above you can see hints of nuances that arise when working with the NHANES data, especially if pediatric age ranges are of interest (as they very often are for me). Suppose one of the variables of interest in your analysis is height. On row 4 we have data from a 22 month old boy: there is no height measurement for him. That’s very often the case for young infants, most obviously because very young infants can’t stand up so you can’t measure standing height. What you <em>can</em> do for those infants is take a related measurement: recumbent length. Okay that makes sense: you measure height for adults, and length for babies. Except… there are some kids in the age range where it makes sense to take <em>both</em> measurements. Row 1 contains data from a 29 month old girl, who was measured as 91.6cm in height and… 93.2cm in length.</p>
+<p>Ah.</p>
+<p>Right. The height of a standing human and the length of the same human lying down don’t have to be the same, and the differences between the two won’t be random measurement error, because gravity and posture are real things that exist! The NHANES data itself illustrates that:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>ok <span class="ot">&lt;-</span> <span class="cf">function</span>(x) <span class="sc">!</span><span class="fu">is.na</span>(x)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>nhanes <span class="sc">|&gt;</span> </span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">ok</span>(height_cm_e), <span class="fu">ok</span>(length_cm_e)) <span class="sc">|&gt;</span> </span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">mean_diff =</span> <span class="fu">mean</span>(length_cm_e <span class="sc">-</span> height_cm_e),</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">sd_diff =</span> <span class="fu">sd</span>(length_cm_e <span class="sc">-</span> height_cm_e)</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 2
+  mean_diff sd_diff
+      &lt;dbl&gt;   &lt;dbl&gt;
+1      1.06   0.998</code></pre>
+</div>
+</div>
+<p>So, when considering what <em>height</em> to use for the boy in row 4, it’s not necessarily a good idea to substitute his <em>length</em>, because those probably aren’t the same. An imputation procedure of some kind is needed. I won’t go into it in this post, but I played around with a few possible models for predicting length from height in the process of writing it, and in the end concluded that nothing fancy is needed here. A simple adjustment will suffice:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>length_to_height <span class="ot">&lt;-</span> <span class="cf">function</span>(length_cm) {</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  length_cm <span class="sc">-</span> <span class="fl">1.06</span>  <span class="co"># adjust based on average difference in NHANES</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>It feels a bit silly writing a function for this conversion, but it’s helpful from a documentation purpose: creating a dummy function to use (rather than just subtracting 1.06 later in the code) makes it clear to the reader that I <em>am</em> using some kind of explicit conversion when I transform length to height, and the comment provides a little extra detail on how I chose the conversion rule.</p>
+<p>Similar nuances for other measurements exist. There are three different measurements that record age, and they don’t have to be in agreement: the <em>survey</em> takes place at a different point in time to the <em>exam</em>, so it’s possible that the (now relabelled) <code>age_mn_e</code> and <code>age_mn_s</code> variables are different. Age in years at the time of the survey <code>age_yr_s</code> should presumably be consistent with the age in months at the time of the survey, but data aren’t always straightforward. Given all this, the preprocessing steps used to create measurements of age and height look like this:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>nhanes <span class="ot">&lt;-</span> nhanes <span class="sc">|&gt;</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">sex_num =</span> sex_s <span class="sc">-</span> <span class="dv">1</span>, <span class="co"># rescale to 0 = M, 1 = F</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">sex_fct =</span> <span class="fu">factor</span>(sex_s, <span class="at">levels =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>, <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"male"</span>, <span class="st">"female"</span>)),</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">age_mn =</span> <span class="fu">case_when</span>(</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>      <span class="sc">!</span><span class="fu">is.na</span>(age_mn_e) <span class="sc">~</span> age_mn_e, <span class="co"># use exam months if present</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>      <span class="sc">!</span><span class="fu">is.na</span>(age_mn_s) <span class="sc">~</span> age_mn_s, <span class="co"># else use survey months</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>      <span class="cn">TRUE</span> <span class="sc">~</span> (age_yr_s <span class="sc">*</span> <span class="dv">12</span>)       <span class="co"># else use age in years</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">age_yr    =</span> age_mn <span class="sc">/</span> <span class="dv">12</span>,</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">weight_kg =</span> weight_kg_e,</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">height_cm =</span> <span class="fu">case_when</span>(</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>      <span class="sc">!</span><span class="fu">is.na</span>(height_cm_e) <span class="sc">~</span> height_cm_e, <span class="co"># use height if it was measured</span></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>      <span class="sc">!</span><span class="fu">is.na</span>(length_cm_e) <span class="sc">~</span> <span class="fu">length_to_height</span>(length_cm_e), <span class="co"># or convert length</span></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>      <span class="cn">TRUE</span> <span class="sc">~</span> <span class="cn">NA_real_</span>, <span class="co"># else missing</span></span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The NHANES data set doesn’t include information about transgender status or intersex status (at least not in the demographics and body measurements tables), and so for the purposes of NHANES-based analyses sex is a treated as binary variable, and doesn’t require any extra steps beyond tidying and attaching nice labels. A similar story holds for weight: we have one measurement, the weight at time of exam, and that’s what we’ll use.</p>
+<p>At this point the unwary might fall into the trap of thinking that we’re done, but – alas – we aren’t quite there yet. There’s one more detail to consider regarding the age data. In the NHANES data set the age values stop at 80, but that value doesn’t literally mean “80 years” it means “80 years or older”. Because of that, you need to take some care in how you work with data for older participants. As it happens, I’ve never had to deal with this in the wild because my projects have used NHANES data in the pediatric setting. Given that, I’ll keep it simple here and just drop all cases with age recorded as “80+” years. Not a problem if your application is pediatric, but you wouldn’t want to do this in situations where you’re interested in older populations.</p>
+<p>In any case, having noted this I can finally complete the preprocessing and arrive at my <code>nhanes</code> data frame:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>nhanes <span class="ot">&lt;-</span> nhanes <span class="sc">|&gt;</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(id, sex_num, sex_fct, weight_kg, height_cm, age_mn, age_yr, cohort) <span class="sc">|&gt;</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">ok</span>(sex_num), <span class="fu">ok</span>(weight_kg), <span class="fu">ok</span>(height_cm), <span class="fu">ok</span>(age_mn)) <span class="sc">|&gt;</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(age_yr <span class="sc">&lt;</span> <span class="dv">80</span>)</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>nhanes</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 113,319 × 8
+      id sex_num sex_fct weight_kg height_cm age_mn age_yr cohort   
+   &lt;dbl&gt;   &lt;dbl&gt; &lt;fct&gt;       &lt;dbl&gt;     &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;    
+ 1     1       1 female       12.5      91.6     29   2.42 1999-2000
+ 2     2       0 male         75.4     174      926  77.2  1999-2000
+ 3     3       1 female       32.9     137.     125  10.4  1999-2000
+ 4     4       0 male         13.3      86.0     22   1.83 1999-2000
+ 5     5       0 male         92.5     178.     597  49.8  1999-2000
+ 6     6       1 female       59.2     162      230  19.2  1999-2000
+ 7     7       1 female       78       163.     712  59.3  1999-2000
+ 8     8       0 male         40.7     162      159  13.2  1999-2000
+ 9     9       1 female       45.5     157.     133  11.1  1999-2000
+10    10       0 male        112.      190.     518  43.2  1999-2000
+# ℹ 113,309 more rows</code></pre>
+</div>
+</div>
+<p>A small slice through a very large data set, but one that contains the four variables that I need almost every time I have to use NHANES data in a pharmacometric analysis: <code>age_mn</code> (<span class="math inline">\(a\)</span>), <code>sex_fct</code> (<span class="math inline">\(s\)</span>), <code>height_cm</code> (<span class="math inline">\(h\)</span>), and <code>weight_kg</code> (<span class="math inline">\(w\)</span>). I can now turn to the substantive statistical problem: estimating the joint conditional density <span class="math inline">\(p(h, w | a, s)\)</span>.</p>
+</section>
+</section>
+<section id="the-gamlss-framework" class="level2">
+<h2 class="anchored" data-anchor-id="the-gamlss-framework">The GAMLSS framework</h2>
+<section id="structural-model" class="level3">
+<h3 class="anchored" data-anchor-id="structural-model">Structural model</h3>
+<p>Let <span class="math inline">\(\tilde{y}_i = E[y_i|x_{i1}, \ldots, x_{ip}]\)</span> denote the expected value of (the <span class="math inline">\(i\)</span>-th observation of) the outcome variable <span class="math inline">\(y\)</span>, conditioned on knowing the values of <span class="math inline">\(p\)</span> predictor variables <span class="math inline">\(x_{1}, \ldots, x_{p}\)</span>. In linear regression we propose that</p>
+<p><span class="math display">\[
+\tilde{y}_i = \beta_0 + \sum_{k=1}^p \beta_k \ x_{ik}
+\]</span></p>
+<p>Often we would rewrite this in matrix notation and express it as <span class="math inline">\(\tilde{\mathbf{y}} = \mathbf{X} \mathbf{\beta}\)</span> to make it look pretty, but I honestly don’t think it adds much in this context. There are two different paths you could pursue when extending this framework: you could change something on the left hand side, or you could change something on the right hand side. For example, the <a href="https://en.wikipedia.org/wiki/Generalized_linear_model">generalised linear model</a> introduced by <a href="https://www.jstor.org/stable/2344614">Nelder and Wedderburn (1972)</a> modifies the linear model by supplying a “link function” <span class="math inline">\(g()\)</span> that transforms <span class="math inline">\(\tilde{y}\)</span>,</p>
+<p><span class="math display">\[
+g(\tilde{y}_i) = \beta_0 + \sum_{k=1}^p \beta_k \ x_{ik}
+\]</span></p>
+<p>Crudely put, the GLM applies a linear model to a transformed <strong>outcome</strong> variable (i.e., <span class="math inline">\(y\)</span>). On the other hand, in the <a href="https://en.wikipedia.org/wiki/Additive_model">additive model</a> proposed by <a href="https://www.tandfonline.com/doi/abs/10.1080/01621459.1981.10477729">Friedman and Stuetzle (1981)</a>, transformation functions <span class="math inline">\(f()\)</span> – sometimes called “smoothing functions” – are applied to the <strong>predictor</strong> variables (i.e., <span class="math inline">\(x\)</span>):</p>
+<p><span class="math display">\[
+\tilde{y}_i = \beta_0 + \sum_{k=1}^p f_k(x_{ik})
+\]</span></p>
+<p>I’ll talk more about the choice of smoothing function <span class="math inline">\(f()\)</span> later in the post, but for now the key thing to note is that the functions used for this purpose usually have free parameters that need to be estimated from the data. Because of this, fitting an additive model is a little more complicated than a simple “transform the predictors first and then fit a linear regression later” procedure.</p>
+<p>In any case, having noted that <strong>generalised</strong> linear models introduce the link function <span class="math inline">\(g()\)</span> and <strong>additive</strong> models introduce the smoothing functions <span class="math inline">\(f()\)</span>, it seems natural to consider a modelling framework that uses both of these things. That framework exists: it is called the <a href="https://en.wikipedia.org/wiki/Generalized_additive_model">generalised additive model</a> (GAM), introduced by <a href="https://www.jstor.org/stable/2245459">Hastie and Tibshirani (1990)</a>:</p>
+<p><span class="math display">\[
+g(\tilde{y}_i) = \beta_0 + \sum_{k=1}^p f_k(x_{ik})
+\]</span></p>
+</section>
+<section id="measurement-model" class="level3">
+<h3 class="anchored" data-anchor-id="measurement-model">Measurement model</h3>
+<p>In linear model with homogeneity of variance, we normally write this:</p>
+<p><span class="math display">\[
+y_i = \tilde{y}_i + \epsilon_i
+\]</span></p>
+<p>where the measurement error terms <span class="math inline">\(\epsilon_i\)</span> are assumed to be normally distributed with mean fixed at 0 and standard deviation <span class="math inline">\(\sigma\)</span> estimated from the data. Another way to express the same idea would be to say that the outcome variable <span class="math inline">\(y_i\)</span> is normally distributed with mean <span class="math inline">\(\mu_i = \tilde{y}_i\)</span>, and a constant standard deviation <span class="math inline">\(\sigma_i = \sigma\)</span>. Taking this line of reasoning a little further, we could rewrite the model in terms of <em>two</em> regression models: a linear model for the mean <span class="math inline">\(\mu\)</span>, and another linear model for the standard deviation <span class="math inline">\(\sigma\)</span>:</p>
+<p><span class="math display">\[
+\begin{array}{rcl}
+\mu_i &amp;=&amp; \beta_{\mu 0} + \sum_k \beta_{\mu k} \ x_{ik} \\
+\sigma_i &amp;=&amp; \beta_{\sigma 0} \\ \\
+y_i &amp;\sim&amp; \mbox{Normal}(\mu_i, \sigma_i)
+\end{array}
+\]</span></p>
+<p>The only way in which this framing of the model differs from the usual form is that I’ve used <span class="math inline">\(\beta_{\sigma 0}\)</span> to refer to the to-be-estimated <span class="math inline">\(\sigma\)</span> parameter. The difference is purely notational, but it reflects a slight shift in mindset: it signals that we’re now considering the possibility that we <em>could</em> have chosen to develop a richer regression model that allows each observation to have its <span class="math inline">\(\sigma_i\)</span>, rather than use an “intercept only” model for the variance. Indeed when expressed this way, the “homogeneity of variance” assumption in linear regression now corresponds to the special case in which no covariates (predictors) are included in the model for <span class="math inline">\(\sigma\)</span>. Moreover, it makes clear that there’s no inherent reason to limit ourselves in this way. Relaxing homogeneity of variance allows us to specify regression models for both <span class="math inline">\(\mu\)</span> and <span class="math inline">\(\sigma\)</span>, giving us the following framework for linear regression:</p>
+<p><span class="math display">\[
+\begin{array}{rcl}
+\mu_i &amp;=&amp; \beta_{\mu 0} + \sum_k \beta_{\mu k} \ x_{ik} \\
+\sigma_i &amp;=&amp; \beta_{\sigma 0}  + \sum_k \beta_{\sigma k} \ x_{ik} \\ \\
+y_i &amp;\sim&amp; \mbox{Normal}(\mu_i, \sigma_i)
+\end{array}
+\]</span></p>
+<p>Having made this conceptual shift, it’s not too hard to see that we can repeat the line of reasoning from the previous section that took us from linear models to generalised additive models. To wit, if we replace the regression coefficients <span class="math inline">\(\beta_{\mu k}\)</span> and <span class="math inline">\(\beta_{\sigma k}\)</span> with smooth functions <span class="math inline">\(f_{\mu k}()\)</span> and <span class="math inline">\(f_{\sigma k}()\)</span> and use these to transform the predictors, we have an additive regression model for the mean and the standard deviation…</p>
+<p><span class="math display">\[
+\begin{array}{rcl}
+\mu_i &amp;=&amp; \beta_{\mu 0} + \sum_k f_{\mu k}(x_{ik}) \\
+\sigma_i &amp;=&amp; \beta_{\sigma 0} + \sum_k f_{\sigma k}(x_{ik}) \\ \\
+y_i &amp;\sim&amp; \mbox{Normal}(\mu_i, \sigma_i)
+\end{array}
+\]</span></p>
+<p>Adding link functions <span class="math inline">\(g()\)</span> to connect the additive predictor to the parameters gives a generalised additive regression on the mean and the standard deviation…</p>
+<p><span class="math display">\[
+\begin{array}{rcl}
+g_\mu(\mu_i) &amp;=&amp; \beta_{\mu 0} + \sum_k f_{\mu k}(x_{ik}) \\
+g_\sigma(\sigma_i) &amp;=&amp; \beta_{\sigma 0} + \sum_k f_{\sigma k}(x_{ik}) \\ \\
+y_i &amp;\sim&amp; \mbox{Normal}(\mu_i, \sigma_i)
+\end{array}
+\]</span></p>
+<p>Finally, we recognise that the normal distribution is not the only choice of measurement model. Like many other distributions it can be described as a distribution that contains one parameter for the <strong>location</strong> (i.e., <span class="math inline">\(\mu\)</span>) and <strong>scale</strong> (i.e., <span class="math inline">\(\sigma\)</span>). More generally though, we might want to use distributions described by one parameter for location, one parameter for scale, and one or more parameters for the <strong>shape</strong>. If we instead choose the <a href="../../posts/2025-08-02_box-cox-power-exponential/">Box-Cox power exponential</a> (BCPE) – in which <span class="math inline">\(\mu\)</span> is a location parameter, <span class="math inline">\(\sigma\)</span> is a scale parameter, and <span class="math inline">\(\nu\)</span> and <span class="math inline">\(\tau\)</span> together control the shape – the statistical model now looks like this…</p>
+<p><span class="math display">\[
+\begin{array}{rcl}
+g_\mu(\mu_i) &amp;=&amp; \beta_{\mu 0} + \sum_k f_{\mu k}(x_{ik}) \\
+g_\sigma(\sigma_i) &amp;=&amp; \beta_{\sigma 0} + \sum_k f_{\sigma k}(x_{ik}) \\
+g_\nu(\nu_i) &amp;=&amp; \beta_{\nu 0} + \sum_k f_{\nu k}(x_{ik}) \\
+g_\tau(\tau_i) &amp;=&amp; \beta_{\tau 0} + \sum_k f_{\tau k}(x_{ik}) \\ \\
+y_i &amp;\sim&amp; \mbox{BCPE}(\mu_i, \sigma_i, \nu_i, \tau_i)
+\end{array}
+\]</span></p>
+<p>and we now have an example of a <strong>generalised additive model for location, scale, and shape</strong> (GAMLSS), noting of course you don’t have to use the BCPE specifically. The key requirement here is that the distributional family be flexible enough that you can separately model location, scale, and shape. There are a lot of distributions that satisfy this property, though for the purposes of this post I am just going to stick with BCPE.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
+</section>
+<section id="model-fitting" class="level3">
+<h3 class="anchored" data-anchor-id="model-fitting">Model fitting</h3>
+<p>Okay, so that’s the basic idea. How do we go about building a model? It’s not entirely straightforward: because the GAMLSS framework is so flexible, there are a lot of different possibilities. My approach to the problem was heavily influenced by the <a href="https://github.com/smouksassi/nhanesgamlss">nhanesgamlss</a> R package developed by my former colleague, the always-wonderful Samer Mouksassi. In fact, the first few times I fit a GAMLSS model all I did was use the <code>nhanesgamlss::simwtage()</code> function his package provides, and to be perfectly honest I probably wouldn’t have bothered to dive any deeper than this except for the fact that twice this year I’ve collided with a real world modelling problem that needed something that Samer hadn’t already solved for me! Specifically, the <strong>nhanesgamlss</strong> package is concerned with estimating and sampling from the distribution of weight conditional on age and sex, <span class="math inline">\(p(w | a, s)\)</span> and unfortunately for me, the problems I’ve worked on lately have needed me to sample height <em>and</em> weight. The density I need is <span class="math inline">\(p(h, w | a, s)\)</span>. The NHANES data set and the GAMLSS modelling framework are both well suited to estimating this density, of course, but it’s a different density to the one that <code>nhanesgamlss::simwtage()</code> is designed for. And so it was with a great deal of sadness I discovered that this time I would have to do my own work and not rely on Samer to have already done it for me. Curses.</p>
+<p>The approach I’ve taken when tackling this problem is split it into two distinct parts. Rather than try to build a multivariate model with <span class="math inline">\((h, w)\)</span> as the outcome vector, I use exchangeability to factorise the joint density as follows:</p>
+<p><span class="math display">\[
+p(h, w | a, s) = p(w | h, a, s) p(h | a, s)
+\]</span></p>
+<p>More precisely, the goal is to fit four GAMLSS models one for each of the following densities:</p>
+<p><span class="math display">\[
+\begin{array}{l}
+p(h | a, s = \mbox{male}) \\
+p(h | a, s = \mbox{female}) \\
+p(w | h, a, s = \mbox{male}) \\
+p(w | h, a, s = \mbox{female})
+\end{array}
+\]</span></p>
+<p>To get started, there are a few tiresome preliminaries to take care of. First, noting that the age range of most interest in the problems I’ve worked on is the pediatric range, I made a pragmatic decision to restrict the training data to participants aged 40 years or less, and split the NHANES data into two data sets: <code>nhanes_m</code> contains data for male participants, and <code>nhanes_f</code> contains data from female participants.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>age_max_yr <span class="ot">&lt;-</span> <span class="dv">40</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>nhanes_m <span class="ot">&lt;-</span> nhanes <span class="sc">|&gt;</span> <span class="fu">filter</span>(sex_fct <span class="sc">==</span> <span class="st">"male"</span>, age_yr <span class="sc">&lt;=</span> age_max_yr)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>nhanes_f <span class="ot">&lt;-</span> nhanes <span class="sc">|&gt;</span> <span class="fu">filter</span>(sex_fct <span class="sc">==</span> <span class="st">"female"</span>, age_yr <span class="sc">&lt;=</span> age_max_yr)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Second, noting that I’m about to use the <a href="https://gamlss.org/">gamlss</a> R package to do the estimation, I’ll define some settings for the optimisation routine using <code>gamlss::gamlss.control()</code>. As it happens, these settings turned out not to matter much for the models I ended up building, but during the process I’d tried out a few different settings and decided to stick with these:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>opt_control <span class="ot">&lt;-</span> <span class="fu">gamlss.control</span>(<span class="at">c.crit =</span> .<span class="dv">001</span>, <span class="at">n.cyc =</span> <span class="dv">250</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="estimating-phas" class="level4">
+<h4 class="anchored" data-anchor-id="estimating-phas">Estimating <span class="math inline">\(p(h|a,s)\)</span></h4>
+<p>Let’s start with the simpler models. When estimating <span class="math inline">\(p(h | a, s = \mbox{male})\)</span> and <span class="math inline">\(p(h | a, s = \mbox{female})\)</span> there is only a single predictor that varies within the data set (i,e., age), so we don’t have to think about headache inducing questions like what interaction terms to include. Here’s the code I used to fit these two models:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>ht_m <span class="ot">&lt;-</span> <span class="fu">gamlss</span>(</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">formula       =</span> height_cm <span class="sc">~</span> <span class="fu">pb</span>(age_mn),</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">sigma.formula =</span> <span class="sc">~</span><span class="fu">pb</span>(age_mn),</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">nu.formula    =</span> <span class="sc">~</span><span class="dv">1</span>,</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">tau.formula   =</span> <span class="sc">~</span><span class="dv">1</span>,</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">data    =</span> nhanes_m,</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">family  =</span> BCPE,</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">control =</span> opt_control</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>ht_f <span class="ot">&lt;-</span> <span class="fu">gamlss</span>(</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">formula       =</span> height_cm <span class="sc">~</span> <span class="fu">pb</span>(age_mn),</span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">sigma.formula =</span> <span class="sc">~</span><span class="fu">pb</span>(age_mn),</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">nu.formula    =</span> <span class="sc">~</span><span class="dv">1</span>,</span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">tau.formula   =</span> <span class="sc">~</span><span class="dv">1</span>,</span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">data    =</span> nhanes_f,</span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">family  =</span> BCPE,</span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">control =</span> opt_control</span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>For the most part, the code here is fairly straightforward. I’ve chosen to use the Box-Cox power exponential distribution as my measurement model, so I’ve set <code>family = BCPE</code>. Calling <code>BCPE()</code> returns a “gamlss.family” object that does two things: it indicates that the Box-Cox power exponential distribution should be used, and it specifies the link functions to be used. Under the default settings for <code>BCPE()</code>, the link functions <span class="math inline">\(g_{\mu}()\)</span> and <span class="math inline">\(g_{\nu}()\)</span> are the identity-link, whereas <span class="math inline">\(g_{\sigma}()\)</span> and <span class="math inline">\(g_{\tau}()\)</span> are both log-link:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">BCPE</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+GAMLSS Family: BCPE Box-Cox Power Exponential 
+Link function for mu   : identity 
+Link function for sigma: log 
+Link function for nu   : identity 
+Link function for tau  : log </code></pre>
+</div>
+</div>
+<p>Since we’re using the BCPE distribution, we need to pass four formula arguments, one for each parameter. After trying out a few different possibilities, I decided to keep things simple for the shape parameters. For <span class="math inline">\(\nu\)</span> and <span class="math inline">\(\tau\)</span> I specified an intercept-only model. The <code>nu.formula</code> and <code>tau.formula</code> arguments both accept a one-sided formula, and in this case I’ve gone with the simplest possibility:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>nu.formula   <span class="ot">=</span> <span class="er">~</span><span class="dv">1</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>tau.formula  <span class="ot">=</span> <span class="er">~</span><span class="dv">1</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>In other words, while the location and scale of the height distribution can change over the lifespan, the model assumes the shape of the distribution remains the same. Straightforward enough. The formulas for the location parameter <span class="math inline">\(\mu\)</span> and the scale parameter <span class="math inline">\(\sigma\)</span> are a little more complex. As with <code>nu.formula</code> and <code>tau.formula</code>, the <code>sigma.formula</code> argument accepts a one-sided formula. Because we’re expecting the variability of height<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a> to change as age increases, <code>age_mn</code> is included as a predictor here. Similarly, it’s pretty obvious that we’d expect the average height to change with age, I’ll also include <code>age_mn</code> as a predictor for <span class="math inline">\(\mu\)</span>. The code looks like this:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>formula       <span class="ot">=</span> height_cm <span class="sc">~</span> <span class="fu">pb</span>(age_mn),</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>sigma.formula <span class="ot">=</span> <span class="er">~</span><span class="fu">pb</span>(age_mn),</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Note that the <code>formula</code> argument takes a two-sided formula as its argument: the outcome variable <code>height_cm</code> is passed on the left hand side of the formula.</p>
+<p>Okay, yes Danielle that’s all well and good, but what’s the story with the <code>pb()</code> function? As you’ve probably guessed, this is where we specify the smoothing functions <span class="math inline">\(f()\)</span> in the additive model. The <code>pb()</code> function is used specify P-spline smoothing (<a href="https://www.jstor.org/stable/2246049">Eilers &amp; Marx, 1996</a>, <a href="https://www.researchgate.net/publication/290086196_Twenty_years_of_P-splines">Eilers, Marx &amp; Durbán 2016</a>), and I absolutely do not have any desire to delve into the formalism for P-splines because that is <em>literally</em> what I did in the <a href="../../posts/2025-09-06_p-splines/">post about P-splines</a>. For my current purposes it’s sufficient to note that <code>pb()</code> implements uses penalised B-splines as a tool to fit a smoothed function to the data. The details don’t matter too much right now.</p>
+<p>When this code is executed, the output looks something like this:</p>
+<pre><code>GAMLSS-RS iteration 1: Global Deviance = 251100.2 
+GAMLSS-RS iteration 2: Global Deviance = 245961 
+GAMLSS-RS iteration 3: Global Deviance = 245664.8 
+GAMLSS-RS iteration 4: Global Deviance = 245645 
+GAMLSS-RS iteration 5: Global Deviance = 245643.9 
+GAMLSS-RS iteration 6: Global Deviance = 245643.9 
+GAMLSS-RS iteration 7: Global Deviance = 245643.9 
+GAMLSS-RS iteration 8: Global Deviance = 245643.8 
+GAMLSS-RS iteration 9: Global Deviance = 245643.8 </code></pre>
+<p>It can sometimes be a slow process, but the more recent implementation of <code>pb()</code> is much more efficient than other spline functions like <code>cs()</code>, and has the advantage that the user doesn’t need to fiddle around with hyperparameters.</p>
+</section>
+<section id="estimating-pwhas" class="level4">
+<h4 class="anchored" data-anchor-id="estimating-pwhas">Estimating <span class="math inline">\(p(w|h,a,s)\)</span></h4>
+<p>Turning now to the second part of the problem, we need to estimate the distributions <span class="math inline">\(p(w | h, a, s = \mbox{male})\)</span> and <span class="math inline">\(p(w | h, a, s = \mbox{female})\)</span>. The GAMLSS models I implemented for these distributions are shown below:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>wt_htm <span class="ot">&lt;-</span> <span class="fu">gamlss</span>(</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">formula       =</span> weight_kg <span class="sc">~</span> <span class="fu">pb</span>(age_mn) <span class="sc">+</span> height_cm <span class="sc">+</span> <span class="fu">pb</span>(age_mn)<span class="sc">:</span>height_cm,</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">sigma.formula =</span> <span class="sc">~</span><span class="fu">pb</span>(age_mn),</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">nu.formula    =</span> <span class="sc">~</span><span class="dv">1</span>,</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">tau.formula   =</span> <span class="sc">~</span><span class="dv">1</span>,</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">data    =</span> nhanes_m,</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">family  =</span> BCPE,</span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">control =</span> opt_control</span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>wt_htf <span class="ot">&lt;-</span> <span class="fu">gamlss</span>(</span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">formula       =</span> weight_kg <span class="sc">~</span> <span class="fu">pb</span>(age_mn) <span class="sc">+</span> height_cm <span class="sc">+</span> <span class="fu">pb</span>(age_mn)<span class="sc">:</span>height_cm,</span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">sigma.formula =</span> <span class="sc">~</span><span class="fu">pb</span>(age_mn),</span>
+<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">nu.formula    =</span> <span class="sc">~</span><span class="dv">1</span>,</span>
+<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">tau.formula   =</span> <span class="sc">~</span><span class="dv">1</span>,</span>
+<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">data    =</span> nhanes_f,</span>
+<span id="cb20-17"><a href="#cb20-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">family  =</span> BCPE,</span>
+<span id="cb20-18"><a href="#cb20-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">control =</span> opt_control</span>
+<span id="cb20-19"><a href="#cb20-19" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The models for <span class="math inline">\(\sigma\)</span>, <span class="math inline">\(\nu\)</span> and <span class="math inline">\(\tau\)</span> haven’t changed from before, but the model for <span class="math inline">\(\mu\)</span> is substantially different. I suspect that there are many different ways you could do this, but the approach I took was to use penalised splines for age, but treat height as a linear predictor. You can see from the code that I also allowed an age-by-height interaction term.<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a></p>
+<p>In any case, I’m not so foolish as to actually run the GAMLSS-fitting code inside this blog post. Instead, I fit the models in another script, and saved the resulting model objects to RDS files. So now I can load these objects and take a look at the objects:</p>
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>ht_m   <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="fu">path</span>(post_dir, <span class="st">"nhanes"</span>, <span class="st">"output"</span>, <span class="st">"ht-m.rds"</span>))</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>ht_f   <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="fu">path</span>(post_dir, <span class="st">"nhanes"</span>, <span class="st">"output"</span>, <span class="st">"ht-f.rds"</span>))</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>wt_htm <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="fu">path</span>(post_dir, <span class="st">"nhanes"</span>, <span class="st">"output"</span>, <span class="st">"wt-htm.rds"</span>))</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>wt_htf <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="fu">path</span>(post_dir, <span class="st">"nhanes"</span>, <span class="st">"output"</span>, <span class="st">"wt-htf.rds"</span>))</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>mod <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">ht_m =</span> ht_m,</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">ht_f =</span> ht_f,</span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">wt_htm =</span> wt_htm,</span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">wt_htf =</span> wt_htf</span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a><span class="fu">quarto_tabset</span>(mod, <span class="at">level =</span> <span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-2-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-2-1" role="tab" aria-controls="tabset-2-1" aria-selected="true">ht_m</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-2-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-2-2" role="tab" aria-controls="tabset-2-2" aria-selected="false">ht_f</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-2-3-tab" data-bs-toggle="tab" data-bs-target="#tabset-2-3" role="tab" aria-controls="tabset-2-3" aria-selected="false">wt_htm</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-2-4-tab" data-bs-toggle="tab" data-bs-target="#tabset-2-4" role="tab" aria-controls="tabset-2-4" aria-selected="false">wt_htf</a></li></ul>
+<div class="tab-content">
+<div id="tabset-2-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-2-1-tab">
+<pre> 
+ 
+Family:  c("BCPE", "Box-Cox Power Exponential")  
+Fitting method: RS()  
+ 
+Call:   
+gamlss(formula = height_cm ~ pb(age_mn), sigma.formula = ~pb(age_mn),   
+    nu.formula = ~1, tau.formula = ~1, family = BCPE,   
+    data = nhanes_m, control = opt_control)  
+ 
+Mu Coefficients: 
+(Intercept)   pb(age_mn)   
+    91.8664       0.2703   
+Sigma Coefficients: 
+(Intercept)   pb(age_mn)   
+ -3.087e+00   -1.098e-05   
+Nu Coefficients: 
+(Intercept)   
+     0.7608   
+Tau Coefficients: 
+(Intercept)   
+      0.587   
+ 
+ Degrees of Freedom for the fit: 40.41 Residual Deg. of Freedom   36764  
+Global Deviance:     239756  
+            AIC:     239837  
+            SBC:     240181  
+</pre>
+</div>
+<div id="tabset-2-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-2-2-tab">
+<pre> 
+ 
+Family:  c("BCPE", "Box-Cox Power Exponential")  
+Fitting method: RS()  
+ 
+Call:   
+gamlss(formula = height_cm ~ pb(age_mn), sigma.formula = ~pb(age_mn),   
+    nu.formula = ~1, tau.formula = ~1, family = BCPE,   
+    data = nhanes_f, control = opt_control)  
+ 
+Mu Coefficients: 
+(Intercept)   pb(age_mn)   
+    93.4863       0.2205   
+Sigma Coefficients: 
+(Intercept)   pb(age_mn)   
+ -3.0928135   -0.0001298   
+Nu Coefficients: 
+(Intercept)   
+     0.5832   
+Tau Coefficients: 
+(Intercept)   
+      0.608   
+ 
+ Degrees of Freedom for the fit: 39.65 Residual Deg. of Freedom   37603  
+Global Deviance:     240867  
+            AIC:     240946  
+            SBC:     241285  
+</pre>
+</div>
+<div id="tabset-2-3" class="tab-pane" role="tabpanel" aria-labelledby="tabset-2-3-tab">
+<pre> 
+ 
+Family:  c("BCPE", "Box-Cox Power Exponential")  
+Fitting method: RS()  
+ 
+Call:  gamlss(formula = weight_kg ~ pb(age_mn) + height_cm +   
+    pb(age_mn):height_cm, sigma.formula = ~pb(age_mn),   
+    nu.formula = ~1, tau.formula = ~1, family = gamlss.dist::BCPE,   
+    data = nhanes_m, control = opt_control)  
+ 
+Mu Coefficients: 
+         (Intercept)            pb(age_mn)             height_cm   
+          -10.526575             -0.326806              0.268436   
+pb(age_mn):height_cm   
+            0.002829   
+Sigma Coefficients: 
+(Intercept)   pb(age_mn)   
+  -2.156377     0.001858   
+Nu Coefficients: 
+(Intercept)   
+     -1.217   
+Tau Coefficients: 
+(Intercept)   
+     0.5824   
+ 
+ Degrees of Freedom for the fit: 37.53 Residual Deg. of Freedom   36766  
+Global Deviance:     245644  
+            AIC:     245719  
+            SBC:     246038  
+</pre>
+</div>
+<div id="tabset-2-4" class="tab-pane" role="tabpanel" aria-labelledby="tabset-2-4-tab">
+<pre> 
+ 
+Family:  c("BCPE", "Box-Cox Power Exponential")  
+Fitting method: RS()  
+ 
+Call:  gamlss(formula = weight_kg ~ pb(age_mn) + height_cm +   
+    pb(age_mn):height_cm, sigma.formula = ~pb(age_mn),   
+    nu.formula = ~1, tau.formula = ~1, family = BCPE,   
+    data = nhanes_f, control = opt_control)  
+ 
+Mu Coefficients: 
+         (Intercept)            pb(age_mn)             height_cm   
+          -10.642828             -0.271211              0.257454   
+pb(age_mn):height_cm   
+            0.002598   
+Sigma Coefficients: 
+(Intercept)   pb(age_mn)   
+  -2.129442     0.002198   
+Nu Coefficients: 
+(Intercept)   
+     -1.009   
+Tau Coefficients: 
+(Intercept)   
+     0.7359   
+ 
+ Degrees of Freedom for the fit: 37.29 Residual Deg. of Freedom   37606  
+Global Deviance:     256606  
+            AIC:     256680  
+            SBC:     256998  
+</pre>
+</div>
+</div>
+</div>
+<p>Oh yes. Those are certainly model objects: I would recognise anywhere that characteristic impenetrable wall of jargon that accompanies every statistical object print method in R. Le sigh.</p>
+</section>
+</section>
+</section>
+<section id="using-the-gamlss-models" class="level2">
+<h2 class="anchored" data-anchor-id="using-the-gamlss-models">Using the GAMLSS models</h2>
+<section id="quantile-estimation" class="level3">
+<h3 class="anchored" data-anchor-id="quantile-estimation">Quantile estimation</h3>
+<p>Now that I have the models I’ve worked so hard to construct, I suppose I should do something with them. The first application uses the <span class="math inline">\(p(h|a,s)\)</span> models to construct quantile curves for height by age and sex. In essence, I’ll build my own version of the CDC growth charts. To that end I’ll write a little wrapper function <code>get_pars()</code> to extract the specific values of <span class="math inline">\(\mu\)</span>, <span class="math inline">\(\sigma\)</span>, <span class="math inline">\(\tau\)</span>, and <span class="math inline">\(\nu\)</span> that describe the distribution of heights, conditional on knowing the age and sex of the person:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>get_pars <span class="ot">&lt;-</span> <span class="cf">function</span>(data, model) {</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>  pars <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">mu    =</span> <span class="fu">predict</span>(model, <span class="at">newdata =</span> data, <span class="at">type =</span> <span class="st">"response"</span>, <span class="at">what =</span> <span class="st">"mu"</span>),</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">sigma =</span> <span class="fu">predict</span>(model, <span class="at">newdata =</span> data, <span class="at">type =</span> <span class="st">"response"</span>, <span class="at">what =</span> <span class="st">"sigma"</span>),</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">nu    =</span> <span class="fu">predict</span>(model, <span class="at">newdata =</span> data, <span class="at">type =</span> <span class="st">"response"</span>, <span class="at">what =</span> <span class="st">"nu"</span>),</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">tau   =</span> <span class="fu">predict</span>(model, <span class="at">newdata =</span> data, <span class="at">type =</span> <span class="st">"response"</span>, <span class="at">what =</span> <span class="st">"tau"</span>),</span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bind_cols</span>(data, pars)</span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>In all honesty I probably didn’t need to do this, because in addition to supplying a <code>predict()</code> method for gamlss objects, the <strong>gamlss</strong> package provides a <code>predictAll()</code> function that does essentially the same thing. But it’s done now, and I prefer my syntax anyways. I can now calculate the desired quantiles by passing the parameter estimates to <code>qBCPE()</code>. The code below computes the 5th, 25th, 50th, 75th, and 95th percentiles for height, conditional on age and sex:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>predict_cases_ht <span class="ot">&lt;-</span> <span class="fu">expand_grid</span>(</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">age_mn  =</span> <span class="dv">1</span><span class="sc">:</span>(age_max_yr <span class="sc">*</span> <span class="dv">12</span>),</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">sex_fct =</span> <span class="fu">factor</span>(<span class="fu">c</span>(<span class="st">"male"</span>, <span class="st">"female"</span>))</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>predict_pars_ht <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>  predict_cases_ht <span class="sc">|&gt;</span> <span class="fu">filter</span>(sex_fct <span class="sc">==</span> <span class="st">"male"</span>) <span class="sc">|&gt;</span> <span class="fu">get_pars</span>(ht_m),</span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>  predict_cases_ht <span class="sc">|&gt;</span> <span class="fu">filter</span>(sex_fct <span class="sc">==</span> <span class="st">"female"</span>) <span class="sc">|&gt;</span> <span class="fu">get_pars</span>(ht_f)</span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a>predict_quantiles_ht <span class="ot">&lt;-</span> predict_pars_ht <span class="sc">|&gt;</span></span>
+<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">q05 =</span> <span class="fu">qBCPE</span>(.<span class="dv">05</span>, <span class="at">mu =</span> mu, <span class="at">sigma =</span> sigma, <span class="at">nu =</span> nu, <span class="at">tau =</span> tau),</span>
+<span id="cb23-14"><a href="#cb23-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">q25 =</span> <span class="fu">qBCPE</span>(.<span class="dv">25</span>, <span class="at">mu =</span> mu, <span class="at">sigma =</span> sigma, <span class="at">nu =</span> nu, <span class="at">tau =</span> tau),</span>
+<span id="cb23-15"><a href="#cb23-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">q50 =</span> <span class="fu">qBCPE</span>(.<span class="dv">50</span>, <span class="at">mu =</span> mu, <span class="at">sigma =</span> sigma, <span class="at">nu =</span> nu, <span class="at">tau =</span> tau),</span>
+<span id="cb23-16"><a href="#cb23-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">q75 =</span> <span class="fu">qBCPE</span>(.<span class="dv">75</span>, <span class="at">mu =</span> mu, <span class="at">sigma =</span> sigma, <span class="at">nu =</span> nu, <span class="at">tau =</span> tau),</span>
+<span id="cb23-17"><a href="#cb23-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">q95 =</span> <span class="fu">qBCPE</span>(.<span class="dv">95</span>, <span class="at">mu =</span> mu, <span class="at">sigma =</span> sigma, <span class="at">nu =</span> nu, <span class="at">tau =</span> tau)</span>
+<span id="cb23-18"><a href="#cb23-18" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb23-19"><a href="#cb23-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-20"><a href="#cb23-20" aria-hidden="true" tabindex="-1"></a>predict_quantiles_ht</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 960 × 11
+   age_mn sex_fct    mu  sigma    nu   tau   q05   q25   q50   q75   q95
+    &lt;int&gt; &lt;fct&gt;   &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+ 1      1 male     56.8 0.0470 0.761  1.80  52.5  55.1  56.8  58.6  61.3
+ 2      2 male     59.1 0.0465 0.761  1.80  54.6  57.3  59.1  60.9  63.7
+ 3      3 male     61.3 0.0459 0.761  1.80  56.7  59.5  61.3  63.1  66.0
+ 4      4 male     63.3 0.0454 0.761  1.80  58.6  61.5  63.3  65.2  68.1
+ 5      5 male     65.3 0.0449 0.761  1.80  60.5  63.4  65.3  67.2  70.1
+ 6      6 male     67.1 0.0445 0.761  1.80  62.2  65.1  67.1  69.0  72.0
+ 7      7 male     68.8 0.0441 0.761  1.80  63.8  66.8  68.8  70.7  73.8
+ 8      8 male     70.3 0.0437 0.761  1.80  65.3  68.4  70.3  72.3  75.4
+ 9      9 male     71.8 0.0433 0.761  1.80  66.8  69.8  71.8  73.9  77.0
+10     10 male     73.2 0.0429 0.761  1.80  68.1  71.2  73.2  75.3  78.5
+# ℹ 950 more rows</code></pre>
+</div>
+</div>
+<p>This is all well and good, Danielle, but since nobody loves looking at tables of numbers, shall we instead draw a pretty picture to display these quantile curves? Why yes, Other Danielle, we shall.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>() <span class="sc">+</span> </span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> nhanes <span class="sc">|&gt;</span> <span class="fu">filter</span>(age_yr <span class="sc">&lt;</span> age_max_yr), </span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">mapping =</span> <span class="fu">aes</span>(age_mn, height_cm),</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">size =</span> .<span class="dv">25</span></span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_path</span>(</span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> predict_quantiles_ht <span class="sc">|&gt;</span> </span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>      <span class="fu">pivot_longer</span>(</span>
+<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>        <span class="at">cols =</span> <span class="fu">starts_with</span>(<span class="st">"q"</span>),</span>
+<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a>        <span class="at">names_to =</span> <span class="st">"quantile"</span>,</span>
+<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a>        <span class="at">values_to =</span> <span class="st">"height_cm"</span></span>
+<span id="cb25-13"><a href="#cb25-13" aria-hidden="true" tabindex="-1"></a>      ),</span>
+<span id="cb25-14"><a href="#cb25-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">mapping =</span> <span class="fu">aes</span>(age_mn, height_cm, <span class="at">color =</span> quantile)</span>
+<span id="cb25-15"><a href="#cb25-15" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb25-16"><a href="#cb25-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>sex_fct) <span class="sc">+</span></span>
+<span id="cb25-17"><a href="#cb25-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"bottom"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/height-quantiles-plot-1.png" class="img-fluid figure-img" width="768"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Very pretty.</p>
+</section>
+<section id="even-more-quantile-estimation" class="level3">
+<h3 class="anchored" data-anchor-id="even-more-quantile-estimation">Even more quantile estimation</h3>
+<p>Okay, that’s nice but you might argue that the GAMLSS modelling is overkill here. The distribution of heights conditional on age and sex is fairly close to normal, and in any case we have about 100k rows in the data set spanning the full range of ages. While it is certainly true that a well-tuned GAMLSS model supplies slightly cleaner curves, and this would <em>absolutely</em> matter if I were working for the CDC and tasked with the job of producing official growth curves, this is a side project on a personal blog and I am not the CDC.</p>
+<p>With that in mind, can we think of a case where even a data set as rich as NHANES starts to become awfully sparse and the modelling becomes much more important? Of course we can, Original Danielle, what a silly question. It is indeed trivially easy to find such a case if we start looking for one.</p>
+<p>Here is an example. Suppose we had a research question that was focused on some intervention (medication, diet, exercise, whatever) that might have an impact on weight, and moreover there was a particular concern or interest in how the intervention affects people at the extremes. In point of fact I <em>don’t</em> have any such research question on my desk, but it’s not entirely outlandish to imagine that there would be scenarios in which we have a specific interest in the distribution of weights associated with very tall or very short people. For the sake of argument, let’s operationally define a “very tall” person to be someone at the 99th height percentile for their age and sex. Similarly we could say that a “very short” person is someone at the 1st percentile. Unless your data set is extremely large – on a scale that not even NHANES can aspire to – the data are going to be very sparse at the extremes. The moment we ask questions like this we should be resigned to the fact that we’ll be taking <em>veeeeeery</em> thin slices through the tails of the distributions.</p>
+<p>Let’s take a look. As before, I’ll construct the quantiles curves predicted by the GAMLSS model. It’s slightly more involved than last time because I’m conditioning on a height percentile first and then constructing quantiles for weight, but the core logic is the same. These are the height percentiles:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>predict_cases_wt <span class="ot">&lt;-</span> predict_pars_ht <span class="sc">|&gt;</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">very_tall  =</span> <span class="fu">qBCPE</span>(.<span class="dv">99</span>, <span class="at">mu =</span> mu, <span class="at">sigma =</span> sigma, <span class="at">nu =</span> nu, <span class="at">tau =</span> tau),</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">very_short =</span> <span class="fu">qBCPE</span>(.<span class="dv">01</span>, <span class="at">mu =</span> mu, <span class="at">sigma =</span> sigma, <span class="at">nu =</span> nu, <span class="at">tau =</span> tau)</span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(</span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">cols =</span> <span class="fu">c</span>(very_tall, very_short),</span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">names_to =</span> <span class="st">"height_fct"</span>, </span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_to =</span> <span class="st">"height_cm"</span></span>
+<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
+<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">height_fct =</span> <span class="fu">factor</span>(height_fct)) <span class="sc">|&gt;</span> </span>
+<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(age_mn, sex_fct, height_fct, height_cm)</span>
+<span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-14"><a href="#cb26-14" aria-hidden="true" tabindex="-1"></a>predict_cases_wt</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1,920 × 4
+   age_mn sex_fct height_fct height_cm
+    &lt;int&gt; &lt;fct&gt;   &lt;fct&gt;          &lt;dbl&gt;
+ 1      1 male    very_tall       63.3
+ 2      1 male    very_short      50.5
+ 3      2 male    very_tall       65.8
+ 4      2 male    very_short      52.7
+ 5      3 male    very_tall       68.1
+ 6      3 male    very_short      54.7
+ 7      4 male    very_tall       70.3
+ 8      4 male    very_short      56.6
+ 9      5 male    very_tall       72.3
+10      5 male    very_short      58.4
+# ℹ 1,910 more rows</code></pre>
+</div>
+</div>
+<p>So now we have a collection of age/sex/height cases for which we need to compute weight quantiles. Here’s the code for that:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>predict_pars_wt <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>  predict_cases_wt <span class="sc">|&gt;</span> <span class="fu">filter</span>(sex_fct <span class="sc">==</span> <span class="st">"male"</span>) <span class="sc">|&gt;</span> <span class="fu">select</span>(<span class="sc">-</span>height_fct) <span class="sc">|&gt;</span> <span class="fu">get_pars</span>(wt_htm),</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>  predict_cases_wt <span class="sc">|&gt;</span> <span class="fu">filter</span>(sex_fct <span class="sc">==</span> <span class="st">"female"</span>) <span class="sc">|&gt;</span> <span class="fu">select</span>(<span class="sc">-</span>height_fct) <span class="sc">|&gt;</span> <span class="fu">get_pars</span>(wt_htf)</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span> </span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(predict_cases_wt, <span class="at">by =</span> <span class="fu">join_by</span>(age_mn, sex_fct, height_cm)) <span class="sc">|&gt;</span> </span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">relocate</span>(height_fct, <span class="at">.before =</span> height_cm)</span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a>predict_quantiles_wt <span class="ot">&lt;-</span> predict_pars_wt <span class="sc">|&gt;</span></span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">q05 =</span> <span class="fu">qBCPE</span>(.<span class="dv">05</span>, <span class="at">mu =</span> mu, <span class="at">sigma =</span> sigma, <span class="at">nu =</span> nu, <span class="at">tau =</span> tau),</span>
+<span id="cb28-11"><a href="#cb28-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">q25 =</span> <span class="fu">qBCPE</span>(.<span class="dv">25</span>, <span class="at">mu =</span> mu, <span class="at">sigma =</span> sigma, <span class="at">nu =</span> nu, <span class="at">tau =</span> tau),</span>
+<span id="cb28-12"><a href="#cb28-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">q50 =</span> <span class="fu">qBCPE</span>(.<span class="dv">50</span>, <span class="at">mu =</span> mu, <span class="at">sigma =</span> sigma, <span class="at">nu =</span> nu, <span class="at">tau =</span> tau),</span>
+<span id="cb28-13"><a href="#cb28-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">q75 =</span> <span class="fu">qBCPE</span>(.<span class="dv">75</span>, <span class="at">mu =</span> mu, <span class="at">sigma =</span> sigma, <span class="at">nu =</span> nu, <span class="at">tau =</span> tau),</span>
+<span id="cb28-14"><a href="#cb28-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">q95 =</span> <span class="fu">qBCPE</span>(.<span class="dv">95</span>, <span class="at">mu =</span> mu, <span class="at">sigma =</span> sigma, <span class="at">nu =</span> nu, <span class="at">tau =</span> tau)</span>
+<span id="cb28-15"><a href="#cb28-15" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb28-16"><a href="#cb28-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-17"><a href="#cb28-17" aria-hidden="true" tabindex="-1"></a>predict_quantiles_wt</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1,920 × 13
+   age_mn sex_fct height_fct height_cm    mu  sigma    nu   tau   q05   q25
+    &lt;int&gt; &lt;fct&gt;   &lt;fct&gt;          &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+ 1      1 male    very_tall       63.3  7.29 0.101  -1.22  1.79  6.26  6.84
+ 2      1 male    very_short      50.5  3.83 0.101  -1.22  1.79  3.29  3.59
+ 3      2 male    very_tall       65.8  7.99 0.100  -1.22  1.79  6.87  7.51
+ 4      2 male    very_short      52.7  4.39 0.100  -1.22  1.79  3.78  4.13
+ 5      3 male    very_tall       68.1  8.64 0.0987 -1.22  1.79  7.45  8.13
+ 6      3 male    very_short      54.7  4.92 0.0987 -1.22  1.79  4.24  4.63
+ 7      4 male    very_tall       70.3  9.25 0.0975 -1.22  1.79  7.99  8.70
+ 8      4 male    very_short      56.6  5.41 0.0975 -1.22  1.79  4.67  5.09
+ 9      5 male    very_tall       72.3  9.82 0.0963 -1.22  1.79  8.49  9.24
+10      5 male    very_short      58.4  5.86 0.0963 -1.22  1.79  5.07  5.52
+# ℹ 1,910 more rows
+# ℹ 3 more variables: q50 &lt;dbl&gt;, q75 &lt;dbl&gt;, q95 &lt;dbl&gt;</code></pre>
+</div>
+</div>
+<p>So far, so good. However, now we turn to the data itself. That’s the point at which it becomes a little trickier When working with continuous data, you won’t find a single person who sits exactly at the 99th or 1st percentile. I mean, the whole reason probability densities even exist as a mathematical formalism is because continous data are inconvenient that way. To the GAMLSS model this isn’t a problem at all, but for the NHANES data itself it’s terribly awkward. For the current purposes, I’ll allow a little slack and extract the subset of the NHANES data where the participant is <em>near</em> the 99th or 1st percentile. Here’s the code doing that:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>permitted <span class="ot">&lt;-</span> predict_cases_wt <span class="sc">|&gt;</span> </span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">height_cm_lo =</span> height_cm <span class="sc">*</span> <span class="fl">0.99</span>, </span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">height_cm_hi =</span> height_cm <span class="sc">*</span> <span class="fl">1.01</span></span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(age_mn, sex_fct, height_fct, height_cm_lo, height_cm_hi)</span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>match_rules <span class="ot">&lt;-</span> <span class="fu">join_by</span>(</span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a>  x<span class="sc">$</span>sex_fct <span class="sc">==</span> y<span class="sc">$</span>sex_fct, </span>
+<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a>  x<span class="sc">$</span>age_mn <span class="sc">==</span> y<span class="sc">$</span>age_mn, </span>
+<span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a>  x<span class="sc">$</span>height_cm <span class="sc">&gt;</span> y<span class="sc">$</span>height_cm_lo, </span>
+<span id="cb30-12"><a href="#cb30-12" aria-hidden="true" tabindex="-1"></a>  x<span class="sc">$</span>height_cm <span class="sc">&lt;</span> y<span class="sc">$</span>height_cm_hi</span>
+<span id="cb30-13"><a href="#cb30-13" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb30-14"><a href="#cb30-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-15"><a href="#cb30-15" aria-hidden="true" tabindex="-1"></a>nhanes_very_short <span class="ot">&lt;-</span> <span class="fu">semi_join</span>(</span>
+<span id="cb30-16"><a href="#cb30-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">x =</span> nhanes, </span>
+<span id="cb30-17"><a href="#cb30-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">y =</span> permitted <span class="sc">|&gt;</span> <span class="fu">filter</span>(height_fct <span class="sc">==</span> <span class="st">"very_short"</span>),</span>
+<span id="cb30-18"><a href="#cb30-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">by =</span> match_rules</span>
+<span id="cb30-19"><a href="#cb30-19" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb30-20"><a href="#cb30-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-21"><a href="#cb30-21" aria-hidden="true" tabindex="-1"></a>nhanes_very_tall <span class="ot">&lt;-</span> <span class="fu">semi_join</span>(</span>
+<span id="cb30-22"><a href="#cb30-22" aria-hidden="true" tabindex="-1"></a>  <span class="at">x =</span> nhanes, </span>
+<span id="cb30-23"><a href="#cb30-23" aria-hidden="true" tabindex="-1"></a>  <span class="at">y =</span> permitted <span class="sc">|&gt;</span> <span class="fu">filter</span>(height_fct <span class="sc">==</span> <span class="st">"very_tall"</span>),</span>
+<span id="cb30-24"><a href="#cb30-24" aria-hidden="true" tabindex="-1"></a>  <span class="at">by =</span> match_rules</span>
+<span id="cb30-25"><a href="#cb30-25" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb30-26"><a href="#cb30-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-27"><a href="#cb30-27" aria-hidden="true" tabindex="-1"></a>nhanes_partial <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
+<span id="cb30-28"><a href="#cb30-28" aria-hidden="true" tabindex="-1"></a>  <span class="at">very_short =</span> nhanes_very_short,</span>
+<span id="cb30-29"><a href="#cb30-29" aria-hidden="true" tabindex="-1"></a>  <span class="at">very_tall =</span> nhanes_very_tall,</span>
+<span id="cb30-30"><a href="#cb30-30" aria-hidden="true" tabindex="-1"></a>  <span class="at">.id =</span> <span class="st">"height_fct"</span></span>
+<span id="cb30-31"><a href="#cb30-31" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">height_fct =</span> <span class="fu">factor</span>(height_fct))</span>
+<span id="cb30-32"><a href="#cb30-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-33"><a href="#cb30-33" aria-hidden="true" tabindex="-1"></a>nhanes_partial</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1,513 × 9
+   height_fct    id sex_num sex_fct weight_kg height_cm age_mn age_yr cohort
+   &lt;fct&gt;      &lt;dbl&gt;   &lt;dbl&gt; &lt;fct&gt;       &lt;dbl&gt;     &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt; 
+ 1 very_short   106       0 male         71.8      157.    479   39.9 1999-…
+ 2 very_short   181       0 male         50.8      153.    177   14.8 1999-…
+ 3 very_short   186       0 male         57.7      158.    220   18.3 1999-…
+ 4 very_short   590       1 female       46.5      146.    186   15.5 1999-…
+ 5 very_short   599       0 male         42.2      143.    162   13.5 1999-…
+ 6 very_short   708       1 female       73.8      146.    313   26.1 1999-…
+ 7 very_short   849       0 male         35.7      150.    172   14.3 1999-…
+ 8 very_short   941       1 female       57.1      146.    262   21.8 1999-…
+ 9 very_short  1012       0 male         38        141.    158   13.2 1999-…
+10 very_short  1075       0 male         54.6      156.    237   19.8 1999-…
+# ℹ 1,503 more rows</code></pre>
+</div>
+</div>
+<p>It’s not exciting reading, but I will confess it was fun to write. I very rarely have to implement semi joins or rolling joins in my day to day life, so it was kind of nice to have an opportunity to remember how they work. Notably though, our filtered NHANES data that contains only very tall and very short people is now much smaller. We have only 1513 subjects, and the effect of this subsetting becomes noticeable when we plot the data, and plot those data against the GAMLSS estimated quantile curves:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>() <span class="sc">+</span> </span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(</span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> nhanes_partial, </span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">mapping =</span> <span class="fu">aes</span>(age_mn, weight_kg),</span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">size =</span> .<span class="dv">5</span></span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_path</span>(</span>
+<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> predict_quantiles_wt <span class="sc">|&gt;</span> </span>
+<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a>      <span class="fu">pivot_longer</span>(</span>
+<span id="cb32-10"><a href="#cb32-10" aria-hidden="true" tabindex="-1"></a>        <span class="at">cols =</span> <span class="fu">starts_with</span>(<span class="st">"q"</span>),</span>
+<span id="cb32-11"><a href="#cb32-11" aria-hidden="true" tabindex="-1"></a>        <span class="at">names_to =</span> <span class="st">"quantile"</span>,</span>
+<span id="cb32-12"><a href="#cb32-12" aria-hidden="true" tabindex="-1"></a>        <span class="at">values_to =</span> <span class="st">"weight_kg"</span></span>
+<span id="cb32-13"><a href="#cb32-13" aria-hidden="true" tabindex="-1"></a>      ),</span>
+<span id="cb32-14"><a href="#cb32-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">mapping =</span> <span class="fu">aes</span>(age_mn, weight_kg, <span class="at">color =</span> quantile),</span>
+<span id="cb32-15"><a href="#cb32-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">linewidth =</span> <span class="dv">1</span></span>
+<span id="cb32-16"><a href="#cb32-16" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb32-17"><a href="#cb32-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_grid</span>(height_fct <span class="sc">~</span> sex_fct) <span class="sc">+</span></span>
+<span id="cb32-18"><a href="#cb32-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"bottom"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/weight-quantiles-plot-1.png" class="img-fluid figure-img" width="768"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Huh. It works better than I would have expected it to, actually. It’s not perfect, and the model does seem to underestimate the uppermost weight quantiles for very tall people, but in fairness I set it a very hard task: estimating the 95th quantile for weight by age and sex, conditional on being at the 99th percentile for height? This is not something I’d have dared attempt in the past, and I’m mildly surprised it works as well as it does. The curves aren’t smooth as I’d like, I suppose, and had I known in advance I was going to make this plot I might have tailored the GAMLSS fitting to enforce smoothness a little more, but honestly I’m not complaining. This is pretty good!</p>
+</section>
+<section id="model-based-sampling" class="level3">
+<h3 class="anchored" data-anchor-id="model-based-sampling">Model-based sampling</h3>
+<p>Time to switch gears. While quantile estimation is the statistical problem for which GAMLSS models are best known, the use case I’m more likely to encounter in my own work is model-based sampling. It is grossly typical of pediatric pharmacometric simulations, in fact. We very often want to simulate the expected drug exposure across a particular subpopulation defined by an age band, stratified by sex, or something along these lines. Performing these simulations is a somewhat complicated affair, and this post is not the right place to dive deep on that topic, but for many of these simulations we need to sample from the full joint conditional distribution <span class="math inline">\(p(h, w | a, s)\)</span>.<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a></p>
+<p>Let’s have a go at doing this.</p>
+<p>The code below defines a function <code>sample_hw()</code> that takes a vector of ages, a vector of sexes, and a list of GAMLSS models as input, and returns a data frame that samples heights and weights for each case with the assistance of the appropriate GAMLSS model:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>sample_hw <span class="ot">&lt;-</span> <span class="cf">function</span>(age_mn, sex_fct, mod) {</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>  rTBCPE <span class="ot">&lt;-</span> <span class="cf">function</span>(n, mu, sigma, nu, tau, <span class="at">trim =</span> .<span class="dv">0025</span>) {</span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="fu">runif</span>(n, <span class="at">min =</span> trim, <span class="at">max =</span> <span class="dv">1</span> <span class="sc">-</span> trim)</span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">any</span>(mu <span class="sc">&lt;=</span> <span class="dv">0</span>)) mu[mu <span class="sc">&lt;=</span> <span class="dv">0</span>] <span class="ot">&lt;-</span> <span class="fl">1E-6</span></span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">any</span>(sigma <span class="sc">&lt;=</span> <span class="dv">0</span>)) sigma[sigma <span class="sc">&lt;=</span> <span class="dv">0</span>] <span class="ot">&lt;-</span> <span class="fl">1E-6</span></span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a>    r <span class="ot">&lt;-</span> <span class="fu">qBCPE</span>(p, <span class="at">mu =</span> mu, <span class="at">sigma =</span> sigma, <span class="at">nu =</span> nu, <span class="at">tau =</span> tau)</span>
+<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a>    r</span>
+<span id="cb33-9"><a href="#cb33-9" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb33-10"><a href="#cb33-10" aria-hidden="true" tabindex="-1"></a>  sample_h <span class="ot">&lt;-</span> <span class="cf">function</span>(age_mn, ht_mod) {</span>
+<span id="cb33-11"><a href="#cb33-11" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tibble</span>(age_mn) <span class="sc">|&gt;</span> </span>
+<span id="cb33-12"><a href="#cb33-12" aria-hidden="true" tabindex="-1"></a>      <span class="fu">get_pars</span>(<span class="at">model =</span> ht_mod) <span class="sc">|&gt;</span> </span>
+<span id="cb33-13"><a href="#cb33-13" aria-hidden="true" tabindex="-1"></a>      <span class="fu">select</span>(mu, sigma, nu, tau) <span class="sc">|&gt;</span> </span>
+<span id="cb33-14"><a href="#cb33-14" aria-hidden="true" tabindex="-1"></a>      <span class="fu">pmap_dbl</span>(\(mu, sigma, nu, tau) <span class="fu">rTBCPE</span>(<span class="at">n =</span> <span class="dv">1</span>, mu, sigma, nu, tau))</span>
+<span id="cb33-15"><a href="#cb33-15" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb33-16"><a href="#cb33-16" aria-hidden="true" tabindex="-1"></a>  sample_w <span class="ot">&lt;-</span> <span class="cf">function</span>(age_mn, height_cm, wt_mod) {</span>
+<span id="cb33-17"><a href="#cb33-17" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tibble</span>(age_mn, height_cm) <span class="sc">|&gt;</span></span>
+<span id="cb33-18"><a href="#cb33-18" aria-hidden="true" tabindex="-1"></a>      <span class="fu">get_pars</span>(<span class="at">model =</span> wt_mod) <span class="sc">|&gt;</span> </span>
+<span id="cb33-19"><a href="#cb33-19" aria-hidden="true" tabindex="-1"></a>      <span class="fu">select</span>(mu, sigma, nu, tau) <span class="sc">|&gt;</span> </span>
+<span id="cb33-20"><a href="#cb33-20" aria-hidden="true" tabindex="-1"></a>      <span class="fu">pmap_dbl</span>(\(mu, sigma, nu, tau) <span class="fu">rTBCPE</span>(<span class="at">n =</span> <span class="dv">1</span>, mu, sigma, nu, tau))</span>
+<span id="cb33-21"><a href="#cb33-21" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb33-22"><a href="#cb33-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-23"><a href="#cb33-23" aria-hidden="true" tabindex="-1"></a>  height_cm <span class="ot">&lt;-</span> weight_kg <span class="ot">&lt;-</span> <span class="fu">numeric</span>(<span class="fu">length</span>(age_mn))</span>
+<span id="cb33-24"><a href="#cb33-24" aria-hidden="true" tabindex="-1"></a>  mm <span class="ot">&lt;-</span> sex_fct <span class="sc">==</span> <span class="st">"male"</span></span>
+<span id="cb33-25"><a href="#cb33-25" aria-hidden="true" tabindex="-1"></a>  ff <span class="ot">&lt;-</span> sex_fct <span class="sc">==</span> <span class="st">"female"</span></span>
+<span id="cb33-26"><a href="#cb33-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-27"><a href="#cb33-27" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">any</span>(mm)) height_cm[mm] <span class="ot">&lt;-</span> <span class="fu">sample_h</span>(age_mn[mm], mod<span class="sc">$</span>ht_m)</span>
+<span id="cb33-28"><a href="#cb33-28" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">any</span>(ff)) height_cm[ff] <span class="ot">&lt;-</span> <span class="fu">sample_h</span>(age_mn[ff], mod<span class="sc">$</span>ht_f)  </span>
+<span id="cb33-29"><a href="#cb33-29" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">any</span>(mm)) weight_kg[mm] <span class="ot">&lt;-</span> <span class="fu">sample_w</span>(age_mn[mm], height_cm[mm], mod<span class="sc">$</span>wt_htm)</span>
+<span id="cb33-30"><a href="#cb33-30" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">any</span>(ff)) weight_kg[ff] <span class="ot">&lt;-</span> <span class="fu">sample_w</span>(age_mn[ff], height_cm[ff], mod<span class="sc">$</span>wt_htf)</span>
+<span id="cb33-31"><a href="#cb33-31" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb33-32"><a href="#cb33-32" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tibble</span>(age_mn, sex_fct, height_cm, weight_kg)</span>
+<span id="cb33-33"><a href="#cb33-33" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>One feature worth noting here is the use of a <em>trimmed</em> Box-Cox power-exponential for the sampling. This is somewhat important in practice becase even with <span class="math inline">\(\nu\)</span> and <span class="math inline">\(\tau\)</span> parameters to control the shape (and thereby make the model less prone to sampling absurd values), the BCPE distribution has limits. It is not equipped with a detailed knowledge of human physiology, and even when fit to a data set as large as the whole of NHANES, the resulting distributions still have support on non-biological values and will – in any sufficiently large simulation – generate a few outliers that are biologically impossible. To that end, the sampling function quietly truncates the very ends of the distribution. The default trim in my code above is to remove 0.25% of the distribution on either side, which is quite a bit smaller than the 3% default used in the <code>nhanesgamlss::simwtage()</code> function that my former colleague Samer developed. The reason for the difference is uninteresting: my GAMLSS models are trained on a much larger data set than the ones supplied by the <strong>nhanesgamlss</strong> package, and I use a slightly different method to construct the model, and one side effect is that the BCPE densities in my version of the GAMLSS model have lighter tails than the ones that you’ll get if you apply <code>nhanesgamlss::simwtage()</code> to the GAMLSS code provided in the package documentation.</p>
+<p>In any case, now that I have the <code>sample_hw()</code> function written down, I can use it as the basis for a simulation. For the first example, I’ll keep the exact same set of age and sex values from the NHANES data that were used to train the GAMLSS model, and sample new heights and weights for each case. In the process, I’ll also classify into a set of “age bands”. In real life these bands would be chosen based on the needs of the simulation, but for this example I don’t have a specific application in mind so I just went with something pretty representative of the bands that I often need.</p>
+<p>Here’s what happens:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>nhanes_fit <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(nhanes_m, nhanes_f) <span class="sc">|&gt;</span> <span class="fu">arrange</span>(age_mn)</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>age_band <span class="ot">&lt;-</span> <span class="cf">function</span>(age_mn) {</span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">factor</span>(</span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="fu">case_when</span>(</span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>      age_mn <span class="sc">&lt;=</span> <span class="dv">12</span>                 <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a>      age_mn <span class="sc">&gt;</span>  <span class="dv">12</span> <span class="sc">&amp;</span> age_mn <span class="sc">&lt;=</span>  <span class="dv">24</span> <span class="sc">~</span> <span class="dv">2</span>,</span>
+<span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a>      age_mn <span class="sc">&gt;</span>  <span class="dv">24</span> <span class="sc">&amp;</span> age_mn <span class="sc">&lt;=</span>  <span class="dv">72</span> <span class="sc">~</span> <span class="dv">3</span>,</span>
+<span id="cb34-9"><a href="#cb34-9" aria-hidden="true" tabindex="-1"></a>      age_mn <span class="sc">&gt;</span>  <span class="dv">72</span> <span class="sc">&amp;</span> age_mn <span class="sc">&lt;=</span> <span class="dv">144</span> <span class="sc">~</span> <span class="dv">4</span>,</span>
+<span id="cb34-10"><a href="#cb34-10" aria-hidden="true" tabindex="-1"></a>      age_mn <span class="sc">&gt;</span> <span class="dv">144</span> <span class="sc">&amp;</span> age_mn <span class="sc">&lt;=</span> <span class="dv">216</span> <span class="sc">~</span> <span class="dv">5</span>,</span>
+<span id="cb34-11"><a href="#cb34-11" aria-hidden="true" tabindex="-1"></a>      age_mn <span class="sc">&gt;</span> <span class="dv">216</span>                 <span class="sc">~</span> <span class="dv">6</span></span>
+<span id="cb34-12"><a href="#cb34-12" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb34-13"><a href="#cb34-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">levels =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">6</span>,</span>
+<span id="cb34-14"><a href="#cb34-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">labels =</span> <span class="fu">c</span>(</span>
+<span id="cb34-15"><a href="#cb34-15" aria-hidden="true" tabindex="-1"></a>      <span class="st">"&lt;1 year"</span>,</span>
+<span id="cb34-16"><a href="#cb34-16" aria-hidden="true" tabindex="-1"></a>      <span class="st">"1-2 years"</span>,</span>
+<span id="cb34-17"><a href="#cb34-17" aria-hidden="true" tabindex="-1"></a>      <span class="st">"2-6 years"</span>,</span>
+<span id="cb34-18"><a href="#cb34-18" aria-hidden="true" tabindex="-1"></a>      <span class="st">"6-12 years"</span>,</span>
+<span id="cb34-19"><a href="#cb34-19" aria-hidden="true" tabindex="-1"></a>      <span class="st">"12-18 years"</span>,</span>
+<span id="cb34-20"><a href="#cb34-20" aria-hidden="true" tabindex="-1"></a>      <span class="st">"&gt;18 years"</span></span>
+<span id="cb34-21"><a href="#cb34-21" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb34-22"><a href="#cb34-22" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb34-23"><a href="#cb34-23" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb34-24"><a href="#cb34-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-25"><a href="#cb34-25" aria-hidden="true" tabindex="-1"></a>pop <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
+<span id="cb34-26"><a href="#cb34-26" aria-hidden="true" tabindex="-1"></a>  <span class="at">gamlss =</span> <span class="fu">sample_hw</span>(nhanes_fit<span class="sc">$</span>age_mn, nhanes_fit<span class="sc">$</span>sex_fct, <span class="at">mod =</span> mod),</span>
+<span id="cb34-27"><a href="#cb34-27" aria-hidden="true" tabindex="-1"></a>  <span class="at">nhanes =</span> nhanes_fit <span class="sc">|&gt;</span> <span class="fu">select</span>(age_mn, sex_fct, height_cm, weight_kg),</span>
+<span id="cb34-28"><a href="#cb34-28" aria-hidden="true" tabindex="-1"></a>  <span class="at">.id =</span> <span class="st">"source"</span></span>
+<span id="cb34-29"><a href="#cb34-29" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">age_band_fct =</span> <span class="fu">age_band</span>(age_mn))</span>
+<span id="cb34-30"><a href="#cb34-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-31"><a href="#cb34-31" aria-hidden="true" tabindex="-1"></a>pop</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 148,894 × 6
+   source age_mn sex_fct height_cm weight_kg age_band_fct
+   &lt;chr&gt;   &lt;dbl&gt; &lt;fct&gt;       &lt;dbl&gt;     &lt;dbl&gt; &lt;fct&gt;       
+ 1 gamlss      0 male         55.3      5.87 &lt;1 year     
+ 2 gamlss      0 male         57.3      5.36 &lt;1 year     
+ 3 gamlss      0 male         56.3      4.86 &lt;1 year     
+ 4 gamlss      0 male         56.5      5.54 &lt;1 year     
+ 5 gamlss      0 male         54.1      5.03 &lt;1 year     
+ 6 gamlss      0 male         53.8      5.23 &lt;1 year     
+ 7 gamlss      0 male         56.6      4.89 &lt;1 year     
+ 8 gamlss      0 male         55.0      5.20 &lt;1 year     
+ 9 gamlss      0 male         55.4      4.98 &lt;1 year     
+10 gamlss      0 male         53.4      4.38 &lt;1 year     
+# ℹ 148,884 more rows</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>pop <span class="sc">|&gt;</span></span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(height_cm, weight_kg, <span class="at">color =</span> sex_fct)) <span class="sc">+</span> </span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">size =</span> .<span class="dv">25</span>, <span class="at">alpha =</span> .<span class="dv">5</span>) <span class="sc">+</span></span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_grid</span>(age_band_fct <span class="sc">~</span> source, <span class="at">scales =</span> <span class="st">"free_y"</span>) <span class="sc">+</span></span>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"bottom"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/height-weight-age-band-scatterplot-1.png" class="img-fluid figure-img" width="768"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>So, so pretty. When I do a pediatric simulation in my work I almost always create a plot similar to this one. It’s not the final product or indeed the point of the simulations, but it’s a important validation check. You really want to make sure that the distributions that you’re sampling from actually make sense and look about right when compared to the known data! Also, they’re preeeeeeeettttttty.</p>
+</section>
+<section id="even-more-sampling" class="level3">
+<h3 class="anchored" data-anchor-id="even-more-sampling">Even more sampling</h3>
+<p>Once again this is a neat example, but it’s mostly a validation of the GAMLSS model: it shows us the model does allow us to sample from the joint conditional density <span class="math inline">\(p(h, w | a, s)\)</span>. But by design the GAMLSS samples in <code>pop</code> are matched to the NHANES data on age and sex. Anything that we could do with the GAMLSS samples in the previous example is also something that we could have done with the NHANES samples directly. So, once again, we ask the question: is there something we can do with the GAMLSS model-based sampling that we wouldn’t be able to do with the NHANES data?</p>
+<p>Of course there is, dear reader, and as you might guess I’ll again look to “extreme cases” like I did in the quantile estimation discussion earlier. This time though I’ll focus on age, and more specifically, I’ll look at body surface area (BSA) simulations for very young infants.</p>
+<p>I’ll motivate the example with a little snippet of code that I keep handy in my everyday life. It’s a <code>compute_bsa()</code> function that calculates a person’s approximate BSA based on their height and weight. By it’s very nature this calculation has to be approximate: bodies come in all shapes and sizes so any function that approximates BSA based on two simpler measurements is going to have some limitations. It should therefore be unsurprising to note that there are <em>lots</em> of different formulae we can use for this purpose:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>compute_bsa <span class="ot">&lt;-</span> <span class="cf">function</span>(height, weight, <span class="at">method =</span> <span class="st">"dubois"</span>) {</span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>  w <span class="ot">&lt;-</span> weight <span class="co"># numeric (kg)</span></span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a>  h <span class="ot">&lt;-</span> height <span class="co"># numeric (cm)</span></span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Du Bois D, Du Bois EF (Jun 1916). "A formula to estimate the approximate</span></span>
+<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a>  <span class="co"># surface area if height and weight be known". Archives of Internal Medicine</span></span>
+<span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a>  <span class="co"># 17 (6): 863-71. PMID 2520314.</span></span>
+<span id="cb37-9"><a href="#cb37-9" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (method <span class="sc">==</span> <span class="st">"dubois"</span>) <span class="fu">return</span>(<span class="fl">0.007184</span> <span class="sc">*</span> w<span class="sc">^</span><span class="fl">0.425</span> <span class="sc">*</span> h<span class="sc">^</span><span class="fl">0.725</span>)</span>
+<span id="cb37-10"><a href="#cb37-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-11"><a href="#cb37-11" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Mosteller RD. "Simplified calculation of body-surface area". N Engl J Med</span></span>
+<span id="cb37-12"><a href="#cb37-12" aria-hidden="true" tabindex="-1"></a>  <span class="co"># 1987; 317:1098. PMID 3657876.</span></span>
+<span id="cb37-13"><a href="#cb37-13" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (method <span class="sc">==</span> <span class="st">"mosteller"</span>) <span class="fu">return</span>(<span class="fl">0.016667</span> <span class="sc">*</span> w<span class="sc">^</span><span class="fl">0.5</span> <span class="sc">*</span> h<span class="sc">^</span><span class="fl">0.5</span>)</span>
+<span id="cb37-14"><a href="#cb37-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-15"><a href="#cb37-15" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Haycock GB, Schwartz GJ, Wisotsky DH "Geometric method for measuring body</span></span>
+<span id="cb37-16"><a href="#cb37-16" aria-hidden="true" tabindex="-1"></a>  <span class="co"># surface area: A height-weight formula validated in infants, children and</span></span>
+<span id="cb37-17"><a href="#cb37-17" aria-hidden="true" tabindex="-1"></a>  <span class="co"># adults" J Pediatr 1978, 93:62-66.</span></span>
+<span id="cb37-18"><a href="#cb37-18" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (method <span class="sc">==</span> <span class="st">"haycock"</span>) <span class="fu">return</span>(<span class="fl">0.024265</span> <span class="sc">*</span> w<span class="sc">^</span><span class="fl">0.5378</span> <span class="sc">*</span> h<span class="sc">^</span><span class="fl">0.3964</span>)</span>
+<span id="cb37-19"><a href="#cb37-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-20"><a href="#cb37-20" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Gehan EA, George SL, Cancer Chemother Rep 1970, 54:225-235</span></span>
+<span id="cb37-21"><a href="#cb37-21" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (method <span class="sc">==</span> <span class="st">"gehan"</span>) <span class="fu">return</span>(<span class="fl">0.0235</span> <span class="sc">*</span> w<span class="sc">^</span><span class="fl">0.51456</span> <span class="sc">*</span> h<span class="sc">^</span><span class="fl">0.42246</span>)</span>
+<span id="cb37-22"><a href="#cb37-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-23"><a href="#cb37-23" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Boyd, Edith (1935). The Growth of the Surface Area of the Human Body.</span></span>
+<span id="cb37-24"><a href="#cb37-24" aria-hidden="true" tabindex="-1"></a>  <span class="co"># University of Minnesota. The Institute of Child Welfare, Monograph Series,</span></span>
+<span id="cb37-25"><a href="#cb37-25" aria-hidden="true" tabindex="-1"></a>  <span class="co"># No. x. London: Oxford University Press</span></span>
+<span id="cb37-26"><a href="#cb37-26" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (method <span class="sc">==</span> <span class="st">"boyd"</span>) <span class="fu">return</span>(<span class="fl">0.03330</span> <span class="sc">*</span> w<span class="sc">^</span>(<span class="fl">0.6157</span> <span class="sc">-</span> <span class="fl">0.0188</span> <span class="sc">*</span> <span class="fu">log10</span>(w)) <span class="sc">*</span> h<span class="sc">^</span><span class="fl">0.3</span>)</span>
+<span id="cb37-27"><a href="#cb37-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-28"><a href="#cb37-28" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Fujimoto S, Watanabe T, Sakamoto A, Yukawa K, Morimoto K. Studies on the</span></span>
+<span id="cb37-29"><a href="#cb37-29" aria-hidden="true" tabindex="-1"></a>  <span class="co"># physical surface area of Japanese. 18. Calculation formulae in three stages</span></span>
+<span id="cb37-30"><a href="#cb37-30" aria-hidden="true" tabindex="-1"></a>  <span class="co"># over all ages. Nippon Eiseigaku Zasshi 1968;5:443-50.</span></span>
+<span id="cb37-31"><a href="#cb37-31" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (method <span class="sc">==</span> <span class="st">"fujimoto"</span>) <span class="fu">return</span>(<span class="fl">0.008883</span> <span class="sc">*</span> w<span class="sc">^</span><span class="fl">0.444</span> <span class="sc">*</span> h<span class="sc">^</span><span class="fl">0.663</span>)</span>
+<span id="cb37-32"><a href="#cb37-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-33"><a href="#cb37-33" aria-hidden="true" tabindex="-1"></a>  rlang<span class="sc">::</span><span class="fu">abort</span>(<span class="st">"unknown BSA method"</span>)</span>
+<span id="cb37-34"><a href="#cb37-34" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The six formulae I’ve implemented in my <code>compute_bsa()</code> are by no means exhaustive, and while browsing the literature on the topic I found several other approaches that I haven’t gotten around to implementing. However, this will be more than sufficient for my example.</p>
+<p>Looking at the code above, you might wonder why I’ve chosen a formula from 1916 to be the default. The choice wasn’t arbitrary: in my experience the Dubois formula is almost <em>always</em> the default method used in BSA calculation code, and the single most important thing when doing simulations of this kind is consistency. None of these formulae will be perfect, but to the extent that they’re a little inexact the idiosyncracies can be accommodated “upstream” when estimating parameters of a pharmacokinetic (PK) model. So from my perspective as the person implementing simulations that <em>use</em> these PK models, the most important thing is that I use the same formula that was used upstream. Almost always that means I use Dubois.</p>
+<p>Nevertheless, a girl gets curious from time to time. The world has changed a lot since 1916, as have nutrition and exercise patterns. Similarly, a formula developed for the entire population might have different characteristics to something like the Haycock method that was developed more recently<a href="#fn5" class="footnote-ref" id="fnref5" role="doc-noteref"><sup>5</sup></a> and specifically validated in infants and children.</p>
+<p>Let’s take a look. The visualisation below plots the height-weight values that map to an estimated body surface area of 0.5 m<sup>2</sup>. The solid line depicts the Dubois-constructed curve, and the dashed line corresponds to the Haycock formula. There’s a clear difference between the two, but it’s unclear if this matters much. In the plots below, I’ve plotted the data <em>only</em> for those cases that exceed the Dubois threshold. For example, if we had a drug that could only be administered to infants with a BSA above 0.5 m<sup>2</sup>, these are the infants and young children who would be allowed to take the medication:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>bsa_cutoff <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">height_cm =</span> <span class="dv">60</span><span class="sc">:</span><span class="dv">110</span>,</span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">dubois  =</span> (<span class="fl">0.5</span> <span class="sc">/</span> <span class="fl">0.007184</span> <span class="sc">/</span> (height_cm<span class="sc">^</span><span class="fl">0.725</span>)) <span class="sc">^</span> (<span class="dv">1</span><span class="sc">/</span><span class="fl">0.425</span>),</span>
+<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">haycock =</span> (<span class="fl">0.5</span> <span class="sc">/</span> <span class="fl">0.024265</span> <span class="sc">/</span> (height_cm<span class="sc">^</span><span class="fl">0.3964</span>)) <span class="sc">^</span>(<span class="dv">1</span><span class="sc">/</span><span class="fl">0.5378</span>)</span>
+<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span> </span>
+<span id="cb38-6"><a href="#cb38-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(</span>
+<span id="cb38-7"><a href="#cb38-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">cols =</span> <span class="fu">c</span>(dubois, haycock),</span>
+<span id="cb38-8"><a href="#cb38-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">names_to =</span> <span class="st">"method"</span>,</span>
+<span id="cb38-9"><a href="#cb38-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_to =</span> <span class="st">"weight_kg"</span></span>
+<span id="cb38-10"><a href="#cb38-10" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb38-11"><a href="#cb38-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-12"><a href="#cb38-12" aria-hidden="true" tabindex="-1"></a>bsa_pop <span class="ot">&lt;-</span> pop <span class="sc">|&gt;</span> </span>
+<span id="cb38-13"><a href="#cb38-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(age_mn, age_band_fct, height_cm, weight_kg, sex_fct, source) <span class="sc">|&gt;</span></span>
+<span id="cb38-14"><a href="#cb38-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(age_mn <span class="sc">&lt;=</span> <span class="dv">72</span>) <span class="sc">|&gt;</span></span>
+<span id="cb38-15"><a href="#cb38-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb38-16"><a href="#cb38-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">bsa_m2_dubois  =</span> <span class="fu">compute_bsa</span>(height_cm, weight_kg, <span class="at">method =</span> <span class="st">"dubois"</span>),</span>
+<span id="cb38-17"><a href="#cb38-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">bsa_m2_haycock =</span> <span class="fu">compute_bsa</span>(height_cm, weight_kg, <span class="at">method =</span> <span class="st">"haycock"</span>)</span>
+<span id="cb38-18"><a href="#cb38-18" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb38-19"><a href="#cb38-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(bsa_m2_dubois <span class="sc">&gt;</span> <span class="fl">0.5</span>) </span>
+<span id="cb38-20"><a href="#cb38-20" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb38-21"><a href="#cb38-21" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>() <span class="sc">+</span> </span>
+<span id="cb38-22"><a href="#cb38-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(</span>
+<span id="cb38-23"><a href="#cb38-23" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> bsa_pop,</span>
+<span id="cb38-24"><a href="#cb38-24" aria-hidden="true" tabindex="-1"></a>    <span class="at">mapping =</span> <span class="fu">aes</span>(height_cm, weight_kg), </span>
+<span id="cb38-25"><a href="#cb38-25" aria-hidden="true" tabindex="-1"></a>    <span class="at">size =</span> .<span class="dv">25</span></span>
+<span id="cb38-26"><a href="#cb38-26" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb38-27"><a href="#cb38-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_path</span>(</span>
+<span id="cb38-28"><a href="#cb38-28" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> bsa_cutoff,</span>
+<span id="cb38-29"><a href="#cb38-29" aria-hidden="true" tabindex="-1"></a>    <span class="at">mapping =</span> <span class="fu">aes</span>(height_cm, weight_kg, <span class="at">linetype =</span> method)</span>
+<span id="cb38-30"><a href="#cb38-30" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb38-31"><a href="#cb38-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_grid</span>(age_band_fct <span class="sc">~</span> source, <span class="at">scales =</span> <span class="st">"free_y"</span>) <span class="sc">+</span></span>
+<span id="cb38-32"><a href="#cb38-32" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"bottom"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/height-weight-bsa-scatterplot-1.png" class="img-fluid figure-img" width="768"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Hm. Okay, so in the region of height/weight space that is relevant to human populations, there is a tendency for the Haycock formula to estimate lower BSA values than Dubois. Moreover, the difference is not merely a shift of the curve up or down: the Dubois formula relies more on weight than the Haycock formula, leading to an “ambiguous triangle” in the plots where an infant might meet the threshold according to Haycock, but not according to Dubois. It’s also very clear that the issue <em>only</em> pertains to infants. Looking at the bottom row of plots, it’s clear that both the raw NHANES data and the GAMLSS model agree that the vast majority of 2-6 year olds will exceed the threshold regardless of which formula is used. The issue is only relevant for infants, and – irritatingly – even the NHANES data set is a bit sparse when we focus on infants. It becomes even moreso if we want a detailed month-by-month breakdown.</p>
+<p>If only we had a <em>model</em> we could use to generate a large data set in the exact age range of interest…</p>
+<p>Oh.</p>
+<p>Right.</p>
+<p>We do.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>cases <span class="ot">&lt;-</span> <span class="fu">expand_grid</span>(</span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">age_mn  =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">24</span>,</span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">sex_fct =</span> <span class="fu">factor</span>(<span class="fu">c</span>(<span class="st">"male"</span>, <span class="st">"female"</span>))</span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a>bsa_pop_2 <span class="ot">&lt;-</span> <span class="fu">sample_hw</span>(</span>
+<span id="cb39-7"><a href="#cb39-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">age_mn  =</span> <span class="fu">rep</span>(cases<span class="sc">$</span>age_mn, <span class="dv">10000</span>),</span>
+<span id="cb39-8"><a href="#cb39-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">sex_fct =</span> <span class="fu">rep</span>(cases<span class="sc">$</span>sex_fct, <span class="dv">10000</span>),</span>
+<span id="cb39-9"><a href="#cb39-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">mod =</span> mod </span>
+<span id="cb39-10"><a href="#cb39-10" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span> </span>
+<span id="cb39-11"><a href="#cb39-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb39-12"><a href="#cb39-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">id =</span> <span class="fu">row_number</span>(),</span>
+<span id="cb39-13"><a href="#cb39-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">bsa_m2_dubois  =</span> <span class="fu">compute_bsa</span>(height_cm, weight_kg, <span class="at">method =</span> <span class="st">"dubois"</span>),</span>
+<span id="cb39-14"><a href="#cb39-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">bsa_m2_haycock =</span> <span class="fu">compute_bsa</span>(height_cm, weight_kg, <span class="at">method =</span> <span class="st">"haycock"</span>),</span>
+<span id="cb39-15"><a href="#cb39-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">threshold =</span> <span class="fu">case_when</span>(</span>
+<span id="cb39-16"><a href="#cb39-16" aria-hidden="true" tabindex="-1"></a>      bsa_m2_dubois <span class="sc">&gt;</span>  .<span class="dv">5</span> <span class="sc">&amp;</span> bsa_m2_haycock <span class="sc">&gt;</span>  .<span class="dv">5</span> <span class="sc">~</span> <span class="st">"above both"</span>,</span>
+<span id="cb39-17"><a href="#cb39-17" aria-hidden="true" tabindex="-1"></a>      bsa_m2_dubois <span class="sc">&gt;</span>  .<span class="dv">5</span> <span class="sc">&amp;</span> bsa_m2_haycock <span class="sc">&lt;=</span> .<span class="dv">5</span> <span class="sc">~</span> <span class="st">"above dubois only"</span>,</span>
+<span id="cb39-18"><a href="#cb39-18" aria-hidden="true" tabindex="-1"></a>      bsa_m2_dubois <span class="sc">&lt;=</span> .<span class="dv">5</span> <span class="sc">&amp;</span> bsa_m2_haycock <span class="sc">&gt;</span>  .<span class="dv">5</span> <span class="sc">~</span> <span class="st">"above haycock only"</span>,</span>
+<span id="cb39-19"><a href="#cb39-19" aria-hidden="true" tabindex="-1"></a>      bsa_m2_dubois <span class="sc">&lt;=</span> .<span class="dv">5</span> <span class="sc">&amp;</span> bsa_m2_haycock <span class="sc">&lt;=</span> .<span class="dv">5</span> <span class="sc">~</span> <span class="st">"below both"</span>,</span>
+<span id="cb39-20"><a href="#cb39-20" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb39-21"><a href="#cb39-21" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
+<span id="cb39-22"><a href="#cb39-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">relocate</span>(id, <span class="dv">1</span>)</span>
+<span id="cb39-23"><a href="#cb39-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-24"><a href="#cb39-24" aria-hidden="true" tabindex="-1"></a>bsa_pop_2</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 480,000 × 8
+      id age_mn sex_fct height_cm weight_kg bsa_m2_dubois bsa_m2_haycock
+   &lt;int&gt;  &lt;int&gt; &lt;fct&gt;       &lt;dbl&gt;     &lt;dbl&gt;         &lt;dbl&gt;          &lt;dbl&gt;
+ 1     1      1 male         58.1      5.70         0.286          0.310
+ 2     2      1 female       55.0      4.37         0.246          0.263
+ 3     3      2 male         62.2      6.58         0.319          0.343
+ 4     4      2 female       56.5      4.52         0.254          0.270
+ 5     5      3 male         59.6      6.41         0.307          0.333
+ 6     6      3 female       63.6      7.08         0.335          0.361
+ 7     7      4 male         64.4      6.87         0.334          0.356
+ 8     8      4 female       63.8      6.34         0.321          0.340
+ 9     9      5 male         65.9      7.42         0.351          0.375
+10    10      5 female       64.5      8.19         0.360          0.392
+# ℹ 479,990 more rows
+# ℹ 1 more variable: threshold &lt;chr&gt;</code></pre>
+</div>
+</div>
+<p>So now – thanks to the modern marvel that is the GAMLSS regression framework – we have a large data set simulated to have the correct height/weight distribution, focused on the precise age range of interest. We can now do a “month by month” plot showing how the height/weight distribution shifts over the first 24 months of life, and see what happens as this distribution “pushes” above the 0.5 m<sup>2</sup> threshold.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>() <span class="sc">+</span> </span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(</span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> bsa_pop_2,</span>
+<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">mapping =</span> <span class="fu">aes</span>(height_cm, weight_kg, <span class="at">color =</span> threshold), </span>
+<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">alpha =</span> .<span class="dv">25</span>, </span>
+<span id="cb41-6"><a href="#cb41-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">shape =</span> <span class="st">"."</span>,</span>
+<span id="cb41-7"><a href="#cb41-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">show.legend =</span> <span class="cn">FALSE</span></span>
+<span id="cb41-8"><a href="#cb41-8" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb41-9"><a href="#cb41-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_path</span>(</span>
+<span id="cb41-10"><a href="#cb41-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> bsa_cutoff,</span>
+<span id="cb41-11"><a href="#cb41-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">mapping =</span> <span class="fu">aes</span>(height_cm, weight_kg, <span class="at">linetype =</span> method)</span>
+<span id="cb41-12"><a href="#cb41-12" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb41-13"><a href="#cb41-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span> age_mn, <span class="at">ncol =</span> <span class="dv">4</span>) <span class="sc">+</span></span>
+<span id="cb41-14"><a href="#cb41-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"bottom"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/height-weight-bsa-scatterplot-detailed-1.png" class="img-fluid figure-img" width="768"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>In the plots above the density is coloured in blue in the region below both thresholds, and red when it is above both threshold. The “ambiguity triangle” region is shown in green. For very young infants there are almost no ambiguous cases at the 0.5 m<sup>2</sup> threshold, and by the time we’d start using the word “child” rather than “infant” the ambiguity is also largely irrelevant to any practical situation.</p>
+<p>We can push this slightly further and plot the proportion of infants that exceed the Dubois threshold and the Haycock threshold as a function of their age; and plot this separately for three different choices of threshold value:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>bsa_pop_2 <span class="sc">|&gt;</span> </span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">dubois_0.4  =</span> <span class="fu">mean</span>(bsa_m2_dubois <span class="sc">&gt;</span> <span class="fl">0.4</span>),</span>
+<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">dubois_0.5  =</span> <span class="fu">mean</span>(bsa_m2_dubois <span class="sc">&gt;</span> <span class="fl">0.5</span>),</span>
+<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">dubois_0.6  =</span> <span class="fu">mean</span>(bsa_m2_dubois <span class="sc">&gt;</span> <span class="fl">0.6</span>),</span>
+<span id="cb42-6"><a href="#cb42-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">haycock_0.4 =</span> <span class="fu">mean</span>(bsa_m2_haycock <span class="sc">&gt;</span> <span class="fl">0.4</span>),</span>
+<span id="cb42-7"><a href="#cb42-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">haycock_0.5 =</span> <span class="fu">mean</span>(bsa_m2_haycock <span class="sc">&gt;</span> <span class="fl">0.5</span>),</span>
+<span id="cb42-8"><a href="#cb42-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">haycock_0.6 =</span> <span class="fu">mean</span>(bsa_m2_haycock <span class="sc">&gt;</span> <span class="fl">0.6</span>),</span>
+<span id="cb42-9"><a href="#cb42-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">.by =</span> age_mn</span>
+<span id="cb42-10"><a href="#cb42-10" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
+<span id="cb42-11"><a href="#cb42-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(</span>
+<span id="cb42-12"><a href="#cb42-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">cols =</span> <span class="fu">c</span>(</span>
+<span id="cb42-13"><a href="#cb42-13" aria-hidden="true" tabindex="-1"></a>      <span class="fu">starts_with</span>(<span class="st">"dubois"</span>), </span>
+<span id="cb42-14"><a href="#cb42-14" aria-hidden="true" tabindex="-1"></a>      <span class="fu">starts_with</span>(<span class="st">"haycock"</span>)</span>
+<span id="cb42-15"><a href="#cb42-15" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb42-16"><a href="#cb42-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">names_to =</span> <span class="st">"group"</span>,</span>
+<span id="cb42-17"><a href="#cb42-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_to =</span> <span class="st">"percent_above_threshold"</span></span>
+<span id="cb42-18"><a href="#cb42-18" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
+<span id="cb42-19"><a href="#cb42-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">separate</span>(</span>
+<span id="cb42-20"><a href="#cb42-20" aria-hidden="true" tabindex="-1"></a>    <span class="at">col =</span> group, </span>
+<span id="cb42-21"><a href="#cb42-21" aria-hidden="true" tabindex="-1"></a>    <span class="at">into =</span> <span class="fu">c</span>(<span class="st">"method"</span>, <span class="st">"threshold"</span>), </span>
+<span id="cb42-22"><a href="#cb42-22" aria-hidden="true" tabindex="-1"></a>    <span class="at">sep =</span> <span class="st">"_"</span></span>
+<span id="cb42-23"><a href="#cb42-23" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
+<span id="cb42-24"><a href="#cb42-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">threshold =</span> <span class="fu">paste</span>(<span class="st">"BSA &gt;"</span>, threshold, <span class="st">"m^2"</span>)) <span class="sc">|&gt;</span> </span>
+<span id="cb42-25"><a href="#cb42-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(</span>
+<span id="cb42-26"><a href="#cb42-26" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> age_mn, </span>
+<span id="cb42-27"><a href="#cb42-27" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> percent_above_threshold, </span>
+<span id="cb42-28"><a href="#cb42-28" aria-hidden="true" tabindex="-1"></a>    <span class="at">linetype =</span> method, </span>
+<span id="cb42-29"><a href="#cb42-29" aria-hidden="true" tabindex="-1"></a>    <span class="at">shape =</span> method</span>
+<span id="cb42-30"><a href="#cb42-30" aria-hidden="true" tabindex="-1"></a>  )) <span class="sc">+</span></span>
+<span id="cb42-31"><a href="#cb42-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(<span class="at">label =</span> scales<span class="sc">::</span><span class="fu">label_percent</span>()) <span class="sc">+</span></span>
+<span id="cb42-32"><a href="#cb42-32" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_continuous</span>(<span class="at">breaks =</span> <span class="fu">seq</span>(<span class="dv">0</span>, <span class="dv">24</span>, <span class="dv">6</span>)) <span class="sc">+</span></span>
+<span id="cb42-33"><a href="#cb42-33" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_path</span>() <span class="sc">+</span></span>
+<span id="cb42-34"><a href="#cb42-34" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb42-35"><a href="#cb42-35" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>threshold) <span class="sc">+</span></span>
+<span id="cb42-36"><a href="#cb42-36" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"bottom"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/bsa-method-comparison-1.png" class="img-fluid figure-img" width="768"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Neat. In practice I think this is pretty reassuring because it suggests that when we look at it solely as a proportion of infants above and below the threshold as a function of their age, the main thing that happens if we switch from Dubois to Haycock is that the curve shifts slightly left, and that’s pretty easy to adjust for: you just modify the threshold slightly if you want to! The “ambiguity triangle” I showed above would only start to matter <em>if</em> there was some possible adverse effect that varies systematically by weight but not height (or vice versa), <em>and</em> said adverse effect was specifically relevant in the age range over which the Dubois and Haycock formulae differ. I imagine that it’s possible that this could happen, but I’ve not yet seen anything like that in the wild.</p>
+</section>
+</section>
+<section id="epilogue" class="level2">
+<h2 class="anchored" data-anchor-id="epilogue">Epilogue</h2>
+<p>This has been a long post. Painfully long, if we acknowledge that I wrote <a href="../../posts/2025-09-06_p-splines/">the last post</a> and <a href="../../posts/2025-08-02_box-cox-power-exponential/">the one before that</a> in service of making this one work. They are, in effect, the appendices to this post. This post, she looooooooong. Yet in truth there’s a lot I haven’t talked about. Fitting a GAMLSS model to the NHANES data is a handy thing to do, but the framework becomes much more powerful when we start trying to work with data sets that are smaller and sparser, or seek to build models to account for a more diverse population. For example, there’s a nice paper by <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC4339962/pdf/BLT.14.139113.pdf">Hayes et al (2014)</a> that provides detailed regional weight-for-age charts based on GAMLSS models that covers parts of the world that are <em>not</em> in North America, and as one of the literally dozens of people who live in a country that is not the United States, and who knows people who live in countries that aren’t well described by NHANES and – <em>gasp</em> – cares about those people even if she doesn’t know them, I love the fact that people take this stuff seriously enough to do this kind of work.</p>
+<p>That seems like a fitting note upon which to end. I’m done, I’m finished, and like Lana I’m off to the races babes.</p>
+
+
+</section>
+
+
+<div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p>One thing I will note as an aside, however, is that this stipulation is one of the key ways in which GAMLSS models extend GAM regressions and GLM analyses. In the GAM and GLM frameworks, the probabilistic component is assumed to be a distribution in the <a href="https://en.wikipedia.org/wiki/Exponential_family">exponential family</a>. The GAMLSS framework relaxes that considerably, insofar as location/scale/shape encompasses many distributions that fall outside the exponential family.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>More precisely, for the BCPE distribution the scale parameter <span class="math inline">\(\sigma\)</span> roughly maps onto the coefficient of variation.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3"><p>The <strong>gamlss</strong> package documentation notes there is nothing sophisticated about how the interactions are implemented for spline predictors; it literally multiplies the two terms.<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn4"><p>A good example of this would be a drug where the approved dosing depends both on weight and body surface area. That happens sometimes, and since body surface area is approximated by a formula based one weight and height (and occasionally sex, depending on which formula you’re using), we need the full joint conditional distribution in those cases.<a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn5"><p>I mean, I don’t know that 1978 counts as “recent” by any stretch of the imagination, but since I <em>was</em> an infant in 1978 I think I’ll let that one slide.<a href="#fnref5" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section><section class="quarto-appendix-contents" id="quarto-reuse"><h2 class="anchored quarto-appendix-heading">Reuse</h2><div class="quarto-appendix-contents"><div><a rel="license" href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></div></div></section><section class="quarto-appendix-contents" id="quarto-citation"><h2 class="anchored quarto-appendix-heading">Citation</h2><div><div class="quarto-appendix-secondary-label">BibTeX citation:</div><pre class="sourceCode code-with-copy quarto-appendix-bibtex"><code class="sourceCode bibtex">@online{navarro2025,
+  author = {Navarro, Danielle},
+  title = {GAMLSS, {NHANES,} and My Own Personal Hell},
+  date = {2025-09-07},
+  url = {https://blog.djnavarro.net/posts/2025-09-07_gamlss/},
+  langid = {en}
+}
+</code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre><div class="quarto-appendix-secondary-label">For attribution, please cite this work as:</div><div id="ref-navarro2025" class="csl-entry quarto-appendix-citeas" role="listitem">
+Navarro, Danielle. 2025. <span>“GAMLSS, NHANES, and My Own Personal
+Hell.”</span> September 7, 2025. <a href="https://blog.djnavarro.net/posts/2025-09-07_gamlss/">https://blog.djnavarro.net/posts/2025-09-07_gamlss/</a>.
+</div></div></section></div></main> <!-- /main -->
+<!-- plausible -->
+<script async="" defer="" data-domain="blog.djnavarro.net" src="https://plausible.io/js/plausible.js"></script>
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const disableStylesheet = (stylesheets) => {
+    for (let i=0; i < stylesheets.length; i++) {
+      const stylesheet = stylesheets[i];
+      stylesheet.rel = 'prefetch';
+    }
+  }
+  const enableStylesheet = (stylesheets) => {
+    for (let i=0; i < stylesheets.length; i++) {
+      const stylesheet = stylesheets[i];
+      stylesheet.rel = 'stylesheet';
+    }
+  }
+  const manageTransitions = (selector, allowTransitions) => {
+    const els = window.document.querySelectorAll(selector);
+    for (let i=0; i < els.length; i++) {
+      const el = els[i];
+      if (allowTransitions) {
+        el.classList.remove('notransition');
+      } else {
+        el.classList.add('notransition');
+      }
+    }
+  }
+  const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+    const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+    const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+    let newTheme = '';
+    if(darkModeDefault) {
+      newTheme = isAlternate ? baseTheme : alternateTheme;
+    } else {
+      newTheme = isAlternate ? alternateTheme : baseTheme;
+    }
+    const changeGiscusTheme = () => {
+      // From: https://github.com/giscus/giscus/issues/336
+      const sendMessage = (message) => {
+        const iframe = document.querySelector('iframe.giscus-frame');
+        if (!iframe) return;
+        iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+      }
+      sendMessage({
+        setConfig: {
+          theme: newTheme
+        }
+      });
+    }
+    const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+    if (isGiscussLoaded) {
+      changeGiscusTheme();
+    }
+  }
+  const toggleColorMode = (alternate) => {
+    // Switch the stylesheets
+    const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+    manageTransitions('#quarto-margin-sidebar .nav-link', false);
+    if (alternate) {
+      enableStylesheet(alternateStylesheets);
+      for (const sheetNode of alternateStylesheets) {
+        if (sheetNode.id === "quarto-bootstrap") {
+          toggleBodyColorMode(sheetNode);
+        }
+      }
+    } else {
+      disableStylesheet(alternateStylesheets);
+      toggleBodyColorPrimary();
+    }
+    manageTransitions('#quarto-margin-sidebar .nav-link', true);
+    // Switch the toggles
+    const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+    for (let i=0; i < toggles.length; i++) {
+      const toggle = toggles[i];
+      if (toggle) {
+        if (alternate) {
+          toggle.classList.add("alternate");     
+        } else {
+          toggle.classList.remove("alternate");
+        }
+      }
+    }
+    // Hack to workaround the fact that safari doesn't
+    // properly recolor the scrollbar when toggling (#1455)
+    if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+      manageTransitions("body", false);
+      window.scrollTo(0, 1);
+      setTimeout(() => {
+        window.scrollTo(0, 0);
+        manageTransitions("body", true);
+      }, 40);  
+    }
+  }
+  const isFileUrl = () => { 
+    return window.location.protocol === 'file:';
+  }
+  const hasAlternateSentinel = () => {  
+    let styleSentinel = getColorSchemeSentinel();
+    if (styleSentinel !== null) {
+      return styleSentinel === "alternate";
+    } else {
+      return false;
+    }
+  }
+  const setStyleSentinel = (alternate) => {
+    const value = alternate ? "alternate" : "default";
+    if (!isFileUrl()) {
+      window.localStorage.setItem("quarto-color-scheme", value);
+    } else {
+      localAlternateSentinel = value;
+    }
+  }
+  const getColorSchemeSentinel = () => {
+    if (!isFileUrl()) {
+      const storageValue = window.localStorage.getItem("quarto-color-scheme");
+      return storageValue != null ? storageValue : localAlternateSentinel;
+    } else {
+      return localAlternateSentinel;
+    }
+  }
+  const darkModeDefault = true;
+  let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+  // Dark / light mode switch
+  window.quartoToggleColorScheme = () => {
+    // Read the current dark / light value 
+    let toAlternate = !hasAlternateSentinel();
+    toggleColorMode(toAlternate);
+    setStyleSentinel(toAlternate);
+    toggleGiscusIfUsed(toAlternate, darkModeDefault);
+  };
+  // Ensure there is a toggle, if there isn't float one in the top right
+  if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+    const a = window.document.createElement('a');
+    a.classList.add('top-right');
+    a.classList.add('quarto-color-scheme-toggle');
+    a.href = "";
+    a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+    const i = window.document.createElement("i");
+    i.classList.add('bi');
+    a.appendChild(i);
+    window.document.body.appendChild(a);
+  }
+  // Switch to dark mode if need be
+  if (hasAlternateSentinel()) {
+    toggleColorMode(true);
+  } else {
+    toggleColorMode(false);
+  }
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp("https:\/\/blog\.djnavarro\.net");
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+    <a class="nav-link" href="https://blog.djnavarro.net">
+<p>blog.djnavarro.net</p>
+</a>
+  </li>  
+</ul>
+    </div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>
