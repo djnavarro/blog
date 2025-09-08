@@ -460,12 +460,15 @@ mod <- list(
 quarto_tabset(mod, level = 3)
 ```
 
+Oh yes. Those are certainly model objects: I would recognise anywhere that characteristic impenetrable wall of jargon that accompanies every statistical object print method in R. Le sigh.
+
 ## Using the GAMLSS models
 
-### Quantiles
+### Quantile estimation
+
+Now that I have the models I've worked so hard to construct, I suppose I should do something with them. The first application uses the $p(h|a,s)$ models to construct quantile curves for height by age and sex. In essence, I'll build my own version of the CDC growth charts. To that end I'll write a little wrapper function `get_pars()` to extract the specific values of $\mu$, $\sigma$, $\tau$, and $\nu$ that describe the distribution of heights, conditional on knowing the age and sex of the person:
 
 ```{r}
-#| label: height-quantiles
 get_pars <- function(data, model) {
   pars <- tibble(
     mu    = predict(model, newdata = data, type = "response", what = "mu"),
@@ -475,7 +478,12 @@ get_pars <- function(data, model) {
   )
   bind_cols(data, pars)
 }
+```
 
+In all honesty I probably didn't need to do this, because in addition to supplying a `predict()` method for gamlss objects, the **gamlss** package provides a `predictAll()` function that does essentially the same thing. But it's done now, and I prefer my syntax anyways. I can now calculate the desired quantiles by passing the parameter estimates to `qBCPE()`. The code below computes the 5th, 25th, 50th, 75th, and 95th percentiles for height, conditional on age and sex:
+
+```{r}
+#| label: height-quantiles
 predict_cases_ht <- expand_grid(
   age_mn  = 1:(age_max_yr * 12),
   sex_fct = factor(c("male", "female"))
@@ -497,6 +505,8 @@ predict_quantiles_ht <- predict_pars_ht |>
 
 predict_quantiles_ht
 ```
+
+This is all well and good, Danielle, but since nobody loves looking at tables of numbers, shall we instead draw a pretty picture to display these quantile curves? Why yes, Other Danielle, we shall. 
 
 ```{r}
 #| label: height-quantiles-plot
@@ -521,9 +531,17 @@ ggplot() +
   theme(legend.position = "bottom")
 ```
 
-Okay, that's nice but you might argue that the GAMLSS modelling is overkill here. The distribution of heights conditional on age and sex is fairly close to normal, and in any case we have about 100k rows in the data set spanning the full range of ages. However, it's not too hard to construct a case where you really do need the model.
+Very pretty.
 
-We can take the logic further and predict the distribution of weights for very tall (99th height percentile) and short (1st height percentile) people, stratified by age and sex. It's a nice illustration of where the GAMLSS framework is useful even when you have a lot of data: as good as it is, the NHANES data become very sparse when you start focusing on very thin slices through the tails of the distributions. 
+### Even more quantile estimation
+
+Okay, that's nice but you might argue that the GAMLSS modelling is overkill here. The distribution of heights conditional on age and sex is fairly close to normal, and in any case we have about 100k rows in the data set spanning the full range of ages. While it is certainly true that a well-tuned GAMLSS model supplies slightly cleaner curves, and this would *absolutely* matter if I were working for the CDC and tasked with the job of producing official growth curves, this is a side project on a personal blog and I am not the CDC. 
+
+With that in mind, can we think of a case where even a data set as rich as NHANES starts to become awfully sparse and the modelling becomes much more important? Of course we can, Original Danielle, what a silly question. It is indeed trivially easy to find such a case if we start looking for one.
+
+Here is an example. Suppose we had a research question that was focused on some intervention (medication, diet, exercise, whatever) that might have an impact on weight, and moreover there was a particular concern or interest in how the intervention affects people at the extremes. In point of fact I *don't* have any such research question on my desk, but it's not entirely outlandish to imagine that there would be scenarios in which we have a specific interest in the distribution of weights associated with very tall or very short people. For the sake of argument, let's operationally define a "very tall" person to be someone at the 99th height percentile for their age and sex. Similarly we could say that a "very short" person is someone at the 1st percentile. Unless your data set is extremely large -- on a scale that not even NHANES can aspire to -- the data are going to be very sparse at the extremes. The moment we ask questions like this we should be resigned to the fact that we'll be taking *veeeeeery* thin slices through the tails of the distributions. 
+
+Let's take a look. As before, I'll construct the quantiles curves predicted by the GAMLSS model. It's slightly more involved than last time because I'm conditioning on a height percentile first and then constructing quantiles for weight, but the core logic is the same. These are the height percentiles:
 
 ```{r}
 predict_cases_wt <- predict_pars_ht |>
@@ -540,7 +558,11 @@ predict_cases_wt <- predict_pars_ht |>
   select(age_mn, sex_fct, height_fct, height_cm)
 
 predict_cases_wt
+```
 
+So now we have a collection of age/sex/height cases for which we need to compute weight quantiles. Here's the code for that:
+
+```{r}
 predict_pars_wt <- bind_rows(
   predict_cases_wt |> filter(sex_fct == "male") |> select(-height_fct) |> get_pars(wt_htm),
   predict_cases_wt |> filter(sex_fct == "female") |> select(-height_fct) |> get_pars(wt_htf)
@@ -559,6 +581,8 @@ predict_quantiles_wt <- predict_pars_wt |>
 
 predict_quantiles_wt
 ```
+
+So far, so good. However, now we turn to the data itself. That's the point at which it becomes a little trickier When working with continuous data, you won't find a single person who sits exactly at the 99th or 1st percentile. I mean, the whole reason probability densities even exist as a mathematical formalism is because continous data are inconvenient that way. To the GAMLSS model this isn't a problem at all, but for the NHANES data itself it's terribly awkward. For the current purposes, I'll allow a little slack and extract the subset of the NHANES data where the participant is *near* the 99th or 1st percentile. Here's the code doing that:
 
 ```{r}
 permitted <- predict_cases_wt |> 
@@ -596,6 +620,8 @@ nhanes_partial <- bind_rows(
 nhanes_partial
 ```
 
+It's not exciting reading, but I will confess it was fun to write. I very rarely have to implement semi joins or rolling joins in my day to day life, so it was kind of nice to have an opportunity to remember how they work. Notably though, our filtered NHANES data that contains only very tall and very short people is now much smaller. We have only 1513 subjects, and the effect of this subsetting becomes noticeable when we plot the data, and plot those data against the GAMLSS estimated quantile curves:
+
 ```{r}
 #| label: weight-quantiles-plot
 #| fig-width: 8
@@ -621,12 +647,15 @@ ggplot() +
 
 ```
 
-Works better than I would have expected. Note that the slight "clumpiness" of the NHANES data is partially tied to the slight misfit in the model at ~12 years. The data flatten out slightly faster than the model predictions, which has the effect that the curves are slightly below the data at that specific age. So if we slice through the data based on model-predicted 99th percentile, there will be more actual 12 year olds selected than other age groups.
+Huh. It works better than I would have expected it to, actually. It's not perfect, and the model does seem to underestimate the uppermost weight quantiles for very tall people, but in fairness I set it a very hard task: estimating the 95th quantile for weight by age and sex, conditional on being at the 99th percentile for height? This is not something I'd have dared attempt in the past, and I'm mildly surprised it works as well as it does. The curves aren't smooth as I'd like, I suppose, and had I known in advance I was going to make this plot I might have tailored the GAMLSS fitting to enforce smoothness a little more, but honestly I'm not complaining. This is pretty good!
 
-### Sampling 
+### Model-based sampling
 
-Sample height conditional on `age`, using an appropriate (sec-specific) gamlss model `ht_mod`. Similarly, we can sample weight conditional on `age` and `height` using a model. Note the use of a trimmed Box-Cox power-exponential: even with nu/tau parameters, the BCPE has support on non-biological values in the tails creating physically impossible outliers in large simulations. The default trim is 0.25% on either side, as compared to 3% for `nhanesgamlss::simwtage()`. 
-  
+Time to switch gears. While quantile estimation is the statistical problem for which GAMLSS models are best known, the use case I'm more likely to encounter in my own work is model-based sampling. It is grossly typical of pediatric pharmacometric simulations, in fact. We very often want to simulate the expected drug exposure across a particular subpopulation defined by an age band, stratified by sex, or something along these lines. Performing these simulations is a somewhat complicated affair, and this post is not the right place to dive deep on that topic, but for many of these simulations we need to sample from the full joint conditional distribution $p(h, w | a, s)$.^[A good example of this would be a drug where the approved dosing depends both on weight and body surface area. That happens sometimes, and since body surface area is approximated by a formula based one weight and height (and occasionally sex, depending on which formula you're using), we need the full joint conditional distribution in those cases.]
+
+Let's have a go at doing this. 
+
+The code below defines a function `sample_hw()` that takes a vector of ages, a vector of sexes, and a list of GAMLSS models as input, and returns a data frame that samples heights and weights for each case with the assistance of the appropriate GAMLSS model:
 
 ```{r}
 sample_hw <- function(age_mn, sex_fct, mod) {
@@ -664,6 +693,11 @@ sample_hw <- function(age_mn, sex_fct, mod) {
 }
 ```
 
+One feature worth noting here is the use of a *trimmed* Box-Cox power-exponential for the sampling. This is somewhat important in practice becase even with $\nu$ and $\tau$ parameters to control the shape (and thereby make the model less prone to sampling absurd values), the BCPE distribution has limits. It is not equipped with a detailed knowledge of human physiology, and even when fit to a data set as large as the whole of NHANES, the resulting distributions still have support on non-biological values and will -- in any sufficiently large simulation -- generate a few outliers that are biologically impossible. To that end, the sampling function quietly truncates the very ends of the distribution. The default trim in my code above is to remove 0.25% of the distribution on either side, which is quite a bit smaller than the 3% default used in the `nhanesgamlss::simwtage()` function that my former colleague Samer developed. The reason for the difference is uninteresting: my GAMLSS models are trained on a much larger data set than the ones supplied by the **nhanesgamlss** package, and I use a slightly different method to construct the model, and one side effect is that the BCPE densities in my version of the GAMLSS model have lighter tails than the ones that you'll get if you apply `nhanesgamlss::simwtage()` to the GAMLSS code provided in the package documentation.  
+
+In any case, now that I have the `sample_hw()` function written down, I can use it as the basis for a simulation. For the first example, I'll keep the exact same set of age and sex values from the NHANES data that were used to train the GAMLSS model, and sample new heights and weights for each case. In the process, I'll also classify into a set of "age bands". In real life these bands would be chosen based on the needs of the simulation, but for this example I don't have a specific application in mind so I just went with something pretty representative of the bands that I often need.
+
+Here's what happens:
 
 ```{r}
 nhanes_fit <- bind_rows(nhanes_m, nhanes_f) |> arrange(age_mn)
@@ -710,8 +744,15 @@ pop |>
   theme(legend.position = "bottom")
 ```
 
-Once again this is a neat example, but it's mostly a validation of the GAMLSS model: it shows us the model does allow us to sample from the joint conditional density $p(h, w | a, s)$. But by design the GAMLSS samples in `pop` are matched to the NHANES data on age and sex. Anything that we could do with the GAMLSS samples is something that we could have done with the NHANES samples directly. 
+So, so pretty. When I do a pediatric simulation in my work I almost always create a plot similar to this one. It's not the final product or indeed the point of the simulations, but it's a important validation check. You really want to make sure that the distributions that you're sampling from actually make sense and look about right when compared to the known data! Also, they're preeeeeeeettttttty. 
 
+### Even more sampling
+
+Once again this is a neat example, but it's mostly a validation of the GAMLSS model: it shows us the model does allow us to sample from the joint conditional density $p(h, w | a, s)$. But by design the GAMLSS samples in `pop` are matched to the NHANES data on age and sex. Anything that we could do with the GAMLSS samples in the previous example is also something that we could have done with the NHANES samples directly. So, once again, we ask the question: is there something we can do with the GAMLSS model-based sampling that we wouldn't be able to do with the NHANES data? 
+
+Of course there is, dear reader, and as you might guess I'll again look to "extreme cases" like I did in the quantile estimation discussion earlier. This time though I'll focus on age, and more specifically, I'll look at body surface area (BSA) simulations for very young infants.
+
+I'll motivate the example with a little snippet of code that I keep handy in my everyday life. It's a `compute_bsa()` function that calculates a person's approximate BSA based on their height and weight. By it's very nature this calculation has to be approximate: bodies come in all shapes and sizes so any function that approximates BSA based on two simpler measurements is going to have some limitations. It should therefore be unsurprising to note that there are *lots* of different formulae we can use for this purpose:
 
 ```{r}
 #| label: bsa-computation
@@ -751,6 +792,14 @@ compute_bsa <- function(height, weight, method = "dubois") {
 }
 ```
 
+The six formulae I've implemented in my `compute_bsa()` are by no means exhaustive, and while browsing the literature on the topic I found several other approaches that I haven't gotten around to implementing. However, this will be more than sufficient for my example. 
+
+Looking at the code above, you might wonder why I've chosen a formula from 1916 to be the default. The choice wasn't arbitrary: in my experience the Dubois formula is almost *always* the default method used in BSA calculation code, and the single most important thing when doing simulations of this kind is consistency. None of these formulae will be perfect, but to the extent that they're a little inexact the idiosyncracies can be accommodated "upstream" when estimating parameters of a pharmacokinetic (PK) model. So from my perspective as the person implementing simulations that *use* these PK models, the most important thing is that I use the same formula that was used upstream. Almost always that means I use Dubois.
+
+Nevertheless, a girl gets curious from time to time. The world has changed a lot since 1916, as have nutrition and exercise patterns. Similarly, a formula developed for the entire population might have different characteristics to something like the Haycock method that was developed more recently^[I mean, I don't know that 1978 counts as "recent" by any stretch of the imagination, but since I *was* an infant in 1978 I think I'll let that one slide.] and specifically validated in infants and children.
+
+Let's take a look. The visualisation below plots the height-weight values that map to an estimated body surface area of 0.5 m^2^. The solid line depicts the Dubois-constructed curve, and the dashed line corresponds to the Haycock formula. There's a clear difference between the two, but it's unclear if this matters much. In the plots below, I've plotted the data *only* for those cases that exceed the Dubois threshold. For example, if we had a drug that could only be administered to infants with a BSA above 0.5 m^2^, these are the infants and young children who would be allowed to take the medication:
+
 ```{r}
 #| label: height-weight-bsa-scatterplot
 #| fig-width: 8
@@ -789,11 +838,22 @@ ggplot() +
   theme(legend.position = "bottom")
 ``` 
 
+Hm. Okay, so in the region of height/weight space that is relevant to human populations, there is a tendency for the Haycock formula to estimate lower BSA values than Dubois. Moreover, the difference is not merely a shift of the curve up or down: the Dubois formula relies more on weight than the Haycock formula, leading to an "ambiguous triangle" in the plots where an infant might meet the threshold according to Haycock, but not according to Dubois. It's also very clear that the issue *only* pertains to infants. Looking at the bottom row of plots, it's clear that both the raw NHANES data and the GAMLSS model agree that the vast majority of 2-6 year olds will exceed the threshold regardless of which formula is used. The issue is only relevant for infants, and -- irritatingly -- even the NHANES data set is a bit sparse when we focus on infants. It becomes even moreso if we want a detailed month-by-month breakdown. 
+
+If only we had a *model* we could use to generate a large data set in the exact age range of interest...
+
+Oh. 
+
+Right.
+
+We do.
+
 ```{r}
 cases <- expand_grid(
   age_mn  = 1:24,
   sex_fct = factor(c("male", "female"))
 )
+
 bsa_pop_2 <- sample_hw(
   age_mn  = rep(cases$age_mn, 10000),
   sex_fct = rep(cases$sex_fct, 10000),
@@ -811,9 +871,11 @@ bsa_pop_2 <- sample_hw(
     )
   ) |> 
   relocate(id, 1)
+
 bsa_pop_2
 ```
 
+So now -- thanks to the modern marvel that is the GAMLSS regression framework -- we have a large data set simulated to have the correct height/weight distribution, focused on the precise age range of interest. We can now do a "month by month" plot showing how the height/weight distribution shifts over the first 24 months of life, and see what happens as this distribution "pushes" above the 0.5 m^2^ threshold. 
 
 ```{r}
 #| label: height-weight-bsa-scatterplot-detailed
@@ -835,6 +897,9 @@ ggplot() +
   theme(legend.position = "bottom")
 ```
 
+In the plots above the density is coloured in blue in the region below both thresholds, and red when it is above both threshold. The "ambiguity triangle" region is shown in green. For very young infants there are almost no ambiguous cases at the 0.5 m^2^ threshold, and by the time we'd start using the word "child" rather than "infant" the ambiguity is also largely irrelevant to any practical situation.
+
+We can push this slightly further and plot the proportion of infants that exceed the Dubois threshold and the Haycock threshold as a function of their age; and plot this separately for three different choices of threshold value:
 
 ```{r}
 #| label: bsa-method-comparison
@@ -878,7 +943,10 @@ bsa_pop_2 |>
   theme(legend.position = "bottom")
 ```
 
+Neat. In practice I think this is pretty reassuring because it suggests that when we look at it solely as a proportion of infants above and below the threshold as a function of their age, the main thing that happens if we switch from Dubois to Haycock is that the curve shifts slightly left, and that's pretty easy to adjust for: you just modify the threshold slightly if you want to! The "ambiguity triangle" I showed above would only start to matter *if* there was some possible adverse effect that varies systematically by weight but not height (or vice versa), *and* said adverse effect was specifically relevant in the age range over which the Dubois and Haycock formulae differ. I imagine that it's possible that this could happen, but I've not yet seen anything like that in the wild. 
 
 ## Epilogue
 
-For example, [Hayes et al (2014)](https://pmc.ncbi.nlm.nih.gov/articles/PMC4339962/pdf/BLT.14.139113.pdf) provide detailed regional weight-for-age charts based on GAMLSS models
+This has been a long post. Painfully long, if we acknowledge that I wrote [the last post](/posts/2025-09-06_p-splines/) and [the one before that](/posts/2025-08-02_box-cox-power-exponential/) in service of making this one work. They are, in effect, the appendices to this post. This post, she looooooooong. Yet in truth there's a lot I haven't talked about. Fitting a GAMLSS model to the NHANES data is a handy thing to do, but the framework becomes much more powerful when we start trying to work with data sets that are smaller and sparser, or seek to build models to account for a more diverse population. For example, there's a nice paper by [Hayes et al (2014)](https://pmc.ncbi.nlm.nih.gov/articles/PMC4339962/pdf/BLT.14.139113.pdf) that provides detailed regional weight-for-age charts based on GAMLSS models that covers parts of the world that are *not* in North America, and as one of the literally dozens of people who live in a country that is not the United States, and who knows people who live in countries that aren't well described by NHANES and -- *gasp* -- cares about those people even if she doesn't know them, I love the fact that people take this stuff seriously enough to do this kind of work. 
+
+That seems like a fitting note upon which to end. I'm done, I'm finished, and like Lana I'm off to the races babes. 
