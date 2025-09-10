@@ -679,6 +679,7 @@ font-style: inherit;">80</span>)</span>
 </div>
 </div>
 <p>A small slice through a very large data set, but one that contains the four variables that I need almost every time I have to use NHANES data in a pharmacometric analysis: <code>age_mn</code> (<img src="https://latex.codecogs.com/png.latex?a">), <code>sex_fct</code> (<img src="https://latex.codecogs.com/png.latex?s">), <code>height_cm</code> (<img src="https://latex.codecogs.com/png.latex?h">), and <code>weight_kg</code> (<img src="https://latex.codecogs.com/png.latex?w">). I can now turn to the substantive statistical problem: estimating the joint conditional density <img src="https://latex.codecogs.com/png.latex?p(h,%20w%20%7C%20a,%20s)">.</p>
+<p>Before I move on though, I do want to add one note of caution, one that I forgot to include in the original version of this post: the NHANES study isn’t a simple random sample, and the sampling design is complicated. As such, care is required in how the data are used and this often requires taking the sample weights into account. I haven’t done so here, because this post is already exhaustingly long and the topic is nuanced enough that it deserves to be its own post, but I’ll mention that <a href="https://wwwn.cdc.gov/nchs/nhanes/tutorials/sampledesign.aspx">accounting for study design</a> is discussed on the NHANES website. (Also, thanks to both Thomas Lumley and Benjamin Rich for asking about this issue, which reminded me that I hadn’t actually talked about this and prompted me to add this paragraph!)</p>
 </section>
 </section>
 <section id="the-gamlss-framework" class="level2">
@@ -18887,7 +18888,7 @@ background-color: null;
 font-style: inherit;">expand =</span><span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">5</span>)</span></code></pre></div>
-<div class="cell column-page quarto-layout-panel" data-layout-nrow="1" data-layout-align="center">
+<div class="cell column-page quarto-layout-panel" data-layout-align="center" data-layout-nrow="1">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -19149,7 +19150,7 @@ background-color: null;
 font-style: inherit;">max_colours =</span> <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">5</span>)</span></code></pre></div>
-<div class="cell column-page quarto-layout-panel" data-layout-nrow="1" data-layout-align="center">
+<div class="cell column-page quarto-layout-panel" data-layout-align="center" data-layout-nrow="1">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -19182,7 +19183,7 @@ background-color: null;
 font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">geom_segment</span>())</span></code></pre></div>
-<div class="cell column-page quarto-layout-panel" data-layout-nrow="1" data-layout-align="center">
+<div class="cell column-page quarto-layout-panel" data-layout-align="center" data-layout-nrow="1">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -19463,7 +19464,7 @@ font-style: inherit;">+</span> texture</span>
 <span id="cb19-2">base <span class="sc" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">+</span> mask</span></code></pre></div>
-<div class="cell column-page quarto-layout-panel" data-layout-nrow="1" data-layout-align="center">
+<div class="cell column-page quarto-layout-panel" data-layout-align="center" data-layout-nrow="1">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -19624,7 +19625,7 @@ background-color: null;
 font-style: inherit;">"content"</span>, <span class="st" style="color: #20794D;
 background-color: null;
 font-style: inherit;">"mask"</span>)</span></code></pre></div>
-<div class="cell column-page quarto-layout-panel" data-layout-nrow="1" data-layout-align="center">
+<div class="cell column-page quarto-layout-panel" data-layout-align="center" data-layout-nrow="1">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -19965,7 +19966,7 @@ font-style: inherit;">-</span><span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">150</span></span>
 <span id="cb30-11">  )</span></code></pre></div>
-<div class="cell column-page quarto-layout-panel" data-layout-nrow="1" data-layout-align="center">
+<div class="cell column-page quarto-layout-panel" data-layout-align="center" data-layout-nrow="1">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -34759,7 +34760,7 @@ background-color: null;
 font-style: inherit;">shaded_ridge_art</span>(<span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">102</span>) </span></code></pre></div>
-<div class="cell column-screen-inset quarto-layout-panel" data-layout-ncol="3" data-layout-align="center">
+<div class="cell column-screen-inset quarto-layout-panel" data-layout-align="center" data-layout-ncol="3">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -35194,7 +35195,7 @@ background-color: null;
 font-style: inherit;">shaded_ice_floe</span>(<span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">102</span>)</span></code></pre></div>
-<div class="cell column-screen-inset quarto-layout-panel" data-layout-ncol="3" data-layout-align="center">
+<div class="cell column-screen-inset quarto-layout-panel" data-layout-align="center" data-layout-ncol="3">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -35234,7 +35235,7 @@ background-color: null;
 font-style: inherit;">shaded_ice_floe</span>(<span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">108</span>)</span></code></pre></div>
-<div class="cell column-screen-inset quarto-layout-panel" data-layout-ncol="3" data-layout-align="center">
+<div class="cell column-screen-inset quarto-layout-panel" data-layout-align="center" data-layout-ncol="3">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -37747,7 +37748,7 @@ background-color: null;
 font-style: inherit;">show_vertices =</span> <span class="cn" style="color: #8f5902;
 background-color: null;
 font-style: inherit;">FALSE</span>)</span></code></pre></div>
-<div class="cell column-screen-inset quarto-layout-panel" data-layout-nrow="1" data-layout-align="center">
+<div class="cell column-screen-inset quarto-layout-panel" data-layout-align="center" data-layout-nrow="1">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -39392,7 +39393,7 @@ background-color: null;
 font-style: inherit;">show_polygon</span>(<span class="cn" style="color: #8f5902;
 background-color: null;
 font-style: inherit;">FALSE</span>)</span></code></pre></div>
-<div class="cell column-screen-inset quarto-layout-panel" data-layout-nrow="1" data-layout-align="center">
+<div class="cell column-screen-inset quarto-layout-panel" data-layout-align="center" data-layout-nrow="1">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -39469,7 +39470,7 @@ background-color: null;
 font-style: inherit;">show_polygon</span>(<span class="cn" style="color: #8f5902;
 background-color: null;
 font-style: inherit;">FALSE</span>)</span></code></pre></div>
-<div class="cell column-screen-inset quarto-layout-panel" data-layout-nrow="1" data-layout-align="center">
+<div class="cell column-screen-inset quarto-layout-panel" data-layout-align="center" data-layout-nrow="1">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -39531,7 +39532,7 @@ background-color: null;
 font-style: inherit;">show_polygon</span>(<span class="cn" style="color: #8f5902;
 background-color: null;
 font-style: inherit;">FALSE</span>)</span></code></pre></div>
-<div class="cell quarto-layout-panel" data-layout-nrow="1" data-layout-align="center">
+<div class="cell quarto-layout-panel" data-layout-align="center" data-layout-nrow="1">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 100.0%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -39744,7 +39745,7 @@ background-color: null;
 font-style: inherit;">show_polygon</span>(<span class="cn" style="color: #8f5902;
 background-color: null;
 font-style: inherit;">FALSE</span>)</span></code></pre></div>
-<div class="cell column-screen-inset quarto-layout-panel" data-layout-nrow="1" data-layout-align="center">
+<div class="cell column-screen-inset quarto-layout-panel" data-layout-align="center" data-layout-nrow="1">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -40278,7 +40279,7 @@ background-color: null;
 font-style: inherit;">|&gt;</span> <span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">show_width</span>()</span></code></pre></div>
-<div class="cell column-screen-inset quarto-layout-panel" data-layout-nrow="1" data-layout-align="center">
+<div class="cell column-screen-inset quarto-layout-panel" data-layout-align="center" data-layout-nrow="1">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">

@@ -513,6 +513,7 @@ p(h, w | a, s)
 </div>
 </div>
 <p>A small slice through a very large data set, but one that contains the four variables that I need almost every time I have to use NHANES data in a pharmacometric analysis: <code>age_mn</code> (<span class="math inline">\(a\)</span>), <code>sex_fct</code> (<span class="math inline">\(s\)</span>), <code>height_cm</code> (<span class="math inline">\(h\)</span>), and <code>weight_kg</code> (<span class="math inline">\(w\)</span>). I can now turn to the substantive statistical problem: estimating the joint conditional density <span class="math inline">\(p(h, w | a, s)\)</span>.</p>
+<p>Before I move on though, I do want to add one note of caution, one that I forgot to include in the original version of this post: the NHANES study isn’t a simple random sample, and the sampling design is complicated. As such, care is required in how the data are used and this often requires taking the sample weights into account. I haven’t done so here, because this post is already exhaustingly long and the topic is nuanced enough that it deserves to be its own post, but I’ll mention that <a href="https://wwwn.cdc.gov/nchs/nhanes/tutorials/sampledesign.aspx">accounting for study design</a> is discussed on the NHANES website. (Also, thanks to both Thomas Lumley and Benjamin Rich for asking about this issue, which reminded me that I hadn’t actually talked about this and prompted me to add this paragraph!)</p>
 </section>
 </section>
 <section id="the-gamlss-framework" class="level2">
