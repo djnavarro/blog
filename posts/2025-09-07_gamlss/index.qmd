@@ -213,6 +213,9 @@ nhanes
 
 A small slice through a very large data set, but one that contains the four variables that I need almost every time I have to use NHANES data in a pharmacometric analysis: `age_mn` ($a$), `sex_fct` ($s$), `height_cm` ($h$), and `weight_kg` ($w$). I can now turn to the substantive statistical problem: estimating the joint conditional density $p(h, w | a, s)$.
 
+Before I move on though, I do want to add one note of caution, one that I forgot to include in the original version of this post: the NHANES study isn't a simple random sample, and the sampling design is complicated. As such, care is required in how the data are used and this often requires taking the sample weights into account. I haven't done so here, because this post is already exhaustingly long and the topic is nuanced enough that it deserves to be its own post, but I'll mention that [accounting for study design](https://wwwn.cdc.gov/nchs/nhanes/tutorials/sampledesign.aspx) is discussed on the NHANES website. (Also, thanks to both Thomas Lumley and Benjamin Rich for asking about this issue, which reminded me that I hadn't actually talked about this and prompted me to add this paragraph!)
+
+
 ## The GAMLSS framework
 
 ### Structural model
