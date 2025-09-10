@@ -13,7 +13,14 @@ listing:
 page-layout: full
 title-block-banner: true
 image: profile_hex.jpg
+format:
+  html:
+    css: shared/front-page-style.css
+    include-in-header:
+      - text: |
+          <script src="shared/category-tweak.js" defer></script>
 ---
+
 
 ```{r write-redirects}
 #| echo: false
