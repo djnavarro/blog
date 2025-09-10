@@ -1,7 +1,8 @@
 project:
   type: website
   resources:
-    - CNAME    
+    - CNAME
+    - shared/category-tweak.js   
   render:
     - "*.qmd"
     - "!posts/2024-12-28_using-targets/liteblog"
