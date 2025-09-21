@@ -1,6 +1,6 @@
 ---
 title: "Some notes on probability judgement"
-description: "For the love of fuck, literally nobody thinks that 20% of the population is transgender. Everybody knows the answer is about 1%, so please sharing that YouGov statistic, it's not true and if you spent even the smallest amount of time thinking about how surveys work you'd bloody well know this"
+description: "For the love of fuck, literally nobody thinks that 20% of the population is transgender. Please stop sharing that ridiculous YouGov statistic"
 image: message.png
 image-alt: "A book carved into the shape of a gun"
 date: "2025-09-21"
