@@ -1,0 +1,135 @@
+Have a household income over $1 million
+0%
+10%
+Are transgender
+1%
+12%
+Have a household income over $500,000
+1%
+19%
+Are Muslim
+1%
+20%
+Are Native American
+1%
+20%
+Are Jewish
+2%
+25%
+Live in New York City
+3%
+22%
+Are gay or lesbian
+3%
+24%
+Are atheists
+3%
+28%
+Are bisexual
+4%
+24%
+Are members of a union
+4%
+35%
+Are vegan or vegetarian
+5%
+25%
+Are Asian
+6%
+24%
+Are a military veteran
+6%
+37%
+Live in Texas
+9%
+22%
+Are left-handed
+11%
+31%
+Live in California
+12%
+25%
+Are Black
+12%
+40%
+Have an advanced degree
+12%
+34%
+Are first-generation immigrants
+14%
+26%
+Are Hispanic
+17%
+35%
+Are Catholic
+22%
+39%
+Own a gun
+32%
+52%
+Have at least a college degree
+33%
+46%
+Have a household income over $100,000
+34%
+35%
+Have a passport
+37%
+42%
+Are Democrats
+42%
+50%
+Are obese
+42%
+56%
+Are Republicans
+47%
+49%
+Are married
+51%
+52%
+Have at least one child
+57%
+59%
+Voted in the 2020 election
+62%
+61%
+Have a household income over $50,000
+62%
+50%
+Are white
+64%
+59%
+Own a house
+65%
+49%
+Are fully vaccinated against COVID-19
+66%
+60%
+Have a pet
+67%
+64%
+Are Christian
+70%
+57%
+Have read a book in the past year
+77%
+50%
+Have a household income over $25,000
+82%
+65%
+Have a driver's license
+83%
+71%
+Own a smartphone
+85%
+80%
+Have flown on a plane
+88%
+61%
+Own a car
+88%
+67%
+Have at least a high school degree
+89%
+68%
