@@ -1,0 +1,15 @@
+{
+  "hash": "0cba2e0172e8d59e81a02b9ceb406578",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"hazard\"\ndescription: \"This is a subtitle\"\ndate: \"2025-09-24\"\nknitr:\n  opts_chunk: \n    dev.args:\n      bg: \"#00000000\"\n--- \n\n\n\n<!--------------- my typical setup ----------------->\n\n\n\n\n\n\n\n<!--------------- post begins here ----------------->\n\n## Hazard and survival functions\n\nSuppose we have a [probability density function](https://en.wikipedia.org/wiki/Probability_density_function) $f(t)$ with [cumulative density function](https://en.wikipedia.org/wiki/Cumulative_distribution_function) $F(t)$, the [hazard function](https://en.wikipedia.org/wiki/Failure_rate#Hazard_rate) is\n\n$$\nh(t) = \\frac{f(t)}{1-F(t)}\n$$\n\n[Survival function](https://en.wikipedia.org/wiki/Survival_function)\n\n$$\nS(t) = 1 - F(t)\n$$\n\n## Kaplan-Meier plots\n\nThe [Kaplan-Meier estimator](https://en.wikipedia.org/wiki/Kaplan%E2%80%93Meier_estimator)\n\n## Weibull hazard\n\n## Cox proportional hazard\n\nThe [Cox proportional hazard model](https://en.wikipedia.org/wiki/Proportional_hazards_model) \n\n## Accelerated failure time model\n\n[Accelerated failure time model](https://en.wikipedia.org/wiki/Accelerated_failure_time_model)\n\n## Time-varying covariates\n\n## Competing risk\n\n## References\n\n- [Survival analysis in R](https://www.emilyzabor.com/survival-analysis-in-r.html) by Emily Zabor.",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}
