@@ -1,0 +1,63 @@
+---
+title: "hazard"
+description: "This is a subtitle"
+date: "2025-09-24"
+knitr:
+  opts_chunk: 
+    dev.args:
+      bg: "#00000000"
+--- 
+
+<!--------------- my typical setup ----------------->
+
+```{r}
+#| label: setup
+#| include: false
+very_wide <- 500
+wide <- 136
+narrow <- 76
+options(width = narrow)
+cache_images <- TRUE
+set.seed(1)
+blog_dir <- rprojroot::find_root_file(criterion = rprojroot::has_file("_quarto.yml"))
+source(fs::path(blog_dir, "shared", "common.R"))
+ggplot2::theme_set(theme_custom())
+```
+
+<!--------------- post begins here ----------------->
+
+## Hazard and survival functions
+
+Suppose we have a [probability density function](https://en.wikipedia.org/wiki/Probability_density_function) $f(t)$ with [cumulative density function](https://en.wikipedia.org/wiki/Cumulative_distribution_function) $F(t)$, the [hazard function](https://en.wikipedia.org/wiki/Failure_rate#Hazard_rate) is
+
+$$
+h(t) = \frac{f(t)}{1-F(t)}
+$$
+
+[Survival function](https://en.wikipedia.org/wiki/Survival_function)
+
+$$
+S(t) = 1 - F(t)
+$$
+
+## Kaplan-Meier plots
+
+The [Kaplan-Meier estimator](https://en.wikipedia.org/wiki/Kaplan%E2%80%93Meier_estimator)
+
+## Weibull hazard
+
+## Cox proportional hazard
+
+The [Cox proportional hazard model](https://en.wikipedia.org/wiki/Proportional_hazards_model) 
+
+## Accelerated failure time model
+
+[Accelerated failure time model](https://en.wikipedia.org/wiki/Accelerated_failure_time_model)
+
+## Time-varying covariates
+
+## Competing risk
+
+## References
+
+- [Survival analysis in R](https://www.emilyzabor.com/survival-analysis-in-r.html) by Emily Zabor.
