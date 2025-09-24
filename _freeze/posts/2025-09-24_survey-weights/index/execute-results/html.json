@@ -1,0 +1,15 @@
+{
+  "hash": "3e338717eab5f8907641921a9257d9a9",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"survey-weights\"\ndescription: \"This is a subtitle\"\ndate: \"2025-09-24\"\nknitr:\n  opts_chunk: \n    dev.args:\n      bg: \"#00000000\"\n--- \n\n\n\n<!--------------- my typical setup ----------------->\n\n\n\n\n\n\n\n<!--------------- post begins here ----------------->\n\n\n- NHANES. In an earlier [post](/posts/2025-09-07_gamlss/) I talked about the [National Health and Nutrition Examination Survey](https://www.cdc.gov/nchs/nhanes/) (NHANES). Weights discussed in the [NHANES study design tutorial](https://wwwn.cdc.gov/nchs/nhanes/tutorials/sampledesign.aspx) \n\n- SIH. [Survey of Income and Housing](https://www.abs.gov.au/statistics/detailed-methodology-information/concepts-sources-methods/survey-income-and-housing-user-guide-australia/2019-20) has a [weights](https://www.abs.gov.au/statistics/detailed-methodology-information/concepts-sources-methods/survey-income-and-housing-user-guide-australia/2019-20/weights) page\n\n## References\n\n- The [survey](https://cran.r-project.org/package=survey) R package by Thomas Lumley\n\n- [How to weight a survey](https://bookdown.org/jespasareig/Book_How_to_weight_a_survey/) by Josep Espasa Reig\n\n- [How different weighting methods work](https://www.pewresearch.org/methods/2018/01/26/how-different-weighting-methods-work/) from the Pew Research Center\n\n- [Survey analysis](https://epirhandbook.com/en/new_pages/survey_analysis.html) chapter from The Epidemiologist R handbook",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}
