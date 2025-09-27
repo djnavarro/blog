@@ -347,24 +347,25 @@ predict_quantiles_compare |>
 
 Well thank fuck. 
 
-There **are** systematic differences between the unweighted and weighted models, which show up the moment we plot the *difference* between the two versions of the model on the y-axis, but... note the scale of the y-axis. The differences between the two models are never larger than a 2cm discrepancy in height regardless of age:
+There **are** systematic differences between the unweighted and weighted models, which show up the moment we plot the *difference* between the two versions of the model on the y-axis, but... note the scale of the y-axis. Even for adults, where you might worry that systematic oversampling in NHANES might start to make a difference, the differences between the two models are never larger than a 2cm discrepancy:
 
 ```{r}
-#| label: predict-quantiles-residuals
+#| label: predict-quantiles-residuals-age
 #| code-fold: true
 #| code-summary: Code for the residuals plot
 predict_quantiles_compare |> 
   ggplot2::ggplot(
     mapping = ggplot2::aes(
-      x = unweighted,
+      x = age_yr,
       y = unweighted - weighted, 
       color = quantile
     )
   ) +
   ggplot2::geom_hline(yintercept = 0) + 
-  ggplot2::geom_point(size = 1.5, alpha = .1, show.legend = FALSE) + 
-  ggplot2::facet_wrap(~quantile)
+  ggplot2::geom_point(size = 1) 
 ```
+
+
 
 I did fuck up, yes. But thankfully the discrepancies between what the correctly weighted model predicts and what my original unweighted model predicts are fairly small. In the context of the analyses that I described in the original [GAMLSS post](/posts/2025-09-07_gamlss/) and -- much more importantly -- the real world analyses in which I've used an unweighted model when I should have used a weighted model, the scale of the discrepancy is so small that it won't affect any of the "downstream" analyses. I'm not going to have to send an emergency mea culpa to any regulatory agency. In the context at hand for most pharmacometric simulations of expected drug exposure, something like this amounts to a mere rounding error and will not have even the slightest effect on the conclusions anyone draws from the data.
 
@@ -372,7 +373,17 @@ Again, thank fuck.
 
 But.
 
-The truth is that I got lucky, and so did all the other pharmacometricans who have used NHANES data the way I did. I forgot to take account of something that does matter, and I was fortunate enough that the scale of the mistake is so trivial that nobody who works with this kind of data in the real world would care. But the nature of luck is that you aren't always lucky. It just doesn't work that way. It is not too difficult to come up with examples where the survey weights really do matter, and the rest of the post will be devoted to showing why. 
+The truth is that I've gotten lucky in my analyses, and so have all the other pharmacometricans who have used NHANES data the same way I have.^[You know who you are. We've all made this mistake once or twice ☺️. 'Tis the nature of the beast if you're working as an applied pharmacometrician at the coalface. You get slammed with client requests that come in faster than you can handle, always with a regulator-imposed deadline that you cannot change. You do the best you can in the limited timeframe that is permitted, and that means you focus on the big things, not the small things. In some contexts survey weights can be big things and you need to care, but in the context of pharmacometric simulations that rely on CDC data to predict height/weight by age/sex, it's mostly a small thing. Even I am not so anal-retentive as to think we should waste a regulators time over something like this. And honey do I have stories about what I can retain in my ass.] I forgot to take account of something that does matter, and I was fortunate enough that the scale of the mistake is so trivial that nobody who works with this kind of data in the real world would care. But the nature of luck is that you aren't always lucky. It just doesn't work that way. It is not too difficult to come up with examples where the survey weights really do matter, and the rest of the post will be devoted to showing why. 
+
+
+## Survey weights really do matter
+
+🧠 : So we're done now, right? You've made your public mea culpa, you've outlined the reasons why the specific worry doesn't matter much in the contexts we've had to do this kind of work. Very diligent of us. Much proud. Very detail. Et cetera. We can stop now, yes? We've done our duty admirably, thanks to your whining and panic. It can end now, yes? No more words need to be written?<br>
+
+🫀 : ...<br>
+
+🫀 : Okay, about that...<br>
+
 
 
 <br>
