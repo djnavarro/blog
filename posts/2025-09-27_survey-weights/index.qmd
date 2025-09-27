@@ -59,7 +59,7 @@ Not gonna lie, I'm a bit nervous.
 
 ## Survey weights
 
-The mistake I made in that post is one that experimentalists (such as myself) are particularly prone to. I took data from a structured, stratified survey -- in this case the [National Health and Nutrition Examination Survey](https://www.cdc.gov/nchs/nhanes/) (NHANES) -- and analysed it as if it were a simple random sample, which it most certainly is not. In short, I forgot to consider **survey weights.** The mistake is embarrassing to me because the NHANES website has an entire [study design tutorial](https://wwwn.cdc.gov/nchs/nhanes/tutorials/sampledesign.aspx) that talks specifically about this issue^[My sincere thanks to Benjamin Rich and Thomas Lumley who, in different contexts, both found very gentle ways to point me in the right direction. I mean, I did sort of know I had to think about this but I just... didn't.] and, like an idiot^[In my defence, I was not an idiot. I was an analyst operating under time pressure, and I missed a detail that in hindsight I should have paid more attention to. Sigh. But it happens to us all, and in an attempt to practice what I preach, I'm admitting it openly.] I didn't take it into account. Siiiiiiiiiiiiiiiigh.
+The mistake I made in that post is one that experimentalists (such as myself) are particularly prone to. I took data from a structured, stratified survey -- in this case the [National Health and Nutrition Examination Survey](https://www.cdc.gov/nchs/nhanes/) (NHANES) -- and analysed it as if it were a simple random sample, which it most certainly is not. In short, I forgot to consider **survey weights.** The mistake is embarrassing to me because the NHANES website has an entire [study design tutorial](https://wwwn.cdc.gov/nchs/nhanes/tutorials/sampledesign.aspx) that talks specifically about this issue^[My sincere thanks to Benjamin Rich and Thomas Lumley who, in different contexts, both found very gentle ways to point me in the right direction. I mean, I did sort of know I had to think about this but I just... didn't.] and like an idiot^[In my defence, I was not an idiot. I was an analyst operating under time pressure, and I missed a detail that in hindsight I should have paid more attention to. Sigh. But it happens to us all, and in an attempt to practice what I preach, I'm admitting it openly.] I didn't take it into account. Siiiiiiiiiiiiiiiigh.
 
 To understand the nature of my mistake, all you need to do is read the first paragraph of the NHANES tutorial discussing the design of the study:
 
@@ -68,6 +68,125 @@ To understand the nature of my mistake, all you need to do is read the first par
 Oh. Right. Yeah. Guess which bitch forgot to do that? Guess which bitch is now all of a sudden remembering that *lots* of surveys use stratified sampling, *lot* of surveys use oversampling for populations of interest, and *lots* of surveys discuss survey weights quite prominently on their websites^[As another example, here's the Australian [Survey of Income and Housing](https://www.abs.gov.au/statistics/detailed-methodology-information/concepts-sources-methods/survey-income-and-housing-user-guide-australia/2019-20), and lo and behold it has a page explicitly discussing [survey weights](https://www.abs.gov.au/statistics/detailed-methodology-information/concepts-sources-methods/survey-income-and-housing-user-guide-australia/2019-20/weights) for the study.] in the hope that researchers don't make the exact mistake that she did, in fact, make? That's right, this bitch.
 
 Oops.
+
+<br>
+
+## How bad was my mistake?
+
+```{r}
+#| label: import-nhanes
+#| code-fold: true
+#| code-summary: Code for NHANES data import and preprocessing
+# directories
+post_dir   <- rprojroot::find_root_file(
+  criterion = rprojroot::has_file(".here")
+)
+local_dir  <- fs::path(post_dir, "nhanes")
+data_dir   <- fs::path(local_dir, "data")
+output_dir <- fs::path(local_dir, "output")
+
+# conversion based on NHANES average
+length_to_height <- function(length_cm) {
+  length_cm - 1.06
+}
+
+# all demographics and body measurement files
+demo_files <- fs::dir_ls(fs::path(data_dir, "demo"))
+bmx_files <- fs::dir_ls(fs::path(data_dir, "bmx"))
+
+# read demographics file (selected variables only)
+demos <- demo_files |> 
+  purrr::map(\(xx) {
+    dd <- haven::read_xpt(xx) 
+    if (!exists("RIDEXAGM", where = dd)) dd$RIDEXAGM <- NA_real_
+    dd <- dplyr::select(dd, SEQN, RIAGENDR, RIDAGEYR, RIDAGEMN, RIDEXAGM)
+    dd
+  }) |> 
+  dplyr::bind_rows(.id = "file_demo") |> 
+  dplyr::mutate(file_demo = fs::path_file(file_demo))
+
+# read body measurements file (selected variables only)
+bmxes <- bmx_files |> 
+  purrr::map(\(xx) {
+    dd <- haven::read_xpt(xx) 
+    dd <- dplyr::select(dd, SEQN, BMXWT, BMXHT, BMXRECUM)
+    dd
+}) |> 
+  dplyr::bind_rows(.id = "file_bmx") |> 
+  dplyr::mutate(file_bmx = fs::path_file(file_bmx))
+
+# join data sets, retaining only those rows where the
+# required body measurements exist
+nhanes <- bmxes |>
+  dplyr::left_join(demos, by = "SEQN") |>
+  dplyr::select(
+    id          = SEQN,
+    sex_s       = RIAGENDR, # sex/gender at screen (1 = M, 2 = F, . = NA)
+    weight_kg_e = BMXWT,    # weight at exam
+    height_cm_e = BMXHT,    # standing height at exam
+    length_cm_e = BMXRECUM, # recumbent length at exam (0-47 months only)
+    age_yr_s    = RIDAGEYR, # natal age at screening (years)
+    age_mn_s    = RIDAGEMN, # natal age at screening (months; 0-24 mos only)
+    age_mn_e    = RIDEXAGM, # natal age at exam (months; 0-19 years only)
+    file_demo,
+    file_bmx
+  ) |>
+  dplyr::mutate(
+    sex_num = sex_s - 1, # rescale to 0 = M, 1 = F
+    sex_fct = factor(sex_s, levels = 1:2, labels = c("male", "female")),
+    age_mn = dplyr::case_when(
+      !is.na(age_mn_e) ~ age_mn_e, # use exam months if present
+      !is.na(age_mn_s) ~ age_mn_s, # else use survey months
+      TRUE ~ (age_yr_s * 12)       # else use age in years
+    ),
+    age_yr = age_mn / 12,
+    weight_kg = weight_kg_e,
+    height_cm = dplyr::case_when(
+      !is.na(height_cm_e) ~ height_cm_e, # use height if it was measured
+      !is.na(length_cm_e) ~ length_to_height(length_cm_e), # or convert length
+      TRUE ~ NA_real_, # else missing
+    ),
+    cohort = dplyr::case_when(
+      file_bmx == "BMX.xpt"   & file_demo == "DEMO.xpt"   ~ "1999-2000",
+      file_bmx == "BMX_B.xpt" & file_demo == "DEMO_B.xpt" ~ "2001-2002",
+      file_bmx == "BMX_C.xpt" & file_demo == "DEMO_C.xpt" ~ "2003-2004",
+      file_bmx == "BMX_D.xpt" & file_demo == "DEMO_D.xpt" ~ "2005-2006",
+      file_bmx == "BMX_E.xpt" & file_demo == "DEMO_E.xpt" ~ "2007-2008",
+      file_bmx == "BMX_F.xpt" & file_demo == "DEMO_F.xpt" ~ "2009-2010",
+      file_bmx == "BMX_G.xpt" & file_demo == "DEMO_G.xpt" ~ "2011-2012",
+      file_bmx == "BMX_H.xpt" & file_demo == "DEMO_H.xpt" ~ "2013-2014",
+      file_bmx == "BMX_I.xpt" & file_demo == "DEMO_I.xpt" ~ "2015-2016",
+      file_bmx == "BMX_J.xpt" & file_demo == "DEMO_J.xpt" ~ "2017-2018",
+      file_bmx == "P_BMX.xpt" & file_demo == "P_DEMO.xpt" ~ "2017-2020",
+      file_bmx == "BMX_L.xpt" & file_demo == "DEMO_L.xpt" ~ "2021-2023",
+      TRUE ~ NA
+    ),
+    is_pandemic = dplyr::case_when(
+      file_bmx == "P_BMX.xpt" & file_demo == "P_DEMO.xpt" ~ TRUE,
+      TRUE ~ FALSE
+    )
+  )
+
+# retain only the to-be-used columns, and only those cases for which
+# age, weight, height, and sex are all present; filter to age < 80
+# because NHANES uses "80" to mean "80 and above" so the actual age
+# is not known
+ok <- function(x) !is.na(x)
+nhanes <- nhanes |>
+  dplyr::select(
+    id, sex_num, sex_fct, weight_kg, height_cm, 
+    age_mn, age_yr, cohort
+  ) |>
+  dplyr::filter(ok(sex_num), ok(weight_kg), ok(height_cm), ok(age_mn)) |>
+  dplyr::filter(age_yr < 80)
+```
+
+```{r}
+#| label: nhanes-data
+nhanes
+```
+
+<br>
 
 ## References
 
