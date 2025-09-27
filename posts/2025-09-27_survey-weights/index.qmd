@@ -1,0 +1,403 @@
+---
+title: "Some notes on survey weights"
+description: "An area of statistics in which the author is not strong, and really needs to up her game"
+date: "2025-09-27"
+categories: ["Statistics", "Surveys"]
+knitr:
+  opts_chunk: 
+    dev.args:
+      bg: "#00000000"
+--- 
+
+<!--------------- my typical setup ----------------->
+
+```{r}
+#| label: setup
+#| include: false
+very_wide <- 500
+wide <- 136
+narrow <- 76
+options(width = narrow)
+cache_images <- TRUE
+set.seed(1)
+blog_dir <- rprojroot::find_root_file(criterion = rprojroot::has_file("_quarto.yml"))
+source(fs::path(blog_dir, "shared", "common.R"))
+ggplot2::theme_set(theme_custom())
+```
+
+<!--------------- post begins here ----------------->
+
+🫀 : Okay. So. Um. Hey babe. You know that [GAMLSS regression post](/posts/2025-09-07_gamlss/) we wrote? <br>
+
+🧠 : Do you mean the monstrosity that took an entire month out of our lives, spawned an unhinged prequel post about the [Box-Cox power exponential distribution](/posts/2025-08-02_box-cox-power-exponential/) and then *another* unhinged prequel post about [B-splines and P-splines](/posts/2025-09-06_p-splines/)? The one that brought us to tears several times and made us question our entire reason for being? The one that literally gave you nightmares? The accursed one, the post we swore we were finished with and would never ever revisit upon pain of death. Is **that** the post you mean? <br>
+
+🫀 : Uh, yeah.<br>
+
+🧠 : Oh yes, I remember it. What about it? <br>
+
+🫀 : I, um... look... I think it, uhhhhh... needs a sequel post. We should talk about survey weights. I mean, I know it's not our job to talk about all the things, but it does sort of matter right? And we've come so far with this thing, we should finish the job properly, right? I mean, I know we're not getting paid for this, but you *do* like to do a good job with things right? Just one more post? Please????<br>
+
+🧠 : ... <br>
+
+🫀 : ... <br>
+
+🧠 : Girl. Seriously though. What the actual fuck is wrong with you?
+
+<br><br>
+
+The worst thing about being a scientist^[Aside from, oh idk, just a lil hypothetical here, an authoritarian government gutting science funding, branding scientists as traitors for researching the wrong topics, threatening researchers, and gluing the cobblestones on the road to fascism in place using the blood and tears of those scientists that have the gall to care about human beings that aren't themselves.] is the fact that no matter how hard you work and no matter how diligent you are in learning skills that fall outside your core discipline, you will on a regular basis get slammed by ["outside context problems"](https://tvtropes.org/pmwiki/pmwiki.php/Main/OutsideContextProblem). You are trained to work within a particular framework, and you are exquisitely skilled at handling situations that fall within the scope of that framework. You are, almost by definition, a *specialist*. The days of the "renaissance polymath" are well and truly behind us, simply because science has advanced so far that no human mind can encompass the whole bloody thing at this point. It's impossible.
+
+This is of course a great triumph for science, but a terrible tragedy for the scientist who will *always* find themselves getting fucked over badly the moment "the thing I was trained for" turns out to require knowledge from "one of the million other things I was not trained for". The cruel reality of science is that we feel like fucking morons every single day because there are so very many traps, tripwires, and landmines strewn across the golden fields of science. 
+
+We all fuck up. All the time. It's a core part of the job, actually. The trick, if you're a newly minted scientist hoping to survive in the badlands of real research, is to remain humble in the face complexity. When -- not if -- it happens to you, and you make a mistake, the thing you have to do own it and admit you were wrong.^[I am currently giving very serious side eye at [Uri Simonsohn](https://datacolada.org/129) in this regard. Stop being a dick, dude. You fucked up because you ventured outside your area of expertise, and you've been gently corrected in the literature by people who know this stuff better than you do. And that's okay, as long as you stop doubling down on the mistake. Just a thought from a girl who no longer has skin in that particular game.] Nobody with a shred of integrity will think less of you for admitting a mistake. 
+
+And so it is in this spirit that I have to admit there's a mistake in my [GAMLSS post](/posts/2025-09-07_gamlss/). As of this exact moment of writing I don't know for certain how bad the mistake is because I haven't checked yet.^[I suppose if you really want to check you can take a look at the git log on the blog repo and confirm that yep, I'm writing this introductory section *before* writing any of the code to investigate the mistake. The anxiety is real.] I have some reason to think my mistake isn't *terrible*, but I don't know for sure, and I'm about to find out as soon as I write the rest of this post. 
+
+Not gonna lie, I'm a bit nervous. 
+
+<br>
+
+```{r}
+#| label: packages
+#| message: false
+library(gamlss)
+library(ggplot2)
+library(quartose)
+```
+
+## Survey weights
+
+The mistake I made in that post is one that experimentalists such as myself^[I mean, it's now been about 5 years since the last time I actually *ran* an experiment of my very own. I'm a data analyst by trade now, and unlike my old discipline of mathematical psychology where analysts tend to also run their own experiments, pharmacometricians tend not to conduct the studies they analyse themselves. Nevertheless, both disciplines are built atop a foundation of experimental science, and I notice that pharmacometricians tend to think in ways I find very familiar as a former math psych girl.] are particularly prone to. I took data from a structured, stratified survey -- in this case the [National Health and Nutrition Examination Survey](https://www.cdc.gov/nchs/nhanes/) (NHANES) -- and analysed it as if it were a simple random sample, which it most certainly is not. In short, I forgot to consider **survey weights.** The mistake is embarrassing to me because the NHANES website has an entire [study design tutorial](https://wwwn.cdc.gov/nchs/nhanes/tutorials/sampledesign.aspx) that talks specifically about this issue^[My sincere thanks to [Benjamin Rich](https://www.linkedin.com/in/benjaminrichphd/) and [Thomas Lumley](https://profiles.auckland.ac.nz/t-lumley) who, in different contexts, both found very gentle ways to point me in the right direction. I mean, I did sort of know I had to think about this but I just... didn't.] and like an idiot^[In my defence, I was not an idiot. I was an analyst operating under time pressure, and I missed a detail that in hindsight I should have paid more attention to. Sigh. But it happens to us all, and in an attempt to practice what I preach, I'm admitting it openly.] I didn't take it into account. Siiiiiiiiiiiiiiiigh.
+
+To understand the nature of my mistake, all you need to do is read the first paragraph of the NHANES tutorial discussing the design of the study:
+
+> The NHANES samples are not simple random samples. Rather, a complex, multistage, probability sampling design is used to select participants representative of the civilian, non-institutionalized US population. Oversampling of certain population subgroups is also done to increase the reliability and precision of health status indicator estimates for these particular subgroups. Researchers need to take this into account in their analyses by appropriately specifying the sampling design parameters. 
+
+Oh. Right. Yeah. Guess which bitch forgot to do that? Guess which bitch is now all of a sudden remembering that *lots* of surveys use stratified sampling, *lot* of surveys use oversampling for populations of interest, and *lots* of surveys discuss survey weights quite prominently on their websites^[As another example, here's the Australian [Survey of Income and Housing](https://www.abs.gov.au/statistics/detailed-methodology-information/concepts-sources-methods/survey-income-and-housing-user-guide-australia/2019-20), and lo and behold it has a page explicitly discussing [survey weights](https://www.abs.gov.au/statistics/detailed-methodology-information/concepts-sources-methods/survey-income-and-housing-user-guide-australia/2019-20/weights) for the study.] in the hope that researchers don't make the exact mistake that she did, in fact, make? That's right, this bitch.
+
+Oops.
+
+<br>
+
+## How bad was my mistake?
+
+```{r}
+#| label: import-nhanes
+#| code-fold: true
+#| code-summary: Code for NHANES data import and preprocessing
+# directories
+post_dir   <- rprojroot::find_root_file(
+  criterion = rprojroot::has_file(".here")
+)
+local_dir  <- fs::path(post_dir, "nhanes")
+data_dir   <- fs::path(local_dir, "data")
+output_dir <- fs::path(local_dir, "output")
+
+# conversion based on NHANES average
+length_to_height <- function(length_cm) {
+  length_cm - 1.06
+}
+
+# all demographics and body measurement files
+demo_files <- fs::dir_ls(fs::path(data_dir, "demo"))
+bmx_files <- fs::dir_ls(fs::path(data_dir, "bmx"))
+
+# read demographics file (selected variables only)
+demos <- demo_files |> 
+  purrr::map(\(xx) {
+    dd <- haven::read_xpt(xx) 
+    if (!exists("WTMEC2YR", where = dd)) dd$WTMEC2YR <- NA_real_
+    if (!exists("RIDEXAGM", where = dd)) dd$RIDEXAGM <- NA_real_
+    dd <- dplyr::select(dd, SEQN, RIAGENDR, RIDAGEYR, RIDAGEMN, RIDEXAGM, WTMEC2YR)
+    dd
+  }) |> 
+  dplyr::bind_rows(.id = "file_demo") |> 
+  dplyr::mutate(file_demo = fs::path_file(file_demo))
+
+# read body measurements file (selected variables only)
+bmxes <- bmx_files |> 
+  purrr::map(\(xx) {
+    dd <- haven::read_xpt(xx) 
+    dd <- dplyr::select(dd, SEQN, BMXWT, BMXHT, BMXRECUM)
+    dd
+}) |> 
+  dplyr::bind_rows(.id = "file_bmx") |> 
+  dplyr::mutate(file_bmx = fs::path_file(file_bmx))
+
+# join data sets, retaining only those rows where the
+# required body measurements exist
+nhanes <- bmxes |>
+  dplyr::left_join(demos, by = "SEQN") |>
+  dplyr::select(
+    id          = SEQN,
+    sex_s       = RIAGENDR, # sex/gender at screen (1 = M, 2 = F, . = NA)
+    weight_kg_e = BMXWT,    # weight at exam
+    height_cm_e = BMXHT,    # standing height at exam
+    length_cm_e = BMXRECUM, # recumbent length at exam (0-47 months only)
+    age_yr_s    = RIDAGEYR, # natal age at screening (years)
+    age_mn_s    = RIDAGEMN, # natal age at screening (months; 0-24 mos only)
+    age_mn_e    = RIDEXAGM, # natal age at exam (months; 0-19 years only)
+    survey_wt   = WTMEC2YR, # 2-year weight for persons with exam data 
+    file_demo,
+    file_bmx
+  ) |>
+  dplyr::mutate(
+    sex_num = sex_s - 1, # rescale to 0 = M, 1 = F
+    sex_fct = factor(sex_s, levels = 1:2, labels = c("male", "female")),
+    age_mn = dplyr::case_when(
+      !is.na(age_mn_e) ~ age_mn_e, # use exam months if present
+      !is.na(age_mn_s) ~ age_mn_s, # else use survey months
+      TRUE ~ (age_yr_s * 12)       # else use age in years
+    ),
+    age_yr = age_mn / 12,
+    weight_kg = weight_kg_e,
+    height_cm = dplyr::case_when(
+      !is.na(height_cm_e) ~ height_cm_e, # use height if it was measured
+      !is.na(length_cm_e) ~ length_to_height(length_cm_e), # or convert length
+      TRUE ~ NA_real_, # else missing
+    ),
+    cohort = dplyr::case_when(
+      file_bmx == "BMX.xpt"   & file_demo == "DEMO.xpt"   ~ "1999-2000",
+      file_bmx == "BMX_B.xpt" & file_demo == "DEMO_B.xpt" ~ "2001-2002",
+      file_bmx == "BMX_C.xpt" & file_demo == "DEMO_C.xpt" ~ "2003-2004",
+      file_bmx == "BMX_D.xpt" & file_demo == "DEMO_D.xpt" ~ "2005-2006",
+      file_bmx == "BMX_E.xpt" & file_demo == "DEMO_E.xpt" ~ "2007-2008",
+      file_bmx == "BMX_F.xpt" & file_demo == "DEMO_F.xpt" ~ "2009-2010",
+      file_bmx == "BMX_G.xpt" & file_demo == "DEMO_G.xpt" ~ "2011-2012",
+      file_bmx == "BMX_H.xpt" & file_demo == "DEMO_H.xpt" ~ "2013-2014",
+      file_bmx == "BMX_I.xpt" & file_demo == "DEMO_I.xpt" ~ "2015-2016",
+      file_bmx == "BMX_J.xpt" & file_demo == "DEMO_J.xpt" ~ "2017-2018",
+      file_bmx == "P_BMX.xpt" & file_demo == "P_DEMO.xpt" ~ "2017-2020",
+      file_bmx == "BMX_L.xpt" & file_demo == "DEMO_L.xpt" ~ "2021-2023",
+      TRUE ~ NA
+    ),
+    is_pandemic = dplyr::case_when(
+      file_bmx == "P_BMX.xpt" & file_demo == "P_DEMO.xpt" ~ TRUE,
+      TRUE ~ FALSE
+    )
+  )
+
+# retain only the to-be-used columns, and only those cases for which
+# age, weight, height, and sex are all present; filter to age < 80
+# because NHANES uses "80" to mean "80 and above" so the actual age
+# is not known
+ok <- function(x) !is.na(x)
+nhanes <- nhanes |>
+  dplyr::select(
+    id, sex_num, sex_fct, weight_kg, height_cm, 
+    age_mn, age_yr, cohort, survey_wt
+  ) |>
+  dplyr::filter(cohort != "1999-2000") |>  
+  dplyr::filter(
+    ok(sex_num), ok(weight_kg), ok(height_cm), 
+    ok(age_mn), ok(survey_wt)
+  ) |>
+  dplyr::filter(age_yr < 80)
+```
+
+```{r}
+#| label: nhanes-data
+nhanes
+```
+
+```{r}
+#| label: gamlss-fit
+#| code-fold: true
+#| code-summary: Code for GAMLSS model fitting
+
+height_unweighted_file <- fs::path(post_dir, "nhanes", "output", "height_unweighted.rds")
+height_weighted_file   <- fs::path(post_dir, "nhanes", "output", "height_weighted.rds")
+
+rerun <- FALSE 
+if (rerun) {
+
+  # unweighted model for height by age
+  height_unweighted <- gamlss(
+    formula       = height_cm ~ pb(age_mn),
+    sigma.formula = ~pb(age_mn),
+    nu.formula    = ~1,
+    tau.formula   = ~1,
+    data    = nhanes,
+    family  = BCPE
+  )
+
+  # unweighted model for height by age
+  height_weighted <- gamlss(
+    formula       = height_cm ~ pb(age_mn),
+    sigma.formula = ~pb(age_mn),
+    nu.formula    = ~1,
+    tau.formula   = ~1,
+    data    = nhanes,
+    weights = survey_wt,
+    family  = BCPE
+  )
+
+  saveRDS(height_unweighted, file = height_unweighted_file)
+  saveRDS(height_weighted, file = height_weighted_file)
+
+} else {
+
+  height_unweighted <- readRDS(file = height_unweighted_file)
+  height_weighted <- readRDS(file = height_weighted_file)
+
+}
+
+height_mod <- list(
+  unweighted = height_unweighted,
+  weighted = height_weighted
+)
+```
+
+```{r}
+#| label: show-gamlss
+#| results: asis
+quarto_tabset(height_mod, level = 3)
+```
+
+```{r}
+#| label: predict-quantiles
+#| code-fold: true
+#| code-summary: Code to compute and plot quantiles
+get_pars <- function(data, model) {
+  pars <- tibble::tibble(
+    mu    = predict(model, newdata = data, type = "response", what = "mu"),
+    sigma = predict(model, newdata = data, type = "response", what = "sigma"),
+    nu    = predict(model, newdata = data, type = "response", what = "nu"),
+    tau   = predict(model, newdata = data, type = "response", what = "tau"),
+  )
+  dplyr::bind_cols(data, pars)
+}
+
+age_max_yr <- 40 
+
+predict_cases <- tidyr::expand_grid(
+  age_mn  = 1:(age_max_yr * 12),
+  weighted = c(TRUE, FALSE)
+)
+
+predict_pars <- dplyr::bind_rows(
+  predict_cases |> 
+    dplyr::filter(weighted == TRUE) |> 
+    dplyr::select(-weighted) |> 
+    get_pars(height_mod$weighted) |> 
+    dplyr::mutate(model_type = "weighted"),
+  predict_cases |> 
+    dplyr::filter(weighted == FALSE) |> 
+    dplyr::select(-weighted) |> 
+    get_pars(height_mod$unweighted) |> 
+    dplyr::mutate(model_type = "unweighted")
+)
+
+predict_quantiles <- predict_pars |>
+  dplyr::mutate(
+    q05 = qBCPE(.05, mu = mu, sigma = sigma, nu = nu, tau = tau),
+    q25 = qBCPE(.25, mu = mu, sigma = sigma, nu = nu, tau = tau),
+    q50 = qBCPE(.50, mu = mu, sigma = sigma, nu = nu, tau = tau),
+    q75 = qBCPE(.75, mu = mu, sigma = sigma, nu = nu, tau = tau),
+    q95 = qBCPE(.95, mu = mu, sigma = sigma, nu = nu, tau = tau),
+    age_yr = age_mn / 12
+  )
+
+predict_quantiles_long <- predict_quantiles |> 
+  tidyr::pivot_longer(
+    cols = dplyr::starts_with("q"),
+    names_to = "quantile",
+    values_to = "height_cm"
+  )
+
+predict_quantiles_compare <- predict_quantiles_long |> 
+  dplyr::select(age_mn, age_yr, height_cm, quantile, model_type) |> 
+  tidyr::pivot_wider(
+    names_from = model_type,
+    values_from = height_cm
+  )
+
+ggplot2::ggplot() + 
+  ggplot2::geom_point(
+    data = nhanes |> 
+      dplyr::filter(age_yr < age_max_yr), 
+    mapping = ggplot2::aes(age_mn, height_cm),
+    size = .25
+  ) +
+  ggplot2::geom_path(
+    data = predict_quantiles_long,
+    mapping = ggplot2::aes(age_mn, height_cm, color = quantile)
+  ) +
+  ggplot2::facet_wrap(~model_type) +
+  ggplot2::theme(legend.position = "bottom")
+```
+
+
+```{r}
+#| label: predict-quantiles-2
+#| code-fold: true
+#| code-summary: Code for the replotting
+predict_quantiles_compare |> 
+  ggplot2::ggplot(
+    mapping = ggplot2::aes(
+      x = unweighted,
+      y = weighted, 
+      color = quantile
+    )
+  ) +
+  ggplot2::geom_abline(intercept = 0, slope = 1) + 
+  ggplot2::geom_point(size = 3, alpha = .1, show.legend = FALSE) + 
+  ggplot2::facet_wrap(~quantile)
+```
+
+Well thank fuck. 
+
+There **are** systematic differences between the unweighted and weighted models, which show up the moment we plot the *difference* between the two versions of the model on the y-axis, but... note the scale of the y-axis. Even for adults, where you might worry that systematic oversampling in NHANES might start to make a difference, the differences between the two models are never larger than a 2cm discrepancy:
+
+```{r}
+#| label: predict-quantiles-residuals-age
+#| code-fold: true
+#| code-summary: Code for the residuals plot
+predict_quantiles_compare |> 
+  ggplot2::ggplot(
+    mapping = ggplot2::aes(
+      x = age_yr,
+      y = unweighted - weighted, 
+      color = quantile
+    )
+  ) +
+  ggplot2::geom_hline(yintercept = 0) + 
+  ggplot2::geom_point(size = 1) 
+```
+
+
+
+I did fuck up, yes. But thankfully the discrepancies between what the correctly weighted model predicts and what my original unweighted model predicts are fairly small. In the context of the analyses that I described in the original [GAMLSS post](/posts/2025-09-07_gamlss/) and -- much more importantly -- the real world analyses in which I've used an unweighted model when I should have used a weighted model, the scale of the discrepancy is so small that it won't affect any of the "downstream" analyses. I'm not going to have to send an emergency mea culpa to any regulatory agency. In the context at hand for most pharmacometric simulations of expected drug exposure, something like this amounts to a mere rounding error and will not have even the slightest effect on the conclusions anyone draws from the data.
+
+Again, thank fuck.
+
+But.
+
+The truth is that I've gotten lucky in my analyses, and so have all the other pharmacometricans who have used NHANES data the same way I have.^[You know who you are. We've all made this mistake once or twice ☺️. 'Tis the nature of the beast if you're working as an applied pharmacometrician at the coalface. You get slammed with client requests that come in faster than you can handle, always with a regulator-imposed deadline that you cannot change. You do the best you can in the limited timeframe that is permitted, and that means you focus on the big things, not the small things. In some contexts survey weights can be big things and you need to care, but in the context of pharmacometric simulations that rely on CDC data to predict height/weight by age/sex, it's mostly a small thing. Even I am not so anal-retentive as to think we should waste a regulators time over something like this. And honey do I have stories about what I can retain in my ass.] I forgot to take account of something that does matter, and I was fortunate enough that the scale of the mistake is so trivial that nobody who works with this kind of data in the real world would care. But the nature of luck is that you aren't always lucky. It just doesn't work that way. It is not too difficult to come up with examples where the survey weights really do matter, and the rest of the post will be devoted to showing why. 
+
+
+## Survey weights really do matter
+
+🧠 : So we're done now, right? You've made your public mea culpa, you've outlined the reasons why the specific worry doesn't matter much in the contexts we've had to do this kind of work. Very diligent of us. Much proud. Very detail. Et cetera. We can stop now, yes? We've done our duty admirably, thanks to your whining and panic. It can end now, yes? No more words need to be written?<br>
+
+🫀 : ...<br>
+
+🫀 : Okay, about that...<br>
+
+
+
+<br>
+
+## References
+
+For a post like this one, where I don't have strong expertise of my own and am writing it with the primary goal of improving my skills, I'm a little wary about suggesting references for others. But for what it's worth, here's some open access resources I relied on for my reading:
+
+- There's a nice page on the Pew Research Center website containing notes by Andrew Mercer, Arnold Lau, and Courtney Kennedy on [how different weighting methods work](https://www.pewresearch.org/methods/2018/01/26/how-different-weighting-methods-work/). If you read it on its own it's brief and helpful, is a nice entry point if you're an inveterate experimentalist at heart and survey data isn't your strength. Better yet, it's not a standalone document, it's acutally part of a much more comprehensive report on [weighting online opt-in samples](https://www.pewresearch.org/methods/2018/01/26/for-weighting-online-opt-in-samples-what-matters-most/), so it gives you ample opportunity to branch out.
+
+- One field in which I know these issues arise often is epidemiology, so it came as little surprise to me to discover that there is a useful chapter on [survey analysis](https://epirhandbook.com/en/new_pages/survey_analysis.html) chapter contained within [The Epidemiologist R Handbook](https://epirhandbook.com/en/).
+
+- Another resource I found useful is this online book on [how to weight a survey](https://bookdown.org/jespasareig/Book_How_to_weight_a_survey/) by Josep Espasa Reig. One nice thing about this one is that it's an informal walkthrough using examples in R, and it's intended to be readable by social scientists without any much expertise in the area.
+
+On the software side, here are a few tools I started investigating:
+
+- The [survey](https://cran.r-project.org/package=survey) R package by Thomas Lumley, and the [srvyr](http://gdfe.co/srvyr/) package that provides a [dplyr](https://dplyr.tidyverse.org/)-like syntax for it.
