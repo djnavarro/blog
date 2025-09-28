@@ -405,9 +405,11 @@ The truth is that I've gotten lucky in my analyses, and so have all the other pe
 
 <br>
 
-## References
+## Resources
 
-For a post like this one, where I don't have strong expertise of my own and am writing it with the primary goal of improving my skills, I'm a little wary about suggesting references for others. But for what it's worth, here's some open access resources I relied on for my reading:
+For a post like this one, where I don't have strong expertise of my own and am writing it with the primary goal of improving my skills, I'm a little wary about suggesting references for others. But for what it's worth, here's some open access resources I relied on while writing this post:
+
+- The [NHANES study design tutorial](https://wwwn.cdc.gov/nchs/nhanes/tutorials/sampledesign.aspx) provides a helpful overview of how to work with the sample weights that come supplied with the NHANES data. Along similar lines, I found it helpful to compare their notes with the [weights page](https://www.abs.gov.au/statistics/detailed-methodology-information/concepts-sources-methods/survey-income-and-housing-user-guide-australia/2019-20/weights) on the Australian [Survey of Income and Housing](https://www.abs.gov.au/statistics/detailed-methodology-information/concepts-sources-methods/survey-income-and-housing-user-guide-australia/2019-20) website. 
 
 - There's a nice page on the Pew Research Center website containing notes by Andrew Mercer, Arnold Lau, and Courtney Kennedy on [how different weighting methods work](https://www.pewresearch.org/methods/2018/01/26/how-different-weighting-methods-work/). If you read it on its own it's brief and helpful, is a nice entry point if you're an inveterate experimentalist at heart and survey data isn't your strength. Better yet, it's not a standalone document, it's acutally part of a much more comprehensive report on [weighting online opt-in samples](https://www.pewresearch.org/methods/2018/01/26/for-weighting-online-opt-in-samples-what-matters-most/), so it gives you ample opportunity to branch out.
 
@@ -415,6 +417,4 @@ For a post like this one, where I don't have strong expertise of my own and am w
 
 - Another resource I found useful is this online book on [how to weight a survey](https://bookdown.org/jespasareig/Book_How_to_weight_a_survey/) by Josep Espasa Reig. One nice thing about this one is that it's an informal walkthrough using examples in R, and it's intended to be readable by social scientists without any much expertise in the area.
 
-On the software side, here are a few tools I started investigating:
-
-- The [survey](https://cran.r-project.org/package=survey) R package by Thomas Lumley, and the [srvyr](http://gdfe.co/srvyr/) package that provides a [dplyr](https://dplyr.tidyverse.org/)-like syntax for it.
+- On the software side, here are a few tools I started investigating: the [survey](https://cran.r-project.org/package=survey) R package by Thomas Lumley, and the [srvyr](http://gdfe.co/srvyr/) package that provides a [dplyr](https://dplyr.tidyverse.org/)-like syntax for it.
