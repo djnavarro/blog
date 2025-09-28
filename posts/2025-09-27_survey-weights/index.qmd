@@ -3,6 +3,8 @@ title: "Some notes on survey weights"
 description: "An area of statistics in which the author is not strong, and really needs to up her game"
 date: "2025-09-27"
 categories: ["Statistics", "Surveys"]
+image: samuel-girven-CeJuNGDjHAM-unsplash.png
+image-alt: "Picture of weights"
 knitr:
   opts_chunk: 
     dev.args:
