@@ -92,7 +92,7 @@ So now we return to my [GAMLSS post](/posts/2025-09-07_gamlss/) and it's clearer
 
 ## How bad was my mistake?
 
-So let's revisit my GAMLSS modelling for the NHANES data set. The `nhanes` data frame shown below is very similar to the one I used last time, with two substantial differences: I've restricted it to the 10 year period 2009-2018 and added a `survey_wt` column that constructs the appropriate 10-year survey weight for these data:^[You can inspect the code to see the actual calculations but in short, I used the "MEC" weights (weights associated with the medical exam) and - noting that the weights are commensurate over this period, constructed the 10-year weight by dividing the 2-year weight by 5 when the data for 5 2-year cycles are aggregated. The [NHANES study design tutorial](https://wwwn.cdc.gov/nchs/nhanes/tutorials/sampledesign.aspx) goes into details on this.] 
+So let's revisit my GAMLSS modelling for the NHANES data set. The `nhanes` data frame shown below is very similar to the one I used last time, with two substantial differences: I've restricted it to the 10 year period 2009-2018 and added a `survey_wt` column that constructs the appropriate 10-year survey weight for these data:^[You can inspect the code to see the actual calculations but in short, I used the "MEC" weights (weights associated with the data collected via the mobile examination centre) and - noting that the weights are commensurate over this period, constructed the 10-year weight by dividing the 2-year weight by 5 when the data for 5 2-year cycles are aggregated. The [NHANES study design tutorial](https://wwwn.cdc.gov/nchs/nhanes/tutorials/sampledesign.aspx) goes into details on this.] 
 
 
 ```{r}
@@ -400,7 +400,134 @@ Again, thank fuck.
 
 <br><br>
 
-The truth is that I've gotten lucky in my analyses, and so have all the other people who have used NHANES data the same way I have.^[You know who you are. We've all made this mistake once or twice ☺️. 'Tis the nature of the beast if you're working as an applied data analyst at the coalface. You get slammed with client requests that come in faster than you can handle, always with an externally-imposed deadline that you cannot change. You do the best you can in the limited timeframe that is permitted, and that means you focus on the big things, not the small things. We do what we can.] I forgot to take account of something that can matter, and I was fortunate enough that in my specific use cases it didn't matter. But the nature of luck is that you aren't always lucky. It just doesn't work that way. It is not too difficult to come up with examples where the survey weights really do matter, and the rest of the post will be devoted to showing why. 
+The truth is that I've gotten lucky in my analyses, and so have all the other people who have used NHANES data the same way I have.^[You know who you are. We've all made this mistake once or twice ☺️. 'Tis the nature of the beast if you're working as an applied data analyst at the coalface. You get slammed with client requests that come in faster than you can handle, always with an externally-imposed deadline that you cannot change. You do the best you can in the limited timeframe that is permitted. That's all you can do.] I forgot to take account of something that can matter, and I was fortunate enough that in my specific use cases it didn't matter. But the nature of luck is that you aren't always lucky. It just doesn't work that way. It is not too difficult to come up with examples where the survey weights really do matter, and the rest of the post will be devoted to a one such case. My example is a little artificial, but it will suffice. 
+
+For the purposes of this example I'm going to focus on the data from the 2015-2018 period, corresponding to the 2-year release cycles labelled "I" and "J" in the data files. As described in the [sample design report](https://www.cdc.gov/nchs/data/series/sr_02/sr02-184-508.pdf) for this period, the oversampled subgroups during this period were:
+
+> - Hispanic persons;
+> - Non-Hispanic black persons;
+> - Non-Hispanic, non-black Asian persons;
+> - Non-Hispanic white persons and persons of other races and ethnicities at or below 185% of the federal poverty
+level; and
+> - Non-Hispanic white persons and persons of other races and ethnicities aged 0–11 years or 80 years and over.
+
+The language is oddly stilted, presumably because the authors of the report are being admirably cautious and have defined the groups using a set of non-overlapping categories. But if we were to be a little more informal, we'd notice that these are the oversampled demographics:
+
+- Hispanic people
+- Black people
+- Asian people
+- Low-income people
+- Young people
+- Old people
+
+This makes sense for NHANES. I'm not privvy to their decision making process but I think I can guess the logic: Hispanic, Black, and Asian demographics are oversampled for the same reason that Tasmanians are oversampled in my hypothetical survey at the beginning. They are minority demographics for which we might need to boost the sample size to allow group-by-group comparisons to work. In contrast, I suspect lower-income people, younger people, and older people are all oversampled because NHANES is primarily a survey about health and nutrition, and these three groups are at higher risk of concerns than the rest of the population. 
+
+Noting all this, let's construct an example that deliberately exploits the structure of this oversampling in order to show why sample weights matter. One of the questions in the NHANES demographic survey asks about country of birth. The question is (on purpose, I suspect) quite coarse-grained. It just asks if you were born in the United States or not, that's it. Here's a version of the NHANES data that includes a column for `us_born`:
+
+```{r}
+#| label: import-nhanes-2
+#| code-fold: true
+#| code-summary: Code for NHANES data import and preprocessing
+
+# demographics files of relevance 
+demo_files <- fs::dir_ls(fs::path(data_dir, "demo"), regexp = "[IJ]\\.xpt")
+
+# read and process demographics file (selected variables only)
+nhanes_2 <- demo_files |> 
+  purrr::map(\(xx) {
+    dd <- haven::read_xpt(xx) 
+    dd <- dplyr::select(dd, SEQN, RIAGENDR, RIDAGEYR, RIDEXAGM, DMDBORN4, WTINT2YR)
+    dd
+  }) |> 
+  dplyr::bind_rows(.id = "file_demo") |> 
+  dplyr::mutate(file_demo = fs::path_file(file_demo)) |> 
+  dplyr::select(
+    id          = SEQN,
+    sex_s       = RIAGENDR, # sex/gender at screen (1 = M, 2 = F, . = NA)
+    age_yr      = RIDAGEYR, # natal age at screening (years)
+    survey_wt   = WTINT2YR, # 2-year weight for persons with interview data 
+    birth_cnt   = DMDBORN4, # country of birth (1 = US, 2 = other, all other codes NA)
+    file_demo
+  ) |>
+  dplyr::mutate(
+    sex_num = sex_s - 1, # rescale to 0 = M, 1 = F
+    sex_fct = factor(sex_s, levels = 1:2, labels = c("male", "female")),
+    us_born = dplyr::case_when(
+      birth_cnt == 1 ~ TRUE, 
+      birth_cnt == 2 ~ FALSE,
+      TRUE ~ NA
+    ),
+    survey_wt = survey_wt / 2, # convert from 2-year to 4-year weight
+    cohort = dplyr::case_when(
+      file_demo == "DEMO_I.xpt" ~ "2015-2016",
+      file_demo == "DEMO_J.xpt" ~ "2017-2018",
+      TRUE ~ NA
+    )
+  ) |>  
+  dplyr::select(
+    id, sex_fct, age_yr, us_born, survey_wt
+  ) |>
+  dplyr::filter(age_yr < 80)
+
+nhanes_2
+```
+
+Now, what I really ought to do here if I were being careful would be to *also* import variables corresponding to covariates of interest. I could, for example, include those variables that record race and ethnicity information for the NHANES participants. In this case that is *especially* important, because we know that oversampling is related to race and ethnicity, and we also know on the basis of commonsense that country of bith will also be related to race and ethnicity.^[Amusing side-note. It's always worth remembering that race and ethnicity categories aren't "natural categories" in the sense that they map onto true and unyielding permanent categories in the world. When I work for Japanese clients, for example, their data set use race and ethnicity categories that are defined completely differently to how American clients define these things. Australian data sets define these things differently from American data sets also. The somewhat artificial nature of these categories means you should be careful when working with them in data sets, but also (and more entertainingly) lead to hilarious side effects. The formal definition of "Hispanic" as used in a lot of US surveys is constructed around family ancestry, and usually around whether you or your parents were born in a Spanish-speaking country. Hilariously, to my mind, Spain is *not* excluded from the list of countries. So if your family comes from Spain (as mine does on one side) you are "technically" Hispanic, but not if your family comes from Portugal. Yes this is absurd. It means that the US considers me Hispanic. By any common sense understanding of what "Hispanic" refers to, I am not Hispanic. But that is the nature of administrative categories: they are crude.] A well-constructed analysis of `us_born` as an outcome variable should include these as explicit covariates. 
+
+However.
+
+I'm not going to do that. I will, on purpose and with malice aforethought, omit critical variables of interest to the substantive problem. My version of the data set includes only two variables that we might use as predictors: `age_yr` and `sex_fct`. That's all you get. That, and the `survey_wt` variable that will turn out to be critically important because I dropped the other covariates! 
+
+Noting that I've done something malicious in the construction of the data set, let's move forward and look at what happens when we estimate the proportion of US residents who are also US born, stratified by age and sex. There are two versions of this calculation shown, one that uses the survey weights, and another that ignores them:
+
+```{r}
+#| label: birth-country-estimates
+birth_country <- nhanes_2 |> 
+  dplyr::filter(!is.na(us_born)) |> 
+  dplyr::summarise(
+    us_born_unweighted = mean(us_born),
+    us_born_weighted = sum(us_born * survey_wt) / sum(survey_wt),
+    .by = c(age_yr, sex_fct)
+  ) |> 
+  dplyr::arrange(age_yr)
+
+birth_country
+```
+
+Looking at the few rows of this table that you can see in this summary, it doesn't *seem* like there's much difference between the weighted and unweighted estimates. However, this is misleading because the only rows you can see here correspond to very young children, and all US-resident infants are also in fact US-born. So all the numbers are above 95% US-born. But once you start looking at every other age group, the story is going to change. And so without further ado, let's draw a plot...
+
+```{r}
+#| label: plot-birth-country-estimates
+birth_country |> 
+  tidyr::pivot_longer(
+    cols = c(us_born_unweighted, us_born_weighted),
+    names_to = "method",
+    values_to = "us_born", 
+    names_prefix = "us_born_"
+  ) |> 
+  ggplot2::ggplot(ggplot2::aes(
+    x = age_yr,
+    y = us_born,
+    colour = method
+  )) + 
+  ggplot2::geom_smooth(
+    method = "loess",
+    formula = y ~ x
+  ) + 
+  ggplot2::geom_point(size = 2) + 
+  ggplot2::facet_wrap(~sex_fct) +
+  ggplot2::theme(legend.position = "bottom")
+```
+
+I've used loess regression rather than gamlss regression because I honestly do not have the energy to fit more gamlss models, but you'll get roughly the same results with any flexible regression method. 
+
+Looking at the plots, you can see that some aspects to the story remain the same no matter how you analyse the data: the proportion of overseas-born US residents is highest among people aged around 40 or thereabouts. Ingoring the sample weights (red curves) doesn't distort the correct answer (blue curves) in that respect, or at least not by very much. But that's about the only thing it doesn't distort. In every other respect the differences between the blue curves and the red curves are huuuuuuuuuge. The oversampling focuses on groups that are more likely to have been born outside the US, so inevitably it turns out that the sample weights make a huge difference. If you forget to look at the survey weights you'd think that only 60% of middle-aged US residents were born in the US. Taking survey weights into account, however, we see that the correct answer is closer to 80%. That... yeah, that matters. 
+
+In short -- sometimes survey weights don't affect your results, but sometimes they really, really do.
+
+<br>
+
+## Epilogue
 
 
 <br>
