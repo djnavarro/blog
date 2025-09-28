@@ -45,7 +45,7 @@ ggplot2::theme_set(theme_custom())
 
 <br><br>
 
-The worst thing about being a scientist^[Aside from, oh idk, just a lil hypothetical here, an authoritarian government gutting science funding, branding scientists as traitors for researching the wrong topics, threatening researchers, and gluing the cobblestones on the road to fascism in place using the blood and tears of those scientists that have the gall to care about human beings that aren't themselves.] is the fact that no matter how hard you work and no matter how diligent you are in learning skills that fall outside your core discipline, you will on a regular basis get slammed by ["outside context problems"](https://tvtropes.org/pmwiki/pmwiki.php/Main/OutsideContextProblem). You are trained to work within a particular framework, and you are exquisitely skilled at handling situations that fall within the scope of that framework. You are, almost by definition, a *specialist*. The days of the "renaissance polymath" are well and truly behind us, simply because science has advanced so far that no human mind can encompass the whole bloody thing at this point. It's impossible.
+The worst thing about being a scientist^[Aside from, oh idk, just a lil hypothetical here, an authoritarian government gutting science funding, branding scientists as traitors for researching the wrong topics, threatening researchers, and gluing the cobblestones on the road to fascism in place using the blood and tears of those scientists that have the gall to care about human beings that aren't themselves.] is the fact that no matter how hard you work and no matter how diligent you are in learning skills that fall outside your core discipline, you will on a regular basis get slammed by [outside context problems](https://tvtropes.org/pmwiki/pmwiki.php/Main/OutsideContextProblem). You are trained to work within a particular framework, and you are exquisitely skilled at handling situations that fall within the scope of that framework. You are, almost by definition, a *specialist*. The days of the "renaissance polymath" are well and truly behind us, simply because science has advanced so far that no human mind can encompass the whole bloody thing at this point. It's impossible.
 
 This is of course a great triumph for science, but a terrible tragedy for the scientist who will *always* find themselves getting fucked over badly the moment "the thing I was trained for" turns out to require knowledge from "one of the million other things I was not trained for". The cruel reality of science is that we feel like fucking morons every single day because there are so very many traps, tripwires, and landmines strewn across the golden fields of science. 
 
@@ -57,13 +57,6 @@ Not gonna lie, I'm a bit nervous.
 
 <br>
 
-```{r}
-#| label: packages
-#| message: false
-library(gamlss)
-library(ggplot2)
-library(quartose)
-```
 
 ## Survey weights
 
@@ -79,7 +72,28 @@ Oops.
 
 <br>
 
+## What do survey weights do?
+
+So let's start by thinking about what survey weights are supposed to do. Reduced to the simplest description I can think of, the idea is to introduce a correction factor that adjusts for whatever sampling biases are known to exist in the sample. Suppose, for example, an Australian survey were designed with an intentional 5-fold oversampling of Tasmanians. There might be reasons for doing this: the population of New South Wales is about 8,500,000 people, whereas Tasmania has only about 580,000 people or thereabouts. If we sampled Australians purely at random, our survey might not have enough Tasmanians in it to be able to say much about Tasmanian residents. Given the differences in population size, you'd expect to see about 15 residents from New South Wales in the sample for every Tasmanian. That could be a problem if we have a need to understand state-by-state differences as well as understand the overall Australian population. Yes, we'd be able to learn about Australia overall, but at the state level we'd learn a lot more about New South Wales and Victoria than we would about Tasmania and South Australia. That's not ideal. 
+
+Given this concern, then, we decide to adopt a 5-fold oversampling of Tasmanians. This means that any *individual* Tasmanian resident is 5x as likely to be included in the survey than any individual resident of New South Wales. We'll still end up with more people from New South Wales (because the actual population difference is 15x not 5x), but the final sample will now only have about 3x as many folks from New South Wales as from Tasmania. It's different, certainly, but we'll now be able to learn the things that we need to learn at the state-by-state level.
+
+The drawback to oversampling Tasmanians, however, is that the sample is now unrepresentative of the nation as a whole. If you want to construct estimates of some quantity for the whole nation, we have to give each NSW resident in the sample 5x the weight that we give to each Tasmanian, in order to correct for the Tasmanian oversampling. This correction factor is the **survey weight**, and it needs to be taken into account when analysing data from our survey. 
+
+To be a little more precise about it, here's the description that the Australian Bureau of Statistics uses to describe survey weights as they apply to the Survey of Income and Housing:
+
+> Weighting is the process of adjusting results from a sample survey to infer results for the total in scope population whether that be persons or households. To do this, a weight is allocated to each sample unit (e.g. a person or a household). The weight is a value which indicates how many population units are represented by the sample unit. The first step in calculating weights for each unit is to assign an initial weight, which is the inverse of the probability of being selected in the survey. For example, if the probability of a household being selected in the survey was 1 in 600, then the household would have an initial weight of 600 (that is, it represents 600 households).
+
+Crudely put, the survey weight is a measure of "how many individuals in the population does this sampled row represent?". In my hypothetical survey with Tasmanian oversampling, each surveyed person from NSW represents 5x as many Australians as each surveyed Tasmanian, and hence those data should weighted 5x as highly when making calculations about Australia as a whole. 
+
+So now we return to my [GAMLSS post](/posts/2025-09-07_gamlss/) and it's clearer why the models I developed weren't ideal: the NHANES data set contains survey weights (in a few different forms, actually) and I forgot to take them into account when fitting my models for population height and weight. In hindsight, it's obvious really.
+
+<br>
+
 ## How bad was my mistake?
+
+So let's revisit my GAMLSS modelling for the NHANES data set. The `nhanes` data frame shown below is very similar to the one I used last time, with two substantial differences: I've restricted it to the 10 year period 2009-2018 and added a `survey_wt` column that constructs the appropriate 10-year survey weight for these data:^[You can inspect the code to see the actual calculations but in short, I used the "MEC" weights (weights associated with the medical exam) and - noting that the weights are commensurate over this period, constructed the 10-year weight by dividing the 2-year weight by 5 when the data for 5 2-year cycles are aggregated. The [NHANES study design tutorial](https://wwwn.cdc.gov/nchs/nhanes/tutorials/sampledesign.aspx) goes into details on this.] 
+
 
 ```{r}
 #| label: import-nhanes
@@ -98,9 +112,10 @@ length_to_height <- function(length_cm) {
   length_cm - 1.06
 }
 
-# all demographics and body measurement files
-demo_files <- fs::dir_ls(fs::path(data_dir, "demo"))
-bmx_files <- fs::dir_ls(fs::path(data_dir, "bmx"))
+# all demographics and body measurement files for the 5 two-year cycles
+# spanning the decade from 2009 to 2018
+demo_files <- fs::dir_ls(fs::path(data_dir, "demo"), regexp = "[FGHIJ]\\.xpt")
+bmx_files <- fs::dir_ls(fs::path(data_dir, "bmx"), regexp = "[FGHIJ]\\.xpt")
 
 # read demographics file (selected variables only)
 demos <- demo_files |> 
@@ -156,6 +171,7 @@ nhanes <- bmxes |>
       !is.na(length_cm_e) ~ length_to_height(length_cm_e), # or convert length
       TRUE ~ NA_real_, # else missing
     ),
+    survey_wt = survey_wt / 5, # convert from 2-year to 10-year weight
     cohort = dplyr::case_when(
       file_bmx == "BMX.xpt"   & file_demo == "DEMO.xpt"   ~ "1999-2000",
       file_bmx == "BMX_B.xpt" & file_demo == "DEMO_B.xpt" ~ "2001-2002",
@@ -200,36 +216,40 @@ nhanes <- nhanes |>
 nhanes
 ```
 
+Happily for us, the `gamlss::gamlss()` function contains a `weights` argument that we can use to take the survey weights into account during the estimation process. Noting this, let's fit a model for height by age, similar to what I did in my GAMLSS post. This time around I'll do it in two wats, one version using the weights and another version ignoring the weights. Here's what we get:
+
 ```{r}
 #| label: gamlss-fit
 #| code-fold: true
 #| code-summary: Code for GAMLSS model fitting
+#| results: asis
 
 height_unweighted_file <- fs::path(post_dir, "nhanes", "output", "height_unweighted.rds")
 height_weighted_file   <- fs::path(post_dir, "nhanes", "output", "height_weighted.rds")
 
+pb <- gamlss::pb
 rerun <- FALSE 
 if (rerun) {
 
   # unweighted model for height by age
-  height_unweighted <- gamlss(
+  height_unweighted <- gamlss::gamlss(
     formula       = height_cm ~ pb(age_mn),
     sigma.formula = ~pb(age_mn),
     nu.formula    = ~1,
     tau.formula   = ~1,
     data    = nhanes,
-    family  = BCPE
+    family  = gamlss.dist::BCPE
   )
 
   # unweighted model for height by age
-  height_weighted <- gamlss(
+  height_weighted <- gamlss::gamlss(
     formula       = height_cm ~ pb(age_mn),
     sigma.formula = ~pb(age_mn),
     nu.formula    = ~1,
     tau.formula   = ~1,
     data    = nhanes,
     weights = survey_wt,
-    family  = BCPE
+    family  = gamlss.dist::BCPE
   )
 
   saveRDS(height_unweighted, file = height_unweighted_file)
@@ -246,13 +266,11 @@ height_mod <- list(
   unweighted = height_unweighted,
   weighted = height_weighted
 )
+
+quartose::quarto_tabset(height_mod, level = 3)
 ```
 
-```{r}
-#| label: show-gamlss
-#| results: asis
-quarto_tabset(height_mod, level = 3)
-```
+Now let's draw the quantile curves that come out of both versions of the model fitting exercise. Thankfully for us, they look very, very similar:
 
 ```{r}
 #| label: predict-quantiles
@@ -290,11 +308,11 @@ predict_pars <- dplyr::bind_rows(
 
 predict_quantiles <- predict_pars |>
   dplyr::mutate(
-    q05 = qBCPE(.05, mu = mu, sigma = sigma, nu = nu, tau = tau),
-    q25 = qBCPE(.25, mu = mu, sigma = sigma, nu = nu, tau = tau),
-    q50 = qBCPE(.50, mu = mu, sigma = sigma, nu = nu, tau = tau),
-    q75 = qBCPE(.75, mu = mu, sigma = sigma, nu = nu, tau = tau),
-    q95 = qBCPE(.95, mu = mu, sigma = sigma, nu = nu, tau = tau),
+    q05 = gamlss.dist::qBCPE(.05, mu = mu, sigma = sigma, nu = nu, tau = tau),
+    q25 = gamlss.dist::qBCPE(.25, mu = mu, sigma = sigma, nu = nu, tau = tau),
+    q50 = gamlss.dist::qBCPE(.50, mu = mu, sigma = sigma, nu = nu, tau = tau),
+    q75 = gamlss.dist::qBCPE(.75, mu = mu, sigma = sigma, nu = nu, tau = tau),
+    q95 = gamlss.dist::qBCPE(.95, mu = mu, sigma = sigma, nu = nu, tau = tau),
     age_yr = age_mn / 12
   )
 
@@ -327,6 +345,7 @@ ggplot2::ggplot() +
   ggplot2::theme(legend.position = "bottom")
 ```
 
+To illustrate the point slightly more precisely, the graphs below plot the quantiles estimated from the weighted model directly against those estimated by from the unweighted model. When drawn like this, the two models are indistinguishable:
 
 ```{r}
 #| label: predict-quantiles-2
@@ -347,7 +366,7 @@ predict_quantiles_compare |>
 
 Well thank fuck. 
 
-There **are** systematic differences between the unweighted and weighted models, which show up the moment we plot the *difference* between the two versions of the model on the y-axis, but... note the scale of the y-axis. Even for adults, where you might worry that systematic oversampling in NHANES might start to make a difference, the differences between the two models are never larger than a 2cm discrepancy:
+Now, this is not to say that the models are literally identical. There **are** systematic differences between the unweighted and weighted models, which show up the moment if we plot the differences between the two versions of the model on the y-axis, but the key thing here is to pay attention to the scale of the y-axis. Even for adults, where you might worry that systematic oversampling in NHANES might start to make a difference, the differences between the two models are never larger than a 2cm discrepancy:
 
 ```{r}
 #| label: predict-quantiles-residuals-age
@@ -365,25 +384,23 @@ predict_quantiles_compare |>
   ggplot2::geom_point(size = 1) 
 ```
 
-
-
-I did fuck up, yes. But thankfully the discrepancies between what the correctly weighted model predicts and what my original unweighted model predicts are fairly small. In the context of the analyses that I described in the original [GAMLSS post](/posts/2025-09-07_gamlss/) and -- much more importantly -- the real world analyses in which I've used an unweighted model when I should have used a weighted model, the scale of the discrepancy is so small that it won't affect any of the "downstream" analyses. I'm not going to have to send an emergency mea culpa to any regulatory agency. In the context at hand for most pharmacometric simulations of expected drug exposure, something like this amounts to a mere rounding error and will not have even the slightest effect on the conclusions anyone draws from the data.
+This makes clear that I did make a mistake -- that part is still true -- but thankfully the discrepancies between what the correctly weighted model predicts and what my original unweighted model predicts are pretty small. In the context of the analyses that I described in the original [GAMLSS post](/posts/2025-09-07_gamlss/) and -- much more importantly -- the real world analyses in which I've used an unweighted model when I should have used a weighted model, the scale of the discrepancy is so small that it won't affect any of the "downstream" analyses. I'm not going to have to send an emergency mea culpa to anyone. The conclusions of my analyses won't change.
 
 Again, thank fuck.
 
-But.
+<br>
 
-The truth is that I've gotten lucky in my analyses, and so have all the other pharmacometricans who have used NHANES data the same way I have.^[You know who you are. We've all made this mistake once or twice ☺️. 'Tis the nature of the beast if you're working as an applied pharmacometrician at the coalface. You get slammed with client requests that come in faster than you can handle, always with a regulator-imposed deadline that you cannot change. You do the best you can in the limited timeframe that is permitted, and that means you focus on the big things, not the small things. In some contexts survey weights can be big things and you need to care, but in the context of pharmacometric simulations that rely on CDC data to predict height/weight by age/sex, it's mostly a small thing. Even I am not so anal-retentive as to think we should waste a regulators time over something like this. And honey do I have stories about what I can retain in my ass.] I forgot to take account of something that does matter, and I was fortunate enough that the scale of the mistake is so trivial that nobody who works with this kind of data in the real world would care. But the nature of luck is that you aren't always lucky. It just doesn't work that way. It is not too difficult to come up with examples where the survey weights really do matter, and the rest of the post will be devoted to showing why. 
+## Survey weights matter
 
-
-## Survey weights really do matter
-
-🧠 : So we're done now, right? You've made your public mea culpa, you've outlined the reasons why the specific worry doesn't matter much in the contexts we've had to do this kind of work. Very diligent of us. Much proud. Very detail. Et cetera. We can stop now, yes? We've done our duty admirably, thanks to your whining and panic. It can end now, yes? No more words need to be written?<br>
+🧠 : So we're done now, right? You've made your mea culpa, you've outlined the reasons why the specific worry doesn't alter the inferences that would be made in the contexts we've had to do this kind of work. Very diligent of us. Much proud. Very detail. Et cetera. We can stop now, yes? We've done our duty admirably, thanks to your whining and panic. It can end now, yes? No more words need to be written?<br>
 
 🫀 : ...<br>
 
 🫀 : Okay, about that...<br>
 
+<br><br>
+
+The truth is that I've gotten lucky in my analyses, and so have all the other people who have used NHANES data the same way I have.^[You know who you are. We've all made this mistake once or twice ☺️. 'Tis the nature of the beast if you're working as an applied data analyst at the coalface. You get slammed with client requests that come in faster than you can handle, always with an externally-imposed deadline that you cannot change. You do the best you can in the limited timeframe that is permitted, and that means you focus on the big things, not the small things. We do what we can.] I forgot to take account of something that can matter, and I was fortunate enough that in my specific use cases it didn't matter. But the nature of luck is that you aren't always lucky. It just doesn't work that way. It is not too difficult to come up with examples where the survey weights really do matter, and the rest of the post will be devoted to showing why. 
 
 
 <br>
