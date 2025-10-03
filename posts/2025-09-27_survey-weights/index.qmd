@@ -573,3 +573,20 @@ For a post like this one, where I don't have strong expertise of my own and am w
 - Another resource I found useful is this online book on [how to weight a survey](https://bookdown.org/jespasareig/Book_How_to_weight_a_survey/) by Josep Espasa Reig. One nice thing about this one is that it's an informal walkthrough using examples in R, and it's intended to be readable by social scientists without any much expertise in the area.
 
 - On the software side, here are a few tools I started investigating: the [survey](https://cran.r-project.org/package=survey) R package by Thomas Lumley, and the [srvyr](http://gdfe.co/srvyr/) package that provides a [dplyr](https://dplyr.tidyverse.org/)-like syntax for it.
+
+In addition, after I shared this post on social media several people suggested additional reading material to look at. 
+
+- [David Okunlola](https://www.linkedin.com/in/david-okunlola-2687a239/) pointed me to [this paper on subpopulation analysis](https://journals.sagepub.com/doi/pdf/10.1177/1536867X0800800404)
+- [Carl Pearson](https://carljpearson.com/ux-research-blog/) pointed me to some good discussion on [statsexchange](https://stats.stackexchange.com/questions/57107/use-of-weights-in-svyglm-vs-glm), and to another useful blog post on [different kinds of weights] by Thomas Lumley
+- [Samer Mouksassi](https://www.linkedin.com/in/samer-mouksassi-pharm-d-phd-fcp-571555b/) pointed me to some work that he's done with [longitudinal weights](https://www.page-meeting.org/pdf_assets/2208-HBGDki-PAGEPoster_v20160520-02Mouksassi.pdf)
+- [Brady West](https://www.umich.edu/~bwest) pointed me to this annual review article ["Are survey weights needed"](https://www.annualreviews.org/content/journals/10.1146/annurev-statistics-011516-012958)
+- [Ben Schneider](https://www.practicalsignificance.com/) mentioned Andrew Gelman's ["struggles with survey weights"](https://sites.stat.columbia.edu/gelman/research/published/STS226.pdf) paper and this [reply](https://projecteuclid.org/journals/statistical-science/volume-22/issue-2/Comment-Struggles-with-Survey-Weighting-and-Regression-Modeling/10.1214/088342307000000195.pdf).
+
+[Stas Kolenikov](https://staskolenikov.net/) very kindly shared a treasure trove of great links: 
+
+- [Pfeffermann 1996](https://journals.sagepub.com/doi/10.1177/096228029600500303)
+- [Binder and Roberts 2003](https://onlinelibrary.wiley.com/doi/10.1002/0470867205.ch3)
+- [Heeringa, West, and Berglund](https://smponline.isr.umich.edu/applied-survey-data-analysis/)
+- [A photo of what an NHANES MEC unit looks like](https://content.govdelivery.com/attachments/fancy_images/MNHENNE/2023/01/7078801/picture1_original.jpg)
+
+So... I suppose I have more reading to do
