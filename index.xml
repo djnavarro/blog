@@ -2235,6 +2235,22 @@ font-style: inherit;">"bottom"</span>)</span></code></pre></div>
 <li><p>Another resource I found useful is this online book on <a href="https://bookdown.org/jespasareig/Book_How_to_weight_a_survey/">how to weight a survey</a> by Josep Espasa Reig. One nice thing about this one is that it’s an informal walkthrough using examples in R, and it’s intended to be readable by social scientists without any much expertise in the area.</p></li>
 <li><p>On the software side, here are a few tools I started investigating: the <a href="https://cran.r-project.org/package=survey">survey</a> R package by Thomas Lumley, and the <a href="http://gdfe.co/srvyr/">srvyr</a> package that provides a <a href="https://dplyr.tidyverse.org/">dplyr</a>-like syntax for it.</p></li>
 </ul>
+<p>In addition, after I shared this post on social media several people suggested additional reading material to look at.</p>
+<ul>
+<li><a href="https://www.linkedin.com/in/david-okunlola-2687a239/">David Okunlola</a> pointed me to <a href="https://journals.sagepub.com/doi/pdf/10.1177/1536867X0800800404">this paper on subpopulation analysis</a></li>
+<li><a href="https://carljpearson.com/ux-research-blog/">Carl Pearson</a> pointed me to some good discussion on <a href="https://stats.stackexchange.com/questions/57107/use-of-weights-in-svyglm-vs-glm">statsexchange</a>, and to another useful blog post on [different kinds of weights] by Thomas Lumley</li>
+<li><a href="https://www.linkedin.com/in/samer-mouksassi-pharm-d-phd-fcp-571555b/">Samer Mouksassi</a> pointed me to some work that he’s done with <a href="https://www.page-meeting.org/pdf_assets/2208-HBGDki-PAGEPoster_v20160520-02Mouksassi.pdf">longitudinal weights</a></li>
+<li><a href="https://www.umich.edu/~bwest">Brady West</a> pointed me to this annual review article <a href="https://www.annualreviews.org/content/journals/10.1146/annurev-statistics-011516-012958">“Are survey weights needed”</a></li>
+<li><a href="https://www.practicalsignificance.com/">Ben Schneider</a> mentioned Andrew Gelman’s <a href="https://sites.stat.columbia.edu/gelman/research/published/STS226.pdf">“struggles with survey weights”</a> paper and this <a href="https://projecteuclid.org/journals/statistical-science/volume-22/issue-2/Comment-Struggles-with-Survey-Weighting-and-Regression-Modeling/10.1214/088342307000000195.pdf">reply</a>.</li>
+</ul>
+<p><a href="https://staskolenikov.net/">Stas Kolenikov</a> very kindly shared a treasure trove of great links:</p>
+<ul>
+<li><a href="https://journals.sagepub.com/doi/10.1177/096228029600500303">Pfeffermann 1996</a></li>
+<li><a href="https://onlinelibrary.wiley.com/doi/10.1002/0470867205.ch3">Binder and Roberts 2003</a></li>
+<li><a href="https://smponline.isr.umich.edu/applied-survey-data-analysis/">Heeringa, West, and Berglund</a></li>
+<li><a href="https://content.govdelivery.com/attachments/fancy_images/MNHENNE/2023/01/7078801/picture1_original.jpg">A photo of what an NHANES MEC unit looks like</a></li>
+</ul>
+<p>So… I suppose I have more reading to do</p>
 
 
 </section>
@@ -23469,7 +23485,7 @@ background-color: null;
 font-style: inherit;">expand =</span><span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">5</span>)</span></code></pre></div>
-<div class="cell column-page quarto-layout-panel" data-layout-nrow="1" data-layout-align="center">
+<div class="cell column-page quarto-layout-panel" data-layout-align="center" data-layout-nrow="1">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -23731,7 +23747,7 @@ background-color: null;
 font-style: inherit;">max_colours =</span> <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">5</span>)</span></code></pre></div>
-<div class="cell column-page quarto-layout-panel" data-layout-nrow="1" data-layout-align="center">
+<div class="cell column-page quarto-layout-panel" data-layout-align="center" data-layout-nrow="1">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -23764,7 +23780,7 @@ background-color: null;
 font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">geom_segment</span>())</span></code></pre></div>
-<div class="cell column-page quarto-layout-panel" data-layout-nrow="1" data-layout-align="center">
+<div class="cell column-page quarto-layout-panel" data-layout-align="center" data-layout-nrow="1">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -24045,7 +24061,7 @@ font-style: inherit;">+</span> texture</span>
 <span id="cb19-2">base <span class="sc" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">+</span> mask</span></code></pre></div>
-<div class="cell column-page quarto-layout-panel" data-layout-nrow="1" data-layout-align="center">
+<div class="cell column-page quarto-layout-panel" data-layout-align="center" data-layout-nrow="1">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -24206,7 +24222,7 @@ background-color: null;
 font-style: inherit;">"content"</span>, <span class="st" style="color: #20794D;
 background-color: null;
 font-style: inherit;">"mask"</span>)</span></code></pre></div>
-<div class="cell column-page quarto-layout-panel" data-layout-nrow="1" data-layout-align="center">
+<div class="cell column-page quarto-layout-panel" data-layout-align="center" data-layout-nrow="1">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -24547,7 +24563,7 @@ font-style: inherit;">-</span><span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">150</span></span>
 <span id="cb30-11">  )</span></code></pre></div>
-<div class="cell column-page quarto-layout-panel" data-layout-nrow="1" data-layout-align="center">
+<div class="cell column-page quarto-layout-panel" data-layout-align="center" data-layout-nrow="1">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -27104,7 +27120,7 @@ background-color: null;
 font-style: inherit;">|&gt;</span> <span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">develop</span>()</span></code></pre></div>
-<div class="cell column-screen-inset quarto-layout-panel" data-layout-align="center" data-layout-ncol="3">
+<div class="cell column-screen-inset quarto-layout-panel" data-layout-ncol="3" data-layout-align="center">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -27524,7 +27540,7 @@ background-color: null;
 font-style: inherit;">seed =</span> <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">1969</span>)</span></code></pre></div>
-<div class="cell column-screen-inset quarto-layout-panel" data-layout-align="center" data-layout-ncol="3">
+<div class="cell column-screen-inset quarto-layout-panel" data-layout-ncol="3" data-layout-align="center">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -27582,7 +27598,7 @@ background-color: null;
 font-style: inherit;">seed =</span> <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">3</span>)</span></code></pre></div>
-<div class="cell column-screen-inset quarto-layout-panel" data-layout-align="center" data-layout-ncol="3">
+<div class="cell column-screen-inset quarto-layout-panel" data-layout-ncol="3" data-layout-align="center">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -28340,7 +28356,7 @@ font-style: inherit;">+</span> </span>
 <span id="cb34-8">  <span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">theme_void</span>()</span></code></pre></div>
-<div class="cell quarto-layout-panel" data-layout-align="center" data-layout-ncol="2">
+<div class="cell quarto-layout-panel" data-layout-ncol="2" data-layout-align="center">
 <div class="quarto-layout-row">
 <div class="cell-output cell-output-stdout quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
 <pre><code># A tibble: 1,001 × 3
@@ -29058,7 +29074,7 @@ background-color: null;
 font-style: inherit;">voronoi_baroque</span>(<span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">17</span>, shake)</span></code></pre></div>
-<div class="cell column-screen-inset quarto-layout-panel" data-layout-align="center" data-layout-ncol="3">
+<div class="cell column-screen-inset quarto-layout-panel" data-layout-ncol="3" data-layout-align="center">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -39341,7 +39357,7 @@ background-color: null;
 font-style: inherit;">shaded_ridge_art</span>(<span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">102</span>) </span></code></pre></div>
-<div class="cell column-screen-inset quarto-layout-panel" data-layout-align="center" data-layout-ncol="3">
+<div class="cell column-screen-inset quarto-layout-panel" data-layout-ncol="3" data-layout-align="center">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -39776,7 +39792,7 @@ background-color: null;
 font-style: inherit;">shaded_ice_floe</span>(<span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">102</span>)</span></code></pre></div>
-<div class="cell column-screen-inset quarto-layout-panel" data-layout-align="center" data-layout-ncol="3">
+<div class="cell column-screen-inset quarto-layout-panel" data-layout-ncol="3" data-layout-align="center">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -39816,7 +39832,7 @@ background-color: null;
 font-style: inherit;">shaded_ice_floe</span>(<span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">108</span>)</span></code></pre></div>
-<div class="cell column-screen-inset quarto-layout-panel" data-layout-align="center" data-layout-ncol="3">
+<div class="cell column-screen-inset quarto-layout-panel" data-layout-ncol="3" data-layout-align="center">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -42180,7 +42196,7 @@ background-color: null;
 font-style: inherit;">5</span>); <span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">show_polygon</span>(polygon)</span></code></pre></div>
-<div class="cell column-screen-inset quarto-layout-panel" data-layout-align="center" data-layout-ncol="3">
+<div class="cell column-screen-inset quarto-layout-panel" data-layout-ncol="3" data-layout-align="center">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -43074,7 +43090,7 @@ background-color: null;
 font-style: inherit;">alpha =</span> .<span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">2</span>)</span></code></pre></div>
-<div class="cell column-screen-inset quarto-layout-panel" data-layout-align="center" data-layout-ncol="4">
+<div class="cell column-screen-inset quarto-layout-panel" data-layout-ncol="4" data-layout-align="center">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 25.0%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -43440,7 +43456,7 @@ background-color: null;
 font-style: inherit;">fill =</span> <span class="st" style="color: #20794D;
 background-color: null;
 font-style: inherit;">"#d4379005"</span>) </span></code></pre></div>
-<div class="cell column-screen quarto-layout-panel" data-layout-align="center" data-layout-ncol="3">
+<div class="cell column-screen quarto-layout-panel" data-layout-ncol="3" data-layout-align="center">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -44535,7 +44551,7 @@ background-color: null;
 font-style: inherit;">seed =</span> <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">451</span>)</span></code></pre></div>
-<div class="cell quarto-layout-panel page-columns page-full" data-layout-align="center" data-layout-ncol="1">
+<div class="cell quarto-layout-panel page-columns page-full" data-layout-ncol="1" data-layout-align="center">
 <div class="quarto-layout-row page-full">
 <div class="quarto-layout-cell page-columns page-full" style="flex-basis: 100.0%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center page-columns page-full">
@@ -45125,7 +45141,7 @@ background-color: null;
 font-style: inherit;">seed =</span> <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">666</span>)</span></code></pre></div>
-<div class="cell quarto-layout-panel page-columns page-full" data-layout-align="center" data-layout-ncol="1">
+<div class="cell quarto-layout-panel page-columns page-full" data-layout-ncol="1" data-layout-align="center">
 <div class="quarto-layout-row page-full">
 <div class="quarto-layout-cell page-columns page-full" style="flex-basis: 100.0%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center page-columns page-full">
@@ -45646,7 +45662,7 @@ background-color: null;
 font-style: inherit;">include_graphics</span>(<span class="st" style="color: #20794D;
 background-color: null;
 font-style: inherit;">"animated-perlin-heart-789.gif"</span>)</span></code></pre></div>
-<div class="cell column-screen-inset quarto-layout-panel" data-layout-align="center" data-layout-ncol="3">
+<div class="cell column-screen-inset quarto-layout-panel" data-layout-ncol="3" data-layout-align="center">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -46107,7 +46123,7 @@ background-color: null;
 font-style: inherit;">stroke =</span> <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">0</span>)</span></code></pre></div>
-<div class="cell quarto-layout-panel" data-layout-align="center" data-layout-ncol="2">
+<div class="cell quarto-layout-panel" data-layout-ncol="2" data-layout-align="center">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -58074,7 +58090,7 @@ font-style: inherit;">+</span> </span>
 background-color: null;
 font-style: inherit;">theme_void</span>()</span>
 <span id="cb10-35">}</span></code></pre></div>
-<div class="cell column-screen-inset quarto-layout-panel" data-layout-align="center" data-layout-ncol="3">
+<div class="cell column-screen-inset quarto-layout-panel" data-layout-ncol="3" data-layout-align="center">
 
 </div>
 <p>Because I’ve written this thing down as a function, I’m now free to reuse it to create multiple pieces. Varying the <code>seed</code> argument creates new pieces that don’t differ in any systematic way from one another, whereas varying <code>n</code> and <code>palette</code> changes the number of segments plotted and the colour scheme used.</p>
@@ -58141,7 +58157,7 @@ background-color: null;
 font-style: inherit;">"black"</span>, <span class="st" style="color: #20794D;
 background-color: null;
 font-style: inherit;">"white"</span>))</span></code></pre></div>
-<div class="cell column-screen-inset quarto-layout-panel" data-layout-align="center" data-layout-ncol="3">
+<div class="cell column-screen-inset quarto-layout-panel" data-layout-ncol="3" data-layout-align="center">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -58416,7 +58432,7 @@ background-color: null;
 font-style: inherit;">seed =</span> <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">4</span>))</span></code></pre></div>
-<div class="cell column-screen-inset quarto-layout-panel" data-layout-align="center" data-layout-ncol="3">
+<div class="cell column-screen-inset quarto-layout-panel" data-layout-ncol="3" data-layout-align="center">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -58499,7 +58515,7 @@ background-color: null;
 font-style: inherit;">seed =</span> <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">1</span>))</span></code></pre></div>
-<div class="cell column-screen-inset quarto-layout-panel" data-layout-align="center" data-layout-ncol="3">
+<div class="cell column-screen-inset quarto-layout-panel" data-layout-ncol="3" data-layout-align="center">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -58872,7 +58888,7 @@ background-color: null;
 font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">geom_point</span>()</span></code></pre></div>
-<div class="cell column-screen-inset quarto-layout-panel" data-layout-align="center" data-layout-ncol="3">
+<div class="cell column-screen-inset quarto-layout-panel" data-layout-ncol="3" data-layout-align="center">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
