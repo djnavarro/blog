@@ -3,6 +3,12 @@ title: "Two githubs, one laptop"
 description: "Some notes on managing multiple sets of github credentials on the one machine"
 categories: [Git]
 date: "2025-12-08"
+image: dual-essence.png
+image-alt: "Artwork depicting two faces blended together"
+knitr:
+  opts_chunk: 
+    dev.args:
+      bg: "#00000000"
 --- 
 
 <!--------------- my typical setup ----------------->
@@ -95,5 +101,6 @@ Resources I looked up while solving this problem:
 - This [github help page](https://docs.github.com/en/account-and-profile/how-tos/account-management/managing-multiple-accounts#contributing-to-multiple-accounts-using-https-and-personal-access-tokens) covers much of what I needed to know
 - This [stack overflow](https://stackoverflow.com/questions/3860112/multiple-github-accounts-on-the-same-computer) thread talks a lot about the specific issues involved in this problem
 - More generally, this [gist](https://gist.github.com/pksunkara/988716) and the associated comment thread has a really comprehensive overview of the settings that can be customised via `.gitignore`
+
 
 
