@@ -15,7 +15,148 @@
 <link>https://blog.djnavarro.net/</link>
 </image>
 <generator>quarto-1.5.52</generator>
-<lastBuildDate>Fri, 26 Sep 2025 14:00:00 GMT</lastBuildDate>
+<lastBuildDate>Sun, 07 Dec 2025 13:00:00 GMT</lastBuildDate>
+<item>
+  <title>Two githubs, one laptop</title>
+  <dc:creator>Danielle Navarro</dc:creator>
+  <link>https://blog.djnavarro.net/posts/2025-12-08_two-github-one-laptop/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<!--------------- my typical setup ----------------->
+<!--------------- post begins here ----------------->
+<p>I have for some time been plagued by an annoyance in the git configuration on my various computers: I am but one woman, but I have multiple github accounts. There are reasons for this, of course. For the purposes of my personal projects and my open source work, I am <a href="https://github.com/djnavarro/"><code>djnavarro</code></a> on github. In that capacity, the <code>djnavarro</code> identity has access to various private repositories, and am authorised to push to various repositories that I don’t own. However, in my work life I am also <a href="https://github.com/certara-dnavarro"><code>certara-dnavarro</code></a>, and the <code>certara-dnavarro</code> professional identity has access to private repositories that (for entirely sensible reasons) are not accessible to <code>djnavarro</code>. It’s a fairly strict separation of roles, but working in a highly regulated industry I’ve come to appreciate this level of caution, and I enforce it on my end too: I don’t grant <code>certara-dnavarro</code> access to private repositories owned by <code>djnavarro</code>. The former is a work account, and there is no reason it should have access to private repositories that I create in my capacity as a private citizen and are unrelated to the terms of my employment. Neither I nor my employer want that! For the most part, these two identities are cleanly separated: on my work laptop I authenticate via a github PAT associated with <code>certara-dnavarro</code>, and on my personal laptop I authenticate via a github PAT for <code>djnavarro</code>. The separation works nicely, and we are all very happy with this arrangement.</p>
+<p>Mostly.</p>
+<p>However, because life is complicated there are edge cases. For example, I might be asked in my professional role (and therefore on my work laptop) to make contributions to an open source project, and because that project is open source and non-proprietary, the maintainers of the project would often prefer to grant permissions to me via the <code>djnavarro</code> account rather than the <code>certara-dnavarro</code> account. A scenario like this one sits in the messy grey zone where it is neither possible nor desirable to enforce a <a href="https://en.wikipedia.org/wiki/Severance_%28TV_series%29">Severance</a> like separation between work life and personal life. Sometimes the professional is personal, and the personal is professional also. Accordingly, I find myself in a situation where I need my git configuration to support two different github accounts on the same machine.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://blog.djnavarro.net/posts/2025-12-08_two-github-one-laptop/dual-essence.png" class="img-fluid figure-img"></p>
+<figcaption><a href="https://avatars.alphacoders.com/avatars/view/374897">“Dual essence”</a>, by <a href="https://alphacoders.com/users/profile/304276/RyMishRy">RyMishRy</a></figcaption>
+</figure>
+</div>
+<section id="defining-my-problem" class="level2">
+<h2 class="anchored" data-anchor-id="defining-my-problem">Defining my problem</h2>
+<p>The first part of solving any problem is being precise about the nature of the problem to be solved. In this case it’s important because I want to think about the following issues:</p>
+<ul>
+<li>The configuration on my work laptop should reflect the needs of my work life; the configuration on my personal laptop should not.</li>
+<li>There is a difference between git and github: some aspects to the configuration need to be specific to github, other aspects will hold generally for git.</li>
+<li>In the same sense that my github-for-work-purposes is different to my github-for-personal-purposes, my work email is different to my personal email. My git commits on a work project should be tied to my work email, and commits on a personal project should be tied to my personal email.</li>
+</ul>
+<p>Taking these considerations into account, what I really want is something like this:</p>
+<ul>
+<li>There should be an appropriate default. By default, everything git-related that happens on my work laptop should be configured to use my work github account and my work email. Only in special cases should this be altered.</li>
+<li>There should be a clear indicator that the default has been overridden. It should be obvious just by looking at my file system at work when a repo is tied to <code>djnavarro</code> rather than <code>certara-dnavarro</code>. Nobody (most importantly me) should ever be uncertain about which identity is used. To that end, <em>only</em> those repositories that exist within a “special” folder on my work laptop should be allowed to use the <code>djnavarro</code> github identity. This matters because of the critical importance of managing commercial-in-confidence data: if I am working in a repo that uses the <code>djnavarro</code> identity, confidential data cannot be referenced, and I need a very clear marker of where that boundary sits. On my work machine, the <code>djnavarro</code> github identity is strictly constrained: my work machine is allowed to know the bare minimum about that github account that is required for me to work on open source projects that are tied to my employment. Nothing more than that is allowed: again, this serves the interests of both myself and my employer. Separation of powers is a key principle in professional life just as much as it is critical in law.</li>
+</ul>
+</section>
+<section id="solving-my-problem" class="level2">
+<h2 class="anchored" data-anchor-id="solving-my-problem">Solving my problem</h2>
+<p>The solution I adopted looks like this. I have two <code>.gitconfig</code> files on my machine, one located in the usual location (i.e., <code>~/.gitconfig</code>) that defines my default configuration, and another located in a specific folder for which I want a different configuration to apply (i.e., <code>~/github/djnavarro</code>). The “default” configuration looks something like this:</p>
+<div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><span class="ex" style="color: null;
+background-color: null;
+font-style: inherit;">[user]</span></span>
+<span id="cb1-2">  <span class="ex" style="color: null;
+background-color: null;
+font-style: inherit;">name</span> = Danielle Navarro</span>
+<span id="cb1-3">  <span class="ex" style="color: null;
+background-color: null;
+font-style: inherit;">email</span> = my.work.email@organisation.com</span>
+<span id="cb1-4"><span class="ex" style="color: null;
+background-color: null;
+font-style: inherit;">[core]</span></span>
+<span id="cb1-5">  <span class="ex" style="color: null;
+background-color: null;
+font-style: inherit;">excludesFile</span> = ~/.gitignore</span>
+<span id="cb1-6"><span class="ex" style="color: null;
+background-color: null;
+font-style: inherit;">[init]</span></span>
+<span id="cb1-7">  <span class="ex" style="color: null;
+background-color: null;
+font-style: inherit;">defaultBranch</span> = main</span>
+<span id="cb1-8"><span class="ex" style="color: null;
+background-color: null;
+font-style: inherit;">[credential</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"https://github.com"</span>]</span>
+<span id="cb1-9">  <span class="ex" style="color: null;
+background-color: null;
+font-style: inherit;">useHttpPath</span> = true</span>
+<span id="cb1-10">  <span class="ex" style="color: null;
+background-color: null;
+font-style: inherit;">username</span> = certara-dnavarro</span>
+<span id="cb1-11"><span class="ex" style="color: null;
+background-color: null;
+font-style: inherit;">[includeIf</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"gitdir:~/github/djnavarro/"</span>]</span>
+<span id="cb1-12">  <span class="ex" style="color: null;
+background-color: null;
+font-style: inherit;">path</span> = ~/github/djnavarro/.gitconfig</span></code></pre></div>
+<p>When I execute any git command, this is the file that git will look at for my configuration settings. There are two key features in this file, solving two different aspects to the problem:</p>
+<ul>
+<li><p>The first thing it does is set <code>useHttpPath = true</code> for my github credentials. What this means is that when git supplies my credentials to github via my credential manager, it does so on a “per-repository” basis. The first time I attempt to push to github, I am prompted to login to github and must supply the relevant PAT (i.e., I use a token associated with <code>djnavarro</code> for some repositories, and a token associated with <code>certara-dnavarro</code> for others). Fortunately, I have login details and PATs for both accounts stored in my password manager, so this is not an onerous task. Importantly, I only have do to this once for each repository.</p></li>
+<li><p>The second thing it does is add the <code>includeIf</code> field. If I am invoking git from <code>~/github/djnavarro</code> or any of its subdirectories, the additional settings from <code>~/github/djnavarro/.gitconfig</code> will be appended. This solves a different aspect to the problem. Notice that according to my “default” <code>.gitconfig</code> file, my git commits are linked to my work email address. That’s a “git thing” and not a “github thing”. By using the <code>includeIf</code> field, I am able to override this for any repository that lives within the special folder.</p></li>
+</ul>
+<p>Noting this, the settings in my “special” git configuration file look something like this:</p>
+<div class="sourceCode" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><span class="ex" style="color: null;
+background-color: null;
+font-style: inherit;">[user]</span></span>
+<span id="cb2-2">  <span class="ex" style="color: null;
+background-color: null;
+font-style: inherit;">name</span> = Danielle Navarro</span>
+<span id="cb2-3">  <span class="ex" style="color: null;
+background-color: null;
+font-style: inherit;">email</span> = my.personal.email@provider.org</span>
+<span id="cb2-4"><span class="ex" style="color: null;
+background-color: null;
+font-style: inherit;">[credential</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"https://github.com"</span>]</span>
+<span id="cb2-5">  <span class="ex" style="color: null;
+background-color: null;
+font-style: inherit;">useHttpPath</span> = true</span>
+<span id="cb2-6">  <span class="ex" style="color: null;
+background-color: null;
+font-style: inherit;">username</span> = djnavarro</span></code></pre></div>
+<p>These settings override those in the default git configuration. For repositories that live within the special directory, git knows to use my personal email address and my personal github account.</p>
+<p>To my surprise this setup worked exactly as I hoped, without the usual horrors I encounter when trying to customise anything about git. It’s a minor inconvenience needing to reauthenticate with github for each new repository, but since it’s a one-off thing for each repo I’m not too fussed. The only real downside I’ve found so far is that this configuration seems to confuse the <code>usethis::git_sitrep()</code> function in R, but everything else works really smoothly.</p>
+<p>Neat.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://blog.djnavarro.net/posts/2025-12-08_two-github-one-laptop/dual-faces.png" class="img-fluid figure-img"></p>
+<figcaption><a href="https://avatars.alphacoders.com/avatars/view/374893">“Dual faces”</a>, by <a href="https://alphacoders.com/users/profile/304276/RyMishRy">RyMishRy</a></figcaption>
+</figure>
+</div>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<p>Resources I looked up while solving this problem:</p>
+<ul>
+<li>This <a href="https://docs.github.com/en/account-and-profile/how-tos/account-management/managing-multiple-accounts#contributing-to-multiple-accounts-using-https-and-personal-access-tokens">github help page</a> covers much of what I needed to know</li>
+<li>This <a href="https://stackoverflow.com/questions/3860112/multiple-github-accounts-on-the-same-computer">stack overflow</a> thread talks a lot about the specific issues involved in this problem</li>
+<li>More generally, this <a href="https://gist.github.com/pksunkara/988716">gist</a> and the associated comment thread has a really comprehensive overview of the settings that can be customised via <code>.gitignore</code></li>
+</ul>
+
+
+</section>
+
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" id="quarto-reuse"><h2 class="anchored quarto-appendix-heading">Reuse</h2><div class="quarto-appendix-contents"><div><a rel="license" href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></div></div></section><section class="quarto-appendix-contents" id="quarto-citation"><h2 class="anchored quarto-appendix-heading">Citation</h2><div><div class="quarto-appendix-secondary-label">BibTeX citation:</div><pre class="sourceCode code-with-copy quarto-appendix-bibtex"><code class="sourceCode bibtex">@online{navarro2025,
+  author = {Navarro, Danielle},
+  title = {Two Githubs, One Laptop},
+  date = {2025-12-08},
+  url = {https://blog.djnavarro.net/posts/2025-12-08_two-github-one-laptop/},
+  langid = {en}
+}
+</code></pre><div class="quarto-appendix-secondary-label">For attribution, please cite this work as:</div><div id="ref-navarro2025" class="csl-entry quarto-appendix-citeas">
+Navarro, Danielle. 2025. <span>“Two Githubs, One Laptop.”</span>
+December 8, 2025. <a href="https://blog.djnavarro.net/posts/2025-12-08_two-github-one-laptop/">https://blog.djnavarro.net/posts/2025-12-08_two-github-one-laptop/</a>.
+</div></div></section></div> ]]></description>
+  <category>Git</category>
+  <guid>https://blog.djnavarro.net/posts/2025-12-08_two-github-one-laptop/</guid>
+  <pubDate>Sun, 07 Dec 2025 13:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Some notes on survey weights</title>
   <dc:creator>Danielle Navarro</dc:creator>
@@ -23485,7 +23626,7 @@ background-color: null;
 font-style: inherit;">expand =</span><span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">5</span>)</span></code></pre></div>
-<div class="cell column-page quarto-layout-panel" data-layout-align="center" data-layout-nrow="1">
+<div class="cell column-page quarto-layout-panel" data-layout-nrow="1" data-layout-align="center">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -23747,7 +23888,7 @@ background-color: null;
 font-style: inherit;">max_colours =</span> <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">5</span>)</span></code></pre></div>
-<div class="cell column-page quarto-layout-panel" data-layout-align="center" data-layout-nrow="1">
+<div class="cell column-page quarto-layout-panel" data-layout-nrow="1" data-layout-align="center">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -23780,7 +23921,7 @@ background-color: null;
 font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">geom_segment</span>())</span></code></pre></div>
-<div class="cell column-page quarto-layout-panel" data-layout-align="center" data-layout-nrow="1">
+<div class="cell column-page quarto-layout-panel" data-layout-nrow="1" data-layout-align="center">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -24061,7 +24202,7 @@ font-style: inherit;">+</span> texture</span>
 <span id="cb19-2">base <span class="sc" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">+</span> mask</span></code></pre></div>
-<div class="cell column-page quarto-layout-panel" data-layout-align="center" data-layout-nrow="1">
+<div class="cell column-page quarto-layout-panel" data-layout-nrow="1" data-layout-align="center">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -24222,7 +24363,7 @@ background-color: null;
 font-style: inherit;">"content"</span>, <span class="st" style="color: #20794D;
 background-color: null;
 font-style: inherit;">"mask"</span>)</span></code></pre></div>
-<div class="cell column-page quarto-layout-panel" data-layout-align="center" data-layout-nrow="1">
+<div class="cell column-page quarto-layout-panel" data-layout-nrow="1" data-layout-align="center">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -24563,7 +24704,7 @@ font-style: inherit;">-</span><span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">150</span></span>
 <span id="cb30-11">  )</span></code></pre></div>
-<div class="cell column-page quarto-layout-panel" data-layout-align="center" data-layout-nrow="1">
+<div class="cell column-page quarto-layout-panel" data-layout-nrow="1" data-layout-align="center">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -27120,7 +27261,7 @@ background-color: null;
 font-style: inherit;">|&gt;</span> <span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">develop</span>()</span></code></pre></div>
-<div class="cell column-screen-inset quarto-layout-panel" data-layout-ncol="3" data-layout-align="center">
+<div class="cell column-screen-inset quarto-layout-panel" data-layout-align="center" data-layout-ncol="3">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -27540,7 +27681,7 @@ background-color: null;
 font-style: inherit;">seed =</span> <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">1969</span>)</span></code></pre></div>
-<div class="cell column-screen-inset quarto-layout-panel" data-layout-ncol="3" data-layout-align="center">
+<div class="cell column-screen-inset quarto-layout-panel" data-layout-align="center" data-layout-ncol="3">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -27598,7 +27739,7 @@ background-color: null;
 font-style: inherit;">seed =</span> <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">3</span>)</span></code></pre></div>
-<div class="cell column-screen-inset quarto-layout-panel" data-layout-ncol="3" data-layout-align="center">
+<div class="cell column-screen-inset quarto-layout-panel" data-layout-align="center" data-layout-ncol="3">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -28356,7 +28497,7 @@ font-style: inherit;">+</span> </span>
 <span id="cb34-8">  <span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">theme_void</span>()</span></code></pre></div>
-<div class="cell quarto-layout-panel" data-layout-ncol="2" data-layout-align="center">
+<div class="cell quarto-layout-panel" data-layout-align="center" data-layout-ncol="2">
 <div class="quarto-layout-row">
 <div class="cell-output cell-output-stdout quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
 <pre><code># A tibble: 1,001 × 3
@@ -29074,7 +29215,7 @@ background-color: null;
 font-style: inherit;">voronoi_baroque</span>(<span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">17</span>, shake)</span></code></pre></div>
-<div class="cell column-screen-inset quarto-layout-panel" data-layout-ncol="3" data-layout-align="center">
+<div class="cell column-screen-inset quarto-layout-panel" data-layout-align="center" data-layout-ncol="3">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -39357,7 +39498,7 @@ background-color: null;
 font-style: inherit;">shaded_ridge_art</span>(<span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">102</span>) </span></code></pre></div>
-<div class="cell column-screen-inset quarto-layout-panel" data-layout-align="center" data-layout-ncol="3">
+<div class="cell column-screen-inset quarto-layout-panel" data-layout-ncol="3" data-layout-align="center">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -39792,7 +39933,7 @@ background-color: null;
 font-style: inherit;">shaded_ice_floe</span>(<span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">102</span>)</span></code></pre></div>
-<div class="cell column-screen-inset quarto-layout-panel" data-layout-align="center" data-layout-ncol="3">
+<div class="cell column-screen-inset quarto-layout-panel" data-layout-ncol="3" data-layout-align="center">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -39832,7 +39973,7 @@ background-color: null;
 font-style: inherit;">shaded_ice_floe</span>(<span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">108</span>)</span></code></pre></div>
-<div class="cell column-screen-inset quarto-layout-panel" data-layout-align="center" data-layout-ncol="3">
+<div class="cell column-screen-inset quarto-layout-panel" data-layout-ncol="3" data-layout-align="center">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -42196,7 +42337,7 @@ background-color: null;
 font-style: inherit;">5</span>); <span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">show_polygon</span>(polygon)</span></code></pre></div>
-<div class="cell column-screen-inset quarto-layout-panel" data-layout-align="center" data-layout-ncol="3">
+<div class="cell column-screen-inset quarto-layout-panel" data-layout-ncol="3" data-layout-align="center">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -43090,7 +43231,7 @@ background-color: null;
 font-style: inherit;">alpha =</span> .<span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">2</span>)</span></code></pre></div>
-<div class="cell column-screen-inset quarto-layout-panel" data-layout-align="center" data-layout-ncol="4">
+<div class="cell column-screen-inset quarto-layout-panel" data-layout-ncol="4" data-layout-align="center">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 25.0%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -43456,7 +43597,7 @@ background-color: null;
 font-style: inherit;">fill =</span> <span class="st" style="color: #20794D;
 background-color: null;
 font-style: inherit;">"#d4379005"</span>) </span></code></pre></div>
-<div class="cell column-screen quarto-layout-panel" data-layout-align="center" data-layout-ncol="3">
+<div class="cell column-screen quarto-layout-panel" data-layout-ncol="3" data-layout-align="center">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -44551,7 +44692,7 @@ background-color: null;
 font-style: inherit;">seed =</span> <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">451</span>)</span></code></pre></div>
-<div class="cell quarto-layout-panel page-columns page-full" data-layout-align="center" data-layout-ncol="1">
+<div class="cell quarto-layout-panel page-columns page-full" data-layout-ncol="1" data-layout-align="center">
 <div class="quarto-layout-row page-full">
 <div class="quarto-layout-cell page-columns page-full" style="flex-basis: 100.0%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center page-columns page-full">
@@ -45141,7 +45282,7 @@ background-color: null;
 font-style: inherit;">seed =</span> <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">666</span>)</span></code></pre></div>
-<div class="cell quarto-layout-panel page-columns page-full" data-layout-align="center" data-layout-ncol="1">
+<div class="cell quarto-layout-panel page-columns page-full" data-layout-ncol="1" data-layout-align="center">
 <div class="quarto-layout-row page-full">
 <div class="quarto-layout-cell page-columns page-full" style="flex-basis: 100.0%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center page-columns page-full">
@@ -45662,7 +45803,7 @@ background-color: null;
 font-style: inherit;">include_graphics</span>(<span class="st" style="color: #20794D;
 background-color: null;
 font-style: inherit;">"animated-perlin-heart-789.gif"</span>)</span></code></pre></div>
-<div class="cell column-screen-inset quarto-layout-panel" data-layout-align="center" data-layout-ncol="3">
+<div class="cell column-screen-inset quarto-layout-panel" data-layout-ncol="3" data-layout-align="center">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -46123,7 +46264,7 @@ background-color: null;
 font-style: inherit;">stroke =</span> <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">0</span>)</span></code></pre></div>
-<div class="cell quarto-layout-panel" data-layout-align="center" data-layout-ncol="2">
+<div class="cell quarto-layout-panel" data-layout-ncol="2" data-layout-align="center">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -53921,7 +54062,7 @@ font-style: inherit;">|&gt;</span></span>
 <span id="cb41-3">  <span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">plot_painted_canvas</span>()</span></code></pre></div>
-<div class="cell quarto-layout-panel" data-layout-nrow="1" data-layout-align="center">
+<div class="cell quarto-layout-panel" data-layout-align="center" data-layout-nrow="1">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 100.0%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -54003,7 +54144,7 @@ font-style: inherit;">|&gt;</span></span>
 <span id="cb43-3">  <span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">plot_painted_canvas</span>()</span></code></pre></div>
-<div class="cell quarto-layout-panel" data-layout-nrow="1" data-layout-align="center">
+<div class="cell quarto-layout-panel" data-layout-align="center" data-layout-nrow="1">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 100.0%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -54144,7 +54285,7 @@ background-color: null;
 font-style: inherit;">plot_painted_canvas</span>(<span class="at" style="color: #657422;
 background-color: null;
 font-style: inherit;">palette =</span> pal)</span></code></pre></div>
-<div class="cell quarto-layout-panel" data-layout-nrow="1" data-layout-align="center">
+<div class="cell quarto-layout-panel" data-layout-align="center" data-layout-nrow="1">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 100.0%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -54525,7 +54666,7 @@ font-style: inherit;">+</span> </span>
 <span id="cb49-13">  <span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">coord_equal</span>()</span></code></pre></div>
-<div class="cell column-screen-inset quarto-layout-panel" data-layout-nrow="1" data-layout-align="center">
+<div class="cell column-screen-inset quarto-layout-panel" data-layout-align="center" data-layout-nrow="1">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -55185,7 +55326,7 @@ font-style: inherit;">+</span> </span>
 <span id="cb61-13">  <span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">coord_equal</span>() </span></code></pre></div>
-<div class="cell column-screen-inset quarto-layout-panel" data-layout-nrow="1" data-layout-align="center">
+<div class="cell column-screen-inset quarto-layout-panel" data-layout-align="center" data-layout-nrow="1">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -57496,2444 +57637,6 @@ Ambient.”</span> December 19, 2024. <a href="https://blog.djnavarro.net/posts/
   <guid>https://blog.djnavarro.net/posts/2024-12-19_art-from-code-2/</guid>
   <pubDate>Wed, 18 Dec 2024 13:00:00 GMT</pubDate>
   <media:content url="https://blog.djnavarro.net/posts/2024-12-19_art-from-code-2/ridged.png" medium="image" type="image/png" height="144" width="144"/>
-</item>
-<item>
-  <title>Art from code I: Generative art with R</title>
-  <dc:creator>Danielle Navarro</dc:creator>
-  <link>https://blog.djnavarro.net/posts/2024-12-18_art-from-code-1/</link>
-  <description><![CDATA[ 
-
-
-
-
-
-<!--------------- my typical setup ----------------->
-<!--------------- post begins here ----------------->
-<p><em>A couple of years ago I gave an invited workshop called <a href="https://art-from-code.netlify.app">art from code</a> at the 2022 rstudio::conf (now posit::conf) conference. As part of the workshop I wrote a lengthy series of notes on how to make generative art using R, all of which were released under a CC-BY licence. For a while now I’d been thinking I should do something with these notes. I considered writing a book, but in all honesty I don’t have the spare capacity for a side-project of that scale these days. I can barely keep up with the workload at my day job as it is. So instead, I’ve decided that I’d port them over to this site as a series of blog posts. In doing so I’ve made a deliberate decision not to modify the original content too much (nobody loves it when an artist tries to “improve” the original, after all). All I’ve done is update the code to accommodate package changes since 2022, and some minor edits so that the images are legible when embedded in this blog (which is light-themed, and the original was dark-theme). Other than that, I’ve left it alone. This is the first post in that series.</em></p>
-<ul>
-<li><a href="../../posts/2024-12-18_art-from-code-1/">Prelude</a></li>
-<li><a href="../../posts/2024-12-19_art-from-code-2/">Spatial tricks with ambient</a></li>
-<li><a href="../../posts/2024-12-20_art-from-code-3/">Polygon tricks</a></li>
-<li><a href="../../posts/2024-12-21_art-from-code-4/">Shading tricks</a></li>
-<li><a href="../../posts/2024-12-22_art-from-code-5/">Iterated function systems</a></li>
-<li><a href="../../posts/2024-12-23_art-from-code-6/">Tiles and tessellations</a></li>
-<li><a href="../../posts/2024-12-24_art-from-code-7/">Pixel filters</a></li>
-</ul>
-<section id="introduction" class="level2">
-<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
-<p>Once upon a time I was a professor.</p>
-<p>It’s a dull story, and I won’t bore you with the details, but I mention it because at the start of almost every class I taught I’d have to go being by explaining the terminology. Want to teach a class on human learning? You better start out by saying what you think “learning” means. Want to teach people about computational models of cognition? The students would like you to start by giving a working definition of “computation”, “model” and “cognition”. It doesn’t really matter if the definitions aren’t <em>good</em> definitions (spoiler: they’re always terrible), but it helps people to start out from something that looks vaguely like stable ground to stand on.</p>
-<p>So. If this is going to be a workshop on generative art in R, I should say something about what I mean by “R”, “art”, and “generative”. Of the three terms, R is the easiest one to define: it’s a programming language used primarily for statistical computing and data science. To anyone starting this workshop I don’t really have to give a lot more detail than that. We all know (roughly speaking) what R is: we wouldn’t be participating at rstudio::conf if we didn’t! For the current purposes all I’ll say is that I’m talking about R the way it is typically used in 2022: R doesn’t just mean “base R”. It also includes “tidyverse”. It includes the sprawling ecosystem of packages on CRAN and GitHub. Often that includes code written in other languages: thanks to packages like Rcpp and cpp11 it’s not at all unusual for computationally intensive subroutines to be farmed out to C++ code, and not written in “pure” R. Supplying bindings to libraries written in other languages is a well-established tradition in R: in this workshop we shall not be purists. If we can do a thing by working with R code, then we’re doing something with R even if other languages are doing some of the work for us.</p>
-<p>Okay, so that’s “R”. What about “art” – what counts as “art”? In this essay I will…</p>
-<p>…just kidding. I do not have the arrogance to pretend that I know what art is. Art is pretty (except when it isn’t). Art is created (except when it is found). Art is intentional (except when it is accidental). Art makes you think (sometimes, not always). Art relies on artist skill (except when you send GPT-3 generated text to DALL-E). Art is uniquely human (no it isn’t). Art… yeah, look, I have no idea what art is. Personally, I like to make pretty things from code that appeal to my aesthetic sensibilities, and that’s good enough for me.</p>
-<p>Which brings me to the third word: “generative”. When we talk about “generative art”, what do we mean? The term isn’t particularly well defined, but what we typically (not always) mean is that generative art is computational artwork that incorporates some source of noise, disorder, or randomness (natural or artificial) into the artistic process itself. It’s a kind of perverse artistry: almost always we’re working with computers, one of the most precise and flexible tools that humans have devised, and yet we are deliberately making the products of the machine unpredictable, unknowable even to the artist.</p>
-<p>We are writing code that makes unpredictable paintings.</p>
-</section>
-<section id="art-is-theft" class="level2">
-<h2 class="anchored" data-anchor-id="art-is-theft">Art is theft</h2>
-<p>Okay that’s quite enough preamble. Let’s stop talking and start making some art! Following the oft-repeated dictum that “art is theft” I want to begin with an act of wholesale thievery. I am going to co-opt tools that were created for serious data science purposes and repurpose them for art. If you’re in this room with me then you already know these tools by name: ggplot2 is an R package designed for data visualisation; dplyr is designed for data manipulation; tibble is designed for data representation. None of these packages were created for artists. They’re practical tools designed for statisticians, data scientists, analysts, and other knowledge workers.</p>
-<p>Fuck it. Let’s steal them. Sorry Hadley.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(ggplot2)</span>
-<span id="cb1-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(tibble)</span></code></pre></div>
-</div>
-<p>Let’s start with a data visualisation exercise that most R users have encountered at one time or another: creating a scatterplot. The ggplot2 package supplies the tediously-overused <code>mpg</code> data set that… I don’t know, it has something to do with cars, I think? I don’t drive and I am trying very hard to pretend I never learned anything about the internal combustion engine. The point here is that we have a data set. From the perspective of the generative artist our main concern is that it’s a table that contains some numbers and text organised in a table:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1">mpg</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 234 × 11
-   manufacturer model  displ  year   cyl trans drv     cty   hwy fl    class
-   &lt;chr&gt;        &lt;chr&gt;  &lt;dbl&gt; &lt;int&gt; &lt;int&gt; &lt;chr&gt; &lt;chr&gt; &lt;int&gt; &lt;int&gt; &lt;chr&gt; &lt;chr&gt;
- 1 audi         a4       1.8  1999     4 auto… f        18    29 p     comp…
- 2 audi         a4       1.8  1999     4 manu… f        21    29 p     comp…
- 3 audi         a4       2    2008     4 manu… f        20    31 p     comp…
- 4 audi         a4       2    2008     4 auto… f        21    30 p     comp…
- 5 audi         a4       2.8  1999     6 auto… f        16    26 p     comp…
- 6 audi         a4       2.8  1999     6 manu… f        18    26 p     comp…
- 7 audi         a4       3.1  2008     6 auto… f        18    27 p     comp…
- 8 audi         a4 qu…   1.8  1999     4 manu… 4        18    26 p     comp…
- 9 audi         a4 qu…   1.8  1999     4 auto… 4        16    25 p     comp…
-10 audi         a4 qu…   2    2008     4 manu… 4        20    28 p     comp…
-# ℹ 224 more rows</code></pre>
-</div>
-</div>
-<p>We need not concern ourselves with why <code>displ</code> refers to engine displacement nor what that term even means. Nor do we have to care about how <code>hwy</code> represents highway mileage or how <code>drv</code> has something to do with gears. Really, this is not our concern. As generative artists we think of these as raw sources of structure and randomness.</p>
-<p>Here’s what I mean. As a data scientist, I might draw a plot like this:</p>
-<div class="cell" data-layout-align="center">
-<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1">mpg <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">|&gt;</span></span>
-<span id="cb4-2">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">ggplot</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">aes</span>(displ, hwy, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">colour =</span> drv)) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> </span>
-<span id="cb4-3">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">geom_point</span>()</span></code></pre></div>
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="https://blog.djnavarro.net/posts/2024-12-18_art-from-code-1/index_files/figure-html/familiar-ggplot-1.png" class="img-fluid quarto-figure quarto-figure-center figure-img" width="1800"></p>
-</figure>
-</div>
-</div>
-</div>
-<p>On the x-axis I’ve plotted one column in the table, on the y-axis I’ve plotted another column, and each row in the table shows up as a dot. A third row of the table is used to supply the colour. Because ggplot2 is designed to support interpretation, the resulting plot has a collection of guides, legends and other labels. In the world of data visualisation, these things are essential for helping the viewer understand how the picture relates to the thing in the world (cars, apparently) that the data pertains to.</p>
-<p>As an artist, I cannot be bothered with such dull practicalities. Let’s get rid of all of them, and – violating all sorts of data visualisation best practices – I’m going to vary the size of the dots in a way that doesn’t help anyone make sense of the data:</p>
-<div class="cell" data-layout-align="center">
-<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1">mpg <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">|&gt;</span></span>
-<span id="cb5-2">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">ggplot</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">aes</span>(displ, hwy, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">colour =</span> drv, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">size =</span> cyl)) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> </span>
-<span id="cb5-3">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">geom_point</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">show.legend =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">FALSE</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> </span>
-<span id="cb5-4">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">theme_void</span>() <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> </span>
-<span id="cb5-5">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">scale_color_brewer</span>()</span></code></pre></div>
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="https://blog.djnavarro.net/posts/2024-12-18_art-from-code-1/index_files/figure-html/tweak-ggplot-1.png" class="img-fluid quarto-figure quarto-figure-center figure-img" width="1800"></p>
-</figure>
-</div>
-</div>
-</div>
-<p>Once we strip away the practical purpose of the data visualisation, we’re left with something that isn’t quite so easy to interpret, but is… well, it’s kind of pretty, right? There’s an overall structure to the scatterplot. The colours, shapes, and positions of the data don’t necessarily tell an easily-understood story about the real world anymore but they’re quite pleasing to look at.</p>
-<p>Viewing ggplot2 through this lens opens up a new world of possibilities. Inspired by Leland Wilkinson’s book on the subject, Hadley Wickham wrote the package to provide a <em>grammar</em> of graphics: it supplies a collection of transformation and composition rules that we can use to construct mappings between data (that represent a thing in the world) and images (that our visual systems can quickly interpret). Those rules are not arbitrary: they’re created to make our lives as data analysts easier. But we can repurpose them. The grammatical rules of human language did not evolve to serve the needs of poets, but the poets use them anyway. So too we as visual artists can (and will) reuse the grammar of graphics for artistic purposes. A few minor tweaks gives us this:</p>
-<div class="cell" data-layout-align="center">
-<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1">mpg <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">|&gt;</span></span>
-<span id="cb6-2">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">ggplot</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">aes</span>(displ, hwy, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">colour =</span> drv)) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> </span>
-<span id="cb6-3">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">geom_point</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">show.legend =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">FALSE</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">size =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">4</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> </span>
-<span id="cb6-4">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">geom_point</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">show.legend =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">FALSE</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">size =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">colour =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"#222222"</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> </span>
-<span id="cb6-5">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">coord_polar</span>() <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> </span>
-<span id="cb6-6">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">theme_void</span>() <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> </span>
-<span id="cb6-7">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">scale_color_brewer</span>()</span></code></pre></div>
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="https://blog.djnavarro.net/posts/2024-12-18_art-from-code-1/index_files/figure-html/tweak-ggplot-more-1.png" class="img-fluid quarto-figure quarto-figure-center figure-img" width="1800"></p>
-</figure>
-</div>
-</div>
-</div>
-<p>And let’s be honest. At this point the image has very little to do with cars. Sure, I’m using the <code>mpg</code> data to drive the process, but as far as I’m concerned it’s really just a source of raw numbers. As a generative artist these numbers are my raw materials, but I’m not too fussed about exactly how I came into possession of these numbers.</p>
-<div id="exercise-mpg-art" class="callout callout-style-default callout-important no-icon callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon no-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Exercise
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>Try it yourself! Using nothing other than ggplot2 and the <code>mpg</code> data set, create your own artwork. Don’t take too long: 3 minutes at the absolute most! See what you can come up with in that time!</p>
-</div>
-</div>
-<p>I could just have easily created my own raw materials. As a statistical programming language R comes equipped with a very sophisticated collection of tools for generating pseudorandom numbers with various distributions. I can tap into this whenever I like but in a lot of cases I don’t need anything more fancy than the <code>runif()</code> function. Uniformly distributed random numbers are perfectly adequate for many purposes. Let’s make some:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>)</span>
-<span id="cb7-2">n <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">50</span></span>
-<span id="cb7-3">dat <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">tibble</span>(</span>
-<span id="cb7-4">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">x0 =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">runif</span>(n),</span>
-<span id="cb7-5">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">y0 =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">runif</span>(n),</span>
-<span id="cb7-6">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">x1 =</span> x0 <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">runif</span>(n, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">min =</span> <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-</span>.<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">max =</span> .<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>),</span>
-<span id="cb7-7">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">y1 =</span> y0 <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">runif</span>(n, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">min =</span> <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-</span>.<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">max =</span> .<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>),</span>
-<span id="cb7-8">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">shade =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">runif</span>(n), </span>
-<span id="cb7-9">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">width =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">runif</span>(n)</span>
-<span id="cb7-10">)</span>
-<span id="cb7-11">dat</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 50 × 6
-       x0     y0    x1      y1 shade width
-    &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt;   &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
- 1 0.266  0.478  0.327  0.523  0.268 0.762
- 2 0.372  0.861  0.313  0.884  0.219 0.933
- 3 0.573  0.438  0.481  0.370  0.517 0.471
- 4 0.908  0.245  1.11   0.226  0.269 0.604
- 5 0.202  0.0707 0.255  0.0709 0.181 0.485
- 6 0.898  0.0995 0.784 -0.0282 0.519 0.109
- 7 0.945  0.316  0.796  0.328  0.563 0.248
- 8 0.661  0.519  0.652  0.349  0.129 0.499
- 9 0.629  0.662  0.799  0.573  0.256 0.373
-10 0.0618 0.407  0.101  0.292  0.718 0.935
-# ℹ 40 more rows</code></pre>
-</div>
-</div>
-<p>Yup. Those look like a bunch of numbers. They do not mean anything to me. They’re entirely deterministic – at least in the sense that the <code>set.seed()</code> command ensures that the pseudorandom number will always generate the same random numbers with this code – but the underlying generator is utterly without structure. As the outside observer I am entirely indifferent about whether I should use <code>set.seed(1)</code> or <code>set.seed(234534)</code>. Both versions of this command will initialise the state of the random number generator in a way that ensures that <code>runif()</code> generates pure noise. Under the hood there are some fancy definitions of what we mean by “randomness” and “noise”, but this is not the place to talk about <a href="https://en.wikipedia.org/wiki/Algorithmically_random_sequence">Martin-Löf randomness</a>. For our purposes it is sufficient to agree that the output of a uniform random number generator is meaningless noise, no matter what seed value we supply.</p>
-<p>The key point is this: the input is garbage. Garbage in…</p>
-<div class="cell" data-layout-align="center">
-<div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1">dat <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">|&gt;</span> </span>
-<span id="cb9-2">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">ggplot</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">aes</span>(</span>
-<span id="cb9-3">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">x =</span> x0,</span>
-<span id="cb9-4">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">y =</span> y0,</span>
-<span id="cb9-5">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">xend =</span> x1,</span>
-<span id="cb9-6">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">yend =</span> y1,</span>
-<span id="cb9-7">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">colour =</span> shade,</span>
-<span id="cb9-8">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">linewidth =</span> width</span>
-<span id="cb9-9">  )) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb9-10">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">geom_segment</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">show.legend =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">FALSE</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb9-11">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">coord_polar</span>() <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb9-12">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">scale_y_continuous</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">expand =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>)) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb9-13">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">scale_x_continuous</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">expand =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>)) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> </span>
-<span id="cb9-14">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">scale_color_viridis_c</span>() <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> </span>
-<span id="cb9-15">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">scale_linewidth</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">range =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10</span>)) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> </span>
-<span id="cb9-16">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">theme_void</span>()</span></code></pre></div>
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="https://blog.djnavarro.net/posts/2024-12-18_art-from-code-1/index_files/figure-html/coord-polar-1.png" class="img-fluid quarto-figure quarto-figure-center figure-img" width="1800"></p>
-</figure>
-</div>
-</div>
-</div>
-<p>…art out?</p>
-<p>Not that anyone has ever asked my opinion on the topic, but this is what I think generative art really is. An automated process that takes garbage as input and creates unpredictably delightful outputs – sometimes with a little helpful human oversight and curation – is a generative art system. It is fundamentally a process of making something from nothing. Art from the void. Treasure from trash. Signal from noise. You get the idea.</p>
-</section>
-<section id="technique" class="level2 page-columns page-full">
-<h2 class="anchored" data-anchor-id="technique">Technique</h2>
-<p>At this point we have some sense of what our creative endeavour is all about, which leads naturally to questions about technique. One thing I’ve learned – about art, yes, but I think it holds quite generally – is that you can’t teach “personal style”. Everyone has their own tastes and preferences, and it makes no sense whatsoever to tell someone else who, what, or how they should love. I have no business telling you what is pleasing and what isn’t. I’m not arrogant enough to try.</p>
-<p>What I can do, however, is talk about the tools and coding practices that have made it easier for me to create the things that I think have aesthetic value. When art schools talk about teaching “technique”, this is what I think they mean. The point isn’t to dictate what you create, but to give you skills that will let you make a reality from the thing you envision. Fundamentally, this is a workshop on <em>technique</em>, in this sense of the term.</p>
-<p>Let’s start with a core principle: code reuse. The entire point of generative art is that we’re turning trash into treasure, and trash is not a scarce resource. If you can write code to create one beautiful thing, the same code should be reusable to create many beautiful things. This “reuse principle” means that the substantive work of writing generative art code is almost always a matter of writing functions. Functions are beautiful…</p>
-<p>…but they are opinionated. A function exists if (and only if) you intend to reuse it. In the ideal case, a function is a thing that makes sense on its own terms and – as a consequence – you might reuse it in many different contexts. Every scientific programming language since the dawn of time has included functions like <code>exp()</code> and <code>log()</code> because scientists will always reuse these functions. Exponents and logarithms are scientifically-reusable concepts.</p>
-<p>So what counts as an artistically-reusable concept? Well, at a minimum, the definition of an artistic <em>system</em> is a reusable concept. Suppose I want to create many art pieces that are “in the same style” as the piece I created above. To do that, I could wrap my code in a function that I’ll call <code>polar_art()</code>:</p>
-<div class="sourceCode cell-code" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1">polar_art <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">function</span>(seed, n, palette) {</span>
-<span id="cb10-2">  </span>
-<span id="cb10-3">  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># set the state of the random number generator</span></span>
-<span id="cb10-4">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">set.seed</span>(seed)</span>
-<span id="cb10-5">  </span>
-<span id="cb10-6">  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># data frame containing random values for </span></span>
-<span id="cb10-7">  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># aesthetics we might want to use in the art</span></span>
-<span id="cb10-8">  dat <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">tibble</span>(</span>
-<span id="cb10-9">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">x0 =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">runif</span>(n),</span>
-<span id="cb10-10">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">y0 =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">runif</span>(n),</span>
-<span id="cb10-11">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">x1 =</span> x0 <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">runif</span>(n, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">min =</span> <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-</span>.<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">max =</span> .<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>),</span>
-<span id="cb10-12">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">y1 =</span> y0 <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">runif</span>(n, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">min =</span> <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-</span>.<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">max =</span> .<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>),</span>
-<span id="cb10-13">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">shade =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">runif</span>(n), </span>
-<span id="cb10-14">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">width =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">runif</span>(n)</span>
-<span id="cb10-15">  )</span>
-<span id="cb10-16">  </span>
-<span id="cb10-17">  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># plot segments in various colours, using </span></span>
-<span id="cb10-18">  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># polar coordinates and a gradient palette</span></span>
-<span id="cb10-19">  dat <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">|&gt;</span> </span>
-<span id="cb10-20">    <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">ggplot</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">aes</span>(</span>
-<span id="cb10-21">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">x =</span> x0,</span>
-<span id="cb10-22">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">y =</span> y0,</span>
-<span id="cb10-23">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">xend =</span> x1,</span>
-<span id="cb10-24">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">yend =</span> y1,</span>
-<span id="cb10-25">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">colour =</span> shade,</span>
-<span id="cb10-26">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">linewidth =</span> width</span>
-<span id="cb10-27">    )) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb10-28">    <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">geom_segment</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">show.legend =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">FALSE</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb10-29">    <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">coord_polar</span>() <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb10-30">    <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">scale_y_continuous</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">expand =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>)) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb10-31">    <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">scale_x_continuous</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">expand =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>)) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> </span>
-<span id="cb10-32">    <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">scale_colour_gradientn</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">colours =</span> palette) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> </span>
-<span id="cb10-33">    <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">scale_linewidth</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">range =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10</span>)) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> </span>
-<span id="cb10-34">    <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">theme_void</span>()</span>
-<span id="cb10-35">}</span></code></pre></div>
-<div class="cell column-screen-inset quarto-layout-panel" data-layout-align="center" data-layout-ncol="3">
-
-</div>
-<p>Because I’ve written this thing down as a function, I’m now free to reuse it to create multiple pieces. Varying the <code>seed</code> argument creates new pieces that don’t differ in any systematic way from one another, whereas varying <code>n</code> and <code>palette</code> changes the number of segments plotted and the colour scheme used.</p>
-<div class="sourceCode cell-code" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">polar_art</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">seed =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">n =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">500</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">palette =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"antiquewhite"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"orange"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"bisque"</span>))</span>
-<span id="cb11-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">polar_art</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">seed =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">n =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">500</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">palette =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"red"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"black"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"white"</span>))</span>
-<span id="cb11-3"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">polar_art</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">seed =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">n =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">50</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">palette =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"red"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"black"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"white"</span>))</span></code></pre></div>
-<div class="cell column-screen-inset quarto-layout-panel" data-layout-align="center" data-layout-ncol="3">
-<div class="quarto-layout-row">
-<div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="https://blog.djnavarro.net/posts/2024-12-18_art-from-code-1/index_files/figure-html/art-functions-1.png" class="img-fluid quarto-figure quarto-figure-center figure-img" width="1800"></p>
-</figure>
-</div>
-</div>
-<div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="https://blog.djnavarro.net/posts/2024-12-18_art-from-code-1/index_files/figure-html/art-functions-2.png" class="img-fluid quarto-figure quarto-figure-center figure-img" width="1800"></p>
-</figure>
-</div>
-</div>
-<div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="https://blog.djnavarro.net/posts/2024-12-18_art-from-code-1/index_files/figure-html/art-functions-3.png" class="img-fluid quarto-figure quarto-figure-center figure-img" width="1800"></p>
-</figure>
-</div>
-</div>
-</div>
-</div>
-<div id="exercise-polar-art" class="callout callout-style-default callout-important no-icon callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon no-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Exercises
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<ol type="1">
-<li><p>In the materials there is a file called <code>polar_art.R</code> that contains a copy of the <code>polar_art()</code> function. Open it and use the <code>polar_art()</code> function to generate your own pieces. Try changing the <code>seed</code>, <code>n</code>, and the <code>palette</code> to create a variety of different pieces.</p></li>
-<li><p>Create a new file called <code>polar_art_02.R</code> that contains the <code>polar_art()</code> function. In the new file, try modifying the <code>polar_art()</code> function itself to see if you can create your own new system.</p></li>
-<li><p>Something to think about: Usually in data science we try to avoid naming our files <code>my_file_version_1</code>, <code>my_file_version_2</code>, etc, and instead we place files under version control using git. Yet here I am in an art context, apparently giving the advice to fall back on the old-fashioned system of naming files with version numbers. Why might I be doing that?</p></li>
-</ol>
-</div>
-</div>
-</section>
-<section id="colour" class="level2 page-columns page-full">
-<h2 class="anchored" data-anchor-id="colour">Colour</h2>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb12" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(scales)</span>
-<span id="cb12-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(ggthemes)</span></code></pre></div>
-</div>
-<p>Picking a palette is always tricky, but can often be made simpler because R has so many packages that provides prespecified colour palettes. My usual approach is to use palettes defined by a few colours, and it’s easy to find sites online that make it easy to find colour combinations you like. One of my favourite sites is <a href="https://coolors.co">coolors.co</a>, which you can browse for preselected palettes or use the tools to build your own. For example I might decide that <a href="https://coolors.co/palette/cdb4db-ffc8dd-ffafcc-bde0fe-a2d2ff">this palette</a> is the one I want to use. The site makes it easy to export the hex codes for each colour, so I can cut and paste to get this:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb13" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1">pal <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"#cdb4db"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"#ffc8dd"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"#ffafcc"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"#bde0fe"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"#a2d2ff"</span>)</span></code></pre></div>
-</div>
-<p>The <code>show_col()</code> function from the scales package is a nice way to quickly preview the colours:</p>
-<div class="cell" data-layout-align="center">
-<div class="sourceCode cell-code" id="cb14" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">show_col</span>(pal)</span></code></pre></div>
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="https://blog.djnavarro.net/posts/2024-12-18_art-from-code-1/index_files/figure-html/show-col-1.png" class="img-fluid quarto-figure quarto-figure-center figure-img" width="1800"></p>
-</figure>
-</div>
-</div>
-</div>
-<p>Though there are only five colours in this palette, the <code>polar_art()</code> function uses <code>scales_colour_gradientn()</code> to construct a continuous colour scale from them by linearly interpolating between them. You can do the same thing manually using <code>colorRampPalette()</code>. In the code below I’ve created a new function <code>palette_fn()</code> that will generate a vector of colours that linearly interpolates between the five input colours in <code>pal</code>:</p>
-<div class="cell" data-layout-align="center">
-<div class="sourceCode cell-code" id="cb15" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1">palette_fn <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">colorRampPalette</span>(pal)</span></code></pre></div>
-</div>
-<p>If I need 100 colours distributed along the spectrum defined by <code>pal</code>, all I need to do is this:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb16" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">palette_fn</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">100</span>)</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  [1] "#CDB4DB" "#CFB4DB" "#D1B5DB" "#D3B6DB" "#D5B7DB" "#D7B8DB" "#D9B8DB"
-  [8] "#DBB9DB" "#DDBADB" "#DFBBDB" "#E1BCDB" "#E3BCDB" "#E5BDDB" "#E7BEDC"
- [15] "#E9BFDC" "#EBC0DC" "#EDC0DC" "#EFC1DC" "#F1C2DC" "#F3C3DC" "#F5C4DC"
- [22] "#F7C4DC" "#F9C5DC" "#FBC6DC" "#FDC7DC" "#FFC7DC" "#FFC6DC" "#FFC5DB"
- [29] "#FFC4DA" "#FFC3DA" "#FFC2D9" "#FFC1D8" "#FFC0D8" "#FFBFD7" "#FFBED6"
- [36] "#FFBDD5" "#FFBCD5" "#FFBBD4" "#FFBAD3" "#FFB9D3" "#FFB8D2" "#FFB7D1"
- [43] "#FFB6D1" "#FFB5D0" "#FFB4CF" "#FFB3CF" "#FFB2CE" "#FFB1CD" "#FFB0CD"
- [50] "#FFAFCC" "#FDAFCD" "#FBB1CF" "#F8B3D1" "#F5B5D3" "#F3B7D5" "#F0B9D7"
- [57] "#EDBBD9" "#EBBDDB" "#E8BFDD" "#E5C1DF" "#E3C3E1" "#E0C5E3" "#DDC7E5"
- [64] "#DBC9E7" "#D8CBE9" "#D5CDEB" "#D3CFED" "#D0D1EF" "#CDD3F1" "#CBD5F3"
- [71] "#C8D7F5" "#C5D9F7" "#C3DBF9" "#C0DDFB" "#BDDFFD" "#BCDFFE" "#BBDFFE"
- [78] "#BADEFE" "#B8DDFE" "#B7DDFE" "#B6DCFE" "#B5DCFE" "#B4DBFE" "#B3DBFE"
- [85] "#B2DAFE" "#B1D9FE" "#B0D9FE" "#AFD8FE" "#AED8FE" "#ACD7FE" "#ABD7FE"
- [92] "#AAD6FE" "#A9D5FE" "#A8D5FE" "#A7D4FE" "#A6D4FE" "#A5D3FE" "#A4D3FE"
- [99] "#A3D2FE" "#A2D2FF"</code></pre>
-</div>
-</div>
-<p>Here’s what those colours look like as a smooth palette:</p>
-<div class="cell" data-layout-align="center">
-<div class="sourceCode cell-code" id="cb18" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">image</span>(</span>
-<span id="cb18-2">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">x =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">matrix</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">100</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">ncol =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>), </span>
-<span id="cb18-3">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">palette_fn</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">100</span>),</span>
-<span id="cb18-4">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">useRaster =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">TRUE</span>,</span>
-<span id="cb18-5">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">axes =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">FALSE</span></span>
-<span id="cb18-6">)</span></code></pre></div>
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="https://blog.djnavarro.net/posts/2024-12-18_art-from-code-1/index_files/figure-html/palette-function-1.png" class="img-fluid quarto-figure quarto-figure-center figure-img" width="1800"></p>
-</figure>
-</div>
-</div>
-</div>
-<p>In this example, I took one set of colours from the web to define a palette, but there are many built-in palettes you can select from randomly as part of your generative process. For example, the ggthemes package contains a list called <code>canva_palettes</code>, which contains 150 palettes taken from <a href="https://www.canva.com/colors/color-palettes/">canva.com</a>. For example, here’s one of those palettes</p>
-<div class="cell" data-layout-align="center">
-<div class="sourceCode cell-code" id="cb19" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1">canva_palettes[[<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">101</span>]]</span></code></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] "#4abdac" "#fc4a1a" "#f7b733" "#dfdce3"</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb21" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">show_col</span>(canva_palettes[[<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">101</span>]])</span></code></pre></div>
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="https://blog.djnavarro.net/posts/2024-12-18_art-from-code-1/index_files/figure-html/show-canva-palette-1.png" class="img-fluid quarto-figure quarto-figure-center figure-img" width="1800"></p>
-</figure>
-</div>
-</div>
-</div>
-<p>The fact that we have a list containing 150 different palettes, it’s a simple matter to write a <code>sample_canva()</code> function that samples one of these palettes at random:</p>
-<div class="cell" data-layout-align="center">
-<div class="sourceCode cell-code" id="cb22" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1">sample_canva <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">function</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">seed =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">NULL</span>) {</span>
-<span id="cb22-2">  <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">if</span>(<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">!</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">is.null</span>(seed)) <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">set.seed</span>(seed)</span>
-<span id="cb22-3">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">sample</span>(ggthemes<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">::</span>canva_palettes, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>)[[<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>]]</span>
-<span id="cb22-4">}</span></code></pre></div>
-</div>
-<p>Here’s an example of me using it:</p>
-<div class="sourceCode cell-code" id="cb23" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">polar_art</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">seed =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">n =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">100</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">palette =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">sample_canva</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">seed =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>))</span>
-<span id="cb23-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">polar_art</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">seed =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">n =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">100</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">palette =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">sample_canva</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">seed =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>))</span>
-<span id="cb23-3"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">polar_art</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">seed =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">n =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">100</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">palette =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">sample_canva</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">seed =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">4</span>))</span></code></pre></div>
-<div class="cell column-screen-inset quarto-layout-panel" data-layout-align="center" data-layout-ncol="3">
-<div class="quarto-layout-row">
-<div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="https://blog.djnavarro.net/posts/2024-12-18_art-from-code-1/index_files/figure-html/canva-palettes-1.png" class="img-fluid quarto-figure quarto-figure-center figure-img" width="1800"></p>
-</figure>
-</div>
-</div>
-<div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="https://blog.djnavarro.net/posts/2024-12-18_art-from-code-1/index_files/figure-html/canva-palettes-2.png" class="img-fluid quarto-figure quarto-figure-center figure-img" width="1800"></p>
-</figure>
-</div>
-</div>
-<div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="https://blog.djnavarro.net/posts/2024-12-18_art-from-code-1/index_files/figure-html/canva-palettes-3.png" class="img-fluid quarto-figure quarto-figure-center figure-img" width="1800"></p>
-</figure>
-</div>
-</div>
-</div>
-</div>
-<p>Notice that I’ve set it up in a way that allows me some degree of control over which elements of the image are allowed to vary. In all three images I used the same seed when calling <code>polar_art()</code>, so the random configuration of shapes is identical in all three cases. In contrast, I gave different seeds to the <code>sample_canva()</code> function, so the images have different palettes. The reverse is also possible, producing different configurations with the same colour scheme:</p>
-<div class="sourceCode cell-code" id="cb24" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">polar_art</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">seed =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">n =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">100</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">palette =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">sample_canva</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">seed =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>))</span>
-<span id="cb24-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">polar_art</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">seed =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">6</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">n =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">100</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">palette =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">sample_canva</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">seed =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>))</span>
-<span id="cb24-3"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">polar_art</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">seed =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">7</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">n =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">100</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">palette =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">sample_canva</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">seed =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>))</span></code></pre></div>
-<div class="cell column-screen-inset quarto-layout-panel" data-layout-align="center" data-layout-ncol="3">
-<div class="quarto-layout-row">
-<div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="https://blog.djnavarro.net/posts/2024-12-18_art-from-code-1/index_files/figure-html/canva-palettes-2-1.png" class="img-fluid quarto-figure quarto-figure-center figure-img" width="1800"></p>
-</figure>
-</div>
-</div>
-<div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="https://blog.djnavarro.net/posts/2024-12-18_art-from-code-1/index_files/figure-html/canva-palettes-2-2.png" class="img-fluid quarto-figure quarto-figure-center figure-img" width="1800"></p>
-</figure>
-</div>
-</div>
-<div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="https://blog.djnavarro.net/posts/2024-12-18_art-from-code-1/index_files/figure-html/canva-palettes-2-3.png" class="img-fluid quarto-figure quarto-figure-center figure-img" width="1800"></p>
-</figure>
-</div>
-</div>
-</div>
-</div>
-<p>The ability to pick and choose when the randomness gets turned on and off is quite handy!</p>
-<div id="exercise-palettes" class="callout callout-style-default callout-important no-icon callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon no-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Exercises
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<ol type="1">
-<li><p>In the materials there is a file called <code>palette-generators.R</code> that contains a copy of the <code>sample_canva()</code> function. Take a look and try calling the function a few times to see what kind of output it produces. You may find it handy to use <code>show_col()</code> to visualise the results.</p></li>
-<li><p>Try writing your own random palette generator. A simple (and occasionally useful) approach is to construct a palette consisting of distinct but otherwise randomly selected named colours in R. There is a set of 502 colour names generated by calling <code>colours()</code> with <code>distinct = TRUE)</code>. Write a function called <code>sample_named_colours()</code> that takes <code>n</code> as an input argument, and then returns a sample of <code>n</code> of these colour. Try using it with the <code>polar_art()</code> function.</p></li>
-<li><p>The <code>sample_canva()</code> function, as I’ve written it, preserves the original structure of the 150 palettes in <code>ggthemes::canva_palettes</code>, so that the 4 colours returned all belong to the same palette on the Canva website originally. Try breaking this constraint. If you call <code>unlist(ggthemes::canva_palettes)</code> you get a vector of 600 distinct colours. Write a palette generating function that samples colours randomly from that set of 600 colours.</p></li>
-</ol>
-</div>
-</div>
-</section>
-<section id="composition" class="level2 page-columns page-full">
-<h2 class="anchored" data-anchor-id="composition">Composition</h2>
-<p>The <code>polar_art()</code> function I wrote earlier is nice, but it’s not very flexible. It allows some control over the palette and the number of segments to be plotted, but that’s all. It doesn’t let me use the full flexibility of ggplot2 to create artwork. For example, what if I wanted to create more pieces in a “similar” style to the ones I created earlier, but plot different geoms? Or perhaps I want to plot more than one data set as part of a single piece? The <code>polar_art()</code> function doesn’t allow that. The data generation and plot building is all handled internally. Perhaps there’s a case to be made that we should break this into smaller functions and see if that helps.</p>
-<p>Let’s start out by writing a “random tibble generator” function, <code>sample_data()</code>. This function will generate tibbles full of random numbers, but that’s all:</p>
-<div class="cell" data-layout-align="center">
-<div class="sourceCode cell-code" id="cb25" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1">sample_data <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">function</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">seed =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">NULL</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">n =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">100</span>){</span>
-<span id="cb25-2">  <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">if</span>(<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">!</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">is.null</span>(seed)) <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">set.seed</span>(seed)</span>
-<span id="cb25-3">  dat <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">tibble</span>(</span>
-<span id="cb25-4">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">x0 =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">runif</span>(n),</span>
-<span id="cb25-5">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">y0 =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">runif</span>(n),</span>
-<span id="cb25-6">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">x1 =</span> x0 <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">runif</span>(n, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">min =</span> <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-</span>.<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">max =</span> .<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>),</span>
-<span id="cb25-7">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">y1 =</span> y0 <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">runif</span>(n, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">min =</span> <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-</span>.<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">max =</span> .<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>),</span>
-<span id="cb25-8">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">shade =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">runif</span>(n), </span>
-<span id="cb25-9">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">size =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">runif</span>(n),</span>
-<span id="cb25-10">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">shape =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">factor</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">sample</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">22</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">size =</span> n, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">replace =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">TRUE</span>))</span>
-<span id="cb25-11">  )</span>
-<span id="cb25-12">}</span></code></pre></div>
-</div>
-<p>Next, let’s create a <code>styled_plot()</code> function that takes a palette and (optionally) a data set as inputs, and sets up the mappings and the stylistic aspects to the plot. This function does a lot of the work in defining what kind of artwork is possible using this system, even though it doesn’t actually draw anything. For example, it specifies <code>coord_polar()</code> as the coordinate system, so any points or lines that get created will be shown in polar coordinates. It uses <code>guide_none()</code> to suppress legends, and <code>theme_void()</code> to suppress axes, axis titles and so on.</p>
-<div class="cell" data-layout-align="center">
-<div class="sourceCode cell-code" id="cb26" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1">polar_styled_plot <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">function</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">data =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">NULL</span>, palette) {</span>
-<span id="cb26-2">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">ggplot</span>(</span>
-<span id="cb26-3">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">data =</span> data,</span>
-<span id="cb26-4">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mapping =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">aes</span>(</span>
-<span id="cb26-5">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">x =</span> x0,</span>
-<span id="cb26-6">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">y =</span> y0,</span>
-<span id="cb26-7">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">xend =</span> x1,</span>
-<span id="cb26-8">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">yend =</span> y1,</span>
-<span id="cb26-9">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">colour =</span> shade,</span>
-<span id="cb26-10">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">size =</span> size</span>
-<span id="cb26-11">    )) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> </span>
-<span id="cb26-12">    <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">coord_polar</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">clip =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"off"</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb26-13">    <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">scale_y_continuous</span>(</span>
-<span id="cb26-14">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">expand =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>),</span>
-<span id="cb26-15">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">limits =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>), </span>
-<span id="cb26-16">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">oob =</span> scales<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">::</span>oob_keep</span>
-<span id="cb26-17">    ) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb26-18">    <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">scale_x_continuous</span>(</span>
-<span id="cb26-19">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">expand =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>), </span>
-<span id="cb26-20">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">limits =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>), </span>
-<span id="cb26-21">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">oob =</span> scales<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">::</span>oob_keep</span>
-<span id="cb26-22">    ) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> </span>
-<span id="cb26-23">    <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">scale_colour_gradientn</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">colours =</span> palette) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> </span>
-<span id="cb26-24">    <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">scale_size</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">range =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10</span>)) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> </span>
-<span id="cb26-25">    <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">theme_void</span>() <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> </span>
-<span id="cb26-26">    <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">guides</span>(</span>
-<span id="cb26-27">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">colour =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">guide_none</span>(),</span>
-<span id="cb26-28">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">size =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">guide_none</span>(),</span>
-<span id="cb26-29">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">fill =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">guide_none</span>(),</span>
-<span id="cb26-30">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">shape =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">guide_none</span>()</span>
-<span id="cb26-31">    )</span>
-<span id="cb26-32">}</span></code></pre></div>
-</div>
-<p>This structure gives a clean delineation of responsibility among the different functions. The <code>sample_canva()</code> function does the work of generating random palettes, <code>sample_data()</code> does the job of creating random data to drive the plot, <code>polar_styled_plot()</code> takes care of all the ggplot set up, and then you can pick and choose which geom you want to add. So we can write code like this that differs only in the choice of geom:</p>
-<div class="sourceCode cell-code" id="cb27" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1">dat <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">sample_data</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">n =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">100</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">seed =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>) </span>
-<span id="cb27-2">pal <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">sample_canva</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">seed =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>)</span>
-<span id="cb27-3"></span>
-<span id="cb27-4"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">polar_styled_plot</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">data =</span> dat, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">palette =</span> pal) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">geom_segment</span>()</span>
-<span id="cb27-5"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">polar_styled_plot</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">data =</span> dat, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">palette =</span> pal) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">geom_path</span>()</span>
-<span id="cb27-6"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">polar_styled_plot</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">data =</span> dat, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">palette =</span> pal) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">geom_point</span>()</span></code></pre></div>
-<div class="cell column-screen-inset quarto-layout-panel" data-layout-align="center" data-layout-ncol="3">
-<div class="quarto-layout-row">
-<div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="https://blog.djnavarro.net/posts/2024-12-18_art-from-code-1/index_files/figure-html/simple-composition-1.png" class="img-fluid quarto-figure quarto-figure-center figure-img" width="1800"></p>
-</figure>
-</div>
-</div>
-<div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="https://blog.djnavarro.net/posts/2024-12-18_art-from-code-1/index_files/figure-html/simple-composition-2.png" class="img-fluid quarto-figure quarto-figure-center figure-img" width="1800"></p>
-</figure>
-</div>
-</div>
-<div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="https://blog.djnavarro.net/posts/2024-12-18_art-from-code-1/index_files/figure-html/simple-composition-3.png" class="img-fluid quarto-figure quarto-figure-center figure-img" width="1800"></p>
-</figure>
-</div>
-</div>
-</div>
-</div>
-<p>Because the output of <code>polar_styled_plot()</code> is a ggplot that we can add layers to, and because each layer in a ggplot can supply its own data, we now have the ability to reuse these components in different ways. For that it’s helpful to load dplyr. Here’s an example where we generate two random data sets and feed those into four separate geoms:</p>
-<div class="cell" data-layout-align="center">
-<div class="sourceCode cell-code" id="cb28" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(dplyr)</span>
-<span id="cb28-2"></span>
-<span id="cb28-3">dat1 <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">sample_data</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">n =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2000</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">seed =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">123</span>) </span>
-<span id="cb28-4">dat2 <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">sample_data</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">n =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">100</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">seed =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">456</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">|&gt;</span>  </span>
-<span id="cb28-5">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">y0 =</span> .<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span> <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> y0 <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">*</span> .<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">6</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">y1 =</span> .<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>)</span>
-<span id="cb28-6"></span>
-<span id="cb28-7"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">polar_styled_plot</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">palette =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">sample_canva</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">seed =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">7</span>)) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> </span>
-<span id="cb28-8">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">geom_segment</span>(</span>
-<span id="cb28-9">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">data =</span> dat1 <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">|&gt;</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">size =</span> size <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">*</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>)</span>
-<span id="cb28-10">  ) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> </span>
-<span id="cb28-11">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">geom_segment</span>(</span>
-<span id="cb28-12">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">data =</span> dat2 <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">|&gt;</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">size =</span> size <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">/</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>), </span>
-<span id="cb28-13">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lineend =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"round"</span>, </span>
-<span id="cb28-14">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">colour =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"white"</span></span>
-<span id="cb28-15">  ) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb28-16">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">geom_segment</span>(</span>
-<span id="cb28-17">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">data =</span> dat2 <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">|&gt;</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">size =</span> size <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">/</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">40</span>), </span>
-<span id="cb28-18">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lineend =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"round"</span>, </span>
-<span id="cb28-19">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">colour =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"#222222"</span></span>
-<span id="cb28-20">  ) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb28-21">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">geom_point</span>(</span>
-<span id="cb28-22">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">data =</span> dat2 <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">|&gt;</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">size =</span> size <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">*</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>),</span>
-<span id="cb28-23">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">colour =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"#222222"</span></span>
-<span id="cb28-24">  )</span></code></pre></div>
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="https://blog.djnavarro.net/posts/2024-12-18_art-from-code-1/index_files/figure-html/compositionality-1.png" class="img-fluid quarto-figure quarto-figure-center figure-img" width="1800"></p>
-</figure>
-</div>
-</div>
-</div>
-<p>Another example that three copies of the same random data set to produce a variation that has additional symmetries:</p>
-<div class="cell" data-layout-align="center">
-<div class="sourceCode cell-code" id="cb29" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1">dat <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">sample_data</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">n =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2000</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">seed =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">123</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">|&gt;</span></span>
-<span id="cb29-2">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">y1 =</span> y0, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">size =</span> size <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">/</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>)</span>
-<span id="cb29-3"></span>
-<span id="cb29-4"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">polar_styled_plot</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">palette =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">sample_canva</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">seed =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">456</span>)) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> </span>
-<span id="cb29-5">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">geom_segment</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">data =</span> dat) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> </span>
-<span id="cb29-6">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">geom_segment</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">data =</span> dat <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">|&gt;</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">y1 =</span> y1 <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-</span> .<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">y0 =</span> y0 <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-</span> .<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>)) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb29-7">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">geom_segment</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">data =</span> dat <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">|&gt;</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">y1 =</span> y1 <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-</span> .<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">4</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">y0 =</span> y0 <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-</span> .<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">4</span>))</span></code></pre></div>
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="https://blog.djnavarro.net/posts/2024-12-18_art-from-code-1/index_files/figure-html/compositionality-2-1.png" class="img-fluid quarto-figure quarto-figure-center figure-img" width="1800"></p>
-</figure>
-</div>
-</div>
-</div>
-<p>Finally, here’s a version that uses the <code>linetype</code> argument to <code>geom_segment()</code> to create a “choppier” version of these pieces:</p>
-<div class="cell" data-layout-align="center">
-<div class="sourceCode cell-code" id="cb30" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1">dat <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">sample_data</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">n =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1000</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">seed =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">|&gt;</span></span>
-<span id="cb30-2">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">y1 =</span> y0, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">size =</span> size <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">/</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">4</span>)</span>
-<span id="cb30-3"></span>
-<span id="cb30-4"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">polar_styled_plot</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">palette =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">sample_canva</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">seed =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>)) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> </span>
-<span id="cb30-5">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">geom_segment</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">data =</span> dat, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">linetype =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"331311"</span>) </span></code></pre></div>
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="https://blog.djnavarro.net/posts/2024-12-18_art-from-code-1/index_files/figure-html/compositionality-3-1.png" class="img-fluid quarto-figure quarto-figure-center figure-img" width="1800"></p>
-</figure>
-</div>
-</div>
-</div>
-<div id="exercise-grammars" class="callout callout-style-default callout-important no-icon callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon no-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Exercises
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<ol type="1">
-<li><p>In the materials there is a file called <code>polar-styled-plots.R</code> that contains a copy of the <code>sample_canva()</code>, <code>sample_data()</code> and <code>polar_styled_plot()</code> functions. Without modifying any of these three functions, explore how much flexibility you have to make different pieces in which (1) data are generated with <code>sample_data()</code>, (2) the plot is initialised by calling <code>polar_styled_plot()</code>, and (3) the piece is created by adding ggplot2 geoms. Data manipulation with dplyr is allowed!</p></li>
-<li><p>In the examples above and the previous exercise you saw that the <code>polar_styled_plot()</code> function plays the role of defining an overarching “style” for possible art pieces, but it doesn’t completely constrain artistic freedom. Your task in this exercise is to try to write a <code>my_styled_plot()</code> that does something similar… but creates a different style that you can explore</p></li>
-</ol>
-</div>
-</div>
-</section>
-<section id="materials" class="level2">
-<h2 class="anchored" data-anchor-id="materials">Materials</h2>
-<p>Code for each of the source files referred to in this section of the workshop is included here. Click on the callout box below to see the code for the file you want to look at. Please keep in mind that (unlike the code in the main text) I haven’t modified these scripts since the original workshop, so you might need to play around with them to get them to work!</p>
-<div class="callout callout-style-simple callout-note no-icon callout-titled" title="palette-generators.R">
-<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-5-contents" aria-controls="callout-5" aria-expanded="false" aria-label="Toggle callout">
-<div class="callout-icon-container">
-<i class="callout-icon no-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-palette-generators.R
-</div>
-<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
-</div>
-<div id="callout-5" class="callout-5-contents callout-collapse collapse">
-<div class="callout-body-container callout-body">
-<div class="cell">
-<div class="sourceCode cell-code" id="cb31" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(ggthemes)</span>
-<span id="cb31-2"></span>
-<span id="cb31-3"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># the original function from the first session</span></span>
-<span id="cb31-4">sample_canva <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">function</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">seed =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">NULL</span>) {</span>
-<span id="cb31-5">  <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">if</span>(<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">!</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">is.null</span>(seed)) <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">set.seed</span>(seed)</span>
-<span id="cb31-6">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">sample</span>(ggthemes<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">::</span>canva_palettes, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>)[[<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>]]</span>
-<span id="cb31-7">}</span>
-<span id="cb31-8"></span>
-<span id="cb31-9"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># the extended function used in later sessions</span></span>
-<span id="cb31-10">sample_canva2 <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">function</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">seed =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">NULL</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">n =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">4</span>) {</span>
-<span id="cb31-11">  <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">if</span>(<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">!</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">is.null</span>(seed)) <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">set.seed</span>(seed)</span>
-<span id="cb31-12">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">sample</span>(ggthemes<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">::</span>canva_palettes, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>)[[<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>]] <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">|&gt;</span></span>
-<span id="cb31-13">    (\(x) <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">colorRampPalette</span>(x)(n))()  </span>
-<span id="cb31-14">}</span></code></pre></div>
-</div>
-</div>
-</div>
-</div>
-<div class="callout callout-style-simple callout-note no-icon callout-titled" title="polar-art.R">
-<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-6-contents" aria-controls="callout-6" aria-expanded="false" aria-label="Toggle callout">
-<div class="callout-icon-container">
-<i class="callout-icon no-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-polar-art.R
-</div>
-<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
-</div>
-<div id="callout-6" class="callout-6-contents callout-collapse collapse">
-<div class="callout-body-container callout-body">
-<div class="cell">
-<div class="sourceCode cell-code" id="cb32" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(ggplot2)</span>
-<span id="cb32-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(tibble)</span>
-<span id="cb32-3"></span>
-<span id="cb32-4">polar_art <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">function</span>(seed, n, palette) {</span>
-<span id="cb32-5">  </span>
-<span id="cb32-6">  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># set the state of the random number generator</span></span>
-<span id="cb32-7">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">set.seed</span>(seed)</span>
-<span id="cb32-8">  </span>
-<span id="cb32-9">  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># data frame containing random values for </span></span>
-<span id="cb32-10">  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># aesthetics we might want to use in the art</span></span>
-<span id="cb32-11">  dat <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">tibble</span>(</span>
-<span id="cb32-12">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">x0 =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">runif</span>(n),</span>
-<span id="cb32-13">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">y0 =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">runif</span>(n),</span>
-<span id="cb32-14">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">x1 =</span> x0 <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">runif</span>(n, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">min =</span> <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-</span>.<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">max =</span> .<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>),</span>
-<span id="cb32-15">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">y1 =</span> y0 <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">runif</span>(n, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">min =</span> <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-</span>.<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">max =</span> .<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>),</span>
-<span id="cb32-16">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">shade =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">runif</span>(n), </span>
-<span id="cb32-17">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">size =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">runif</span>(n)</span>
-<span id="cb32-18">  )</span>
-<span id="cb32-19">  </span>
-<span id="cb32-20">  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># plot segments in various colours, using </span></span>
-<span id="cb32-21">  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># polar coordinates and a gradient palette</span></span>
-<span id="cb32-22">  dat <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">|&gt;</span> </span>
-<span id="cb32-23">    <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">ggplot</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">aes</span>(</span>
-<span id="cb32-24">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">x =</span> x0,</span>
-<span id="cb32-25">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">y =</span> y0,</span>
-<span id="cb32-26">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">xend =</span> x1,</span>
-<span id="cb32-27">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">yend =</span> y1,</span>
-<span id="cb32-28">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">colour =</span> shade,</span>
-<span id="cb32-29">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">size =</span> size</span>
-<span id="cb32-30">    )) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb32-31">    <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">geom_segment</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">show.legend =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">FALSE</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb32-32">    <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">coord_polar</span>() <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb32-33">    <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">scale_y_continuous</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">expand =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>)) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb32-34">    <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">scale_x_continuous</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">expand =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>)) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> </span>
-<span id="cb32-35">    <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">scale_colour_gradientn</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">colours =</span> palette) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> </span>
-<span id="cb32-36">    <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">scale_size</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">range =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10</span>)) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> </span>
-<span id="cb32-37">    <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">theme_void</span>()</span>
-<span id="cb32-38">}</span>
-<span id="cb32-39"></span>
-<span id="cb32-40"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">polar_art</span>(</span>
-<span id="cb32-41">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">seed =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, </span>
-<span id="cb32-42">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">n =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">50</span>, </span>
-<span id="cb32-43">  <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">palette =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"red"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"black"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"white"</span>)</span>
-<span id="cb32-44">)</span></code></pre></div>
-</div>
-</div>
-</div>
-</div>
-<div class="callout callout-style-simple callout-note no-icon callout-titled" title="polar-styled-plots.R">
-<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-7-contents" aria-controls="callout-7" aria-expanded="false" aria-label="Toggle callout">
-<div class="callout-icon-container">
-<i class="callout-icon no-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-polar-styled-plots.R
-</div>
-<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
-</div>
-<div id="callout-7" class="callout-7-contents callout-collapse collapse">
-<div class="callout-body-container callout-body">
-<div class="cell">
-<div class="sourceCode cell-code" id="cb33" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(ggplot2)</span>
-<span id="cb33-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(tibble)</span>
-<span id="cb33-3"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(dplyr)</span>
-<span id="cb33-4"></span>
-<span id="cb33-5">sample_canva <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">function</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">seed =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">NULL</span>) {</span>
-<span id="cb33-6">  <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">if</span>(<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">!</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">is.null</span>(seed)) <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">set.seed</span>(seed)</span>
-<span id="cb33-7">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">sample</span>(ggthemes<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">::</span>canva_palettes, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>)[[<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>]]</span>
-<span id="cb33-8">}</span>
-<span id="cb33-9"></span>
-<span id="cb33-10">sample_data <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">function</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">seed =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">NULL</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">n =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">100</span>){</span>
-<span id="cb33-11">  <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">if</span>(<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">!</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">is.null</span>(seed)) <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">set.seed</span>(seed)</span>
-<span id="cb33-12">  dat <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">tibble</span>(</span>
-<span id="cb33-13">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">x0 =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">runif</span>(n),</span>
-<span id="cb33-14">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">y0 =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">runif</span>(n),</span>
-<span id="cb33-15">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">x1 =</span> x0 <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">runif</span>(n, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">min =</span> <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-</span>.<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">max =</span> .<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>),</span>
-<span id="cb33-16">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">y1 =</span> y0 <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">runif</span>(n, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">min =</span> <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-</span>.<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">max =</span> .<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>),</span>
-<span id="cb33-17">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">shade =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">runif</span>(n), </span>
-<span id="cb33-18">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">size =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">runif</span>(n),</span>
-<span id="cb33-19">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">shape =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">factor</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">sample</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">22</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">size =</span> n, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">replace =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">TRUE</span>))</span>
-<span id="cb33-20">  )</span>
-<span id="cb33-21">}</span>
-<span id="cb33-22"></span>
-<span id="cb33-23">polar_styled_plot <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">function</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">data =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">NULL</span>, palette) {</span>
-<span id="cb33-24">  <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">ggplot</span>(</span>
-<span id="cb33-25">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">data =</span> data,</span>
-<span id="cb33-26">    <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mapping =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">aes</span>(</span>
-<span id="cb33-27">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">x =</span> x0,</span>
-<span id="cb33-28">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">y =</span> y0,</span>
-<span id="cb33-29">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">xend =</span> x1,</span>
-<span id="cb33-30">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">yend =</span> y1,</span>
-<span id="cb33-31">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">colour =</span> shade,</span>
-<span id="cb33-32">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">size =</span> size</span>
-<span id="cb33-33">    )) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> </span>
-<span id="cb33-34">    <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">coord_polar</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">clip =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"off"</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb33-35">    <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">scale_y_continuous</span>(</span>
-<span id="cb33-36">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">expand =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>),</span>
-<span id="cb33-37">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">limits =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>), </span>
-<span id="cb33-38">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">oob =</span> scales<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">::</span>oob_keep</span>
-<span id="cb33-39">    ) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb33-40">    <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">scale_x_continuous</span>(</span>
-<span id="cb33-41">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">expand =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>), </span>
-<span id="cb33-42">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">limits =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>), </span>
-<span id="cb33-43">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">oob =</span> scales<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">::</span>oob_keep</span>
-<span id="cb33-44">    ) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> </span>
-<span id="cb33-45">    <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">scale_colour_gradientn</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">colours =</span> palette) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> </span>
-<span id="cb33-46">    <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">scale_size</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">range =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10</span>)) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> </span>
-<span id="cb33-47">    <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">theme_void</span>() <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> </span>
-<span id="cb33-48">    <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">guides</span>(</span>
-<span id="cb33-49">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">colour =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">guide_none</span>(),</span>
-<span id="cb33-50">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">size =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">guide_none</span>(),</span>
-<span id="cb33-51">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">fill =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">guide_none</span>(),</span>
-<span id="cb33-52">      <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">shape =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">guide_none</span>()</span>
-<span id="cb33-53">    )</span>
-<span id="cb33-54">}</span></code></pre></div>
-</div>
-</div>
-</div>
-</div>
-
-
-</section>
-
-<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" id="quarto-reuse"><h2 class="anchored quarto-appendix-heading">Reuse</h2><div class="quarto-appendix-contents"><div><a rel="license" href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></div></div></section><section class="quarto-appendix-contents" id="quarto-citation"><h2 class="anchored quarto-appendix-heading">Citation</h2><div><div class="quarto-appendix-secondary-label">BibTeX citation:</div><pre class="sourceCode code-with-copy quarto-appendix-bibtex"><code class="sourceCode bibtex">@online{navarro2024,
-  author = {Navarro, Danielle},
-  title = {Art from Code {I:} {Generative} Art with {R}},
-  date = {2024-12-18},
-  url = {https://blog.djnavarro.net/posts/2024-12-18_art-from-code-1/},
-  langid = {en}
-}
-</code></pre><div class="quarto-appendix-secondary-label">For attribution, please cite this work as:</div><div id="ref-navarro2024" class="csl-entry quarto-appendix-citeas">
-Navarro, Danielle. 2024. <span>“Art from Code I: Generative Art with
-R.”</span> December 18, 2024. <a href="https://blog.djnavarro.net/posts/2024-12-18_art-from-code-1/">https://blog.djnavarro.net/posts/2024-12-18_art-from-code-1/</a>.
-</div></div></section></div> ]]></description>
-  <category>R</category>
-  <category>Art</category>
-  <guid>https://blog.djnavarro.net/posts/2024-12-18_art-from-code-1/</guid>
-  <pubDate>Tue, 17 Dec 2024 13:00:00 GMT</pubDate>
-  <media:content url="https://blog.djnavarro.net/posts/2024-12-18_art-from-code-1/compositionality.png" medium="image" type="image/png" height="144" width="144"/>
 </item>
 </channel>
 </rss>
