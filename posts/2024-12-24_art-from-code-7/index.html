@@ -397,7 +397,7 @@ Exercise
 <span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>base <span class="sc">+</span>   </span>
 <span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  trunk <span class="sc">+</span> </span>
 <span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">with_outer_glow</span>(leaves, <span class="at">colour =</span> <span class="st">"blue"</span>, <span class="at">sigma =</span> <span class="dv">10</span>, <span class="at">expand =</span><span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell column-page quarto-layout-panel" data-layout-nrow="1" data-layout-align="center">
+<div class="cell column-page quarto-layout-panel" data-layout-align="center" data-layout-nrow="1">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -485,7 +485,7 @@ Exercise
 <p>The details to this don’t matter very much right now. All that matters is that when we add <code>geom_segment()</code> to <code>base</code>, it produces radial art like the image shown below on the left. Then, on the right, we can see the effect of the <code>with_dither()</code> function. I’ve reduced the image to five distinct colours in order to exaggerate the dithering effect as much as possible. Any lower than this and the image degrades too much.</p>
 <div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>base <span class="sc">+</span> <span class="fu">geom_segment</span>()</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>base <span class="sc">+</span> <span class="fu">with_dither</span>(<span class="fu">geom_segment</span>(), <span class="at">max_colours =</span> <span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell column-page quarto-layout-panel" data-layout-nrow="1" data-layout-align="center">
+<div class="cell column-page quarto-layout-panel" data-layout-align="center" data-layout-nrow="1">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -506,7 +506,7 @@ Exercise
 <p>Floyd-Steinberg dithering gives the image a slightly grainy feel. It can be very handy when you don’t want the art to look too clean. Rendering the image in halftone gives it a more patterend feel, as the images below illustrate:</p>
 <div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>base <span class="sc">+</span> <span class="fu">with_halftone_dither</span>(<span class="fu">geom_segment</span>())</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="fu">with_halftone_dither</span>(base <span class="sc">+</span> <span class="fu">geom_segment</span>())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell column-page quarto-layout-panel" data-layout-nrow="1" data-layout-align="center">
+<div class="cell column-page quarto-layout-panel" data-layout-align="center" data-layout-nrow="1">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -577,7 +577,7 @@ Exercise
 <p>Okay, so now let’s take a look the two layers individually:</p>
 <div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>base <span class="sc">+</span> texture</span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>base <span class="sc">+</span> mask</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell column-page quarto-layout-panel" data-layout-nrow="1" data-layout-align="center">
+<div class="cell column-page quarto-layout-panel" data-layout-align="center" data-layout-nrow="1">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -638,7 +638,7 @@ Exercise
 <span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_group</span>(texture, text, border, <span class="at">id =</span> <span class="st">"content"</span>) <span class="sc">+</span></span>
 <span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_reference</span>(mask, <span class="at">id =</span> <span class="st">"mask"</span>) <span class="sc">+</span> </span>
 <span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">with_mask</span>(<span class="st">"content"</span>, <span class="st">"mask"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell column-page quarto-layout-panel" data-layout-nrow="1" data-layout-align="center">
+<div class="cell column-page quarto-layout-panel" data-layout-align="center" data-layout-nrow="1">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
@@ -728,7 +728,7 @@ Exercise
 <span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">x_scale =</span> <span class="dv">150</span>,</span>
 <span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">y_scale =</span> <span class="sc">-</span><span class="dv">150</span></span>
 <span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell column-page quarto-layout-panel" data-layout-nrow="1" data-layout-align="center">
+<div class="cell column-page quarto-layout-panel" data-layout-align="center" data-layout-nrow="1">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
 <div class="quarto-figure quarto-figure-center">
