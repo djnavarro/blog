@@ -2811,7 +2811,7 @@
     "href": "posts/2025-12-08_two-github-one-laptop/index.html#references",
     "title": "Two githubs, one laptop",
     "section": "References",
-    "text": "References\nResources I looked up while solving this problem:\n\nThis github help page covers much of what I needed to know\nThis stack overflow thread talks a lot about the specific issues involved in this problem\nMore generally, this gist and the associated comment thread has a really comprehensive overview of the settings that can be customised via .gitignore"
+    "text": "References\nResources I looked up while solving this problem:\n\nThis github help page covers much of what I needed to know\nThis stack overflow thread talks a lot about the specific issues involved in this problem\nMore generally, this gist and the associated comment thread has a really comprehensive overview of the settings that can be customised via .gitconfig"
   },
   {
     "objectID": "posts/2021-04-19_bs4cards-in-distill/index.html",
